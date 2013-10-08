@@ -90,7 +90,7 @@ static void handle_message(char *msg, uint32_t length)
 	fprintf(stdout, "%s\n", buffer);
 }
 
-static int read_all_messages(struct peer *p, int epoll_fd)
+static int process_all_messages(struct peer *p, int epoll_fd)
 {
 	uint32_t message_length;
 	char *message_ptr;
@@ -134,7 +134,7 @@ static int read_all_messages(struct peer *p, int epoll_fd)
 
 void handle_all_peer_operations(struct peer *p, int epoll_fd)
 {
-	read_all_messages(p, epoll_fd);
+	process_all_messages(p, epoll_fd);
 	return;
 }
 
