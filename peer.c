@@ -50,6 +50,18 @@ static int free_space(struct peer *p)
 	return &(p->buffer[MAX_MESSAGE_SIZE + 1]) - p->write_ptr;
 }
 
+static void reorganize_buffer(struct peer *p)
+{
+	unsigned int unread = p->write_ptr - p->read_ptr;
+	if (unread != 0) {
+		memmove(p->buffer, p->read_ptr, unread);
+		p->write_ptr -= unread;
+	} else {
+		p->write_ptr = p->buffer;
+	}
+	p->read_ptr = p->buffer;
+}
+
 static char *get_read_offset(struct peer *p, int epoll_fd, int count)
 {
 	if (unlikely(count > unread_space(p))) {
@@ -121,7 +133,7 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 			}
 			handle_message(message_ptr, message_length);
 			p->op = READ_MSG_LENGTH;
-			/*  TODO: memmove */
+			reorganize_buffer(p);
 			break;
 
 		default:
