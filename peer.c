@@ -63,7 +63,7 @@ static void reorganize_buffer(struct peer *p)
 	p->read_ptr = p->buffer;
 }
 
-static char *get_read_offset(struct peer *p, int epoll_fd, int count)
+static char *get_read_ptr(struct peer *p, int epoll_fd, int count)
 {
 	if (unlikely(count > unread_space(p))) {
 		fprintf(stdout, "peer asked for too much data: %d!\n", count);
@@ -112,7 +112,7 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 		char *message_length_ptr;
 		switch (p->op) {
 		case READ_MSG_LENGTH:
-			message_length_ptr = get_read_offset(p, epoll_fd, sizeof(message_length));
+			message_length_ptr = get_read_ptr(p, epoll_fd, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
 				return -1;
 			}
@@ -129,7 +129,7 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 
 		case READ_MSG:
 			message_length = p->msg_length;
-			message_ptr = get_read_offset(p, epoll_fd, message_length);
+			message_ptr = get_read_ptr(p, epoll_fd, message_length);
 			if (unlikely(message_ptr == NULL)) {
 				return -1;
 			}
