@@ -42,20 +42,21 @@ static void close_peer_connection(struct peer *p, int epoll_fd, int fd)
 
 static int unread_space(struct peer *p)
 {
-	return &(p->buffer[MAX_MESSAGE_SIZE + 1]) - p->read_ptr;
+	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
 
 static int free_space(struct peer *p)
 {
-	return &(p->buffer[MAX_MESSAGE_SIZE + 1]) - p->write_ptr;
+	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
 }
 
 static void reorganize_buffer(struct peer *p)
 {
 	unsigned int unread = p->write_ptr - p->read_ptr;
 	if (unread != 0) {
+		fprintf(stdout, "memmoving!\n");
 		memmove(p->buffer, p->read_ptr, unread);
-		p->write_ptr -= unread;
+		p->write_ptr = p->buffer + unread;
 	} else {
 		p->write_ptr = p->buffer;
 	}
@@ -125,6 +126,7 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 			 *  a single TCP packet. This fall through eliminates an
 			 *  additional loop iteration
 			 */
+
 		case READ_MSG:
 			message_length = p->msg_length;
 			message_ptr = get_read_offset(p, epoll_fd, message_length);
