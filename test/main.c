@@ -1,4 +1,5 @@
 #include <arpa/inet.h>
+#include <endian.h>
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,13 +25,17 @@ int main()
 	char buffer[1000];
 	char *write_ptr = buffer;
 
-	const char *msg = "Hello World!";
+
+	const char *msg = "{\"menu\": {\"id\": \"file\",\"value\": \"File\",\"popup\": {\"menuitem\": [{\"value\": \"New\", \"onclick\": \"CreateNewDoc()\"},{\"value\": \"Open\", \"onclick\": \"OpenDoc()\"},{\"value\": \"Close\", \"onclick\": \"CloseDoc()\"}]}}}";
+
+
 	uint32_t len = strlen(msg);
 	len = htobe32(len);
 	memcpy(write_ptr, &len, sizeof(len));
 	write_ptr += sizeof(len);
 	memcpy(write_ptr, msg, strlen(msg));
 	write_ptr += strlen(msg);
+
 	memcpy(write_ptr, &len, sizeof(len));
 	write_ptr += sizeof(len);
 	memcpy(write_ptr, msg, strlen(msg));

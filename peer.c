@@ -9,6 +9,7 @@
 
 #include "peer.h"
 #include "compiler.h"
+#include "cJSON.h"
 
 #define READ_MSG_LENGTH 0
 #define READ_MSG 1
@@ -95,11 +96,23 @@ static char *get_read_ptr(struct peer *p, int epoll_fd, int count)
 	}
 }
 
-static void handle_message(char *msg, uint32_t length)
+static int handle_message(char *msg, uint32_t length)
 {
-	char buffer[10000];
-	strncpy(buffer, msg, length);
-	fprintf(stdout, "%s\n", buffer);
+	cJSON *root;
+	const char *end_parse;
+
+	root = cJSON_ParseWithOpts(msg, &end_parse, 0);
+	if (root == NULL) {
+		fprintf(stderr, "Could not parse JSON!\n");
+		return -1;
+	} else {
+		uint32_t parsed_length = end_parse - msg;
+		if (parsed_length != length) {
+			return -1;
+		}
+		cJSON_Delete(root);
+		return 0;
+	}
 }
 
 static int process_all_messages(struct peer *p, int epoll_fd)
@@ -109,6 +122,8 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 
 	while (1) {
 		char *message_length_ptr;
+		int ret;
+
 		switch (p->op) {
 		case READ_MSG_LENGTH:
 			message_length_ptr = get_read_ptr(p, epoll_fd, sizeof(message_length));
@@ -132,7 +147,10 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 			if (unlikely(message_ptr == NULL)) {
 				return -1;
 			}
-			handle_message(message_ptr, message_length);
+			ret = handle_message(message_ptr, message_length);
+			if (unlikely(ret == -1)) {
+				close_peer_connection(p, epoll_fd, p->fd);
+			}
 			p->op = READ_MSG_LENGTH;
 			reorganize_buffer(p);
 			break;
