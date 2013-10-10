@@ -4,7 +4,7 @@
 #define SERVER_PORT 11122
 #define LISTEN_BACKLOG 40
 
-#define MAX_MESSAGE_SIZE 128
+#define MAX_MESSAGE_SIZE 250
 
 /* Linux specific configs */
 #define MAX_EPOLL_EVENTS 100
