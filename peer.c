@@ -54,7 +54,6 @@ static void reorganize_buffer(struct peer *p)
 {
 	unsigned int unread = p->write_ptr - p->read_ptr;
 	if (unread != 0) {
-		fprintf(stdout, "memmoving!\n");
 		memmove(p->buffer, p->read_ptr, unread);
 		p->write_ptr = p->buffer + unread;
 	} else {
@@ -66,7 +65,7 @@ static void reorganize_buffer(struct peer *p)
 static char *get_read_ptr(struct peer *p, int epoll_fd, int count)
 {
 	if (unlikely(count > unread_space(p))) {
-		fprintf(stdout, "peer asked for too much data: %d!\n", count);
+		fprintf(stderr, "peer asked for too much data: %d!\n", count);
 		close_peer_connection(p, epoll_fd, p->fd);
 		return NULL;
 	}
