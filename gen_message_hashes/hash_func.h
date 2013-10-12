@@ -1,6 +1,6 @@
-static inline unsigned int hash_func_string(const char* key)
+static inline uint32_t hash_func_string(const char* key)
 {
-	unsigned int hash = 0;
+	uint32_t hash = 0;
 	int c;
 	while ((c = *key++) != 0)
 		hash = c + (hash << 6) + (hash << 16) - hash;
