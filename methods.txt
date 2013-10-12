@@ -1,0 +1,7 @@
+add
+remove
+call
+fetch
+unfetch
+set
+post
