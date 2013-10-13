@@ -34,13 +34,6 @@ void free_peer(struct peer *p)
 	free(p);
 }
 
-static void close_peer_connection(struct peer *p, int epoll_fd, int fd)
-{
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-	close(fd);
-	free_peer(p);
-}
-
 static int unread_space(struct peer *p)
 {
 	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
@@ -94,7 +87,7 @@ static char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-int handle_all_peer_operations(struct peer *p, int epoll_fd)
+int handle_all_peer_operations(struct peer *p)
 {
 	uint32_t message_length;
 	char *message_ptr;
@@ -107,7 +100,6 @@ int handle_all_peer_operations(struct peer *p, int epoll_fd)
 		case READ_MSG_LENGTH:
 			message_length_ptr = get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
-				close_peer_connection(p, epoll_fd, p->fd);
 				return -1;
 			} else if (message_length_ptr == (char *)-1) {
 				return 0;
@@ -127,14 +119,13 @@ int handle_all_peer_operations(struct peer *p, int epoll_fd)
 			message_length = p->msg_length;
 			message_ptr = get_read_ptr(p, message_length);
 			if (unlikely(message_ptr == NULL)) {
-				close_peer_connection(p, epoll_fd, p->fd);
 				return -1;
 			} else if (message_ptr == (char *)-1) {
 				return 0;
 			}
 			ret = parse_message(message_ptr, message_length);
 			if (unlikely(ret == -1)) {
-				close_peer_connection(p, epoll_fd, p->fd);
+				return -1;
 			}
 			p->op = READ_MSG_LENGTH;
 			reorganize_buffer(p);

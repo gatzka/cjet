@@ -67,6 +67,13 @@ alloc_peer_failed:
 	return NULL;
 }
 
+static void close_peer_connection(struct peer *p, int epoll_fd, int fd)
+{
+	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
+	close(fd);
+	free_peer(p);
+}
+
 static struct peer *setup_listen_socket(int epoll_fd)
 {
 	int listen_fd;
@@ -221,7 +228,10 @@ int main()
 				}
 			} else {
 				struct peer *peer = events[i].data.ptr;
-				handle_all_peer_operations(peer, epoll_fd);
+				int ret = handle_all_peer_operations(peer);
+				if (unlikely(ret == -1)) {
+					close_peer_connection(peer, epoll_fd, peer->fd);
+				}
 			}
 		}
 	}
