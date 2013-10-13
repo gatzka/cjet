@@ -43,6 +43,7 @@ static const int AGAIN = 3;
 static const int SLOW_READ = 4;
 static const int FAST_READ = 5;
 static const int HANDLE_FAST_PEER = 6;
+static const int HANDLE_SLOW_PEER = 7;
 
 extern "C" {
 
@@ -59,7 +60,9 @@ int parse_message(char *msg, uint32_t length)
 static unsigned char slow_read_counter = 0;
 static const char fast_read_msg[] = "HelloWorld";
 static const char handle_fast_peer_msg[] = "Hello World!";
+static const char handle_slow_peer_msg[] = "Gruess dich Bronko!";
 static int handle_fast_peer_first = 0;
+static int handle_slow_peer_count = 0;
 
 ssize_t fake_read(int fd, void *buf, size_t count)
 {
@@ -108,6 +111,40 @@ ssize_t fake_read(int fd, void *buf, size_t count)
 		}
 	}
 
+	if (fd == HANDLE_SLOW_PEER) {
+		switch (handle_slow_peer_count++) {
+			char *write_ptr;
+			uint32_t length;
+			char *read_ptr;
+
+		case 0:
+			write_ptr = (char *)buf;
+			length = strlen(handle_slow_peer_msg);
+			length = htobe32(length);
+			memcpy(write_ptr, &length, sizeof(length) - 1);
+			return sizeof(length) - 1;
+
+		case 2:
+			write_ptr = (char *)buf;
+			length = strlen(handle_slow_peer_msg);
+			length = htobe32(length);
+			read_ptr = (char *)&length;
+			read_ptr = read_ptr + 3;
+			memcpy(write_ptr, read_ptr, 1);
+			write_ptr++;
+			memcpy(write_ptr, handle_slow_peer_msg, 3);
+			return 4;
+
+		case 4:
+			write_ptr = (char *)buf;
+			memcpy(write_ptr, &handle_slow_peer_msg[3], strlen(handle_slow_peer_msg) - 3);
+			return strlen(handle_slow_peer_msg) - 3;
+
+		default:
+			errno = EAGAIN;
+			return -1;
+		}
+	}
 }
 
 }
@@ -213,6 +250,31 @@ BOOST_AUTO_TEST_CASE(handle_fast_peer)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(parsed_length == strlen(handle_fast_peer_msg));
 	BOOST_CHECK(strncmp(parsed_msg, handle_fast_peer_msg, parsed_length) == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(handle_slow_peer)
+{
+	parsed_length = 0;
+	parsed_msg = 0;
+
+	struct peer *p = alloc_peer(HANDLE_SLOW_PEER);
+	BOOST_REQUIRE(p != NULL);
+
+	int ret = handle_all_peer_operations(p);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(p->op == READ_MSG_LENGTH);
+
+	ret = handle_all_peer_operations(p);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(p->op == READ_MSG);
+
+	ret = handle_all_peer_operations(p);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(p->op == READ_MSG_LENGTH);
+	BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
+	BOOST_CHECK(strncmp(parsed_msg, handle_slow_peer_msg, parsed_length) == 0);
 
 	free_peer(p);
 }
