@@ -33,6 +33,39 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
+static int add_epoll(int epoll_fd, int epoll_op, int fd, void *cookie)
+{
+	struct epoll_event ev;
+
+	memset(&ev, 0, sizeof(ev));
+	ev.data.ptr = cookie;
+	ev.events = EPOLLIN | EPOLLET;
+	if (unlikely(epoll_ctl(epoll_fd, epoll_op, fd, &ev) < 0)) {
+		fprintf(stderr, "epoll_ctl failed!\n");
+		return -1;
+	}
+	return 0;
+}
+
+static void *peer_create_wait(int fd, int epoll_fd)
+{
+	struct peer *peer;
+	peer = alloc_peer(fd);
+	if (unlikely(peer == NULL)) {
+		fprintf(stderr, "Could not allocate peer!\n");
+		goto alloc_peer_failed;
+	}
+
+	if (unlikely(add_epoll(epoll_fd, EPOLL_CTL_ADD, fd, peer) < 0)) {
+		goto epollctl_failed;
+	}
+	return peer;
+
+epollctl_failed:
+	free_peer(peer);
+alloc_peer_failed:
+	return NULL;
+}
 
 static struct peer *setup_listen_socket(int epoll_fd)
 {

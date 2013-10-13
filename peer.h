@@ -14,7 +14,9 @@ struct peer {
 	char buffer[MAX_MESSAGE_SIZE];
 };
 
-void *peer_create_wait(int fd, int epoll_fd);
+struct peer *alloc_peer(int fd);
+void free_peer(struct peer *p);
+
 void peer_unwait_delete(struct peer *p, int epoll_fd);
 
 void handle_all_peer_operations(struct peer *c, int epoll_fd);
