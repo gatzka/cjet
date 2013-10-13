@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "peer_testing.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,6 +23,12 @@ struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
+
+/*
+ * private functions. They prototypes are just here to allow unit
+ * testing.
+ */
+char *get_read_ptr(struct peer *p, int count);
 
 #ifdef __cplusplus
 }

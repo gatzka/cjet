@@ -55,7 +55,7 @@ static void reorganize_buffer(struct peer *p)
 	p->read_ptr = p->buffer;
 }
 
-static char *get_read_ptr(struct peer *p, int count)
+char *get_read_ptr(struct peer *p, int count)
 {
 	if (unlikely(count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %d!\n", count);
@@ -69,7 +69,7 @@ static char *get_read_ptr(struct peer *p, int count)
 			return read_ptr;
 		}
 
-		read_length = read(p->fd, p->write_ptr, free_space(p));
+		read_length = READ(p->fd, p->write_ptr, free_space(p));
 		if (unlikely(read_length == 0)) {
 			fprintf(stdout, "peer closed connection!\n");
 			return NULL;
