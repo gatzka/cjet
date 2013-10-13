@@ -9,6 +9,7 @@ SET(CMAKE_C_FLAGS "-pipe -Wall -Wextra -pedantic -O2 -flto -fwhole-program -fomi
 SET(CJET_FILES
 	cJSON.c
 	main.c
+	parse.c
 	peer.c
 )
 
