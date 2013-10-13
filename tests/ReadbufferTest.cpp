@@ -42,16 +42,24 @@ static const int CLIENT_CLOSE = 2;
 static const int AGAIN = 3;
 static const int SLOW_READ = 4;
 static const int FAST_READ = 5;
+static const int HANDLE_FAST_PEER = 6;
 
 extern "C" {
 
+static uint32_t parsed_length = 0;
+static char *parsed_msg = NULL;
+
 int parse_message(char *msg, uint32_t length)
 {
+	parsed_msg = msg;
+	parsed_length = length;
 	return 0;
 }
 
 static unsigned char slow_read_counter = 0;
-static const char *fast_read_msg = "HelloWorld";
+static const char fast_read_msg[] = "HelloWorld";
+static const char handle_fast_peer_msg[] = "Hello World!";
+static int handle_fast_peer_first = 0;
 
 ssize_t fake_read(int fd, void *buf, size_t count)
 {
@@ -82,6 +90,24 @@ ssize_t fake_read(int fd, void *buf, size_t count)
 		memcpy(buf, fast_read_msg, strlen(fast_read_msg));
 		return strlen(fast_read_msg);
 	}
+
+	if (fd == HANDLE_FAST_PEER) {
+
+		if (handle_fast_peer_first == 0) {
+			char *write_ptr = (char *)buf;
+			uint32_t length = strlen(handle_fast_peer_msg);
+			length = htobe32(length);
+			memcpy(write_ptr, &length, sizeof(length));
+			write_ptr += sizeof(length);
+			memcpy(write_ptr, handle_fast_peer_msg, sizeof(handle_fast_peer_msg));
+			handle_fast_peer_first = 1;
+			return sizeof(length) + sizeof(handle_fast_peer_msg);
+		} else {
+			errno = EAGAIN;
+			return -1;
+		}
+	}
+
 }
 
 }
@@ -174,6 +200,19 @@ BOOST_AUTO_TEST_CASE(fast_read)
 	strncpy(buffer, read_ptr, read_len);
 	buffer[read_len] = '\0';
 	BOOST_CHECK(strcmp(buffer, "World") == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(handle_fast_peer)
+{
+	struct peer *p = alloc_peer(HANDLE_FAST_PEER);
+	BOOST_REQUIRE(p != NULL);
+
+	int ret = handle_all_peer_operations(p);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(parsed_length == strlen(handle_fast_peer_msg));
+	BOOST_CHECK(strncmp(parsed_msg, handle_fast_peer_msg, parsed_length) == 0);
 
 	free_peer(p);
 }
