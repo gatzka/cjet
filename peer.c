@@ -94,7 +94,7 @@ static char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-static int process_all_messages(struct peer *p, int epoll_fd)
+int handle_all_peer_operations(struct peer *p, int epoll_fd)
 {
 	uint32_t message_length;
 	char *message_ptr;
@@ -146,12 +146,6 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 			break;
 		}
 	}
-}
-
-void handle_all_peer_operations(struct peer *p, int epoll_fd)
-{
-	process_all_messages(p, epoll_fd);
-	return;
 }
 
 void peer_unwait_delete(struct peer *p, int epoll_fd)
