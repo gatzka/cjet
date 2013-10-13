@@ -10,10 +10,6 @@
 #include "parse.h"
 #include "peer.h"
 
-#define READ_MSG_LENGTH 0
-#define READ_MSG 1
-#define WRITE_OP 2
-
 struct peer *alloc_peer(int fd)
 {
 	struct peer *p;
