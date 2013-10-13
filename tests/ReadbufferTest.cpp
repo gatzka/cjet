@@ -40,6 +40,7 @@ static const int BADFD = -1;
 static const int TOO_MUCH_DATA = 1;
 static const int CLIENT_CLOSE = 2;
 static const int AGAIN = 3;
+static const int SLOW_READ = 4;
 
 extern "C" {
 
@@ -47,6 +48,8 @@ int parse_message(char *msg, uint32_t length)
 {
 	return 0;
 }
+
+static unsigned char slow_read_counter = 0;
 
 ssize_t fake_read(int fd, void *buf, size_t count)
 {
@@ -60,6 +63,17 @@ ssize_t fake_read(int fd, void *buf, size_t count)
 	if (fd == AGAIN) {
 		errno = EAGAIN;
 		return -1;
+	}
+
+	if (fd == SLOW_READ) {
+		char val = ++slow_read_counter;
+		if (val % 2 == 0) {
+			errno = EAGAIN;
+			return -1;
+		} else {
+			*((char *)buf) = val;
+			return 1;
+		}
 	}
 }
 
@@ -106,5 +120,27 @@ BOOST_AUTO_TEST_CASE(eagain)
 	char *read_ptr = get_read_ptr(p, MAX_MESSAGE_SIZE);
 	BOOST_CHECK(read_ptr == (char *)-1);
 
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(slow_read)
+{
+	uint32_t value;
+
+	struct peer *p = alloc_peer(SLOW_READ);
+	BOOST_REQUIRE(p != NULL);
+
+	slow_read_counter = 0;
+
+	char *read_ptr = get_read_ptr(p, sizeof(value));
+	BOOST_CHECK(read_ptr == (char *)-1);
+	read_ptr = get_read_ptr(p, sizeof(value));
+	BOOST_CHECK(read_ptr == (char *)-1);
+	read_ptr = get_read_ptr(p, sizeof(value));
+	BOOST_CHECK(read_ptr == (char *)-1);
+	read_ptr = get_read_ptr(p, sizeof(value));
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+	memcpy(&value, read_ptr, sizeof(value));
+	BOOST_CHECK(be32toh(value) == 0x01030507);
 	free_peer(p);
 }
