@@ -111,7 +111,7 @@ int handle_all_peer_operations(struct peer *p)
 			 *  CAUTION! This fall through is by design! Typically, the
 			 *  length of a messages and the message itself will go into
 			 *  a single TCP packet. This fall through eliminates an
-			 *  additional loop iteration
+			 *  additional loop iteration.
 			 */
 
 		case READ_MSG:
