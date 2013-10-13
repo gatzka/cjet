@@ -41,6 +41,7 @@ static const int TOO_MUCH_DATA = 1;
 static const int CLIENT_CLOSE = 2;
 static const int AGAIN = 3;
 static const int SLOW_READ = 4;
+static const int FAST_READ = 5;
 
 extern "C" {
 
@@ -50,6 +51,7 @@ int parse_message(char *msg, uint32_t length)
 }
 
 static unsigned char slow_read_counter = 0;
+static const char *fast_read_msg = "HelloWorld";
 
 ssize_t fake_read(int fd, void *buf, size_t count)
 {
@@ -74,6 +76,11 @@ ssize_t fake_read(int fd, void *buf, size_t count)
 			*((char *)buf) = val;
 			return 1;
 		}
+	}
+
+	if (fd == FAST_READ) {
+		memcpy(buf, fast_read_msg, strlen(fast_read_msg));
+		return strlen(fast_read_msg);
 	}
 }
 
@@ -142,5 +149,31 @@ BOOST_AUTO_TEST_CASE(slow_read)
 	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
 	memcpy(&value, read_ptr, sizeof(value));
 	BOOST_CHECK(be32toh(value) == 0x01030507);
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(fast_read)
+{
+	uint32_t value;
+	static const int read_len = 5;
+	char buffer[read_len + 1];
+
+	struct peer *p = alloc_peer(FAST_READ);
+	BOOST_REQUIRE(p != NULL);
+
+	char *read_ptr = get_read_ptr(p, read_len);
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+
+	strncpy(buffer, read_ptr, read_len);
+	buffer[read_len] = '\0';
+	BOOST_CHECK(strcmp(buffer, "Hello") == 0);
+
+	read_ptr = get_read_ptr(p, read_len);
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+
+	strncpy(buffer, read_ptr, read_len);
+	buffer[read_len] = '\0';
+	BOOST_CHECK(strcmp(buffer, "World") == 0);
+
 	free_peer(p);
 }
