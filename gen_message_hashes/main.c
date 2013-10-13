@@ -30,7 +30,7 @@ static int get_messages(FILE *message_string_file, struct message *buffer, unsig
 			fprintf(stderr, "Too many messages in file, adjust MAX_MESSAGES!\n");
 			goto too_many_messages;
 		}
-		if (strcmp(line, "") != 0) {
+		if (strlen(line) > 0) {
 			char *name = malloc(read + 1);
 			if (name == NULL) {
 				fprintf(stderr, "Could not allocate memory for message name!\n");
