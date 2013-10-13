@@ -4,7 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/epoll.h>
 #include <unistd.h>
 
 #include "compiler.h"
@@ -139,9 +138,3 @@ int handle_all_peer_operations(struct peer *p)
 	}
 }
 
-void peer_unwait_delete(struct peer *p, int epoll_fd)
-{
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, p->fd, NULL);
-	close(p->fd);
-	free_peer(p);
-}

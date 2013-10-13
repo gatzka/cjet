@@ -17,8 +17,6 @@ struct peer {
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
-void peer_unwait_delete(struct peer *p, int epoll_fd);
-
 int handle_all_peer_operations(struct peer *c);
 
 #endif

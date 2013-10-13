@@ -217,8 +217,9 @@ int main()
 					fprintf(stderr, "epoll error on listen fd!\n");
 					goto epoll_on_listen_failed;
 				} else {
+					struct peer *peer = events[i].data.ptr;
 					fprintf(stderr, "epoll error on peer fd!\n");
-					peer_unwait_delete(events[i].data.ptr, epoll_fd);
+					close_peer_connection(peer, epoll_fd, peer->fd);
 					continue;
 				}
 			}
@@ -240,7 +241,7 @@ int main()
  * closed by the OS if this process ends.
  */
 
-	peer_unwait_delete(listen_server, epoll_fd);
+	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
 	close(epoll_fd);
 	return EXIT_SUCCESS;
 
@@ -251,7 +252,7 @@ epoll_on_listen_failed:
  * I do not waste code to close all peer fds, because the will be
  * closed by the OS if this process ends.
  */
-	peer_unwait_delete(listen_server, epoll_fd);
+	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
 setup_listen_failed:
 	close(epoll_fd);
 	return EXIT_FAILURE;
