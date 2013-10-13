@@ -19,7 +19,7 @@ static struct peer *alloc_peer(int fd)
 {
 	struct peer *p;
 	p = malloc(sizeof(*p));
-	if (p == NULL) {
+	if (unlikely(p == NULL)) {
 		return NULL;
 	}
 	p->fd = fd;
@@ -102,12 +102,13 @@ static int handle_message(char *msg, uint32_t length)
 	const char *end_parse;
 
 	root = cJSON_ParseWithOpts(msg, &end_parse, 0);
-	if (root == NULL) {
+	if (unlikely(root == NULL)) {
 		fprintf(stderr, "Could not parse JSON!\n");
 		return -1;
 	} else {
 		uint32_t parsed_length = end_parse - msg;
-		if (parsed_length != length) {
+		if (unlikely(parsed_length != length)) {
+			fprintf(stderr, "length of parsed JSON does not math to message length!\n");
 			return -1;
 		}
 		cJSON_Delete(root);
