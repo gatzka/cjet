@@ -94,7 +94,7 @@ static char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-static int handle_message(char *msg, uint32_t length)
+static int parse_message(char *msg, uint32_t length)
 {
 	cJSON *root;
 	const char *end_parse;
@@ -152,7 +152,7 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 			} else if (message_ptr == (char *)-1) {
 				return 0;
 			}
-			ret = handle_message(message_ptr, message_length);
+			ret = parse_message(message_ptr, message_length);
 			if (unlikely(ret == -1)) {
 				close_peer_connection(p, epoll_fd, p->fd);
 			}
