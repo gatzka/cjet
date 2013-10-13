@@ -5,6 +5,10 @@
 
 #include "config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct peer {
 	int fd;
 	int op;
@@ -18,6 +22,10 @@ struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 
