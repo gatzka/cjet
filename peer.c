@@ -63,11 +63,10 @@ static void reorganize_buffer(struct peer *p)
 	p->read_ptr = p->buffer;
 }
 
-static char *get_read_ptr(struct peer *p, int epoll_fd, int count)
+static char *get_read_ptr(struct peer *p, int count)
 {
 	if (unlikely(count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %d!\n", count);
-		close_peer_connection(p, epoll_fd, p->fd);
 		return NULL;
 	}
 	while (1) {
@@ -81,16 +80,15 @@ static char *get_read_ptr(struct peer *p, int epoll_fd, int count)
 		read_length = read(p->fd, p->write_ptr, free_space(p));
 		if (unlikely(read_length == 0)) {
 			fprintf(stdout, "peer closed connection!\n");
-			close_peer_connection(p, epoll_fd, p->fd);
 			return NULL;
 		}
 		if (read_length == -1) {
 			if ((errno != EAGAIN) &&
 			    (errno != EWOULDBLOCK)) {
 				fprintf(stderr, "unexpected read error: %d!\n", errno);
-				close_peer_connection(p, epoll_fd, p->fd);
+				return NULL;
 			}
-			return NULL;
+			return (char*)-1;
 		}
 		p->write_ptr += read_length;
 	}
@@ -127,9 +125,12 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 
 		switch (p->op) {
 		case READ_MSG_LENGTH:
-			message_length_ptr = get_read_ptr(p, epoll_fd, sizeof(message_length));
+			message_length_ptr = get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
+				close_peer_connection(p, epoll_fd, p->fd);
 				return -1;
+			} else if (message_length_ptr == (char *)-1) {
+				return 0;
 			}
 			memcpy(&message_length, message_length_ptr, sizeof(message_length));
 			message_length = be32toh(message_length);
@@ -144,9 +145,12 @@ static int process_all_messages(struct peer *p, int epoll_fd)
 
 		case READ_MSG:
 			message_length = p->msg_length;
-			message_ptr = get_read_ptr(p, epoll_fd, message_length);
+			message_ptr = get_read_ptr(p, message_length);
 			if (unlikely(message_ptr == NULL)) {
+				close_peer_connection(p, epoll_fd, p->fd);
 				return -1;
+			} else if (message_ptr == (char *)-1) {
+				return 0;
 			}
 			ret = handle_message(message_ptr, message_length);
 			if (unlikely(ret == -1)) {
