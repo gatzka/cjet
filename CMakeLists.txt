@@ -2,11 +2,6 @@ project("cjet" C)
 
 cmake_minimum_required(VERSION 2.8)
 
-# SET(CMAKE_C_FLAGS "-pipe -Wall -Wextra -pedantic -O2 -fomit-frame-pointer" CACHE STRING "" FORCE)
-SET(CMAKE_C_FLAGS "-pipe -Wall -Wextra -pedantic -O2 -flto -fwhole-program -fomit-frame-pointer" CACHE STRING "" FORCE)
-# SET(CMAKE_C_FLAGS "-pipe -Wall -Wextra -pedantic -O2 -flto -fuse-linker-plugin -fomit-frame-pointer" CACHE STRING "" FORCE)
-
-
 SET(CJET_FILES
 	cJSON.c
 	main.c
