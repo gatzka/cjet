@@ -156,9 +156,9 @@ static int accept_all(int epoll_fd, int listen_fd)
 			}
 			return 0;
 
-peer_create_wait_failed:
-no_delay_failed:
-nonblock_failed:
+		peer_create_wait_failed:
+		no_delay_failed:
+		nonblock_failed:
 			close(peer_fd);
 			return -1;
 		}

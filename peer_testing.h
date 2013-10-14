@@ -2,10 +2,11 @@
 #define CJET_PEER_TESTING_H
 
 #ifdef TESTING
-#define READ fake_read
+#define READ \
+	fake_read
 #else
-#define READ read
+#define READ \
+	read
 #endif
 
 #endif
-

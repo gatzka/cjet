@@ -76,7 +76,7 @@ char *get_read_ptr(struct peer *p, int count)
 				fprintf(stderr, "unexpected read error: %d!\n", errno);
 				return NULL;
 			}
-			return (char*)-1;
+			return (char *)-1;
 		}
 		p->write_ptr += read_length;
 	}
@@ -133,4 +133,3 @@ int handle_all_peer_operations(struct peer *p)
 		}
 	}
 }
-

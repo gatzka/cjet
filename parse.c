@@ -24,4 +24,3 @@ int parse_message(char *msg, uint32_t length)
 		return 0;
 	}
 }
-

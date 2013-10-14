@@ -10,11 +10,15 @@
 extern "C" {
 #endif
 
-#define READ_MSG_LENGTH 0
-#define READ_MSG 1
-#define WRITE_OP 2
+#define READ_MSG_LENGTH \
+	0
+#define READ_MSG \
+	1
+#define WRITE_OP \
+	2
 
-struct peer {
+struct peer
+{
 	int fd;
 	int op;
 	char *read_ptr;
@@ -39,4 +43,3 @@ char *get_read_ptr(struct peer *p, int count);
 #endif
 
 #endif
-
