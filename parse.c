@@ -17,7 +17,7 @@ int parse_message(const char *msg, uint32_t length)
 	} else {
 		uint32_t parsed_length = end_parse - msg;
 		if (unlikely(parsed_length != length)) {
-			fprintf(stderr, "length of parsed JSON does not match to message length!\n");
+			fprintf(stderr, "length of parsed JSON does not match message length!\n");
 			return -1;
 		}
 		cJSON_Delete(root);
