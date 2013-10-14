@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-int parse_message(char *msg, uint32_t length);
+int parse_message(const char *msg, uint32_t length);
 
 #ifdef __cplusplus
 }

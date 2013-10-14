@@ -5,7 +5,7 @@
 #include "cJSON.h"
 #include "parse.h"
 
-int parse_message(char *msg, uint32_t length)
+int parse_message(const char *msg, uint32_t length)
 {
 	cJSON *root;
 	const char *end_parse;
