@@ -17,13 +17,13 @@ BOOST_AUTO_TEST_CASE(parse_correct_json)
 	BOOST_CHECK(ret == 0);
 }
 
-BOOST_AUTO_TEST_CASE(lenth_too_long)
+BOOST_AUTO_TEST_CASE(length_too_long)
 {
 	int ret = parse_message(correct_json, strlen(correct_json) + 1);
 	BOOST_CHECK(ret == -1);
 }
 
-BOOST_AUTO_TEST_CASE(lenth_too_short)
+BOOST_AUTO_TEST_CASE(length_too_short)
 {
 	int ret = parse_message(correct_json, strlen(correct_json) -1);
 	BOOST_CHECK(ret == -1);
