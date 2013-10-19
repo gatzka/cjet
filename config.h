@@ -5,7 +5,9 @@
 	11122
 #define LISTEN_BACKLOG \
 	40
-
+/*
+ * It is somehow beneficial if this size is 32 bit aligned.
+ */
 #define MAX_MESSAGE_SIZE \
 	256
 
