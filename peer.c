@@ -21,8 +21,8 @@ struct peer *alloc_peer(int fd)
 	}
 	p->fd = fd;
 	p->op = READ_MSG_LENGTH;
-	p->read_ptr = p->buffer;
-	p->write_ptr = p->buffer;
+	p->read_ptr = p->read_buffer;
+	p->write_ptr = p->read_buffer;
 	return p;
 }
 
@@ -33,24 +33,24 @@ void free_peer(struct peer *p)
 
 static int unread_space(const struct peer *p)
 {
-	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
+	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
 
 static int free_space(const struct peer *p)
 {
-	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
+	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
 }
 
-static void reorganize_buffer(struct peer *p)
+static void reorganize_read_buffer(struct peer *p)
 {
 	unsigned int unread = p->write_ptr - p->read_ptr;
 	if (unread != 0) {
-		memmove(p->buffer, p->read_ptr, unread);
-		p->write_ptr = p->buffer + unread;
+		memmove(p->read_buffer, p->read_ptr, unread);
+		p->write_ptr = p->read_buffer + unread;
 	} else {
-		p->write_ptr = p->buffer;
+		p->write_ptr = p->read_buffer;
 	}
-	p->read_ptr = p->buffer;
+	p->read_ptr = p->read_buffer;
 }
 
 char *get_read_ptr(struct peer *p, int count)
@@ -84,11 +84,16 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-int send_message(const struct peer *p, char *rendered, size_t len)
+static int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t message_length, int already_written)
+{
+	return 0;
+}
+
+int send_message(struct peer *p, char *rendered, size_t len)
 {
 	struct iovec iov[2];
 	int iovcnt;
-	int ret;
+	int written;
 
 	uint32_t message_length = htobe32(len);
 	iov[0].iov_base = &message_length;
@@ -97,17 +102,21 @@ int send_message(const struct peer *p, char *rendered, size_t len)
 	iov[1].iov_len = len;
 	iovcnt = sizeof(iov) / sizeof(struct iovec);
 
-	ret = writev(p->fd, iov, iovcnt);
-	if (unlikely(ret == -1)) {
+	written = writev(p->fd, iov, iovcnt);
+	if (unlikely(written == -1)) {
+		int ret;
 		if ((errno != EAGAIN) &&
 		    (errno != EWOULDBLOCK)) {
 			fprintf(stdout, "unexpected write error: %d!\n", errno);
 			return -1;
 		}
-		fprintf(stdout, "write blocked, implement this case!\n");
+		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
+		p->op = WRITE_MSG;
 		return 0;
 	}
-	if (unlikely((size_t)ret < len)) {
+	if (unlikely((size_t)written < len)) {
+		int ret = copy_msg_to_write_buffer(p, rendered, message_length, written);
+		/*  TODO: send_buffer(p); */
 		fprintf(stdout, "Not everything written, implement this case!\n");
 		return 0;
 	}
@@ -156,9 +165,9 @@ int handle_all_peer_operations(struct peer *p)
 				return -1;
 			}
 			p->op = READ_MSG_LENGTH;
-			reorganize_buffer(p);
+			reorganize_read_buffer(p);
 			break;
-
+		/* TODO: implement WRITE_MSG */
 		default:
 			fprintf(stderr, "Unknown client operation!\n");
 			return -1;

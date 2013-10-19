@@ -8,7 +8,7 @@
 #include "peer.h"
 #include "response.h"
 
-int process_config(cJSON *json_rpc, const struct peer *p)
+int process_config(cJSON *json_rpc, struct peer *p)
 {
 	int ret = 0;
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");

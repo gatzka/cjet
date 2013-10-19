@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-int parse_message(const char *msg, uint32_t length, const struct peer *p);
+int parse_message(const char *msg, uint32_t length, struct peer *p);
 
 #ifdef __cplusplus
 }

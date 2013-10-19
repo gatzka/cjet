@@ -11,12 +11,9 @@
 extern "C" {
 #endif
 
-#define READ_MSG_LENGTH \
-	0
-#define READ_MSG \
-	1
-#define WRITE_OP \
-	2
+#define READ_MSG_LENGTH 0
+#define READ_MSG 1
+#define WRITE_MSG 2
 
 struct peer
 {
@@ -25,14 +22,15 @@ struct peer
 	char *read_ptr;
 	char *write_ptr;
 	uint32_t msg_length;
-	char buffer[MAX_MESSAGE_SIZE];
+	char read_buffer[MAX_MESSAGE_SIZE];
+	char write_buffer[MAX_MESSAGE_SIZE];
 };
 
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
-int send_message(const struct peer *p, char *rendered, size_t len);
+int send_message(struct peer *p, char *rendered, size_t len);
 
 /*
  * private functions. They prototypes are just here to allow unit
