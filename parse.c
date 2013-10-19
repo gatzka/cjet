@@ -10,6 +10,7 @@
 
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
+	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
