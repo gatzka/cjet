@@ -26,9 +26,7 @@ int process_config(cJSON *json_rpc, const struct peer *p)
 			goto render_error;
 		}
 		ret = send_message(p, rendered, strlen(rendered));
-		if (likely(ret == 0)) {
-			free(rendered);
-		}
+		free(rendered);
 	render_error:
 		cJSON_Delete(response);
 	}
