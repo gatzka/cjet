@@ -3,11 +3,13 @@
 
 #include <stdint.h>
 
+#include "peer.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int parse_message(const char *msg, uint32_t length);
+int parse_message(const char *msg, uint32_t length, struct peer *p);
 
 #ifdef __cplusplus
 }

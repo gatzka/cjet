@@ -4,9 +4,11 @@
 
 #include "compiler.h"
 #include "cJSON.h"
+#include "jet_config.h"
 #include "parse.h"
+#include "peer.h"
 
-static int parse_json_rpc(cJSON *json_rpc)
+static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	const char *method_string;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
@@ -33,6 +35,8 @@ static int parse_json_rpc(cJSON *json_rpc)
 
 	} else if (strcmp(method_string, "unfetch") == 0) {
 
+	} else if (strcmp(method_string, "config") == 0) {
+		process_config(json_rpc, p);
 	} else {
 		fprintf(stderr, "Unsupported method: %s!\n", method_string);
 		goto unsupported_method;
@@ -45,7 +49,7 @@ unsupported_method:
 	return -1;
 }
 
-int parse_message(const char *msg, uint32_t length)
+int parse_message(const char *msg, uint32_t length, struct peer *p)
 {
 	cJSON *root;
 	const char *end_parse;
@@ -60,7 +64,7 @@ int parse_message(const char *msg, uint32_t length)
 
 	parsed_length = end_parse - msg;
 	if (unlikely(parsed_length != length)) {
-		fprintf(stderr, "length of parsed JSON does not match message length!\n");
+		fprintf(stderr, "length of parsed JSON (%d) does not match message length (%d)!\n", parsed_length, length);
 		ret = -1;
 		goto out;
 	}
@@ -72,7 +76,7 @@ int parse_message(const char *msg, uint32_t length)
 		for (i = 0; i < array_size; i++) {
 			cJSON *sub_item = cJSON_GetArrayItem(root, i);
 			if (likely(sub_item->type == cJSON_Object)) {
-				ret = parse_json_rpc(sub_item);
+				ret = parse_json_rpc(sub_item, p);
 				if (unlikely(ret == -1)) {
 					goto out;
 				}
@@ -86,7 +90,7 @@ int parse_message(const char *msg, uint32_t length)
 		break;
 
 	case cJSON_Object:
-		ret = parse_json_rpc(root);
+		ret = parse_json_rpc(root, p);
 		break;
 
 	default:

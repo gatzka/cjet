@@ -118,7 +118,7 @@ int handle_all_peer_operations(struct peer *p)
 			} else if (message_ptr == (char *)-1) {
 				return 0;
 			}
-			ret = parse_message(message_ptr, message_length);
+			ret = parse_message(message_ptr, message_length, p);
 			if (unlikely(ret == -1)) {
 				return -1;
 			}
