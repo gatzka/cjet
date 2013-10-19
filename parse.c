@@ -16,10 +16,12 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
+		ret = -1;
 		goto no_method;
 	}
 	method_string = method->valuestring;
 	if (unlikely(method_string == NULL)) {
+		ret = -1;
 		goto no_method;
 	}
 
