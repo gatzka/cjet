@@ -29,12 +29,12 @@ void free_peer(struct peer *p)
 	free(p);
 }
 
-static int unread_space(struct peer *p)
+static int unread_space(const struct peer *p)
 {
 	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
 
-static int free_space(struct peer *p)
+static int free_space(const struct peer *p)
 {
 	return &(p->buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
 }

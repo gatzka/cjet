@@ -8,7 +8,7 @@
 #include "parse.h"
 #include "peer.h"
 
-static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
+static int parse_json_rpc(cJSON *json_rpc, const struct peer *p)
 {
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
@@ -50,7 +50,7 @@ unsupported_method:
 	return -1;
 }
 
-int parse_message(const char *msg, uint32_t length, struct peer *p)
+int parse_message(const char *msg, uint32_t length, const struct peer *p)
 {
 	cJSON *root;
 	const char *end_parse;
