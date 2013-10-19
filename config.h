@@ -7,7 +7,7 @@
 	40
 
 #define MAX_MESSAGE_SIZE \
-	250
+	256
 
 /* Linux specific configs */
 #define MAX_EPOLL_EVENTS \
