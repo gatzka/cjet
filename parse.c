@@ -12,6 +12,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
+	int ret = 0;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
@@ -37,17 +38,18 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "unfetch") == 0) {
 
 	} else if (strcmp(method_string, "config") == 0) {
-		process_config(json_rpc, p);
+		ret = process_config(json_rpc, p);
 	} else {
 		fprintf(stderr, "Unsupported method: %s!\n", method_string);
+		ret = -1;
 		goto unsupported_method;
 	}
-	return 0;
+	return ret;
 
 no_method:
 	fprintf(stderr, "Cannot find supported method!\n");
 unsupported_method:
-	return -1;
+	return ret;
 }
 
 int parse_message(const char *msg, uint32_t length, struct peer *p)
