@@ -1,6 +1,7 @@
 #ifndef CJET_PEER_H
 #define CJET_PEER_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "config.h"
@@ -31,6 +32,7 @@ struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
+int send_message(const struct peer *p, const char *rendered, size_t len);
 
 /*
  * private functions. They prototypes are just here to allow unit

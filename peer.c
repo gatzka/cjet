@@ -1,5 +1,6 @@
 #include <endian.h>
 #include <errno.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -80,6 +81,11 @@ char *get_read_ptr(struct peer *p, int count)
 		}
 		p->write_ptr += read_length;
 	}
+}
+
+int send_message(const struct peer *p, const char *rendered, size_t len)
+{
+	return 0;
 }
 
 int handle_all_peer_operations(struct peer *p)
