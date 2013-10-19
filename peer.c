@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include "compiler.h"
@@ -83,8 +84,34 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-int send_message(const struct peer *p, const char *rendered, size_t len)
+int send_message(const struct peer *p, char *rendered, size_t len)
 {
+	struct iovec iov[2];
+	int iovcnt;
+	int ret;
+
+	uint32_t message_length = htobe32(len);
+	iov[0].iov_base = &message_length;
+	iov[0].iov_len = sizeof(message_length);
+	iov[1].iov_base = rendered;
+	iov[1].iov_len = len;
+	iovcnt = sizeof(iov) / sizeof(struct iovec);
+
+	ret = writev(p->fd, iov, iovcnt);
+	if (unlikely(ret == -1)) {
+		if ((errno != EAGAIN) &&
+		    (errno != EWOULDBLOCK)) {
+			fprintf(stdout, "unexpected write error: %d!\n", errno);
+			return -1;
+		}
+		fprintf(stdout, "write blocked, implement this case!\n");
+		return 0;
+	}
+	if (unlikely((size_t)ret < len)) {
+		fprintf(stdout, "Not everything written, implement this case!\n");
+		return 0;
+	}
+
 	return 0;
 }
 
