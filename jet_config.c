@@ -9,7 +9,7 @@
 int process_config(cJSON *json_rpc, struct peer *p)
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
-	if (id != NULL) {
+	if (likely(id != NULL)) {
 		cJSON *response = create_boolean_success_response(id, 1);
 		if (unlikely (response == NULL)) {
 			return -1;
