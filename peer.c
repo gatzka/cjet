@@ -84,8 +84,61 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-static int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t message_length, int already_written)
+static int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t message_length, size_t already_written)
 {
+	const char *message_ptr;
+	int msg_offset;
+	int to_write;
+	int len;
+
+	p->write_buffer_ptr = p->write_buffer;
+	if (already_written < sizeof(message_length)) {
+		char *msg_len_ptr = (char*)(&message_length);
+		msg_len_ptr += already_written;
+		to_write = sizeof(message_length) - already_written;
+		if (unlikely(to_write > MAX_MESSAGE_SIZE)) {
+			goto no_space;
+		}
+		memcpy(p->write_buffer_ptr, msg_len_ptr, to_write);
+		p->write_buffer_ptr += to_write;
+		already_written += to_write;
+	}
+
+	msg_offset = already_written - sizeof(message_length);
+	message_ptr = rendered + msg_offset;
+	len = be32toh(message_length);
+	to_write = len - msg_offset;
+	if (unlikely(to_write > (MAX_MESSAGE_SIZE - (p->write_buffer_ptr - p->write_buffer)))) {
+		goto no_space;
+	}
+	strcpy(p->write_buffer_ptr, message_ptr);
+	p->write_buffer_ptr += to_write;
+	p->to_write = p->write_buffer_ptr - p->write_buffer;
+	p->write_buffer_ptr = p->write_buffer;
+
+	return 0;
+
+no_space:
+	fprintf(stderr, "write buffer too small!\n");
+	return -1;
+}
+
+static int send_buffer(struct peer *p)
+{
+	while (p->to_write != 0) {
+		int written;
+		written = write(p->fd, p->write_buffer_ptr, p->to_write);
+		if (unlikely(written == -1)) {
+			if (unlikely((errno != EAGAIN) &&
+			             (errno != EWOULDBLOCK))) {
+				return -1;
+			}
+			p->op = WRITE_MSG;
+			return 0;
+		}
+		p->write_buffer_ptr += written;
+		p->to_write -= written;
+	}
 	return 0;
 }
 
@@ -111,14 +164,17 @@ int send_message(struct peer *p, char *rendered, size_t len)
 			return -1;
 		}
 		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
-		p->op = WRITE_MSG;
-		return 0;
+		if (likely(ret == 0)) {
+			p->op = WRITE_MSG;
+		}
+		return ret;
 	}
 	if (unlikely((size_t)written < len)) {
 		int ret = copy_msg_to_write_buffer(p, rendered, message_length, written);
-		/*  TODO: send_buffer(p); */
-		fprintf(stdout, "Not everything written, implement this case!\n");
-		return 0;
+		if (likely(ret == 0)) {
+			ret = send_buffer(p);
+		}
+		return ret;
 	}
 
 	return 0;
@@ -164,10 +220,21 @@ int handle_all_peer_operations(struct peer *p)
 			if (unlikely(ret == -1)) {
 				return -1;
 			}
-			p->op = READ_MSG_LENGTH;
 			reorganize_read_buffer(p);
+			if (likely(p->op == READ_MSG)) {
+				p->op = READ_MSG_LENGTH;
+			}
 			break;
-		/* TODO: implement WRITE_MSG */
+
+		case WRITE_MSG: {
+			int ret = send_buffer(p);
+			if (unlikely(ret == -1)) {
+				return -1;
+			}
+			p->op = READ_MSG_LENGTH;
+		}
+			break;
+
 		default:
 			fprintf(stderr, "Unknown client operation!\n");
 			return -1;

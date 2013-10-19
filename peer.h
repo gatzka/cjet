@@ -19,11 +19,13 @@ struct peer
 {
 	int fd;
 	int op;
-	char *read_ptr;
-	char *write_ptr;
+	int to_write;
 	uint32_t msg_length;
 	char read_buffer[MAX_MESSAGE_SIZE];
 	char write_buffer[MAX_MESSAGE_SIZE];
+	char *read_ptr;
+	char *write_ptr;
+	char *write_buffer_ptr;
 };
 
 struct peer *alloc_peer(int fd);
