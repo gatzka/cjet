@@ -39,7 +39,7 @@ static int add_epoll(int epoll_fd, int epoll_op, int fd, void *cookie)
 
 	memset(&ev, 0, sizeof(ev));
 	ev.data.ptr = cookie;
-	ev.events = EPOLLIN | EPOLLET;
+	ev.events = EPOLLIN | EPOLLOUT | EPOLLRDHUP | EPOLLET;
 	if (unlikely(epoll_ctl(epoll_fd, epoll_op, fd, &ev) < 0)) {
 		fprintf(stderr, "epoll_ctl failed!\n");
 		return -1;
@@ -222,6 +222,12 @@ int main()
 					close_peer_connection(peer, epoll_fd, peer->fd);
 					continue;
 				}
+			}
+			if (unlikely(events[i].events & EPOLLRDHUP)) {
+					struct peer *peer = events[i].data.ptr;
+					fprintf(stdout, "peer closed connection!\n");
+					close_peer_connection(peer, epoll_fd, peer->fd);
+					continue;
 			}
 			if (unlikely(events[i].data.ptr == listen_server)) {
 				if (accept_all(epoll_fd, listen_server->fd) < 0) {
