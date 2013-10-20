@@ -20,6 +20,7 @@ static const int HANDLE_FAST_PEER = 6;
 static const int HANDLE_SLOW_PEER = 7;
 static const int WRITEV_COMPLETE = 8;
 static const int SLOW_WRITE = 9;
+static const int INCOMPLETE_WRITE = 10;
 
 extern "C" {
 
@@ -39,6 +40,8 @@ static const char handle_fast_peer_msg[] = "Hello World!";
 static const char handle_slow_peer_msg[] = "Gruess dich Bronko!";
 static int handle_fast_peer_first = 0;
 static int handle_slow_peer_count = 0;
+static unsigned int incomplete_write_counter = 0;
+static unsigned int incomplete_write_written_before_blocking = 0;
 
 ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
 {
@@ -60,6 +63,17 @@ ssize_t fake_write(int fd, const void *buf, size_t count)
 	}
 	if (fd == SLOW_WRITE) {
 		return 1;
+	}
+
+	if (fd == INCOMPLETE_WRITE) {
+		if (incomplete_write_counter == 0) {
+			incomplete_write_counter++;
+			incomplete_write_written_before_blocking = 3;
+			return incomplete_write_written_before_blocking;
+		} else  {
+			errno = EAGAIN;
+			return -1;
+		}
 	}
 
 	return 0;
@@ -419,6 +433,31 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 	int ret = send_buffer(p);
 	BOOST_CHECK(ret == -2);
 	BOOST_CHECK(p->op == WRITE_MSG);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(incomplete_write)
+{
+	struct peer *p = alloc_peer(INCOMPLETE_WRITE);
+	BOOST_REQUIRE(p != NULL);
+
+	static char sw_message[] = "HelloWorld!";
+	uint32_t len_be = htobe32(::strlen(sw_message));
+	int ret = copy_msg_to_write_buffer(p, sw_message, len_be, 0);
+	BOOST_REQUIRE(ret == 0);
+
+	ret = send_buffer(p);
+	BOOST_CHECK(ret == -2);
+	BOOST_CHECK(p->op == WRITE_MSG);
+
+	static char check_buffer[sizeof(sw_message) + sizeof(len_be)];
+	char *buf_ptr = check_buffer;
+	memcpy(buf_ptr, &len_be, sizeof(len_be));
+	buf_ptr += sizeof(len_be);
+	memcpy(buf_ptr, sw_message, strlen(sw_message));
+
+	ret = memcmp(p->write_buffer, check_buffer + incomplete_write_written_before_blocking, p->to_write);
 
 	free_peer(p);
 }
