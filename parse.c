@@ -1,28 +1,92 @@
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "compiler.h"
 #include "cJSON.h"
-#include "jet_config.h"
 #include "parse.h"
 #include "peer.h"
+#include "response.h"
+
+static int process_add(cJSON *json_rpc, struct peer *p)
+{
+	cJSON *value;
+	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (unlikely(path == NULL)) {
+		fprintf(stderr, "no path given\n");
+		return -1;
+	}
+	if (unlikely(path->type != cJSON_String) ) {
+		fprintf(stderr, "path is not a string\n");
+		return -1;
+	}
+
+	value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL) ) {
+		fprintf(stderr, "no value given\n");
+		return -1;
+	}
+	fprintf(stdout, "want to add state %s!\n", path->valuestring);
+
+	return 0;
+}
+
+static int process_config(cJSON *json_rpc, struct peer *p) {
+	return 0;
+}
+
+static int possibly_send_success_response(cJSON *json_rpc, struct peer *p) {
+	int ret = 0;
+
+	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
+	if (likely(id != NULL)) {
+		char *rendered;
+
+		cJSON *response = create_boolean_success_response(id, TRUE);
+		if (unlikely (response == NULL)) {
+			return -1;
+		}
+		rendered = cJSON_PrintUnformatted(response);
+		if (unlikely(rendered == NULL)) {
+			fprintf(stderr, "Could not render JSON into a string!\n");
+			ret = -1;
+			goto render_error;
+		}
+		ret = send_message(p, rendered, strlen(rendered));
+		free(rendered);
+	render_error:
+		cJSON_Delete(response);
+	}
+	return ret;
+}
 
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
+	cJSON *params;
 	int ret = 0;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
+		fprintf(stderr, "Cannot find supported method!\n");
 		ret = -1;
 		goto no_method;
 	}
 	method_string = method->valuestring;
 	if (unlikely(method_string == NULL)) {
+		fprintf(stderr, "Cannot find supported method!\n");
 		ret = -1;
 		goto no_method;
+	}
+
+	params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		fprintf(stderr, "no params in JSON-RPC!\n");
+		ret = -1;
+		goto no_params;
 	}
 
 	if (strcmp(method_string, "set") == 0) {
@@ -30,7 +94,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "post") == 0) {
 
 	} else if (strcmp(method_string, "add") == 0) {
-
+		ret = process_add(json_rpc, p);
 	} else if (strcmp(method_string, "remove") == 0) {
 
 	} else if (strcmp(method_string, "call") == 0) {
@@ -46,10 +110,12 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		ret = -1;
 		goto unsupported_method;
 	}
+
+	ret = possibly_send_success_response(json_rpc, p);
 	return ret;
 
+no_params:
 no_method:
-	fprintf(stderr, "Cannot find supported method!\n");
 unsupported_method:
 	return ret;
 }
