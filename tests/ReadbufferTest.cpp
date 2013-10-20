@@ -411,6 +411,9 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 	unsigned int len_part = sizeof(uint32_t) - already_written;
 
 	char message[MAX_MESSAGE_SIZE - len_part];
+	for (int i = 0; i < sizeof(message); ++i) {
+		message[i] = (i + 13) & 0xff;
+	}
 	uint32_t len = sizeof(message);
 	uint32_t len_be = htobe32(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, already_written);
@@ -459,6 +462,7 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 	struct peer *p = alloc_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
+	p->to_write = 10;
 	int ret = send_buffer(p);
 	BOOST_CHECK(ret == -1);
 
@@ -470,6 +474,7 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 	struct peer *p = alloc_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
+	p->to_write = 10;
 	int ret = send_buffer(p);
 	BOOST_CHECK(ret == -2);
 	BOOST_CHECK(p->op == WRITE_MSG);
