@@ -21,6 +21,8 @@ static const int HANDLE_SLOW_PEER = 7;
 static const int WRITEV_COMPLETE = 8;
 static const int SLOW_WRITE = 9;
 static const int INCOMPLETE_WRITE = 10;
+static const int INCOMPLETE_WRITEV_COMPLETE_WRITE = 11;
+static const int INCOMPLETE_WRITEV_INCOMPLETE_WRITE = 12;
 
 extern "C" {
 
@@ -43,10 +45,27 @@ static int handle_slow_peer_count = 0;
 static unsigned int incomplete_write_counter = 0;
 static unsigned int incomplete_write_written_before_blocking = 0;
 
+static char incomplete_writev_check_buffer[MAX_MESSAGE_SIZE];
+static char *incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+
 ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
 {
 	if (fd == WRITEV_COMPLETE) {
 		return iov[0].iov_len + iov[1].iov_len;
+	}
+
+	if (fd == INCOMPLETE_WRITEV_COMPLETE_WRITE) {
+		static const int incomplete = 1;
+		memcpy(incomplete_writev_buffer_ptr, iov[0].iov_base, incomplete);
+		incomplete_writev_buffer_ptr += incomplete;
+		return incomplete;
+	}
+	if (fd == INCOMPLETE_WRITEV_INCOMPLETE_WRITE) {
+		static const int incomplete = 1;
+		memcpy(incomplete_writev_buffer_ptr, iov[0].iov_base, incomplete);
+		incomplete_writev_buffer_ptr += incomplete;
+		incomplete_write_written_before_blocking += incomplete;
+		return incomplete;
 	}
 	return 0;
 }
@@ -70,6 +89,27 @@ ssize_t fake_write(int fd, const void *buf, size_t count)
 			incomplete_write_counter++;
 			incomplete_write_written_before_blocking = 3;
 			return incomplete_write_written_before_blocking;
+		} else  {
+			errno = EAGAIN;
+			return -1;
+		}
+	}
+
+	if (fd == INCOMPLETE_WRITEV_COMPLETE_WRITE) {
+		memcpy(incomplete_writev_buffer_ptr, buf, count);
+		incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+		return count;
+	}
+
+	if (fd == INCOMPLETE_WRITEV_INCOMPLETE_WRITE) {
+		if (incomplete_write_counter == 0) {
+			static const int incomplete = 6;
+			incomplete_write_counter++;
+
+			memcpy(incomplete_writev_buffer_ptr, buf, incomplete);
+			incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+			incomplete_write_written_before_blocking += incomplete;
+			return incomplete;
 		} else  {
 			errno = EAGAIN;
 			return -1;
@@ -439,6 +479,10 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 
 BOOST_AUTO_TEST_CASE(incomplete_write)
 {
+	incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+	incomplete_write_counter = 0;
+	incomplete_write_written_before_blocking = 0;
+
 	struct peer *p = alloc_peer(INCOMPLETE_WRITE);
 	BOOST_REQUIRE(p != NULL);
 
@@ -488,6 +532,57 @@ BOOST_AUTO_TEST_CASE(complete)
 
 	static char message[] = "HelloWorld!";
 	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(incomplete_writev)
+{
+	struct peer *p = alloc_peer(INCOMPLETE_WRITEV_COMPLETE_WRITE);
+	BOOST_REQUIRE(p != NULL);
+
+	static char message[] = "HelloWorld!";
+	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == 0);
+
+	static char check_buffer[MAX_MESSAGE_SIZE];
+	uint32_t len_be = htobe32(::strlen(message));
+	char *buf_ptr = check_buffer;
+
+	memcpy(buf_ptr, &len_be, sizeof(len_be));
+	buf_ptr += sizeof(len_be);
+	memcpy(buf_ptr, message, strlen(message));
+
+	ret = memcmp(incomplete_writev_check_buffer, check_buffer, strlen(message) + sizeof(len_be));
+	BOOST_CHECK(ret == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(incomplete_writev_incomplete_write)
+{
+	incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+	incomplete_write_counter = 0;
+	incomplete_write_written_before_blocking = 0;
+
+	struct peer *p = alloc_peer(INCOMPLETE_WRITEV_INCOMPLETE_WRITE);
+	BOOST_REQUIRE(p != NULL);
+
+	static char message[] = "HelloWorld!";
+	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(p->op == WRITE_MSG);
+
+	static char check_buffer[MAX_MESSAGE_SIZE];
+	uint32_t len_be = htobe32(::strlen(message));
+	char *buf_ptr = check_buffer;
+
+	memcpy(buf_ptr, &len_be, sizeof(len_be));
+	buf_ptr += sizeof(len_be);
+	memcpy(buf_ptr, message, strlen(message));
+
+	ret = memcmp(incomplete_writev_check_buffer, check_buffer, incomplete_write_written_before_blocking);
 	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
