@@ -1,6 +1,7 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE read buffer test
+
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
 #include <stdint.h>
@@ -17,6 +18,7 @@ static const int SLOW_READ = 4;
 static const int FAST_READ = 5;
 static const int HANDLE_FAST_PEER = 6;
 static const int HANDLE_SLOW_PEER = 7;
+static const int WRITEV_COMPLETE = 8;
 
 extern "C" {
 
@@ -36,6 +38,16 @@ static const char handle_fast_peer_msg[] = "Hello World!";
 static const char handle_slow_peer_msg[] = "Gruess dich Bronko!";
 static int handle_fast_peer_first = 0;
 static int handle_slow_peer_count = 0;
+
+ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
+{
+	return 0;
+}
+
+ssize_t fake_write(int fd, const void *buf, size_t count)
+{
+	return 0;
+}
 
 ssize_t fake_read(int fd, void *buf, size_t count)
 {
@@ -357,3 +369,13 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 
 	free_peer(p);
 }
+
+BOOST_AUTO_TEST_CASE(send_message_complete)
+{
+	struct peer *p = alloc_peer(WRITEV_COMPLETE);
+	BOOST_REQUIRE(p != NULL);
+
+
+	free_peer(p);
+}
+

@@ -127,7 +127,7 @@ static int send_buffer(struct peer *p)
 {
 	while (p->to_write != 0) {
 		int written;
-		written = write(p->fd, p->write_buffer_ptr, p->to_write);
+		written = WRITE(p->fd, p->write_buffer_ptr, p->to_write);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
@@ -155,7 +155,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	iov[1].iov_len = len;
 	iovcnt = sizeof(iov) / sizeof(struct iovec);
 
-	written = writev(p->fd, iov, iovcnt);
+	written = WRITEV(p->fd, iov, iovcnt);
 	if (unlikely(written == -1)) {
 		int ret;
 		if ((errno != EAGAIN) &&
