@@ -84,7 +84,7 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-static int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t message_length, size_t already_written)
+int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t message_length, size_t already_written)
 {
 	const char *message_ptr;
 	int msg_offset;
