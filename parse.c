@@ -33,7 +33,7 @@ static int process_add(cJSON *json_rpc, struct peer *p)
 	return 0;
 }
 
-static int process_config(cJSON *json_rpc, struct peer *p) {
+static int process_config() {
 	return 0;
 }
 
@@ -104,7 +104,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "unfetch") == 0) {
 
 	} else if (strcmp(method_string, "config") == 0) {
-		ret = process_config(json_rpc, p);
+		ret = process_config();
 	} else {
 		fprintf(stderr, "Unsupported method: %s!\n", method_string);
 		ret = -1;
