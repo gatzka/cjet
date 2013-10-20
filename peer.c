@@ -134,7 +134,7 @@ static int send_buffer(struct peer *p)
 				return -1;
 			}
 			p->op = WRITE_MSG;
-			return 0;
+			return -2;
 		}
 		p->write_buffer_ptr += written;
 		p->to_write -= written;
@@ -173,6 +173,14 @@ int send_message(struct peer *p, char *rendered, size_t len)
 		int ret = copy_msg_to_write_buffer(p, rendered, message_length, written);
 		if (likely(ret == 0)) {
 			ret = send_buffer(p);
+			/*
+			 * write in send_buffer blocked. This is not an error, so
+			 * change ret to 0 (no error). Writing the missing stuff is
+			 * handled via epoll / handle_all_peer_operations.
+			 */
+			if (ret == -2) {
+				ret = 0;
+			}
 		}
 		return ret;
 	}
@@ -231,7 +239,9 @@ int handle_all_peer_operations(struct peer *p)
 			if (unlikely(ret == -1)) {
 				return -1;
 			}
-			p->op = READ_MSG_LENGTH;
+			if (likely(ret == 0)) {
+				p->op = READ_MSG_LENGTH;
+			}
 		}
 			break;
 
