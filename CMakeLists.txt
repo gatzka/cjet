@@ -8,6 +8,7 @@ SET(CJET_FILES
 	parse.c
 	peer.c
 	response.c
+	state.c
 )
 
 SET(GEN_MESSAGE_HASHES

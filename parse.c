@@ -8,9 +8,11 @@
 #include "parse.h"
 #include "peer.h"
 #include "response.h"
+#include "state.h"
 
 static int process_add(cJSON *json_rpc, struct peer *p)
 {
+	int ret;
 	cJSON *value;
 	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	cJSON *path = cJSON_GetObjectItem(params, "path");
@@ -28,7 +30,9 @@ static int process_add(cJSON *json_rpc, struct peer *p)
 		fprintf(stderr, "no value given\n");
 		return -1;
 	}
-	fprintf(stdout, "want to add state %s!\n", path->valuestring);
+
+	ret = add_state_to_peer(p, path->valuestring, value);
+	return ret;
 
 	return 0;
 }
