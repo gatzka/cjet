@@ -19,6 +19,7 @@ static const int FAST_READ = 5;
 static const int HANDLE_FAST_PEER = 6;
 static const int HANDLE_SLOW_PEER = 7;
 static const int WRITEV_COMPLETE = 8;
+static const int SLOW_WRITE = 9;
 
 extern "C" {
 
@@ -41,11 +42,26 @@ static int handle_slow_peer_count = 0;
 
 ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
 {
+	if (fd == WRITEV_COMPLETE) {
+		return iov[0].iov_len + iov[1].iov_len;
+	}
 	return 0;
 }
 
 ssize_t fake_write(int fd, const void *buf, size_t count)
 {
+	if (fd == BADFD) {
+		errno = EBADF;
+		return -1;
+	}
+	if (fd == AGAIN) {
+		errno = EAGAIN;
+		return -1;
+	}
+	if (fd == SLOW_WRITE) {
+		return 1;
+	}
+
 	return 0;
 }
 
@@ -357,7 +373,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 
 	unsigned int msg_part_already_written = 3;
 
-	const char message[] = "Hello World!";
+	static const char message[] = "Hello World!";
 	uint32_t len = ::strlen(message);
 	uint32_t len_be = htobe32(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, sizeof(len_be) + msg_part_already_written);
@@ -370,11 +386,52 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 	free_peer(p);
 }
 
+BOOST_AUTO_TEST_CASE(send_buffer_wrong_fd)
+{
+	struct peer *p = alloc_peer(BADFD);
+	BOOST_REQUIRE(p != NULL);
+
+	int ret = send_buffer(p);
+	BOOST_CHECK(ret == -1);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(write_blocks)
+{
+	struct peer *p = alloc_peer(AGAIN);
+	BOOST_REQUIRE(p != NULL);
+
+	int ret = send_buffer(p);
+	BOOST_CHECK(ret == -2);
+	BOOST_CHECK(p->op == WRITE_MSG);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(slow_write)
+{
+	struct peer *p = alloc_peer(SLOW_WRITE);
+	BOOST_REQUIRE(p != NULL);
+
+	static char sw_message[] = "HelloWorld!";
+	int ret = copy_msg_to_write_buffer(p, sw_message, htobe32(::strlen(sw_message)), 0);
+	BOOST_REQUIRE(ret == 0);
+
+	ret = send_buffer(p);
+	BOOST_CHECK(ret == 0);
+
+	free_peer(p);
+}
+
 BOOST_AUTO_TEST_CASE(send_message_complete)
 {
 	struct peer *p = alloc_peer(WRITEV_COMPLETE);
 	BOOST_REQUIRE(p != NULL);
 
+	static char message[] = "HelloWorld!";
+	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
 }
