@@ -111,7 +111,7 @@ int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t msg_
 	if (unlikely(to_write > (MAX_MESSAGE_SIZE - (p->write_buffer_ptr - p->write_buffer)))) {
 		goto no_space;
 	}
-	strcpy(p->write_buffer_ptr, message_ptr);
+	memcpy(p->write_buffer_ptr, message_ptr, to_write);
 	p->write_buffer_ptr += to_write;
 	p->to_write = p->write_buffer_ptr - p->write_buffer;
 	p->write_buffer_ptr = p->write_buffer;
