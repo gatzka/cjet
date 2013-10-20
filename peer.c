@@ -84,7 +84,7 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
-int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t msg_len_be, size_t already_written)
+int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written)
 {
 	const char *message_ptr;
 	int msg_offset;
@@ -105,7 +105,7 @@ int copy_msg_to_write_buffer(struct peer *p, const char *rendered, uint32_t msg_
 	}
 
 	msg_offset = already_written - sizeof(msg_len_be);
-	message_ptr = rendered + msg_offset;
+	message_ptr = (char *)rendered + msg_offset;
 	len = be32toh(msg_len_be);
 	to_write = len - msg_offset;
 	if (unlikely(to_write > (MAX_MESSAGE_SIZE - (p->write_buffer_ptr - p->write_buffer)))) {
