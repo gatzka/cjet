@@ -16,8 +16,7 @@ extern "C" {
 #define READ_MSG 1
 #define WRITE_MSG 2
 
-struct peer
-{
+struct peer {
 	int fd;
 	int op;
 	int to_write;
