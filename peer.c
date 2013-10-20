@@ -160,7 +160,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 		int ret;
 		if ((errno != EAGAIN) &&
 		    (errno != EWOULDBLOCK)) {
-			fprintf(stdout, "unexpected write error: %d!\n", errno);
+			fprintf(stderr, "unexpected write error: %d!\n", errno);
 			return -1;
 		}
 		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
