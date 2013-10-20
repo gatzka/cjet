@@ -152,6 +152,8 @@ ssize_t fake_read(int fd, void *buf, size_t count)
 
 }
 
+BOOST_AUTO_TEST_SUITE(get_read_ptr_test)
+
 BOOST_AUTO_TEST_CASE(wrong_fd)
 {
 	struct peer *p = alloc_peer(BADFD);
@@ -244,7 +246,11 @@ BOOST_AUTO_TEST_CASE(fast_read)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(handle_fast_peer)
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(handle_all_peer_operations_test)
+
+BOOST_AUTO_TEST_CASE(fast_peer)
 {
 	struct peer *p = alloc_peer(HANDLE_FAST_PEER);
 	BOOST_REQUIRE(p != NULL);
@@ -257,7 +263,7 @@ BOOST_AUTO_TEST_CASE(handle_fast_peer)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(handle_slow_peer)
+BOOST_AUTO_TEST_CASE(slow_peer)
 {
 	parsed_length = 0;
 	parsed_msg = 0;
@@ -281,6 +287,10 @@ BOOST_AUTO_TEST_CASE(handle_slow_peer)
 
 	free_peer(p);
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(copy_msg_to_write_buffer_test)
 
 BOOST_AUTO_TEST_CASE(copy_msg_all)
 {
@@ -386,7 +396,11 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(send_buffer_wrong_fd)
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(send_buffer_test)
+
+BOOST_AUTO_TEST_CASE(wrong_fd)
 {
 	struct peer *p = alloc_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
@@ -424,7 +438,11 @@ BOOST_AUTO_TEST_CASE(slow_write)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(send_message_complete)
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(send_message_test)
+
+BOOST_AUTO_TEST_CASE(complete)
 {
 	struct peer *p = alloc_peer(WRITEV_COMPLETE);
 	BOOST_REQUIRE(p != NULL);
@@ -436,3 +454,4 @@ BOOST_AUTO_TEST_CASE(send_message_complete)
 	free_peer(p);
 }
 
+BOOST_AUTO_TEST_SUITE_END()
