@@ -9,6 +9,8 @@
 #include <unistd.h>
 
 #include "compiler.h"
+#include "config.h"
+#include "list.h"
 #include "parse.h"
 #include "peer.h"
 
@@ -19,6 +21,7 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+	INIT_LIST_HEAD(&p->state_list);
 	p->fd = fd;
 	p->op = READ_MSG_LENGTH;
 	p->read_ptr = p->read_buffer;

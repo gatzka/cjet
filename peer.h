@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "list.h"
 #include "peer_testing.h"
 
 #ifdef __cplusplus
@@ -21,6 +22,7 @@ struct peer
 	int op;
 	int to_write;
 	uint32_t msg_length;
+	struct list_head state_list;
 	char read_buffer[MAX_MESSAGE_SIZE];
 	char write_buffer[MAX_MESSAGE_SIZE];
 	char *read_ptr;
