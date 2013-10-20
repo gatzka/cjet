@@ -123,7 +123,7 @@ no_space:
 	return -1;
 }
 
-static int send_buffer(struct peer *p)
+int send_buffer(struct peer *p)
 {
 	while (p->to_write != 0) {
 		int written;

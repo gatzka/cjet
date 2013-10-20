@@ -40,6 +40,7 @@ int send_message(struct peer *p, char *rendered, size_t len);
  */
 char *get_read_ptr(struct peer *p, int count);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
+int send_buffer(struct peer *p);
 
 #ifdef __cplusplus
 }
