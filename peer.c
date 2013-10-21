@@ -138,6 +138,7 @@ int send_buffer(struct peer *p)
 			             (errno != EWOULDBLOCK))) {
 				return -1;
 			}
+			p->next_read_op = p->op;
 			p->op = WRITE_MSG;
 			return -2;
 		}
@@ -170,6 +171,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 		}
 		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
 		if (likely(ret == 0)) {
+			p->next_read_op = p->op;
 			p->op = WRITE_MSG;
 		}
 		return ret;
@@ -229,14 +231,12 @@ int handle_all_peer_operations(struct peer *p)
 			} else if (message_ptr == (char *)-1) {
 				return 0;
 			}
+			p->op = READ_MSG_LENGTH;
 			ret = parse_message(message_ptr, message_length, p);
 			if (unlikely(ret == -1)) {
 				return -1;
 			}
 			reorganize_read_buffer(p);
-			if (likely(p->op == READ_MSG)) {
-				p->op = READ_MSG_LENGTH;
-			}
 			break;
 
 		case WRITE_MSG: {
@@ -245,7 +245,7 @@ int handle_all_peer_operations(struct peer *p)
 				return -1;
 			}
 			if (likely(ret == 0)) {
-				p->op = READ_MSG_LENGTH;
+				p->op = p->next_read_op;
 			}
 		}
 			break;

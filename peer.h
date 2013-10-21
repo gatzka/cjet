@@ -19,6 +19,7 @@ extern "C" {
 struct peer {
 	int fd;
 	int op;
+	int next_read_op;
 	int to_write;
 	uint32_t msg_length;
 	struct list_head state_list;
