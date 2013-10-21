@@ -28,15 +28,14 @@ static inline void list_add_tail(struct list_head *new_entry, struct list_head *
 	for (pos = (head)->next, n = pos->next; pos != (head); \
 		pos = n, n = pos->next)
 
-#define container_of(ptr, type, member) ({          \
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
-	(type *)( (char *)__mptr - offsetof(type,member) );})
+#define container_of(ptr, type, member) (          \
+	(type *)((char *)ptr - offsetof(type,member) ))
 
 
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)
 
-static inline void __list_del(struct list_head * prev, struct list_head * next)
+static inline void __list_del(struct list_head *prev, struct list_head *next)
 {
 	next->prev = prev;
 	prev->next = next;
