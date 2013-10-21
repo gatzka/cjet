@@ -7,7 +7,7 @@
 
 struct state {
 	struct list_head next_state;
-	const char *path;
+	char *path;
 	cJSON *value;
 };
 
