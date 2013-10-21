@@ -7,9 +7,20 @@
 #include "../cJSON.h"
 
 extern "C" {
-	int process_config(cJSON *json_rpc, struct peer *p)
+
+	ssize_t fake_read(int fd, void *buf, size_t count)
 	{
 		return 0;
+	}
+
+	ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
+	{
+		return iov[0].iov_len + iov[1].iov_len;
+	}
+
+	ssize_t fake_write(int fd, const void *buf, size_t count)
+	{
+		return count;
 	}
 }
 
@@ -24,8 +35,10 @@ static const char wrong_jet_array[] = "[1, 2]";
 
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
-	int ret = parse_message(correct_json, strlen(correct_json), NULL);
+	struct peer *p = alloc_peer(-1);
+	int ret = parse_message(correct_json, strlen(correct_json), p);
 	BOOST_CHECK(ret == 0);
+	free_peer(p);
 }
 
 BOOST_AUTO_TEST_CASE(length_too_long)
@@ -66,8 +79,10 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 
 BOOST_AUTO_TEST_CASE(two_method)
 {
-	int ret = parse_message(json_two_method, strlen(json_two_method), NULL);
+	struct peer *p = alloc_peer(-1);
+	int ret = parse_message(json_two_method, strlen(json_two_method), p);
 	BOOST_CHECK(ret == 0);
+	free_peer(p);
 }
 
 BOOST_AUTO_TEST_CASE(wrong_array)
@@ -75,3 +90,4 @@ BOOST_AUTO_TEST_CASE(wrong_array)
 	int ret = parse_message(wrong_jet_array, strlen(wrong_jet_array), NULL);
 	BOOST_CHECK(ret == -1);
 }
+

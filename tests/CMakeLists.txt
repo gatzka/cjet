@@ -13,12 +13,17 @@ add_definitions(-DTESTING)
 
 SET(READBUFFER_TEST
 	ReadbufferTest.cpp
+	../cJSON.c
 	../peer.c
+	../state.c
 )
 
 SET(JSON_PARSE_TEST
 	Parse.cpp
 	../parse.c
+	../peer.c
+	../response.c
+	../state.c
 	../cJSON.c
 )
 
