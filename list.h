@@ -11,17 +11,17 @@ static inline void INIT_LIST_HEAD(struct list_head *list)
 	list->prev = list;
 }
 
-static inline void __list_add(struct list_head *new, struct list_head *prev, struct list_head *next)
+static inline void __list_add(struct list_head *new_entry, struct list_head *prev, struct list_head *next)
 {
-	next->prev = new;
-	new->next = next;
-	new->prev = prev;
-	prev->next = new;
+	next->prev = new_entry;
+	new_entry->next = next;
+	new_entry->prev = prev;
+	prev->next = new_entry;
 }
 
-static inline void list_add_tail(struct list_head *new, struct list_head *head)
+static inline void list_add_tail(struct list_head *new_entry, struct list_head *head)
 {
-	__list_add(new, head->prev, head);
+	__list_add(new_entry, head->prev, head);
 }
 
 #define list_for_each_safe(pos, n, head) \
