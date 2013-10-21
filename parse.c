@@ -49,7 +49,7 @@ static int possibly_send_success_response(cJSON *json_rpc, struct peer *p) {
 		char *rendered;
 
 		cJSON *response = create_boolean_success_response(id, TRUE);
-		if (unlikely (response == NULL)) {
+		if (unlikely(response == NULL)) {
 			return -1;
 		}
 		rendered = cJSON_PrintUnformatted(response);
