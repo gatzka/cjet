@@ -24,5 +24,19 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
 	__list_add(new, head->prev, head);
 }
 
+#define list_for_each(pos, head) \
+	for (pos = (head)->next; pos != (head); pos = pos->next)
+
+
+#define container_of(ptr, type, member) ({          \
+	const typeof( ((type *)0)->member ) *__mptr = (ptr);    \
+	(type *)( (char *)__mptr - offsetof(type,member) );})
+
+
+#define list_entry(ptr, type, member) \
+	container_of(ptr, type, member)
+
+
+
 
 #endif
