@@ -9,7 +9,7 @@
  * It is somehow beneficial if this size is 32 bit aligned.
  */
 #define MAX_MESSAGE_SIZE \
-	256
+	512
 
 /* Linux specific configs */
 #define MAX_EPOLL_EVENTS \
