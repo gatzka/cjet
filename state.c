@@ -61,3 +61,14 @@ int add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	list_add_tail(&s->next_state, &p->state_list);
 	return 0;
 }
+
+void remove_all_states_from_peer(struct peer *p) {
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->state_list) {
+		struct state *s = list_entry(item, struct state, next_state);
+		list_del(&s->next_state);
+		free_state(s);
+	}
+}
+

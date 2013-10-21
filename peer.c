@@ -13,6 +13,7 @@
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
+#include "state.h"
 
 struct peer *alloc_peer(int fd)
 {
@@ -31,6 +32,7 @@ struct peer *alloc_peer(int fd)
 
 void free_peer(struct peer *p)
 {
+	remove_all_states_from_peer(p);
 	free(p);
 }
 
