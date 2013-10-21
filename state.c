@@ -42,6 +42,13 @@ alloc_path_failed:
 	return NULL;
 }
 
+static void free_state(struct state *s)
+{
+	cJSON_Delete(s->value);
+	free(s->path);
+	free(s);
+}
+
 int add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
 	/*
