@@ -173,16 +173,12 @@ static void sighandler(int signum)
 
 int main()
 {
-	struct sigaction act;
-
 	int epoll_fd;
 	struct epoll_event events[MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
 
-	memset(&act, 0, sizeof(act));
-	act.sa_handler = sighandler;
-	if (sigaction(SIGTERM, &act, NULL) < 0) {
-		fprintf(stderr, "sigaction failed!\n");
+	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+		fprintf(stderr, "signal failed!\n");
 		return EXIT_FAILURE;
 	}
 
