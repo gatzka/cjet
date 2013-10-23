@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -132,7 +134,8 @@ int send_buffer(struct peer *p)
 {
 	while (p->to_write != 0) {
 		int written;
-		written = WRITE(p->fd, p->write_buffer_ptr, p->to_write);
+		/* written = WRITE(p->fd, p->write_buffer_ptr, p->to_write); */
+		written = send(p->fd, p->write_buffer_ptr, p->to_write, 0);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
