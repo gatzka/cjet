@@ -1,4 +1,4 @@
-#include <endian.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -113,7 +113,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 	msg_offset = already_written - sizeof(msg_len_be);
 	message_ptr = (char *)rendered + msg_offset;
-	len = be32toh(msg_len_be);
+	len = ntohl(msg_len_be);
 	to_write = len - msg_offset;
 	if (unlikely(to_write > (MAX_MESSAGE_SIZE - (p->write_buffer_ptr - p->write_buffer)))) {
 		goto no_space;
@@ -157,7 +157,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	int iovcnt;
 	int written;
 
-	uint32_t message_length = htobe32(len);
+	uint32_t message_length = htonl(len);
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);
 	iov[1].iov_base = rendered;
@@ -216,7 +216,7 @@ int handle_all_peer_operations(struct peer *p)
 				return 0;
 			}
 			memcpy(&message_length, message_length_ptr, sizeof(message_length));
-			message_length = be32toh(message_length);
+			message_length = ntohl(message_length);
 			p->op = READ_MSG;
 			p->msg_length = message_length;
 			/*
