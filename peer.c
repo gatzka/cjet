@@ -80,7 +80,7 @@ char *get_read_ptr(struct peer *p, int count)
 
 		read_length = READ(p->fd, p->write_ptr, free_space(p));
 		if (unlikely(read_length == 0)) {
-			fprintf(stdout, "peer closed connection!\n");
+			/* peer closed connection */
 			return NULL;
 		}
 		if (read_length == -1) {
