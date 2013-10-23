@@ -142,10 +142,10 @@ int send_buffer(struct peer *p)
 			}
 			memmove(p->write_buffer, p->write_buffer_ptr, p->to_write);
 			p->write_buffer_ptr = p->write_buffer;
-
-			/* TODO: this seems not to be correct for multiple blocks. */
-			p->next_read_op = p->op;
-			p->op = WRITE_MSG;
+			if (p->op != WRITE_MSG) {
+				p->next_read_op = p->op;
+				p->op = WRITE_MSG;
+			}
 			return -2;
 		}
 		p->write_buffer_ptr += written;
@@ -195,7 +195,6 @@ int send_message(struct peer *p, char *rendered, int len)
 
 	if (ret == -1) {
 		/* one of the write calls had blocked */
-		/* TODO: this seems not to be correct for multiple blocks. */
 		p->next_read_op = p->op;
 		p->op = WRITE_MSG;
 		return 0;
@@ -269,6 +268,10 @@ int handle_all_peer_operations(struct peer *p)
 			if (likely(ret == 0)) {
 				p->op = p->next_read_op;
 			}
+			/*
+			 * ret == -2 shows that send_buffer blocked. Leave
+			 * everything like it is.
+			 */
 		}
 			break;
 
