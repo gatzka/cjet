@@ -7,7 +7,6 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <sys/uio.h>
 #include <unistd.h>
 
 #include "compiler.h"
@@ -135,7 +134,7 @@ int send_buffer(struct peer *p)
 	while (p->to_write != 0) {
 		int written;
 		/* written = WRITE(p->fd, p->write_buffer_ptr, p->to_write); */
-		written = send(p->fd, p->write_buffer_ptr, p->to_write, 0);
+		written = send(p->fd, p->write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
@@ -151,51 +150,56 @@ int send_buffer(struct peer *p)
 	return 0;
 }
 
-int send_message(struct peer *p, char *rendered, size_t len)
+int send_message(struct peer *p, char *rendered, int len)
 {
-	struct iovec iov[2];
-	int iovcnt;
-	int written;
-
+	int ret;
+	int written = 0;
 	uint32_t message_length = htonl(len);
-	iov[0].iov_base = &message_length;
-	iov[0].iov_len = sizeof(message_length);
-	iov[1].iov_base = rendered;
-	iov[1].iov_len = len;
-	iovcnt = sizeof(iov) / sizeof(struct iovec);
 
-	written = WRITEV(p->fd, iov, iovcnt);
-	if (unlikely(written == -1)) {
-		int ret;
-		if ((errno != EAGAIN) &&
-		    (errno != EWOULDBLOCK)) {
-			fprintf(stderr, "unexpected write error: %d!\n", errno);
-			return -1;
+	ret = send(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
+	if (likely(ret == sizeof(message_length))) {
+		written = ret;
+		ret = send(p->fd, rendered, len, MSG_NOSIGNAL);
+		if (likely(ret == len)) {
+			return 0;
 		}
-		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
-		if (likely(ret == 0)) {
-			p->next_read_op = p->op;
-			p->op = WRITE_MSG;
+		if (likely(ret >= 0)) {
+			written += ret;
 		}
-		return ret;
-	}
-	if (unlikely((size_t)written < len)) {
-		int ret = copy_msg_to_write_buffer(p, rendered, message_length, written);
-		if (likely(ret == 0)) {
-			ret = send_buffer(p);
-			/*
-			 * write in send_buffer blocked. This is not an error, so
-			 * change ret to 0 (no error). Writing the missing stuff is
-			 * handled via epoll / handle_all_peer_operations.
-			 */
-			if (ret == -2) {
-				ret = 0;
-			}
-		}
-		return ret;
 	}
 
-	return 0;
+	if (unlikely((ret == -1) &&
+	             ((errno != EAGAIN) &&
+	              (errno != EWOULDBLOCK)))) {
+		fprintf(stderr, "unexpected write error: %d!\n", errno);
+		return -1;
+	}
+
+	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length, written) == -1)) {
+		return -1;
+	}
+
+	if (ret == -1) {
+		/* one of the write calls had blocked */
+		p->next_read_op = p->op;
+		p->op = WRITE_MSG;
+		return 0;
+	}
+
+	/* 
+	 * The write calls didn't block, but only wrote parts of the
+	 * messages. Try to send the rest.
+	 */
+	ret = send_buffer(p);
+	/*
+	 * write in send_buffer blocked. This is not an error, so
+	 * change ret to 0 (no error). Writing the missing stuff is
+	 * handled via epoll / handle_all_peer_operations.
+	 */
+	if (ret == -2) {
+		ret = 0;
+	}
+	return ret;
 }
 
 int handle_all_peer_operations(struct peer *p)

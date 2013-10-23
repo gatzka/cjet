@@ -34,7 +34,7 @@ struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
-int send_message(struct peer *p, char *rendered, size_t len);
+int send_message(struct peer *p, char *rendered, int len);
 
 /*
  * private functions. They prototypes are just here to allow unit
