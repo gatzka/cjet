@@ -28,6 +28,7 @@ struct peer *alloc_peer(int fd)
 	p->op = READ_MSG_LENGTH;
 	p->read_ptr = p->read_buffer;
 	p->write_ptr = p->read_buffer;
+	p->write_buffer_ptr = p->write_buffer;
 	return p;
 }
 
@@ -139,6 +140,10 @@ int send_buffer(struct peer *p)
 			             (errno != EWOULDBLOCK))) {
 				return -1;
 			}
+			memmove(p->write_buffer, p->write_buffer_ptr, p->to_write);
+			p->write_buffer_ptr = p->write_buffer;
+
+			/* TODO: this seems not to be correct for multiple blocks. */
 			p->next_read_op = p->op;
 			p->op = WRITE_MSG;
 			return -2;
@@ -146,6 +151,7 @@ int send_buffer(struct peer *p)
 		p->write_buffer_ptr += written;
 		p->to_write -= written;
 	}
+	p->write_buffer_ptr = p->write_buffer;
 	return 0;
 }
 
@@ -154,6 +160,16 @@ int send_message(struct peer *p, char *rendered, int len)
 	int ret;
 	int written = 0;
 	uint32_t message_length = htonl(len);
+
+	if (unlikely(p->op == WRITE_MSG)) {
+		/* 
+		 * There is already something in p->write_buffer, that hasn't
+		 * been written yet because the socket had blocked. In this case
+		 * just append the new message to p->write_buffer.
+		 */
+		 ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
+		 return ret;
+	}
 
 	ret = SEND(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
 	if (likely(ret == sizeof(message_length))) {
@@ -179,6 +195,7 @@ int send_message(struct peer *p, char *rendered, int len)
 
 	if (ret == -1) {
 		/* one of the write calls had blocked */
+		/* TODO: this seems not to be correct for multiple blocks. */
 		p->next_read_op = p->op;
 		p->op = WRITE_MSG;
 		return 0;
