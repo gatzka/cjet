@@ -18,11 +18,11 @@ static const int SLOW_READ = 4;
 static const int FAST_READ = 5;
 static const int HANDLE_FAST_PEER = 6;
 static const int HANDLE_SLOW_PEER = 7;
-static const int WRITEV_COMPLETE = 8;
+static const int WRITE_COMPLETE = 8;
 static const int SLOW_WRITE = 9;
 static const int INCOMPLETE_WRITE = 10;
-static const int INCOMPLETE_WRITEV_COMPLETE_WRITE = 11;
-static const int INCOMPLETE_WRITEV_INCOMPLETE_WRITE = 12;
+static const int INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG = 11;
+static const int INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG = 12;
 
 extern "C" {
 
@@ -45,32 +45,10 @@ static int handle_slow_peer_count = 0;
 static unsigned int incomplete_write_counter = 0;
 static unsigned int incomplete_write_written_before_blocking = 0;
 
-static char incomplete_writev_check_buffer[MAX_MESSAGE_SIZE];
-static char *incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+static char incomplete_write_check_buffer[MAX_MESSAGE_SIZE];
+static char *incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 
-ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
-{
-	if (fd == WRITEV_COMPLETE) {
-		return iov[0].iov_len + iov[1].iov_len;
-	}
-
-	if (fd == INCOMPLETE_WRITEV_COMPLETE_WRITE) {
-		static const int incomplete = 1;
-		memcpy(incomplete_writev_buffer_ptr, iov[0].iov_base, incomplete);
-		incomplete_writev_buffer_ptr += incomplete;
-		return incomplete;
-	}
-	if (fd == INCOMPLETE_WRITEV_INCOMPLETE_WRITE) {
-		static const int incomplete = 1;
-		memcpy(incomplete_writev_buffer_ptr, iov[0].iov_base, incomplete);
-		incomplete_writev_buffer_ptr += incomplete;
-		incomplete_write_written_before_blocking += incomplete;
-		return incomplete;
-	}
-	return 0;
-}
-
-ssize_t fake_write(int fd, const void *buf, size_t count)
+int fake_send(int fd, void *buf, size_t count, int flags)
 {
 	if (fd == BADFD) {
 		errno = EBADF;
@@ -94,20 +72,37 @@ ssize_t fake_write(int fd, const void *buf, size_t count)
 			return -1;
 		}
 	}
-
-	if (fd == INCOMPLETE_WRITEV_COMPLETE_WRITE) {
-		memcpy(incomplete_writev_buffer_ptr, buf, count);
-		incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+	if (fd == WRITE_COMPLETE) {
 		return count;
 	}
 
-	if (fd == INCOMPLETE_WRITEV_INCOMPLETE_WRITE) {
+	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
 		if (incomplete_write_counter == 0) {
+			incomplete_write_counter++;
+			static const int incomplete = 1;
+			memcpy(incomplete_write_buffer_ptr, buf, incomplete);
+			incomplete_write_buffer_ptr += incomplete;
+			return incomplete;
+		} else {
+			memcpy(incomplete_write_buffer_ptr, buf, count);
+			incomplete_write_buffer_ptr = incomplete_write_check_buffer;
+			return count;
+		}
+	}
+	if (fd == INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG) {
+		if (incomplete_write_counter == 0) {
+			incomplete_write_counter++;
+			static const int incomplete = 1;
+			memcpy(incomplete_write_buffer_ptr, buf, incomplete);
+			incomplete_write_buffer_ptr += incomplete;
+			incomplete_write_written_before_blocking += incomplete;
+			return incomplete;
+		} else if (incomplete_write_counter == 1) {
 			static const int incomplete = 6;
 			incomplete_write_counter++;
 
-			memcpy(incomplete_writev_buffer_ptr, buf, incomplete);
-			incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+			memcpy(incomplete_write_buffer_ptr, buf, incomplete);
+			incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 			incomplete_write_written_before_blocking += incomplete;
 			return incomplete;
 		} else  {
@@ -115,11 +110,10 @@ ssize_t fake_write(int fd, const void *buf, size_t count)
 			return -1;
 		}
 	}
-
 	return 0;
 }
 
-ssize_t fake_read(int fd, void *buf, size_t count)
+int fake_read(int fd, void *buf, size_t count)
 {
 	if (fd == BADFD) {
 		errno = EBADF;
@@ -484,7 +478,7 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 
 BOOST_AUTO_TEST_CASE(incomplete_write)
 {
-	incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+	incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 	incomplete_write_counter = 0;
 	incomplete_write_written_before_blocking = 0;
 
@@ -532,7 +526,7 @@ BOOST_AUTO_TEST_SUITE(send_message_test)
 
 BOOST_AUTO_TEST_CASE(complete)
 {
-	struct peer *p = alloc_peer(WRITEV_COMPLETE);
+	struct peer *p = alloc_peer(WRITE_COMPLETE);
 	BOOST_REQUIRE(p != NULL);
 
 	static char message[] = "HelloWorld!";
@@ -542,9 +536,12 @@ BOOST_AUTO_TEST_CASE(complete)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(incomplete_writev)
+BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
 {
-	struct peer *p = alloc_peer(INCOMPLETE_WRITEV_COMPLETE_WRITE);
+	incomplete_write_counter = 0;
+	incomplete_write_buffer_ptr = incomplete_write_check_buffer;
+
+	struct peer *p = alloc_peer(INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG);
 	BOOST_REQUIRE(p != NULL);
 
 	static char message[] = "HelloWorld!";
@@ -559,19 +556,19 @@ BOOST_AUTO_TEST_CASE(incomplete_writev)
 	buf_ptr += sizeof(len_be);
 	memcpy(buf_ptr, message, strlen(message));
 
-	ret = memcmp(incomplete_writev_check_buffer, check_buffer, strlen(message) + sizeof(len_be));
+	ret = memcmp(incomplete_write_check_buffer, check_buffer, strlen(message) + sizeof(len_be));
 	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(incomplete_writev_incomplete_write)
+BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 {
-	incomplete_writev_buffer_ptr = incomplete_writev_check_buffer;
+	incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 	incomplete_write_counter = 0;
 	incomplete_write_written_before_blocking = 0;
 
-	struct peer *p = alloc_peer(INCOMPLETE_WRITEV_INCOMPLETE_WRITE);
+	struct peer *p = alloc_peer(INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG);
 	BOOST_REQUIRE(p != NULL);
 
 	static char message[] = "HelloWorld!";
@@ -587,7 +584,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writev_incomplete_write)
 	buf_ptr += sizeof(len_be);
 	memcpy(buf_ptr, message, strlen(message));
 
-	ret = memcmp(incomplete_writev_check_buffer, check_buffer, incomplete_write_written_before_blocking);
+	ret = memcmp(incomplete_write_check_buffer, check_buffer, incomplete_write_written_before_blocking);
 	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
