@@ -364,20 +364,6 @@ BOOST_AUTO_TEST_CASE(copy_msg_all)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(copy_too_big_msg)
-{
-	struct peer *p = alloc_peer(BADFD);
-	BOOST_REQUIRE(p != NULL);
-
-	char message[MAX_MESSAGE_SIZE + 1];
-	uint32_t len = sizeof(message);
-	uint32_t len_be = htobe32(len);
-	int ret = copy_msg_to_write_buffer(p, message, len_be, 0);
-	BOOST_CHECK(ret == -1);
-
-	free_peer(p);
-}
-
 BOOST_AUTO_TEST_CASE(copy_msg_len_already_written)
 {
 	struct peer *p = alloc_peer(BADFD);
