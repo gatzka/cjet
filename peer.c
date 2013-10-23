@@ -163,9 +163,9 @@ int send_message(struct peer *p, char *rendered, int len)
 		if (likely(ret == len)) {
 			return 0;
 		}
-		if (likely(ret >= 0)) {
-			written += ret;
-		}
+	}
+	if (ret > 0) {
+		written += ret;
 	}
 
 	if (unlikely((ret == -1) &&
@@ -174,7 +174,6 @@ int send_message(struct peer *p, char *rendered, int len)
 		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
 		return -1;
 	}
-
 	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length, written) == -1)) {
 		return -1;
 	}
