@@ -133,7 +133,6 @@ int send_buffer(struct peer *p)
 {
 	while (p->to_write != 0) {
 		int written;
-		/* written = WRITE(p->fd, p->write_buffer_ptr, p->to_write); */
 		written = SEND(p->fd, p->write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
