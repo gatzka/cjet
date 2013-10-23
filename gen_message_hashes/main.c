@@ -7,6 +7,7 @@
 #include "hash_func.h"
 
 static const unsigned int MAX_MESSAGES = 100;
+static const unsigned int MAX_LINE_LENGTH = 1000;
 
 struct message {
 	char *name;
@@ -15,34 +16,32 @@ struct message {
 
 static int get_messages(FILE *message_string_file, struct message *buffer, unsigned int max_msg)
 {
-	ssize_t read;
-	char *line = NULL;
-	size_t len = 0;
+	char line[MAX_LINE_LENGTH];
 	unsigned int i = 0;
 	unsigned int j;
 
-	while ((read = getline(&line, &len, message_string_file)) != -1) {
-		if (line[read - 1] == '\n') {
-		    line[read - 1] = '\0';
-			read--;
+	while ((fgets(line, sizeof(line), message_string_file)) != NULL) {
+		size_t line_length = strlen(line);
+		if (line[line_length - 1] == '\n') {
+		    line[line_length] = '\0';
+			line_length--;
 		}
 		if (i >= max_msg) {
 			fprintf(stderr, "Too many messages in file, adjust MAX_MESSAGES!\n");
 			goto too_many_messages;
 		}
 		if (strlen(line) > 0) {
-			char *name = malloc(read + 1);
+			char *name = malloc(line_length + 1);
 			if (name == NULL) {
 				fprintf(stderr, "Could not allocate memory for message name!\n");
 				goto malloc_failed;
 			}
-			strncpy(name, line, read);
+			strncpy(name, line, line_length);
 			buffer[i].name = name;
 			buffer[i].hash = hash_func_string(name);
 			i++;
 		}
 	}
-	free(line);
 	return i;
 
 too_many_messages:
@@ -50,7 +49,6 @@ malloc_failed:
 	for (j = 0; j < i; j++) {
 		free(buffer[j].name);
 	}
-	free(line);
 	return -1;
 }
 
