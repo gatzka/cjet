@@ -8,13 +8,14 @@ extern "C" {
 #endif
 
 int fake_read(int fd, void *buf, size_t count);
+int fake_send(int fd, void *buf, size_t count, int flags);
 
 #ifdef __cplusplus
 }
 #endif
 
 #define READ fake_read
-#define SEND fake_send_
+#define SEND fake_send
 
 #else
 

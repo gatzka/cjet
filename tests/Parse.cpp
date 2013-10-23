@@ -8,17 +8,12 @@
 
 extern "C" {
 
-	ssize_t fake_read(int fd, void *buf, size_t count)
+	int fake_read(int fd, void *buf, size_t count)
 	{
 		return 0;
 	}
 
-	ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt)
-	{
-		return iov[0].iov_len + iov[1].iov_len;
-	}
-
-	ssize_t fake_write(int fd, const void *buf, size_t count)
+	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
 		return count;
 	}
