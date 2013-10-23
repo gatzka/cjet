@@ -7,26 +7,20 @@
 extern "C" {
 #endif
 
-#include <stddef.h>
-#include <sys/uio.h>
-
-ssize_t fake_read(int fd, void *buf, size_t count);
-ssize_t fake_write(int fd, const void *buf, size_t count);
-ssize_t fake_writev(int fd, const struct iovec *iov, int iovcnt);
+int fake_read(int fd, void *buf, size_t count);
 
 #ifdef __cplusplus
 }
 #endif
 
 #define READ fake_read
-#define WRITE fake_write
-#define WRITEV fake_writev
+#define SEND fake_send_
 
 #else
 
 #define READ read
-#define WRITE write
-#define WRITEV writev
+#define SEND send
+
 #endif
 
 #endif

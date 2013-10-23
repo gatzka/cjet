@@ -134,7 +134,7 @@ int send_buffer(struct peer *p)
 	while (p->to_write != 0) {
 		int written;
 		/* written = WRITE(p->fd, p->write_buffer_ptr, p->to_write); */
-		written = send(p->fd, p->write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		written = SEND(p->fd, p->write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
@@ -156,10 +156,10 @@ int send_message(struct peer *p, char *rendered, int len)
 	int written = 0;
 	uint32_t message_length = htonl(len);
 
-	ret = send(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
+	ret = SEND(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
 	if (likely(ret == sizeof(message_length))) {
 		written = ret;
-		ret = send(p->fd, rendered, len, MSG_NOSIGNAL);
+		ret = SEND(p->fd, rendered, len, MSG_NOSIGNAL);
 		if (likely(ret == len)) {
 			return 0;
 		}
