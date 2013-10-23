@@ -81,7 +81,7 @@ char *get_read_ptr(struct peer *p, int count)
 		if (read_length == -1) {
 			if ((errno != EAGAIN) &&
 			    (errno != EWOULDBLOCK)) {
-				fprintf(stderr, "unexpected read error: %d!\n", errno);
+				fprintf(stderr, "unexpected read error: %s!\n", strerror(errno));
 				return NULL;
 			}
 			return (char *)-1;
@@ -171,7 +171,7 @@ int send_message(struct peer *p, char *rendered, int len)
 	if (unlikely((ret == -1) &&
 	             ((errno != EAGAIN) &&
 	              (errno != EWOULDBLOCK)))) {
-		fprintf(stderr, "unexpected write error: %d!\n", errno);
+		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
 		return -1;
 	}
 
