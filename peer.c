@@ -28,13 +28,17 @@ struct peer *alloc_peer(int fd)
 	p->op = READ_MSG_LENGTH;
 	p->read_ptr = p->read_buffer;
 	p->write_ptr = p->read_buffer;
-	p->write_buffer_ptr = p->write_buffer;
+	p->write_buffer = NULL;
+	p->write_buffer_ptr = NULL;
+	p->write_buffer_size = 0;
+	p->to_write = 0;
 	return p;
 }
 
 void free_peer(struct peer *p)
 {
 	remove_all_states_from_peer(p);
+	free(p->write_buffer);
 	free(p);
 }
 
@@ -91,21 +95,45 @@ char *get_read_ptr(struct peer *p, int count)
 	}
 }
 
+static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
+{
+	char *new_write_buffer;
+	int alloc_inc = WRITE_BUFFER_SIZE_INCREMENT > bytes_to_copy ? WRITE_BUFFER_SIZE_INCREMENT : bytes_to_copy;
+	int new_buffer_size = p->write_buffer_size + alloc_inc;
+	new_write_buffer = malloc(new_buffer_size);
+	if (new_write_buffer == NULL) {
+		fprintf(stderr, "Allocation for write buffer failed!\n");
+		goto malloc_failed;
+	}
+	memcpy(new_write_buffer, p->write_buffer, p->to_write);
+	free(p->write_buffer);
+	p->write_buffer = new_write_buffer;
+	p->write_buffer_ptr = p->write_buffer + p->to_write;
+	return 0;
+
+malloc_failed:
+	return -1;
+}
+
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written)
 {
 	const char *message_ptr;
 	int msg_offset;
 	int to_write;
-	int len;
+	int msg_len = ntohl(msg_len_be);
+	int free_space = p->write_buffer_size - (p->write_buffer_ptr - p->write_buffer);
+	int bytes_to_copy = msg_len + sizeof(msg_len_be) + already_written;
 
-	p->write_buffer_ptr = p->write_buffer;
+	if (bytes_to_copy > free_space) {
+		if (allocate_new_write_buffer(p, bytes_to_copy) == -1) {
+			goto alloc_failed;
+		}
+	}
+
 	if (already_written < sizeof(msg_len_be)) {
 		char *msg_len_ptr = (char*)(&msg_len_be);
 		msg_len_ptr += already_written;
 		to_write = sizeof(msg_len_be) - already_written;
-		if (unlikely(to_write > MAX_MESSAGE_SIZE)) {
-			goto no_space;
-		}
 		memcpy(p->write_buffer_ptr, msg_len_ptr, to_write);
 		p->write_buffer_ptr += to_write;
 		already_written += to_write;
@@ -113,11 +141,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 	msg_offset = already_written - sizeof(msg_len_be);
 	message_ptr = (char *)rendered + msg_offset;
-	len = ntohl(msg_len_be);
-	to_write = len - msg_offset;
-	if (unlikely(to_write > (MAX_MESSAGE_SIZE - (p->write_buffer_ptr - p->write_buffer)))) {
-		goto no_space;
-	}
+	to_write = msg_len - msg_offset;
 	memcpy(p->write_buffer_ptr, message_ptr, to_write);
 	p->write_buffer_ptr += to_write;
 	p->to_write = p->write_buffer_ptr - p->write_buffer;
@@ -125,8 +149,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 	return 0;
 
-no_space:
-	fprintf(stderr, "write buffer too small!\n");
+alloc_failed:
 	return -1;
 }
 

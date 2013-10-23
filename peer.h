@@ -22,9 +22,10 @@ struct peer {
 	int next_read_op;
 	int to_write;
 	uint32_t msg_length;
+	uint32_t write_buffer_size;
 	struct list_head state_list;
 	char read_buffer[MAX_MESSAGE_SIZE];
-	char write_buffer[MAX_MESSAGE_SIZE];
+	char *write_buffer;
 	char *read_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
