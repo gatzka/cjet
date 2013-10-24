@@ -284,7 +284,7 @@ int handle_all_peer_operations(struct peer *p)
 			break;
 
 		case WRITE_MSG: {
-			int ret = send_buffer(p);
+			ret = send_buffer(p);
 			if (unlikely(ret == -1)) {
 				return -1;
 			}
