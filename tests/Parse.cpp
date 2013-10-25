@@ -3,8 +3,9 @@
 #define BOOST_TEST_MODULE parse JSON
 #include <boost/test/unit_test.hpp>
 
-#include "../parse.h"
 #include "../cJSON.h"
+#include "../parse.h"
+#include "../state.h"
 
 extern "C" {
 
@@ -31,9 +32,11 @@ static const char wrong_jet_array[] = "[1, 2]";
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	struct peer *p = alloc_peer(-1);
+	create_setter_hashtable();
 	int ret = parse_message(correct_json, strlen(correct_json), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
+	delete_setter_hashtable();
 }
 
 BOOST_AUTO_TEST_CASE(length_too_long)
@@ -75,9 +78,11 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 BOOST_AUTO_TEST_CASE(two_method)
 {
 	struct peer *p = alloc_peer(-1);
+	create_setter_hashtable();
 	int ret = parse_message(json_two_method, strlen(json_two_method), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
+	delete_setter_hashtable();
 }
 
 BOOST_AUTO_TEST_CASE(wrong_array)

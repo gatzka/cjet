@@ -71,13 +71,15 @@ static void free_state(struct state *s)
 
 int add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
-	/*
-	 * TODO: Check if the state exists in ALL peers available!
-	 */
-	struct state *s = alloc_state(path, value);
+	struct state *s = HASHTABLE_GET(STATE_SET_TABLE, setter_hashtable, path);
+	if (unlikely(s != NULL)) {
+		return -2;
+	}
+	s = alloc_state(path, value);
 	if (unlikely(s == NULL)) {
 		return -1;
 	}
+	HASHTABLE_PUT(STATE_SET_TABLE, setter_hashtable, path, s, NULL);
 	list_add_tail(&s->next_state, &p->state_list);
 	return 0;
 }
@@ -88,6 +90,7 @@ void remove_all_states_from_peer(struct peer *p) {
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, next_state);
 		list_del(&s->next_state);
+		HASHTABLE_REMOVE(STATE_SET_TABLE, setter_hashtable, s->path);
 		free_state(s);
 	}
 }
