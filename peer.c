@@ -16,6 +16,8 @@
 #include "peer.h"
 #include "state.h"
 
+#define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
+
 struct peer *alloc_peer(int fd)
 {
 	struct peer *p;
@@ -98,8 +100,8 @@ char *get_read_ptr(struct peer *p, int count)
 static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
 {
 	char *new_write_buffer;
-	int alloc_inc = WRITE_BUFFER_SIZE_INCREMENT > bytes_to_copy ? WRITE_BUFFER_SIZE_INCREMENT : bytes_to_copy;
-	int new_buffer_size = p->write_buffer_size + alloc_inc;
+
+	int new_buffer_size = DIV_ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
 	new_write_buffer = malloc(new_buffer_size);
 	if (new_write_buffer == NULL) {
 		fprintf(stderr, "Allocation for write buffer failed!\n");
