@@ -14,6 +14,7 @@
 #include "compiler.h"
 #include "config.h"
 #include "peer.h"
+#include "state.h"
 
 static int shall_close = 0;
 
