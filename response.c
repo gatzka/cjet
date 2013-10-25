@@ -34,6 +34,35 @@ unsupported_type:
 	return NULL;
 }
 
+cJSON *create_invalid_params_error(const char *tag, const char *reason)
+{
+	cJSON *error = cJSON_CreateObject();
+	if (unlikely(error == NULL)) {
+		fprintf(stderr, "Could not create error JSON object!\n");
+		return NULL;
+	}
+	cJSON_AddStringToObject(error, "message", "Invalid params");
+	cJSON_AddNumberToObject(error, "code", -32602);
+	if ((tag != NULL) && (reason != NULL)) {
+		cJSON *data = cJSON_CreateObject();
+		if (likely(data != NULL)) {
+			cJSON_AddStringToObject(data, tag, reason);
+			cJSON_AddItemToObject(error, "data", data);
+		}
+	}
+	return error;
+}
+
+cJSON *create_error_response(const cJSON *id, cJSON *error)
+{
+	cJSON *root = create_common_response(id);
+	if (unlikely(root == NULL)) {
+		return NULL;
+	}
+	cJSON_AddItemToObject(root, "error", error);
+	return root;
+}
+
 cJSON *create_boolean_success_response(const cJSON *id, int true_false)
 {
 	cJSON *root = create_common_response(id);

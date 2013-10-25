@@ -10,49 +10,57 @@
 #include "response.h"
 #include "state.h"
 
-static int process_add(cJSON *json_rpc, struct peer *p)
+static cJSON *process_add(cJSON *params, struct peer *p)
 {
-	int ret;
 	cJSON *value;
-	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	cJSON *error;
 	cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
-		fprintf(stderr, "no path given\n");
-		return -1;
+		error = create_invalid_params_error("reason", "no path given");
+		return error;
 	}
 	if (unlikely(path->type != cJSON_String) ) {
-		fprintf(stderr, "path is not a string\n");
-		return -1;
+		error = create_invalid_params_error("reason", "path is not a string");
+		return error;
 	}
 
 	value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL) ) {
-		fprintf(stderr, "no value given\n");
-		return -1;
+		error = create_invalid_params_error("reason", "no value given");
+		return error;
 	}
 
-	ret = add_state_to_peer(p, path->valuestring, value);
-	return ret;
+	error = add_state_to_peer(p, path->valuestring, value);
+	return error;
 
-	return 0;
+	return NULL;
 }
 
-static int process_config() {
-	return 0;
+static cJSON *process_config() {
+	return NULL;
 }
 
-static int possibly_send_success_response(cJSON *json_rpc, struct peer *p) {
+static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
+{
 	int ret = 0;
 
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (likely(id != NULL)) {
+		cJSON *root;
 		char *rendered;
+		if (unlikely(error != NULL)) {
+			root = create_error_response(id, error);
+		} else {
+			root = create_boolean_success_response(id, TRUE);
+		}
 
-		cJSON *response = create_boolean_success_response(id, TRUE);
-		if (unlikely(response == NULL)) {
+		if (unlikely(root == NULL)) {
+			if (error != NULL) {
+				cJSON_Delete(error);
+			}
 			return -1;
 		}
-		rendered = cJSON_PrintUnformatted(response);
+		rendered = cJSON_PrintUnformatted(root);
 		if (unlikely(rendered == NULL)) {
 			fprintf(stderr, "Could not render JSON into a string!\n");
 			ret = -1;
@@ -61,7 +69,7 @@ static int possibly_send_success_response(cJSON *json_rpc, struct peer *p) {
 		ret = send_message(p, rendered, strlen(rendered));
 		free(rendered);
 	render_error:
-		cJSON_Delete(response);
+		cJSON_Delete(root);
 	}
 	return ret;
 }
@@ -71,6 +79,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
 	cJSON *params;
+	cJSON *error;
 	int ret = 0;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
@@ -94,32 +103,28 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	}
 
 	if (strcmp(method_string, "set") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "post") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "add") == 0) {
-		ret = process_add(json_rpc, p);
+		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "call") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "fetch") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "unfetch") == 0) {
-
+		error = NULL;
 	} else if (strcmp(method_string, "config") == 0) {
-		ret = process_config();
+		error = process_config();
 	} else {
 		fprintf(stderr, "Unsupported method: %s!\n", method_string);
 		ret = -1;
 		goto unsupported_method;
 	}
 
-	if (likely(ret == 0)) {
-		ret = possibly_send_success_response(json_rpc, p);
-	} else {
-		/* TODO: send error response */
-	}
+	ret = possibly_send_response(json_rpc, error, p);
 
 	return ret;
 

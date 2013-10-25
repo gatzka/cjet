@@ -8,6 +8,7 @@
 #include "hashtable.h"
 #include "list.h"
 #include "peer.h"
+#include "response.h"
 #include "state.h"
 
 DECLARE_HASHTABLE_STRING(STATE_SET_TABLE, STATE_SET_TABLE_ORDER)
@@ -69,19 +70,21 @@ static void free_state(struct state *s)
 	free(s);
 }
 
-int add_state_to_peer(struct peer *p, const char *path, cJSON *value)
+cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
 	struct state *s = HASHTABLE_GET(STATE_SET_TABLE, setter_hashtable, path);
 	if (unlikely(s != NULL)) {
-		return -2;
+		cJSON *error = create_invalid_params_error("exists", path);
+		return error;
 	}
 	s = alloc_state(path, value);
 	if (unlikely(s == NULL)) {
-		return -1;
+		cJSON *error = create_invalid_params_error("reason", "not enough memory");
+		return error;
 	}
 	HASHTABLE_PUT(STATE_SET_TABLE, setter_hashtable, path, s, NULL);
 	list_add_tail(&s->next_state, &p->state_list);
-	return 0;
+	return NULL;
 }
 
 void remove_all_states_from_peer(struct peer *p) {
