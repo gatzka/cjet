@@ -4,7 +4,7 @@
 #include "compiler.h"
 #include "response.h"
 
-static cJSON *create_common_success_response(const cJSON *id)
+static cJSON *create_common_response(const cJSON *id)
 {
 	cJSON *root = cJSON_CreateObject();
 	if (unlikely(root == NULL)) {
@@ -36,7 +36,7 @@ unsupported_type:
 
 cJSON *create_boolean_success_response(const cJSON *id, int true_false)
 {
-	cJSON *root = create_common_success_response(id);
+	cJSON *root = create_common_response(id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
