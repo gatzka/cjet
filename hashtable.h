@@ -37,7 +37,7 @@
 typedef uint32_t u32;
 typedef uint64_t u64;
 
-#define wmb() __sync_synchronize()
+#define wmb()
 
 #define HASHTABLE_SUCCESS 0
 #define HASHTABLE_FULL -1
