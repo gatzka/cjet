@@ -54,14 +54,19 @@ static cJSON *create_error_object(const char *message, int code, const char *tag
 
 }
 
-cJSON *create_invalid_params_error(const char *tag, const char *reason)
+cJSON *create_invalid_request_error(const char *tag, const char *reason)
 {
-	return create_error_object("Invalid params", -32602, tag, reason);
+	return create_error_object("Invalid Request", -32600, tag, reason);
 }
 
 cJSON *create_method_not_found_error(const char *tag, const char *reason)
 {
 	return create_error_object("Method not found", -32601, tag, reason);
+}
+
+cJSON *create_invalid_params_error(const char *tag, const char *reason)
+{
+	return create_error_object("Invalid params", -32602, tag, reason);
 }
 
 cJSON *create_error_response(const cJSON *id, cJSON *error)

@@ -6,6 +6,7 @@
 static const int TRUE = 1;
 static const int FALSE = 0;
 
+cJSON *create_invalid_request_error(const char *tag, const char *reason);
 cJSON *create_invalid_params_error(const char *tag, const char *reason);
 cJSON *create_method_not_found_error(const char *tag, const char *reason);
 cJSON *create_error_response(const cJSON *id, cJSON *error);

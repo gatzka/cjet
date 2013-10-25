@@ -10,7 +10,7 @@
 #include "../state.h"
 
 static const char correct_json[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-static const char wrong_json[] = "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
+static const char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static const char json_no_method[] = "{\"id\": 7384,\"meth\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static const char json_no_string_method[] = "{\"id\": 7384,\"method\": 123,\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static const char json_two_method[] = "[{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}, {\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/state\",\"value\": 321}}]";
@@ -86,24 +86,6 @@ BOOST_AUTO_TEST_CASE(length_too_long)
 BOOST_AUTO_TEST_CASE(length_too_short)
 {
 	int ret = parse_message(correct_json, strlen(correct_json) - 1, NULL);
-	BOOST_CHECK(ret == -1);
-}
-
-BOOST_AUTO_TEST_CASE(parse_wrong_json)
-{
-	int ret = parse_message(wrong_json, strlen(wrong_json), NULL);
-	BOOST_CHECK(ret == -1);
-}
-
-BOOST_AUTO_TEST_CASE(no_method)
-{
-	int ret = parse_message(json_no_method, strlen(json_no_method), NULL);
-	BOOST_CHECK(ret == -1);
-}
-
-BOOST_AUTO_TEST_CASE(no_string_method)
-{
-	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), NULL);
 	BOOST_CHECK(ret == -1);
 }
 
@@ -326,5 +308,94 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 	BOOST_CHECK(strcmp(message->valuestring, "Method not found") == 0);
 
 	cJSON_Delete(root);
+}
+
+BOOST_AUTO_TEST_CASE(no_method)
+{
+	readback_buffer_ptr = readback_buffer;
+	memset(readback_buffer, 0x00, sizeof(readback_buffer));
+
+	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
+	create_setter_hashtable();
+	int ret = parse_message(json_no_method, strlen(json_no_method), p);
+	BOOST_CHECK(ret == 0);
+	free_peer(p);
+	delete_setter_hashtable();
+
+	uint32_t len;
+	char *readback_ptr = readback_buffer;
+	memcpy(&len, readback_ptr, sizeof(len));
+	len = ntohl(len);
+	readback_ptr += sizeof(len);
+
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
+	BOOST_CHECK(root != NULL);
+
+	uint32_t parsed_length = end_parse - readback_ptr;
+	BOOST_CHECK(parsed_length == len);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_REQUIRE(error != NULL);
+
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_CHECK(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32600);
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	BOOST_REQUIRE(message != NULL);
+	BOOST_CHECK(message->type == cJSON_String);
+	BOOST_CHECK(strcmp(message->valuestring, "Invalid Request") == 0);
+
+	cJSON_Delete(root);
+}
+
+
+BOOST_AUTO_TEST_CASE(no_string_method)
+{
+	readback_buffer_ptr = readback_buffer;
+	memset(readback_buffer, 0x00, sizeof(readback_buffer));
+
+	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
+	create_setter_hashtable();
+	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), p);
+	BOOST_CHECK(ret == 0);
+	free_peer(p);
+	delete_setter_hashtable();
+
+	uint32_t len;
+	char *readback_ptr = readback_buffer;
+	memcpy(&len, readback_ptr, sizeof(len));
+	len = ntohl(len);
+	readback_ptr += sizeof(len);
+
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
+	BOOST_CHECK(root != NULL);
+
+	uint32_t parsed_length = end_parse - readback_ptr;
+	BOOST_CHECK(parsed_length == len);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_REQUIRE(error != NULL);
+
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_CHECK(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32600);
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	BOOST_REQUIRE(message != NULL);
+	BOOST_CHECK(message->type == cJSON_String);
+	BOOST_CHECK(strcmp(message->valuestring, "Invalid Request") == 0);
+
+	cJSON_Delete(root);
+}
+
+BOOST_AUTO_TEST_CASE(parse_wrong_json)
+{
+	int ret = parse_message(wrong_json, strlen(wrong_json), NULL);
+	BOOST_CHECK(ret == -1);
 }
 

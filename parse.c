@@ -84,14 +84,12 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
-		fprintf(stderr, "Cannot find supported method!\n");
-		ret = -1;
+		error = create_invalid_request_error("reason", "no method tag found");
 		goto no_method;
 	}
-	method_string = method->valuestring;
-	if (unlikely(method_string == NULL)) {
-		fprintf(stderr, "Cannot find supported method!\n");
-		ret = -1;
+
+	if (unlikely(method->type != cJSON_String)) {
+		error = create_invalid_request_error("reason", "method tag is not a string");
 		goto no_method;
 	}
 
@@ -101,6 +99,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		goto no_params;
 	}
 
+	method_string = method->valuestring;
 	if (strcmp(method_string, "set") == 0) {
 		error = NULL;
 	} else if (strcmp(method_string, "post") == 0) {
@@ -122,13 +121,11 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		goto unsupported_method;
 	}
 
+no_method:
 no_params:
 unsupported_method:
 	ret = possibly_send_response(json_rpc, error, p);
 
-	return ret;
-
-no_method:
 	return ret;
 }
 
