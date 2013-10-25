@@ -10,6 +10,12 @@
 #define WRITE_BUFFER_CHUNK 512
 #define MAX_WRITE_BUFFER_SIZE (10 * (WRITE_BUFFER_CHUNK))
 
+/*
+ * This config parameter the maximum amount of states that can be
+ * handled in a jet. The number of states is 2^STATE_SET_TABLE_ORDER.
+ */
+#define STATE_SET_TABLE_ORDER 13
+
 /* Linux specific configs */
 #define MAX_EPOLL_EVENTS 100
 

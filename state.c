@@ -4,9 +4,29 @@
 
 #include "cJSON.h"
 #include "compiler.h"
+#include "config.h"
+#include "hashtable.h"
 #include "list.h"
 #include "peer.h"
 #include "state.h"
+
+DECLARE_HASHTABLE_STRING(STATE_SET_TABLE, STATE_SET_TABLE_ORDER)
+
+static struct hashtable_string *setter_hashtable = NULL;
+
+int create_setter_hashtable(void)
+{
+	setter_hashtable = HASHTABLE_CREATE(STATE_SET_TABLE);
+	if (unlikely(setter_hashtable == NULL)) {
+		return -1;
+	}
+	return 0;
+}
+
+void delete_setter_hashtable(void)
+{
+	HASHTABLE_DELETE(STATE_SET_TABLE, setter_hashtable);
+}
 
 static struct state *alloc_state(const char *path, cJSON *value_object) {
 	struct state *s;

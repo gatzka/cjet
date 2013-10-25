@@ -187,6 +187,11 @@ int main()
 		return EXIT_FAILURE;
 	}
 
+	if ((create_setter_hashtable()) == -1) {
+		fprintf(stderr, "Cannot allocate hashtable for states!\n");
+		goto create_setter_hashtable_failed;
+	}
+
 	if ((listen_server = setup_listen_socket(epoll_fd)) == NULL)  {
 		goto setup_listen_failed;
 	}
@@ -238,6 +243,7 @@ int main()
  */
 
 	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
+	delete_setter_hashtable();
 	close(epoll_fd);
 	return EXIT_SUCCESS;
 
@@ -250,6 +256,8 @@ epoll_on_listen_failed:
  */
 	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
 setup_listen_failed:
+	delete_setter_hashtable();
+create_setter_hashtable_failed:
 	close(epoll_fd);
 	return EXIT_FAILURE;
 }
