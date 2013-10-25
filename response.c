@@ -53,6 +53,25 @@ cJSON *create_invalid_params_error(const char *tag, const char *reason)
 	return error;
 }
 
+cJSON *create_method_not_found_error(const char *tag, const char *reason)
+{
+	cJSON *error = cJSON_CreateObject();
+	if (unlikely(error == NULL)) {
+		fprintf(stderr, "Could not create error JSON object!\n");
+		return NULL;
+	}
+	cJSON_AddStringToObject(error, "message", "Method not found");
+	cJSON_AddNumberToObject(error, "code", -32601);
+	if ((tag != NULL) && (reason != NULL)) {
+		cJSON *data = cJSON_CreateObject();
+		if (likely(data != NULL)) {
+			cJSON_AddStringToObject(data, tag, reason);
+			cJSON_AddItemToObject(error, "data", data);
+		}
+	}
+	return error;
+}
+
 cJSON *create_error_response(const cJSON *id, cJSON *error)
 {
 	cJSON *root = create_common_response(id);

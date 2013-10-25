@@ -118,18 +118,17 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "config") == 0) {
 		error = process_config();
 	} else {
-		fprintf(stderr, "Unsupported method: %s!\n", method_string);
-		ret = -1;
+		error = create_method_not_found_error("reason", method_string);
 		goto unsupported_method;
 	}
 
 no_params:
+unsupported_method:
 	ret = possibly_send_response(json_rpc, error, p);
 
 	return ret;
 
 no_method:
-unsupported_method:
 	return ret;
 }
 

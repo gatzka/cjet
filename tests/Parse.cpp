@@ -25,6 +25,7 @@ static const int ADD_WITHOUT_PATH = 1;
 static const int PATH_NO_STRING = 2;
 static const int NO_VALUE = 3;
 static const int NO_PARAMS = 4;
+static const int UNSUPPORTED_METHOD = 5;
 
 static char readback_buffer[10000];
 static char *readback_buffer_ptr = readback_buffer;
@@ -54,6 +55,11 @@ extern "C" {
 		}
 
 		if (fd == NO_PARAMS) {
+			memcpy(readback_buffer_ptr, buf, count);
+			readback_buffer_ptr += count;
+		}
+
+		if (fd == UNSUPPORTED_METHOD) {
 			memcpy(readback_buffer_ptr, buf, count);
 			readback_buffer_ptr += count;
 		}
@@ -98,12 +104,6 @@ BOOST_AUTO_TEST_CASE(no_method)
 BOOST_AUTO_TEST_CASE(no_string_method)
 {
 	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), NULL);
-	BOOST_CHECK(ret == -1);
-}
-
-BOOST_AUTO_TEST_CASE(unsupported_method)
-{
-	int ret = parse_message(json_unsupported_method, strlen(json_unsupported_method), NULL);
 	BOOST_CHECK(ret == -1);
 }
 
@@ -286,3 +286,46 @@ BOOST_AUTO_TEST_CASE(no_params_test)
 
 	cJSON_Delete(root);
 }
+
+BOOST_AUTO_TEST_CASE(unsupported_method)
+{
+	readback_buffer_ptr = readback_buffer;
+	memset(readback_buffer, 0x00, sizeof(readback_buffer));
+
+	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
+	create_setter_hashtable();
+	int ret = parse_message(json_unsupported_method, strlen(json_unsupported_method), p);
+	BOOST_CHECK(ret == 0);
+	free_peer(p);
+	delete_setter_hashtable();
+
+	uint32_t len;
+	char *readback_ptr = readback_buffer;
+	memcpy(&len, readback_ptr, sizeof(len));
+	len = ntohl(len);
+	readback_ptr += sizeof(len);
+
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
+	BOOST_CHECK(root != NULL);
+
+	uint32_t parsed_length = end_parse - readback_ptr;
+	BOOST_CHECK(parsed_length == len);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_REQUIRE(error != NULL);
+
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_CHECK(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32601);
+	std::cout << "code: " << code->valueint << std::endl;
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	BOOST_REQUIRE(message != NULL);
+	BOOST_CHECK(message->type == cJSON_String);
+	BOOST_CHECK(strcmp(message->valuestring, "Method not found") == 0);
+
+	cJSON_Delete(root);
+}
+
