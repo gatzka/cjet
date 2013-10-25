@@ -522,6 +522,36 @@ BOOST_AUTO_TEST_CASE(complete)
 	free_peer(p);
 }
 
+BOOST_AUTO_TEST_CASE(max_message_length)
+{
+	struct peer *p = alloc_peer(BADFD);
+	BOOST_REQUIRE(p != NULL);
+	p->op = WRITE_MSG;
+
+	static char message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
+	memset(message, 0x42, sizeof(message));
+	message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
+	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(message_too_large)
+{
+	struct peer *p = alloc_peer(BADFD);
+	BOOST_REQUIRE(p != NULL);
+	p->op = WRITE_MSG;
+
+	static char message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
+	memset(message, 0x42, sizeof(message));
+	message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
+	int ret = send_message(p, message, ::strlen(message));
+	BOOST_CHECK(ret == -1);
+
+	free_peer(p);
+}
+
 BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
 {
 	incomplete_write_counter = 0;
