@@ -31,7 +31,6 @@ struct peer *alloc_peer(int fd)
 	p->read_ptr = p->read_buffer;
 	p->write_ptr = p->read_buffer;
 	p->write_buffer = NULL;
-	p->write_buffer_ptr = NULL;
 	p->write_buffer_size = 0;
 	p->to_write = 0;
 	return p;
@@ -111,7 +110,7 @@ static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
 		goto realloc_failed;
 	}
 	p->write_buffer = new_write_buffer;
-	p->write_buffer_ptr = p->write_buffer + p->to_write;
+	p->write_buffer_size = new_buffer_size;
 	return 0;
 
 realloc_failed:
@@ -123,8 +122,9 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 	const char *message_ptr;
 	int msg_offset;
 	int to_write;
+	char *write_buffer_ptr;
 	int msg_len = ntohl(msg_len_be);
-	int free_space = p->write_buffer_size - (p->write_buffer_ptr - p->write_buffer);
+	int free_space = p->write_buffer_size - p->to_write;
 	int bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
 
 	if (bytes_to_copy > free_space) {
@@ -133,22 +133,22 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 		}
 	}
 
+	write_buffer_ptr = p->write_buffer + p->to_write;
 	if (already_written < sizeof(msg_len_be)) {
 		char *msg_len_ptr = (char*)(&msg_len_be);
 		msg_len_ptr += already_written;
 		to_write = sizeof(msg_len_be) - already_written;
-		memcpy(p->write_buffer_ptr, msg_len_ptr, to_write);
-		p->write_buffer_ptr += to_write;
+		memcpy(write_buffer_ptr, msg_len_ptr, to_write);
+		write_buffer_ptr += to_write;
 		already_written += to_write;
+		p->to_write += to_write;
 	}
 
 	msg_offset = already_written - sizeof(msg_len_be);
 	message_ptr = (char *)rendered + msg_offset;
 	to_write = msg_len - msg_offset;
-	memcpy(p->write_buffer_ptr, message_ptr, to_write);
-	p->write_buffer_ptr += to_write;
-	p->to_write = p->write_buffer_ptr - p->write_buffer;
-	p->write_buffer_ptr = p->write_buffer;
+	memcpy(write_buffer_ptr, message_ptr, to_write);
+	p->to_write += to_write;
 
 	return 0;
 
@@ -158,26 +158,25 @@ alloc_failed:
 
 int send_buffer(struct peer *p)
 {
+	char *write_buffer_ptr = p->write_buffer;
 	while (p->to_write != 0) {
 		int written;
-		written = SEND(p->fd, p->write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		written = SEND(p->fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
 				return -1;
 			}
-			memmove(p->write_buffer, p->write_buffer_ptr, p->to_write);
-			p->write_buffer_ptr = p->write_buffer;
+			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
 			if (p->op != WRITE_MSG) {
 				p->next_read_op = p->op;
 				p->op = WRITE_MSG;
 			}
 			return -2;
 		}
-		p->write_buffer_ptr += written;
+		write_buffer_ptr += written;
 		p->to_write -= written;
 	}
-	p->write_buffer_ptr = p->write_buffer;
 	return 0;
 }
 
