@@ -115,7 +115,12 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		goto unsupported_method;
 	}
 
-	ret = possibly_send_success_response(json_rpc, p);
+	if (likely(ret == 0)) {
+		ret = possibly_send_success_response(json_rpc, p);
+	} else {
+		/* TODO: send error response */
+	}
+
 	return ret;
 
 no_params:
