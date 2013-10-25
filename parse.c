@@ -79,7 +79,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	const char *method_string;
 	cJSON *params;
-	cJSON *error;
+	cJSON *error = NULL;
 	int ret = 0;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
@@ -97,8 +97,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 
 	params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		fprintf(stderr, "no params in JSON-RPC!\n");
-		ret = -1;
+		error = create_invalid_params_error("reason", "no params found");
 		goto no_params;
 	}
 
@@ -124,11 +123,11 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		goto unsupported_method;
 	}
 
+no_params:
 	ret = possibly_send_response(json_rpc, error, p);
 
 	return ret;
 
-no_params:
 no_method:
 unsupported_method:
 	return ret;
