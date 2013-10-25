@@ -15,6 +15,7 @@ SET(READBUFFER_TEST
 	ReadbufferTest.cpp
 	../cJSON.c
 	../peer.c
+	../response.c
 	../state.c
 )
 
