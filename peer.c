@@ -105,18 +105,16 @@ static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
 	if (unlikely(new_buffer_size > MAX_WRITE_BUFFER_SIZE)) {
 		return -1;
 	}
-	new_write_buffer = malloc(new_buffer_size);
+	new_write_buffer = realloc(p->write_buffer, new_buffer_size);
 	if (new_write_buffer == NULL) {
 		fprintf(stderr, "Allocation for write buffer failed!\n");
-		goto malloc_failed;
+		goto realloc_failed;
 	}
-	memcpy(new_write_buffer, p->write_buffer, p->to_write);
-	free(p->write_buffer);
 	p->write_buffer = new_write_buffer;
 	p->write_buffer_ptr = p->write_buffer + p->to_write;
 	return 0;
 
-malloc_failed:
+realloc_failed:
 	return -1;
 }
 
