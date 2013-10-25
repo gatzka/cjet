@@ -102,6 +102,9 @@ static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
 	char *new_write_buffer;
 
 	int new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
+	if (unlikely(new_buffer_size > MAX_WRITE_BUFFER_SIZE)) {
+		return -1;
+	}
 	new_write_buffer = malloc(new_buffer_size);
 	if (new_write_buffer == NULL) {
 		fprintf(stderr, "Allocation for write buffer failed!\n");
