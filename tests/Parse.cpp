@@ -319,7 +319,6 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 	BOOST_REQUIRE(code != NULL);
 	BOOST_CHECK(code->type == cJSON_Number);
 	BOOST_CHECK(code->valueint == -32601);
-	std::cout << "code: " << code->valueint << std::endl;
 
 	cJSON *message = cJSON_GetObjectItem(error, "message");
 	BOOST_REQUIRE(message != NULL);
