@@ -2,6 +2,7 @@
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE read buffer test
 
+#include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
 #include <stdint.h>
@@ -148,7 +149,7 @@ int fake_read(int fd, void *buf, size_t count)
 		if (handle_fast_peer_first == 0) {
 			char *write_ptr = (char *)buf;
 			uint32_t length = strlen(handle_fast_peer_msg);
-			length = htobe32(length);
+			length = htonl(length);
 			memcpy(write_ptr, &length, sizeof(length));
 			write_ptr += sizeof(length);
 			memcpy(write_ptr, handle_fast_peer_msg, sizeof(handle_fast_peer_msg));
@@ -169,14 +170,14 @@ int fake_read(int fd, void *buf, size_t count)
 		case 0:
 			write_ptr = (char *)buf;
 			length = strlen(handle_slow_peer_msg);
-			length = htobe32(length);
+			length = htonl(length);
 			memcpy(write_ptr, &length, sizeof(length) - 1);
 			return sizeof(length) - 1;
 
 		case 2:
 			write_ptr = (char *)buf;
 			length = strlen(handle_slow_peer_msg);
-			length = htobe32(length);
+			length = htonl(length);
 			read_ptr = (char *)&length;
 			read_ptr = read_ptr + 3;
 			memcpy(write_ptr, read_ptr, 1);
@@ -264,7 +265,7 @@ BOOST_AUTO_TEST_CASE(slow_read)
 	read_ptr = get_read_ptr(p, sizeof(value));
 	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
 	memcpy(&value, read_ptr, sizeof(value));
-	BOOST_CHECK(be32toh(value) == 0x01030507);
+	BOOST_CHECK(ntohl(value) == 0x01030507);
 	free_peer(p);
 }
 
@@ -347,14 +348,14 @@ BOOST_AUTO_TEST_CASE(copy_msg_all)
 
 	const char message[] = "Hello World!";
 	uint32_t len = ::strlen(message);
-	uint32_t len_be = htobe32(len);
+	uint32_t len_be = htonl(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, 0);
 	BOOST_CHECK(ret == 0);
 
 	char *read_back_ptr = p->write_buffer;
 	uint32_t readback_len_be32;
 	memcpy(&readback_len_be32, read_back_ptr, sizeof(readback_len_be32));
-	uint32_t readback_len = be32toh(readback_len_be32);
+	uint32_t readback_len = ntohl(readback_len_be32);
 	BOOST_CHECK(readback_len == len);
 
 	read_back_ptr += sizeof(readback_len_be32);
@@ -371,7 +372,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_already_written)
 
 	const char message[] = "Hello World!";
 	uint32_t len = ::strlen(message);
-	uint32_t len_be = htobe32(len);
+	uint32_t len_be = htonl(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, sizeof(len_be));
 	BOOST_CHECK(ret == 0);
 
@@ -395,7 +396,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 		message[i] = (i + 13) & 0xff;
 	}
 	uint32_t len = sizeof(message);
-	uint32_t len_be = htobe32(len);
+	uint32_t len_be = htonl(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, already_written);
 	BOOST_CHECK(ret == 0);
 
@@ -422,13 +423,53 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 
 	static const char message[] = "Hello World!";
 	uint32_t len = ::strlen(message);
-	uint32_t len_be = htobe32(len);
+	uint32_t len_be = htonl(len);
 	int ret = copy_msg_to_write_buffer(p, message, len_be, sizeof(len_be) + msg_part_already_written);
 	BOOST_CHECK(ret == 0);
 
 	char *read_back_ptr = p->write_buffer;
 	ret = ::strncmp(read_back_ptr, message + msg_part_already_written, len - msg_part_already_written);
 	BOOST_CHECK(ret == 0);
+
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(copy_two_messages_of_chunk_size)
+{
+	struct peer *p = alloc_peer(BADFD);
+	BOOST_REQUIRE(p != NULL);
+
+	char message1[WRITE_BUFFER_CHUNK];
+	memset(message1, 'A', sizeof(message1));
+	message1[sizeof(message1) - 1] = '\0';
+	uint32_t len1 = ::strlen(message1);
+	uint32_t len1_be = htonl(len1);
+	int ret = copy_msg_to_write_buffer(p, message1, len1_be, 0);
+	BOOST_CHECK(ret == 0);
+
+	char message2[WRITE_BUFFER_CHUNK];
+	memset(message2, 'B', sizeof(message2));
+	message2[sizeof(message2) - 1] = '\0';
+	uint32_t len2 = ::strlen(message2);
+	uint32_t len2_be = htonl(len2);
+	ret = copy_msg_to_write_buffer(p, message2, len2_be, 0);
+	BOOST_CHECK(ret == 0);
+
+	uint32_t readback_len1;
+	char *write_buffer = p->write_buffer;
+	memcpy(&readback_len1, write_buffer, sizeof(readback_len1));
+	readback_len1 = ntohl(readback_len1);
+	BOOST_CHECK(readback_len1 == len1);
+	write_buffer += sizeof(readback_len1);
+	BOOST_CHECK(memcmp(write_buffer, message1, len1) == 0);
+	write_buffer += len1;
+
+	uint32_t readback_len2;
+	memcpy(&readback_len2, write_buffer, sizeof(readback_len2));
+	readback_len2 = ntohl(readback_len2);
+	BOOST_CHECK(readback_len2 == len2);
+	write_buffer += sizeof(readback_len2);
+	BOOST_CHECK(memcmp(write_buffer, message2, len2) == 0);
 
 	free_peer(p);
 }
@@ -472,7 +513,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 	BOOST_REQUIRE(p != NULL);
 
 	static char sw_message[] = "HelloWorld!";
-	uint32_t len_be = htobe32(::strlen(sw_message));
+	uint32_t len_be = htonl(::strlen(sw_message));
 	int ret = copy_msg_to_write_buffer(p, sw_message, len_be, 0);
 	BOOST_REQUIRE(ret == 0);
 
@@ -497,7 +538,7 @@ BOOST_AUTO_TEST_CASE(slow_write)
 	BOOST_REQUIRE(p != NULL);
 
 	static char sw_message[] = "HelloWorld!";
-	int ret = copy_msg_to_write_buffer(p, sw_message, htobe32(::strlen(sw_message)), 0);
+	int ret = copy_msg_to_write_buffer(p, sw_message, htonl(::strlen(sw_message)), 0);
 	BOOST_REQUIRE(ret == 0);
 
 	ret = send_buffer(p);
@@ -565,7 +606,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
 	BOOST_CHECK(ret == 0);
 
 	static char check_buffer[MAX_MESSAGE_SIZE];
-	uint32_t len_be = htobe32(::strlen(message));
+	uint32_t len_be = htonl(::strlen(message));
 	char *buf_ptr = check_buffer;
 
 	memcpy(buf_ptr, &len_be, sizeof(len_be));
@@ -593,7 +634,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 	BOOST_CHECK(p->op == WRITE_MSG);
 
 	static char check_buffer[MAX_MESSAGE_SIZE];
-	uint32_t len_be = htobe32(::strlen(message));
+	uint32_t len_be = htonl(::strlen(message));
 	char *buf_ptr = check_buffer;
 
 	memcpy(buf_ptr, &len_be, sizeof(len_be));
