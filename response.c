@@ -34,15 +34,15 @@ unsupported_type:
 	return NULL;
 }
 
-cJSON *create_invalid_params_error(const char *tag, const char *reason)
+static cJSON *create_error_object(const char *message, int code, const char *tag, const char *reason)
 {
 	cJSON *error = cJSON_CreateObject();
 	if (unlikely(error == NULL)) {
 		fprintf(stderr, "Could not create error JSON object!\n");
 		return NULL;
 	}
-	cJSON_AddStringToObject(error, "message", "Invalid params");
-	cJSON_AddNumberToObject(error, "code", -32602);
+	cJSON_AddStringToObject(error, "message", message);
+	cJSON_AddNumberToObject(error, "code", code);
 	if ((tag != NULL) && (reason != NULL)) {
 		cJSON *data = cJSON_CreateObject();
 		if (likely(data != NULL)) {
@@ -51,25 +51,17 @@ cJSON *create_invalid_params_error(const char *tag, const char *reason)
 		}
 	}
 	return error;
+
+}
+
+cJSON *create_invalid_params_error(const char *tag, const char *reason)
+{
+	return create_error_object("Invalid params", -32602, tag, reason);
 }
 
 cJSON *create_method_not_found_error(const char *tag, const char *reason)
 {
-	cJSON *error = cJSON_CreateObject();
-	if (unlikely(error == NULL)) {
-		fprintf(stderr, "Could not create error JSON object!\n");
-		return NULL;
-	}
-	cJSON_AddStringToObject(error, "message", "Method not found");
-	cJSON_AddNumberToObject(error, "code", -32601);
-	if ((tag != NULL) && (reason != NULL)) {
-		cJSON *data = cJSON_CreateObject();
-		if (likely(data != NULL)) {
-			cJSON_AddStringToObject(data, tag, reason);
-			cJSON_AddItemToObject(error, "data", data);
-		}
-	}
-	return error;
+	return create_error_object("Method not found", -32601, tag, reason);
 }
 
 cJSON *create_error_response(const cJSON *id, cJSON *error)
