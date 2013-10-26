@@ -89,7 +89,20 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 
 cJSON *remove_state_from_peer(struct peer *p, const char *path)
 {
-	return NULL;
+	struct list_head *item;
+	struct list_head *tmp;
+	cJSON *error;
+	list_for_each_safe(item, tmp, &p->state_list) {
+		struct state *s = list_entry(item, struct state, next_state);
+		if (strcmp(s->path, path) == 0) {
+			list_del(&s->next_state);
+			HASHTABLE_REMOVE(STATE_SET_TABLE, setter_hashtable, s->path);
+			free_state(s);
+			return NULL;
+		}
+	}
+	error = create_invalid_params_error("notExists", path);
+	return error;
 }
 
 void remove_all_states_from_peer(struct peer *p) {
