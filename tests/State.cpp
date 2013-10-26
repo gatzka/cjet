@@ -25,9 +25,17 @@ extern "C" {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(test1)
+BOOST_AUTO_TEST_CASE(add_state)
 {
+	create_setter_hashtable();
 	struct peer *p = alloc_peer(-1);
+	cJSON *value = cJSON_CreateNumber(1234);
+
+	cJSON *error = add_state_to_peer(p, "/foo/bar/", value);
+	BOOST_CHECK(error == NULL);
+
+	cJSON_Delete(value);
 	free_peer(p);
+	delete_setter_hashtable();
 }
 
