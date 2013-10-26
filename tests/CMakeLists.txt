@@ -21,15 +21,24 @@ SET(READBUFFER_TEST
 
 SET(JSON_PARSE_TEST
 	Parse.cpp
+	../cJSON.c
 	../parse.c
 	../peer.c
 	../response.c
 	../state.c
+)
+
+SET(STATE_TEST
+	State.cpp
 	../cJSON.c
+	../peer.c
+	../response.c
+	../state.c
 )
 
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})
+ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 
 target_link_libraries (
 	parse_test.bin
@@ -41,8 +50,14 @@ target_link_libraries (
 	${Boost_LIBRARIES}
 )
 
+target_link_libraries (
+	state_test.bin
+	${Boost_LIBRARIES}
+)
+
 enable_testing()
 
 add_test(parse_test parse_test.bin)
 add_test(readbuffer_test readbuffer_test.bin)
+add_test(state_test state_test.bin)
 
