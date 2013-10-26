@@ -32,8 +32,22 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 
 	error = add_state_to_peer(p, path->valuestring, value);
 	return error;
+}
 
-	return NULL;
+static cJSON *process_remove(cJSON *params, struct peer *p)
+{
+	cJSON *error = NULL;
+	cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (unlikely(path == NULL)) {
+		error = create_invalid_params_error("reason", "no path given");
+		return error;
+	}
+	if (unlikely(path->type != cJSON_String) ) {
+		error = create_invalid_params_error("reason", "path is not a string");
+		return error;
+	}
+	error = remove_state_from_peer(p, path->valuestring);
+	return error;
 }
 
 static cJSON *process_config() {
@@ -107,7 +121,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "add") == 0) {
 		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
-		error = NULL;
+		error = process_remove(params, p);
 	} else if (strcmp(method_string, "call") == 0) {
 		error = NULL;
 	} else if (strcmp(method_string, "fetch") == 0) {

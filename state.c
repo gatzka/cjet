@@ -87,6 +87,11 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	return NULL;
 }
 
+cJSON *remove_state_from_peer(struct peer *p, const char *path)
+{
+	return NULL;
+}
+
 void remove_all_states_from_peer(struct peer *p) {
 	struct list_head *item;
 	struct list_head *tmp;
