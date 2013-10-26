@@ -10,17 +10,30 @@
 #include "response.h"
 #include "state.h"
 
+static cJSON *get_path_from_params(cJSON *params, cJSON **err)
+{
+	cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (unlikely(path == NULL)) {
+		cJSON *error = create_invalid_params_error("reason", "no path given");
+		*err = error;
+		return NULL;
+	}
+	if (unlikely(path->type != cJSON_String) ) {
+		cJSON *error = create_invalid_params_error("reason", "path is not a string");
+		*err = error;
+		return NULL;
+	}
+	*err = NULL;
+	return path;
+}
+
 static cJSON *process_add(cJSON *params, struct peer *p)
 {
 	cJSON *value;
 	cJSON *error;
-	cJSON *path = cJSON_GetObjectItem(params, "path");
+	cJSON *path = get_path_from_params(params, &error);
+
 	if (unlikely(path == NULL)) {
-		error = create_invalid_params_error("reason", "no path given");
-		return error;
-	}
-	if (unlikely(path->type != cJSON_String) ) {
-		error = create_invalid_params_error("reason", "path is not a string");
 		return error;
 	}
 
@@ -36,16 +49,12 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 
 static cJSON *process_remove(cJSON *params, struct peer *p)
 {
-	cJSON *error = NULL;
-	cJSON *path = cJSON_GetObjectItem(params, "path");
+	cJSON *error;
+	cJSON *path = get_path_from_params(params, &error);
 	if (unlikely(path == NULL)) {
-		error = create_invalid_params_error("reason", "no path given");
 		return error;
 	}
-	if (unlikely(path->type != cJSON_String) ) {
-		error = create_invalid_params_error("reason", "path is not a string");
-		return error;
-	}
+
 	error = remove_state_from_peer(p, path->valuestring);
 	return error;
 }
