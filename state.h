@@ -10,7 +10,7 @@ extern "C" {
 #endif
 
 struct state {
-	struct list_head next_state;
+	struct list_head list;
 	char *path;
 	cJSON *value;
 };
