@@ -1,7 +1,7 @@
 SET (CMAKE_C_COMPILER "clang")
 SET (CMAKE_CXX_COMPILER "clang++")
 
-SET(CMAKE_C_FLAGS "-pipe -Wall -Wextra -Wshadow -Wformat=2 -Wwrite-strings -std=c99 -pedantic" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS "-pipe -Weverything -std=c99 -pedantic" CACHE STRING "" FORCE)
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer" CACHE STRING "" FORCE)
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb" CACHE STRING "" FORCE)
