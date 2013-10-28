@@ -10,8 +10,8 @@
 #define MAX_LINE_LENGTH 1000
 
 struct message {
-	uint32_t hash;
 	char *name;
+	uint32_t hash;
 };
 
 static int get_messages(FILE *message_string_file, struct message *buffer, int max_msg)
