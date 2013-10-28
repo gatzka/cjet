@@ -112,16 +112,6 @@ static inline u32 wrap_pos##name(u32 pos) \
 	return pos & (table_size_##name - 1); \
 } \
 \
-static inline u32 hash_func_##name##_u32(u32 key) \
-{ \
-	return (key * (hash32_magic) >> (32 - (order))); \
-} \
-\
-static inline u32 hash_func_##name##_u64(u64 key) \
-{ \
-	return (u32)((key * (hash64_magic)) >> (64 - (order))); \
-} \
-\
 static inline u32 hash_func_##name##_string(const char* key) \
 { \
 	u32 hash = 0; \
