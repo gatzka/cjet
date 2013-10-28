@@ -35,13 +35,13 @@ struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 
 int handle_all_peer_operations(struct peer *c);
-int send_message(struct peer *p, char *rendered, int len);
+int send_message(struct peer *p, char *rendered, uint32_t len);
 
 /*
  * private functions. They prototypes are just here to allow unit
  * testing.
  */
-char *get_read_ptr(struct peer *p, int count);
+char *get_read_ptr(struct peer *p, unsigned int count);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
 int send_buffer(struct peer *p);
 

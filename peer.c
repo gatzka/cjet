@@ -43,7 +43,7 @@ void free_peer(struct peer *p)
 	free(p);
 }
 
-static int unread_space(const struct peer *p)
+static unsigned int unread_space(const struct peer *p)
 {
 	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
@@ -65,7 +65,7 @@ static void reorganize_read_buffer(struct peer *p)
 	p->read_ptr = p->read_buffer;
 }
 
-char *get_read_ptr(struct peer *p, int count)
+char *get_read_ptr(struct peer *p, unsigned int count)
 {
 	if (unlikely(count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %d!\n", count);
@@ -180,10 +180,11 @@ int send_buffer(struct peer *p)
 	return 0;
 }
 
-int send_message(struct peer *p, char *rendered, int len)
+int send_message(struct peer *p, char *rendered, uint32_t len)
 {
 	int ret;
-	int written = 0;
+	ssize_t sent;
+	size_t written = 0;
 	uint32_t message_length = htonl(len);
 
 	if (unlikely(p->op == WRITE_MSG)) {
@@ -196,19 +197,19 @@ int send_message(struct peer *p, char *rendered, int len)
 		 return ret;
 	}
 
-	ret = SEND(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
-	if (likely(ret == sizeof(message_length))) {
-		written = ret;
-		ret = SEND(p->fd, rendered, len, MSG_NOSIGNAL);
-		if (likely(ret == len)) {
+	sent = SEND(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
+	if (likely(sent == sizeof(message_length))) {
+		written = (size_t)sent;
+		sent = SEND(p->fd, rendered, len, MSG_NOSIGNAL);
+		if (likely(sent == len)) {
 			return 0;
 		}
 	}
-	if (ret > 0) {
-		written += ret;
+	if (sent > 0) {
+		written += (size_t)sent;
 	}
 
-	if (unlikely((ret == -1) &&
+	if (unlikely((sent == -1) &&
 	             ((errno != EAGAIN) &&
 	              (errno != EWOULDBLOCK)))) {
 		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
@@ -218,7 +219,7 @@ int send_message(struct peer *p, char *rendered, int len)
 		return -1;
 	}
 
-	if (ret == -1) {
+	if (sent == -1) {
 		/* one of the write calls had blocked */
 		p->next_read_op = p->op;
 		p->op = WRITE_MSG;
