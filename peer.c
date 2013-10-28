@@ -304,7 +304,6 @@ int handle_all_peer_operations(struct peer *p)
 		default:
 			fprintf(stderr, "Unknown client operation!\n");
 			return -1;
-			break;
 		}
 	}
 }
