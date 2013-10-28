@@ -115,10 +115,10 @@ static inline u32 wrap_pos##name(u32 pos) \
 static inline u32 hash_func_##name##_string(const char* key) \
 { \
 	u32 hash = 0; \
-	int c; \
-	while ((c = *key++) != 0) \
-		hash = c + (hash << 6) + (hash << 16) - hash; \
-	hash = (hash * (hash32_magic)) >> (32 - (order)); \
+	u32 c; \
+	while ((c = (u32)*key++) != 0) \
+		hash = c + (hash << 6u) + (hash << 16u) - hash; \
+	hash = (hash * (hash32_magic)) >> (32u - (order)); \
 	return hash; \
 } \
 \
