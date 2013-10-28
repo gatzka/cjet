@@ -6,19 +6,19 @@
 
 #include "hash_func.h"
 
-static const unsigned int MAX_MESSAGES = 100;
-static const unsigned int MAX_LINE_LENGTH = 1000;
+#define MAX_MESSAGES 100
+#define MAX_LINE_LENGTH 1000
 
 struct message {
-	char *name;
 	uint32_t hash;
+	char *name;
 };
 
-static int get_messages(FILE *message_string_file, struct message *buffer, unsigned int max_msg)
+static int get_messages(FILE *message_string_file, struct message *buffer, int max_msg)
 {
 	char line[MAX_LINE_LENGTH];
-	unsigned int i = 0;
-	unsigned int j;
+	int i = 0;
+	int j;
 
 	while ((fgets(line, sizeof(line), message_string_file)) != NULL) {
 		size_t line_length = strlen(line);
