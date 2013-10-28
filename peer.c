@@ -43,21 +43,21 @@ void free_peer(struct peer *p)
 	free(p);
 }
 
-static unsigned int unread_space(const struct peer *p)
+static ptrdiff_t unread_space(const struct peer *p)
 {
 	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
 
-static int free_space(const struct peer *p)
+static ptrdiff_t free_space(const struct peer *p)
 {
 	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
 }
 
 static void reorganize_read_buffer(struct peer *p)
 {
-	unsigned int unread = p->write_ptr - p->read_ptr;
+	ptrdiff_t unread = p->write_ptr - p->read_ptr;
 	if (unread != 0) {
-		memmove(p->read_buffer, p->read_ptr, unread);
+		memmove(p->read_buffer, p->read_ptr, (size_t)unread);
 		p->write_ptr = p->read_buffer + unread;
 	} else {
 		p->write_ptr = p->read_buffer;
@@ -72,14 +72,14 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		return NULL;
 	}
 	while (1) {
-		int read_length;
+		ssize_t read_length;
 		if (p->write_ptr - p->read_ptr >= count) {
 			char *read_ptr = p->read_ptr;
 			p->read_ptr += count;
 			return read_ptr;
 		}
 
-		read_length = READ(p->fd, p->write_ptr, free_space(p));
+		read_length = READ(p->fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			/* peer closed connection */
 			return NULL;
@@ -96,11 +96,11 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 	}
 }
 
-static int allocate_new_write_buffer(struct peer *p, int bytes_to_copy)
+static int allocate_new_write_buffer(struct peer *p, size_t bytes_to_copy)
 {
 	char *new_write_buffer;
 
-	int new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
+	size_t new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
 	if (unlikely(new_buffer_size > MAX_WRITE_BUFFER_SIZE)) {
 		return -1;
 	}
@@ -120,12 +120,12 @@ realloc_failed:
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written)
 {
 	const char *message_ptr;
-	int msg_offset;
-	int to_write;
+	size_t msg_offset;
+	size_t to_write;
 	char *write_buffer_ptr;
-	int msg_len = ntohl(msg_len_be);
-	int free_space_in_buf = p->write_buffer_size - p->to_write;
-	int bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
+	uint32_t msg_len = ntohl(msg_len_be);
+	size_t free_space_in_buf = p->write_buffer_size - p->to_write;
+	size_t bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
 
 	if (bytes_to_copy > free_space_in_buf) {
 		if (allocate_new_write_buffer(p, bytes_to_copy) == -1) {
@@ -160,7 +160,7 @@ int send_buffer(struct peer *p)
 {
 	char *write_buffer_ptr = p->write_buffer;
 	while (p->to_write != 0) {
-		int written;
+		ssize_t written;
 		written = SEND(p->fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
