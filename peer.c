@@ -124,10 +124,10 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 	int to_write;
 	char *write_buffer_ptr;
 	int msg_len = ntohl(msg_len_be);
-	int free_space = p->write_buffer_size - p->to_write;
+	int free_space_in_buf = p->write_buffer_size - p->to_write;
 	int bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
 
-	if (bytes_to_copy > free_space) {
+	if (bytes_to_copy > free_space_in_buf) {
 		if (allocate_new_write_buffer(p, bytes_to_copy) == -1) {
 			goto alloc_failed;
 		}
