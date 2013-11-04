@@ -50,7 +50,8 @@ typedef struct MatchState {
 	} capture[LUA_MAXCAPTURES];
 } MatchState;
 
-static const char *lmemfind(const char *s1, size_t l1, const char *s2, size_t l2) {
+static const char *lmemfind(const char *s1, size_t l1, const char *s2, size_t l2)
+{
 	if (l2 == 0)
 		return s1;  /* empty strings are everywhere */
 	else if (l2 > l1)
@@ -94,7 +95,8 @@ static int nospecials(const char *p, size_t l) {
 
 static const char *match(MatchState *ms, const char *s, const char *p);
 
-static int capture_to_close (MatchState *ms) {
+static int capture_to_close(MatchState *ms)
+{
 	int level = ms->level;
 	for (level--; level>=0; level--)
 		if (ms->capture[level].len == CAP_UNFINISHED) return level;
@@ -102,8 +104,8 @@ static int capture_to_close (MatchState *ms) {
 	return 0;
 }
 
-static const char *start_capture (MatchState *ms, const char *s,
-		const char *p, int what) {
+static const char *start_capture(MatchState *ms, const char *s,	const char *p, int what)
+{
 	const char *res;
 	int level = ms->level;
 	if (level >= LUA_MAXCAPTURES) printf("too many captures");
@@ -115,8 +117,8 @@ static const char *start_capture (MatchState *ms, const char *s,
 	return res;
 }
 
-static const char *end_capture (MatchState *ms, const char *s,
-		const char *p) {
+static const char *end_capture (MatchState *ms, const char *s, const char *p)
+{
 	int l = capture_to_close(ms);
 	const char *res;
 	ms->capture[l].len = s - ms->capture[l].init;  /* close capture */
@@ -125,8 +127,8 @@ static const char *end_capture (MatchState *ms, const char *s,
 	return res;
 }
 
-static const char *matchbalance (MatchState *ms, const char *s,
-		const char *p) {
+static const char *matchbalance(MatchState *ms, const char *s,	const char *p)
+{
 	if (p >= ms->p_end - 1)
 		printf("malformed pattern (missing arguments\n");
 	if (*s != *p) return NULL;
@@ -144,7 +146,8 @@ static const char *matchbalance (MatchState *ms, const char *s,
 	return NULL;  /* string ends out of balance */
 }
 
-static const char *classend (MatchState *ms, const char *p) {
+static const char *classend(MatchState *ms, const char *p)
+{
 	switch (*p++) {
 		case L_ESC: {
 						if (p == ms->p_end)
@@ -167,7 +170,8 @@ static const char *classend (MatchState *ms, const char *p) {
 	}
 }
 
-static int check_capture (MatchState *ms, int l) {
+static int check_capture(MatchState *ms, int l)
+{
 	l -= '1';
 	if (l < 0 || l >= ms->level || ms->capture[l].len == CAP_UNFINISHED)
 		printf("invalid capture index %d\n", l + 1);
@@ -175,7 +179,8 @@ static int check_capture (MatchState *ms, int l) {
 	return l;
 }
 
-static const char *match_capture (MatchState *ms, const char *s, int l) {
+static const char *match_capture(MatchState *ms, const char *s, int l)
+{
 	size_t len;
 	l = check_capture(ms, l);
 	len = ms->capture[l].len;
@@ -185,7 +190,8 @@ static const char *match_capture (MatchState *ms, const char *s, int l) {
 	else return NULL;
 }
 
-static int match_class (int c, int cl) {
+static int match_class(int c, int cl)
+{
 	int res;
 	switch (tolower(cl)) {
 		case 'a' : res = isalpha(c); break;
@@ -204,7 +210,8 @@ static int match_class (int c, int cl) {
 	return (islower(cl) ? res : !res);
 }
 
-static int matchbracketclass (int c, const char *p, const char *ec) {
+static int matchbracketclass(int c, const char *p, const char *ec)
+{
 	int sig = 1;
 	if (*(p+1) == '^') {
 		sig = 0;
@@ -226,8 +233,8 @@ static int matchbracketclass (int c, const char *p, const char *ec) {
 	return !sig;
 }
 
-static int singlematch (MatchState *ms, const char *s, const char *p,
-		const char *ep) {
+static int singlematch(MatchState *ms, const char *s, const char *p, const char *ep)
+{
 	if (s >= ms->src_end)
 		return 0;
 	else {
@@ -241,8 +248,8 @@ static int singlematch (MatchState *ms, const char *s, const char *p,
 	}
 }
 
-static const char *max_expand (MatchState *ms, const char *s,
-		const char *p, const char *ep) {
+static const char *max_expand(MatchState *ms, const char *s, const char *p, const char *ep)
+{
 	ptrdiff_t i = 0;  /* counts maximum expand for item */
 	while (singlematch(ms, s + i, p, ep))
 		i++;
@@ -255,8 +262,8 @@ static const char *max_expand (MatchState *ms, const char *s,
 	return NULL;
 }
 
-static const char *min_expand (MatchState *ms, const char *s,
-		const char *p, const char *ep) {
+static const char *min_expand (MatchState *ms, const char *s, const char *p, const char *ep)
+{
 	for (;;) {
 		const char *res = match(ms, s, ep+1);
 		if (res != NULL)
@@ -267,7 +274,8 @@ static const char *min_expand (MatchState *ms, const char *s,
 	}
 }
 
-static const char *match (MatchState *ms, const char *s, const char *p) {
+static const char *match(MatchState *ms, const char *s, const char *p)
+{
 	if (ms->matchdepth-- == 0)
 		printf("pattern too complex");
 init: /* using goto's to optimize tail recursion */
@@ -368,7 +376,8 @@ init: /* using goto's to optimize tail recursion */
 	return s;
 }
 
-int str_find_aux(const char *s, const char *p) {
+int str_find_aux(const char *s, const char *p)
+{
 	size_t ls = strlen(s);
 	size_t lp = strlen(p);
 
