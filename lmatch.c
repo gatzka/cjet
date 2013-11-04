@@ -360,22 +360,21 @@ init: /* using goto's to optimize tail recursion */
 	return s;
 }
 
-int str_find_aux (const char *s, const char *p) {
+int str_find_aux(const char *s, const char *p) {
 	size_t ls = strlen(s);
 	size_t lp = strlen(p);
 
-	size_t init = 1;
 	/* explicit request or no special characters? */
 	if (nospecials(p, lp)) {
 		/* do a plain search */
-		const char *s2 = lmemfind(s + init - 1, ls - init + 1, p, lp);
+		const char *s2 = lmemfind(s, ls, p, lp);
 		if (s2) {
 			return 1;
 		}
 	}
 	else {
 		MatchState ms;
-		const char *s1 = s + init - 1;
+		const char *s1 = s;
 		int anchor = (*p == '^');
 		if (anchor) {
 			p++; lp--;  /* skip anchor character */
@@ -388,7 +387,7 @@ int str_find_aux (const char *s, const char *p) {
 			const char *res;
 			ms.level = 0;
 			assert(ms.matchdepth == MAXCCALLS);
-			if ((res=match(&ms, s1, p)) != NULL) {
+			if ((res = match(&ms, s1, p)) != NULL) {
 				return 1;
 			}
 		} while (s1++ < ms.src_end && !anchor);
