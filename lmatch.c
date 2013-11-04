@@ -30,6 +30,25 @@
 #include "lmatch.h"
 
 #define uchar(c)    ((unsigned char)(c))
+#define LUA_MAXCAPTURES     32
+#define MAXCCALLS   200
+#define CAP_UNFINISHED  (-1)
+#define CAP_POSITION    (-2)
+
+#define L_ESC       '%'
+#define SPECIALS    "^$*+?.([%-"
+
+typedef struct MatchState {
+	int matchdepth;  /* control for recursive depth (to avoid C stack overflow) */
+	const char *src_init;  /* init of source string */
+	const char *src_end;  /* end ('\0') of source string */
+	const char *p_end;  /* end ('\0') of pattern */
+	int level;  /* total number of captures (finished or unfinished) */
+	struct {
+		const char *init;
+		ptrdiff_t len;
+	} capture[LUA_MAXCAPTURES];
+} MatchState;
 
 static const char *lmemfind (const char *s1, size_t l1,
 		const char *s2, size_t l2) {
@@ -52,9 +71,6 @@ static const char *lmemfind (const char *s1, size_t l1,
 	}
 }
 
-#define L_ESC       '%'
-#define SPECIALS    "^$*+?.([%-"
-
 static int nospecials (const char *p, size_t l) {
 	size_t upto = 0;
 	do {
@@ -64,25 +80,6 @@ static int nospecials (const char *p, size_t l) {
 	} while (upto <= l);
 	return 1;  /* no special chars found */
 }
-
-#define LUA_MAXCAPTURES     32
-#define MAXCCALLS   200
-#define CAP_UNFINISHED  (-1)
-#define CAP_POSITION    (-2)
-
-
-
-typedef struct MatchState {
-	int matchdepth;  /* control for recursive depth (to avoid C stack overflow) */
-	const char *src_init;  /* init of source string */
-	const char *src_end;  /* end ('\0') of source string */
-	const char *p_end;  /* end ('\0') of pattern */
-	int level;  /* total number of captures (finished or unfinished) */
-	struct {
-		const char *init;
-		ptrdiff_t len;
-	} capture[LUA_MAXCAPTURES];
-} MatchState;
 
 static const char *match (MatchState *ms, const char *s, const char *p);
 
@@ -371,10 +368,8 @@ int str_find_aux(const char *s, const char *p) {
 		if (s2) {
 			return 1;
 		}
-	}
-	else {
+	} else {
 		MatchState ms;
-		const char *s1 = s;
 		int anchor = (*p == '^');
 		if (anchor) {
 			p++; lp--;  /* skip anchor character */
@@ -387,10 +382,10 @@ int str_find_aux(const char *s, const char *p) {
 			const char *res;
 			ms.level = 0;
 			assert(ms.matchdepth == MAXCCALLS);
-			if ((res = match(&ms, s1, p)) != NULL) {
+			if ((res = match(&ms, s, p)) != NULL) {
 				return 1;
 			}
-		} while (s1++ < ms.src_end && !anchor);
+		} while (s++ < ms.src_end && !anchor);
 	}
 	return 0;
 }
