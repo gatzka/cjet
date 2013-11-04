@@ -43,11 +43,6 @@ typedef struct MatchState {
 	const char *src_init;  /* init of source string */
 	const char *src_end;  /* end ('\0') of source string */
 	const char *p_end;  /* end ('\0') of pattern */
-	int level;  /* total number of captures (finished or unfinished) */
-	struct {
-		const char *init;
-		ptrdiff_t len;
-	} capture[LUA_MAXCAPTURES];
 } MatchState;
 
 static const char *lmemfind(const char *s1, size_t l1, const char *s2, size_t l2)
@@ -95,6 +90,7 @@ static int nospecials(const char *p, size_t l) {
 
 static const char *match(MatchState *ms, const char *s, const char *p);
 
+#if 0
 static int capture_to_close(MatchState *ms)
 {
 	int level = ms->level;
@@ -146,6 +142,8 @@ static const char *matchbalance(MatchState *ms, const char *s,	const char *p)
 	return NULL;  /* string ends out of balance */
 }
 
+#endif
+
 static const char *classend(MatchState *ms, const char *p)
 {
 	switch (*p++) {
@@ -170,6 +168,7 @@ static const char *classend(MatchState *ms, const char *p)
 	}
 }
 
+#if 0
 static int check_capture(MatchState *ms, int l)
 {
 	l -= '1';
@@ -189,6 +188,7 @@ static const char *match_capture(MatchState *ms, const char *s, int l)
 		return s+len;
 	else return NULL;
 }
+#endif
 
 static int match_class(int c, int cl)
 {
@@ -281,6 +281,7 @@ static const char *match(MatchState *ms, const char *s, const char *p)
 init: /* using goto's to optimize tail recursion */
 	if (p != ms->p_end) {  /* end of pattern? */
 		switch (*p) {
+#if 0
 			case '(': {  /* start capture */
 						  if (*(p + 1) == ')')  /* position capture? */
 							  s = start_capture(ms, s, p + 2, CAP_POSITION);
@@ -292,12 +293,14 @@ init: /* using goto's to optimize tail recursion */
 						  s = end_capture(ms, s, p + 1);
 						  break;
 					  }
+#endif
 			case '$': {
 						  if ((p + 1) != ms->p_end)  /* is the `$' the last char in pattern? */
 							  goto dflt;  /* no; go to default */
 						  s = (s == ms->src_end) ? s : NULL;  /* check end of string */
 						  break;
 					  }
+#if 0
 			case L_ESC: {  /* escaped sequences not in the format class[*+?-]? */
 							switch (*(p + 1)) {
 								case 'b': {  /* balanced string? */
@@ -334,6 +337,7 @@ init: /* using goto's to optimize tail recursion */
 							}
 							break;
 						}
+#endif
 			default: dflt: {  /* pattern class plus optional suffix */
 						 const char *ep = classend(ms, p);  /* points to optional suffix */
 						 /* does not match at least once? */
@@ -400,7 +404,6 @@ int str_find_aux(const char *s, const char *p)
 		ms.p_end = p + lp;
 		do {
 			const char *res;
-			ms.level = 0;
 			assert(ms.matchdepth == MAXCCALLS);
 			if ((res = match(&ms, s, p)) != NULL) {
 				return 1;
