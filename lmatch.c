@@ -50,20 +50,21 @@ typedef struct MatchState {
 	} capture[LUA_MAXCAPTURES];
 } MatchState;
 
-static const char *lmemfind (const char *s1, size_t l1,
-		const char *s2, size_t l2) {
-	if (l2 == 0) return s1;  /* empty strings are everywhere */
-	else if (l2 > l1) return NULL;  /* avoids a negative `l1' */
+static const char *lmemfind(const char *s1, size_t l1, const char *s2, size_t l2) {
+	if (l2 == 0)
+		return s1;  /* empty strings are everywhere */
+	else if (l2 > l1)
+		return NULL;  /* avoids a negative `l1' */
 	else {
 		const char *init;  /* to search for a `*s2' inside `s1' */
 		l2--;  /* 1st char will be checked by `memchr' */
-		l1 = l1-l2;  /* `s2' cannot be found after that */
+		l1 = l1 - l2;  /* `s2' cannot be found after that */
 		while (l1 > 0 && (init = (const char *)memchr(s1, *s2, l1)) != NULL) {
 			init++;   /* 1st char is already checked */
-			if (memcmp(init, s2+1, l2) == 0)
-				return init-1;
+			if (memcmp(init, s2 + 1, l2) == 0)
+				return init - 1;
 			else {  /* correct `l1' and `s1' to try again */
-				l1 -= init-s1;
+				l1 -= init - s1;
 				s1 = init;
 			}
 		}
@@ -71,7 +72,16 @@ static const char *lmemfind (const char *s1, size_t l1,
 	}
 }
 
-static int nospecials (const char *p, size_t l) {
+static int nospecials(const char *p)
+{
+	if (strpbrk(p, SPECIALS))
+		return 0;
+	else
+		return 1;
+}
+
+#if 0
+static int nospecials(const char *p, size_t l) {
 	size_t upto = 0;
 	do {
 		if (strpbrk(p + upto, SPECIALS))
@@ -80,8 +90,9 @@ static int nospecials (const char *p, size_t l) {
 	} while (upto <= l);
 	return 1;  /* no special chars found */
 }
+#endif
 
-static const char *match (MatchState *ms, const char *s, const char *p);
+static const char *match(MatchState *ms, const char *s, const char *p);
 
 static int capture_to_close (MatchState *ms) {
 	int level = ms->level;
@@ -362,7 +373,7 @@ int str_find_aux(const char *s, const char *p) {
 	size_t lp = strlen(p);
 
 	/* explicit request or no special characters? */
-	if (nospecials(p, lp)) {
+	if (nospecials(p)) {
 		/* do a plain search */
 		const char *s2 = lmemfind(s, ls, p, lp);
 		if (s2) {
