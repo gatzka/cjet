@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 2.8)
 
 SET(CJET_FILES
 	cJSON.c
+	lmatch.c
 	main.c
 	parse.c
 	peer.c

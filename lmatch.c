@@ -23,9 +23,11 @@
 
 #include <assert.h>
 #include <ctype.h>
-#include <string.h>
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <string.h>
+
+#include "lmatch.h"
 
 #define uchar(c)    ((unsigned char)(c))
 
