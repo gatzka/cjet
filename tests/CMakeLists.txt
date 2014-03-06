@@ -2,14 +2,17 @@ project("cjet tests" C CXX)
 
 cmake_minimum_required(VERSION 2.8)
 
-find_package(Boost 1.52 COMPONENTS unit_test_framework)
+set (Boost_NO_SYSTEM_PATHS ON)
+add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
+set(BOOST_ROOT "/opt/boost/1.55.0" CACHE PATH "")
+
+find_package(Boost 1.55 COMPONENTS unit_test_framework)
 IF(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
   LIST(APPEND ADDITIONAL_LIBS ${Boost_LIBRARIES})
 endif(Boost_FOUND)
 
 add_definitions(-DTESTING)
-
 
 SET(READBUFFER_TEST
 	ReadbufferTest.cpp
