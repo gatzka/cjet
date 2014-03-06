@@ -201,7 +201,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	if (likely(sent == sizeof(message_length))) {
 		written = (size_t)sent;
 		sent = SEND(p->fd, rendered, len, MSG_NOSIGNAL);
-		if (likely(sent == len)) {
+		if (likely(sent == (ssize_t)len)) {
 			return 0;
 		}
 	}
