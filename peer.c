@@ -67,13 +67,13 @@ static void reorganize_read_buffer(struct peer *p)
 
 char *get_read_ptr(struct peer *p, unsigned int count)
 {
-	if (unlikely(count > unread_space(p))) {
+	if (unlikely((ptrdiff_t)count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %d!\n", count);
 		return NULL;
 	}
 	while (1) {
 		ssize_t read_length;
-		if (p->write_ptr - p->read_ptr >= count) {
+		if (p->write_ptr - p->read_ptr >= (ptrdiff_t)count) {
 			char *read_ptr = p->read_ptr;
 			p->read_ptr += count;
 			return read_ptr;
