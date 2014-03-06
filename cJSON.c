@@ -789,15 +789,15 @@ static char *print_object(cJSON *item, int depth, int fmt)
 }
 
 /* Get Array size/item / object item. */
-int cJSON_GetArraySize(cJSON *array)
+unsigned int cJSON_GetArraySize(cJSON *array)
 {
 	cJSON *c = array->child;
-	int i = 0;
+	unsigned int i = 0;
 	while (c)
 		i++, c = c->next;
 	return i;
 }
-cJSON *cJSON_GetArrayItem(cJSON *array, int item)
+cJSON *cJSON_GetArrayItem(cJSON *array, unsigned int item)
 {
 	cJSON *c = array->child;
 	while (c && item > 0)
@@ -863,7 +863,7 @@ void cJSON_AddItemReferenceToObject(cJSON *object, const char *string, cJSON *it
 	cJSON_AddItemToObject(object, string, create_reference(item));
 }
 
-cJSON *cJSON_DetachItemFromArray(cJSON *array, int which)
+cJSON *cJSON_DetachItemFromArray(cJSON *array, unsigned int which)
 {
 	cJSON *c = array->child;
 	while (c && which > 0)
@@ -879,13 +879,13 @@ cJSON *cJSON_DetachItemFromArray(cJSON *array, int which)
 	c->prev = c->next = 0;
 	return c;
 }
-void cJSON_DeleteItemFromArray(cJSON *array, int which)
+void cJSON_DeleteItemFromArray(cJSON *array, unsigned int which)
 {
 	cJSON_Delete(cJSON_DetachItemFromArray(array, which));
 }
 cJSON *cJSON_DetachItemFromObject(cJSON *object, const char *string)
 {
-	int i = 0;
+	unsigned int i = 0;
 	cJSON *c = object->child;
 	while (c && cJSON_strcasecmp(c->string, string))
 		i++, c = c->next;
@@ -899,7 +899,7 @@ void cJSON_DeleteItemFromObject(cJSON *object, const char *string)
 }
 
 /* Replace array/object items with new ones. */
-void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
+void cJSON_ReplaceItemInArray(cJSON *array, unsigned int which, cJSON *newitem)
 {
 	cJSON *c = array->child;
 	while (c && which > 0)
@@ -919,7 +919,7 @@ void cJSON_ReplaceItemInArray(cJSON *array, int which, cJSON *newitem)
 }
 void cJSON_ReplaceItemInObject(cJSON *object, const char *string, cJSON *newitem)
 {
-	int i = 0;
+	unsigned int i = 0;
 	cJSON *c = object->child;
 	while (c && cJSON_strcasecmp(c->string, string))
 		i++, c = c->next;

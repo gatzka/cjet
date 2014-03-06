@@ -174,8 +174,8 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 
 	switch (root->type) {
 	case cJSON_Array: {
-		int i;
-		int array_size = cJSON_GetArraySize(root);
+		unsigned int i;
+		unsigned int array_size = cJSON_GetArraySize(root);
 		for (i = 0; i < array_size; i++) {
 			cJSON *sub_item = cJSON_GetArrayItem(root, i);
 			if (likely(sub_item->type == cJSON_Object)) {
