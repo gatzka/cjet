@@ -1,18 +1,15 @@
-project("cjet tests" C CXX)
+PROJECT("cjet tests" C CXX)
 
-cmake_minimum_required(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-set (Boost_NO_SYSTEM_PATHS ON)
-add_definitions(-DBOOST_SYSTEM_NO_DEPRECATED)
-set(BOOST_ROOT "/opt/boost/1.55.0" CACHE PATH "")
-
-find_package(Boost 1.55 COMPONENTS unit_test_framework)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
 IF(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   LIST(APPEND ADDITIONAL_LIBS ${Boost_LIBRARIES})
-endif(Boost_FOUND)
+  ADD_DEFINITIONS(-DBOOST_SYSTEM_NO_DEPRECATED)
+ENDIF(Boost_FOUND)
 
-add_definitions(-DTESTING)
+ADD_DEFINITIONS(-DTESTING)
 
 SET(READBUFFER_TEST
 	ReadbufferTest.cpp
@@ -43,24 +40,24 @@ ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 
-target_link_libraries (
+TARGET_LINK_LIBRARIES(
 	parse_test.bin
 	${Boost_LIBRARIES}
 )
 
-target_link_libraries (
+TARGET_LINK_LIBRARIES(
 	readbuffer_test.bin
 	${Boost_LIBRARIES}
 )
 
-target_link_libraries (
+TARGET_LINK_LIBRARIES(
 	state_test.bin
 	${Boost_LIBRARIES}
 )
 
-enable_testing()
+ENABLE_TESTING()
 
-add_test(parse_test parse_test.bin)
-add_test(readbuffer_test readbuffer_test.bin)
-add_test(state_test state_test.bin)
+ADD_TEST(parse_test parse_test.bin)
+ADD_TEST(readbuffer_test readbuffer_test.bin)
+ADD_TEST(state_test state_test.bin)
 
