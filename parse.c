@@ -89,7 +89,7 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 			ret = -1;
 			goto render_error;
 		}
-		ret = send_message(p, rendered, (uint32_t)strlen(rendered));
+		ret = send_message(p, rendered, strlen(rendered));
 		free(rendered);
 	render_error:
 		cJSON_Delete(root);
@@ -166,7 +166,8 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 	}
 
 	parsed_length = end_parse - msg;
-	if (unlikely(parsed_length != length)) {
+	if (parsed_length != length) {
+	//if (unlikely(parsed_length != length)) {
 		fprintf(stderr, "length of parsed JSON (%td) does not match message length (%d)!\n", parsed_length, length);
 		ret = -1;
 		goto out;
