@@ -29,7 +29,7 @@ static inline void list_add_tail(struct list_head *new_entry, struct list_head *
 		pos = n, n = pos->next)
 
 #define container_of(ptr, type, member) (          \
-	(type *)((char *)ptr - offsetof(type,member) ))
+	(void *)((char *)ptr - offsetof(type,member) ))
 
 
 #define list_entry(ptr, type, member) \
