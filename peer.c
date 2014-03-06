@@ -145,7 +145,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 	}
 
 	msg_offset = already_written - sizeof(msg_len_be);
-	message_ptr = (char *)rendered + msg_offset;
+	message_ptr = (const char *)rendered + msg_offset;
 	to_write = msg_len - msg_offset;
 	memcpy(write_buffer_ptr, message_ptr, to_write);
 	p->to_write += to_write;
