@@ -9,7 +9,7 @@ SET (CMAKE_CXX_COMPILER "g++")
 SET (CMAKE_C_COMPILER "/opt/poky/1.5.1/sysroots/x86_64-pokysdk-linux/usr/bin/powerpc-poky-linux/powerpc-poky-linux-gcc")
 SET (CMAKE_CXX_COMPILER "/opt/poky/1.5.1/sysroots/x86_64-pokysdk-linux/usr/bin/powerpc-poky-linux/powerpc-poky-linux-g++")
 
-SET(CMAKE_C_FLAGS "-pipe -Wall -Wshadow -Wextra -Wunused-result -Wcast-qual -Wformat=2 -Wwrite-strings -Wmissing-prototypes -std=c99 -pedantic" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS "-pipe -Wall -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -std=c99 -pedantic" CACHE STRING "" FORCE)
 #SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer" CACHE STRING "" FORCE)
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -flto -fomit-frame-pointer" CACHE STRING "" FORCE)
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb" CACHE STRING "" FORCE)
