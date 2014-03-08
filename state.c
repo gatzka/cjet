@@ -32,6 +32,7 @@ void delete_setter_hashtable(void)
 static struct state *alloc_state(const char *path, cJSON *value_object) {
 	struct state *s;
 	char *p;
+	size_t path_length;
 	cJSON *value_copy;
 
 	s = malloc(sizeof(*s));
@@ -39,12 +40,13 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 		fprintf(stderr, "Could not allocate memory for state object!\n");
 		return NULL;
 	}
-	p = malloc(strlen(path) + 1);
+	path_length = strlen(path);
+	p = malloc(path_length + 1);
 	if (unlikely(p == NULL)) {
 		fprintf(stderr, "Could not allocate memory for path object!\n");
 		goto alloc_path_failed;
 	}
-	strcpy(p, path);
+	strncpy(p, path, path_length);
 	s->path = p;
 	value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
