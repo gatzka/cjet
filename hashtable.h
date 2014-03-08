@@ -125,7 +125,7 @@ static inline u32 hash_func_##name##_string(const char* key) \
 static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 { \
 	size_t i; \
-	struct hashtable_##type_name *table = (struct hashtable_##type_name *)malloc(table_size_##name * sizeof(struct hashtable_##type_name)) ; \
+	struct hashtable_##type_name *table = (struct hashtable_##type_name *)malloc(table_size_##name * sizeof(struct hashtable_##type_name)); \
 	if (table != NULL) { \
 		for (i = 0; i < table_size_##name; i++) { \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
