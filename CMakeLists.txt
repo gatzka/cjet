@@ -27,6 +27,15 @@ SET(CJET_FILES
 	state.c
 )
 
+SET(ECHO_FILES
+	cJSON.c
+	main.c
+	echo.c
+	peer.c
+	response.c
+	state.c
+)
+
 SET(GEN_MESSAGE_HASHES
 	gen_message_hashes/main.c
 )
@@ -36,10 +45,16 @@ SET(DYNLIBS
 )
 
 ADD_EXECUTABLE(cjet.bin ${CJET_FILES})
+ADD_EXECUTABLE(echo.bin ${ECHO_FILES})
 ADD_EXECUTABLE(gen_message_hashes.bin ${GEN_MESSAGE_HASHES})
 
 TARGET_LINK_LIBRARIES(
 	cjet.bin
+	${DYNLIBS}
+)
+
+TARGET_LINK_LIBRARIES(
+	echo.bin
 	${DYNLIBS}
 )
 
