@@ -207,7 +207,7 @@ int main()
 		num_events = epoll_wait(epoll_fd, events, MAX_EPOLL_EVENTS, -1);
 		if (unlikely(num_events == -1)) {
 			if (errno == EINTR) {
-				break;
+				continue;
 			} else {
 				goto epoll_wait_failed;
 			}
