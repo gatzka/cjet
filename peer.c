@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/uio.h>
 #include <unistd.h>
 
 #include "compiler.h"
@@ -183,6 +184,7 @@ int send_buffer(struct peer *p)
 int send_message(struct peer *p, const char *rendered, size_t len)
 {
 	int ret;
+	struct iovec iov[2];
 	ssize_t sent;
 	size_t written = 0;
 	uint32_t message_length = htonl(len);
@@ -197,14 +199,16 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 		 return ret;
 	}
 
-	sent = SEND(p->fd, &message_length, sizeof(message_length), MSG_NOSIGNAL | MSG_MORE);
-	if (likely(sent == sizeof(message_length))) {
-		written = (size_t)sent;
-		sent = SEND(p->fd, rendered, len, MSG_NOSIGNAL);
-		if (likely(sent == (ssize_t)len)) {
-			return 0;
-		}
+	iov[0].iov_base = &message_length;
+	iov[0].iov_len = sizeof(message_length);
+	iov[1].iov_base = rendered;
+	iov[1].iov_len = len;
+
+	sent = writev(p->fd, iov, sizeof(iov) / sizeof(struct iovec));
+	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
+		return 0;
 	}
+
 	if (sent > 0) {
 		written += (size_t)sent;
 	}
