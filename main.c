@@ -239,7 +239,7 @@ int main()
 		}
 	}
 /*
- * I do not waste code to close all peer fds, because the will be
+ * I do not waste code to close all peer fds, because they will be
  * closed by the OS if this process ends.
  */
 
