@@ -47,6 +47,7 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 		goto alloc_path_failed;
 	}
 	strncpy(p, path, path_length);
+	p[path_length] = '\0';
 	s->path = p;
 	value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
