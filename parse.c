@@ -152,7 +152,7 @@ unsupported_method:
 	return ret;
 }
 
-int parse_message(const char *msg, uint32_t length, struct peer *p)
+int parse_message(char *msg, uint32_t length, struct peer *p)
 {
 	cJSON *root;
 	const char *end_parse;
