@@ -3,6 +3,7 @@
 #define BOOST_TEST_MODULE state
 
 #include <boost/test/unit_test.hpp>
+#include <sys/uio.h>
 
 #include "../peer.h"
 #include "../state.h"
@@ -21,6 +22,15 @@ extern "C" {
 
 	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
+		return count;
+	}
+
+	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
+	{
+		int count = 0;
+		for (int i = 0; i < iovcnt; ++i) {
+			count += iov[i].iov_len;
+		}
 		return count;
 	}
 }
@@ -70,7 +80,7 @@ BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
 	BOOST_CHECK(error == NULL);
 
 	error = add_state_to_peer(p, "/foo/bar/", value);
-	BOOST_CHECK(error != NULL);
+	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
 	cJSON_Delete(value);
