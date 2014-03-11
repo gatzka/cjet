@@ -1,5 +1,5 @@
-#ifndef CJET_CONFIG_H
-#define CJET_CONFIG_H
+#ifndef CJET_LINUX_CONFIG_H
+#define CJET_LINUX_CONFIG_H
 
 #define SERVER_PORT	11122
 #define LISTEN_BACKLOG 40

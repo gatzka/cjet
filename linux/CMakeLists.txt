@@ -15,23 +15,27 @@ IF(NOT CMAKE_BUILD_TYPE )
   SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING "" FORCE)
 ENDIF()
 
+file(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+	DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -std=c99" CACHE STRING "" FORCE)
 
 SET(CJET_FILES
+	main.c
+	peer.c
 	../cJSON.c
 	../lmatch.c
-	../main.c
 	../parse.c
-	../peer.c
 	../response.c
 	../state.c
 )
 
 SET(ECHO_FILES
+	main.c
+	peer.c
 	../cJSON.c
-	../main.c
 	../echo.c
-	../peer.c
 	../response.c
 	../state.c
 )

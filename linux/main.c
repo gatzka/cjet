@@ -11,10 +11,10 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "compiler.h"
+#include "../compiler.h"
+#include "../peer.h"
+#include "../state.h"
 #include "config.h"
-#include "peer.h"
-#include "state.h"
 
 static int shall_close = 0;
 

@@ -10,12 +10,13 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
-#include "compiler.h"
+#include "../compiler.h"
+#include "../list.h"
+#include "../parse.h"
+#include "../peer.h"
+#include "../state.h"
 #include "config.h"
-#include "list.h"
-#include "parse.h"
-#include "peer.h"
-#include "state.h"
+#include "peer_testing.h"
 
 #define ROUND_UP(n,d) ((((n) + (d) - 1) / (d)) * (d))
 

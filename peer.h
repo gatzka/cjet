@@ -6,7 +6,6 @@
 
 #include "config.h"
 #include "list.h"
-#include "peer_testing.h"
 
 #ifdef __cplusplus
 extern "C" {
