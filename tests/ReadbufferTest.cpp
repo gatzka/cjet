@@ -49,6 +49,33 @@ static unsigned int incomplete_write_written_before_blocking = 0;
 static char incomplete_write_check_buffer[MAX_MESSAGE_SIZE];
 static char *incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 
+int fake_writev(int fd, const struct iovec *iov, int iovcnt)
+{
+	if (fd == WRITE_COMPLETE) {
+	int count = 0;
+		for (int i = 0; i < iovcnt; ++i) {
+			count += iov[i].iov_len;
+		}
+		return count;
+	}
+	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
+		static const int incomplete = 1;
+		memcpy(incomplete_write_buffer_ptr, iov[0].iov_base, incomplete);
+		incomplete_write_buffer_ptr += incomplete;
+		return incomplete;
+	}
+	if (fd == INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG) {
+		incomplete_write_counter++;
+		static const int incomplete = 1;
+		memcpy(incomplete_write_buffer_ptr, iov[0].iov_base, incomplete);
+		incomplete_write_buffer_ptr += incomplete;
+		incomplete_write_written_before_blocking += incomplete;
+		return incomplete;
+	}
+
+	return 0;
+}
+
 int fake_send(int fd, void *buf, size_t count, int flags)
 {
 	if (fd == BADFD) {
@@ -73,32 +100,15 @@ int fake_send(int fd, void *buf, size_t count, int flags)
 			return -1;
 		}
 	}
-	if (fd == WRITE_COMPLETE) {
+
+	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
+		memcpy(incomplete_write_buffer_ptr, buf, count);
+		incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 		return count;
 	}
 
-	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
-		if (incomplete_write_counter == 0) {
-			incomplete_write_counter++;
-			static const int incomplete = 1;
-			memcpy(incomplete_write_buffer_ptr, buf, incomplete);
-			incomplete_write_buffer_ptr += incomplete;
-			return incomplete;
-		} else {
-			memcpy(incomplete_write_buffer_ptr, buf, count);
-			incomplete_write_buffer_ptr = incomplete_write_check_buffer;
-			return count;
-		}
-	}
 	if (fd == INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG) {
-		if (incomplete_write_counter == 0) {
-			incomplete_write_counter++;
-			static const int incomplete = 1;
-			memcpy(incomplete_write_buffer_ptr, buf, incomplete);
-			incomplete_write_buffer_ptr += incomplete;
-			incomplete_write_written_before_blocking += incomplete;
-			return incomplete;
-		} else if (incomplete_write_counter == 1) {
+		if (incomplete_write_counter == 1) {
 			static const int incomplete = 6;
 			incomplete_write_counter++;
 
