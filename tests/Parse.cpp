@@ -4,6 +4,7 @@
 
 #include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
+#include <sys/uio.h>
 
 #include "../cJSON.h"
 #include "../parse.h"
@@ -39,30 +40,23 @@ extern "C" {
 
 	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
-		if (fd == ADD_WITHOUT_PATH) {
-			memcpy(readback_buffer_ptr, buf, count);
-			readback_buffer_ptr += count;
-		}
+		return 0;
+	}
 
-		if (fd == PATH_NO_STRING) {
-			memcpy(readback_buffer_ptr, buf, count);
-			readback_buffer_ptr += count;
+	static int copy_iov(const struct iovec *iov, int iovcnt)
+	{
+		int count = 0;
+		for (int i = 0; i < iovcnt; ++i) {
+			memcpy(readback_buffer_ptr, iov[i].iov_base, iov[i].iov_len);
+			readback_buffer_ptr += iov[i].iov_len;
+			count += iov[i].iov_len;
 		}
+		return count;
+	}
 
-		if (fd == NO_VALUE) {
-			memcpy(readback_buffer_ptr, buf, count);
-			readback_buffer_ptr += count;
-		}
-
-		if (fd == NO_PARAMS) {
-			memcpy(readback_buffer_ptr, buf, count);
-			readback_buffer_ptr += count;
-		}
-
-		if (fd == UNSUPPORTED_METHOD) {
-			memcpy(readback_buffer_ptr, buf, count);
-			readback_buffer_ptr += count;
-		}
+	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
+	{
+		int count = copy_iov(iov, iovcnt);
 		return count;
 	}
 }
