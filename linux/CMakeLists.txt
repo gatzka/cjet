@@ -18,26 +18,26 @@ ENDIF()
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -std=c99" CACHE STRING "" FORCE)
 
 SET(CJET_FILES
-	cJSON.c
-	lmatch.c
-	main.c
-	parse.c
-	peer.c
-	response.c
-	state.c
+	../cJSON.c
+	../lmatch.c
+	../main.c
+	../parse.c
+	../peer.c
+	../response.c
+	../state.c
 )
 
 SET(ECHO_FILES
-	cJSON.c
-	main.c
-	echo.c
-	peer.c
-	response.c
-	state.c
+	../cJSON.c
+	../main.c
+	../echo.c
+	../peer.c
+	../response.c
+	../state.c
 )
 
 SET(GEN_MESSAGE_HASHES
-	gen_message_hashes/main.c
+	../gen_message_hashes/main.c
 )
 
 SET(DYNLIBS
