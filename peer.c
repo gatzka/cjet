@@ -204,7 +204,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	iov[1].iov_base = rendered;
 	iov[1].iov_len = len;
 
-	sent = writev(p->fd, iov, sizeof(iov) / sizeof(struct iovec));
+	sent = WRITEV(p->fd, iov, sizeof(iov) / sizeof(struct iovec));
 	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
 		return 0;
 	}

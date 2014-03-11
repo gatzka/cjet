@@ -16,11 +16,12 @@ int fake_send(int fd, void *buf, size_t count, int flags);
 
 #define READ fake_read
 #define SEND fake_send
-
+#define WRITEV fake_writev
 #else
 
 #define READ read
 #define SEND send
+#define WRITEV writev
 
 #endif
 
