@@ -224,9 +224,11 @@ static const char *parse_string(cJSON *item, const char *str)
 		return 0;
 	} /* not a string! */
 
-	while (*ptr != '\"' && *ptr && ++len)
+	while (*ptr != '\"' && *ptr) {
+		++len;
 		if (*ptr++ == '\\')
 			ptr++; /* Skip escaped quotes. */
+	}
 
 	out = (char *)cJSON_malloc(len + 1); /* This is how long we need for the string, roughly. */
 	if (!out)
@@ -385,11 +387,11 @@ static char *print_string(cJSON *item)
 
 /* Predeclare these prototypes. */
 static const char *parse_value(cJSON *item, const char *value);
-static char *print_value(cJSON *item, int depth, int fmt);
+static char *print_value(cJSON *item, unsigned int depth, int fmt);
 static const char *parse_array(cJSON *item, const char *value);
-static char *print_array(cJSON *item, int depth, int fmt);
+static char *print_array(cJSON *item, unsigned int depth, int fmt);
 static const char *parse_object(cJSON *item, const char *value);
-static char *print_object(cJSON *item, int depth, int fmt);
+static char *print_object(cJSON *item, unsigned int depth, int fmt);
 
 /* Utility to jump whitespace and cr/lf */
 static const char *skip(const char *in)
@@ -479,7 +481,7 @@ static const char *parse_value(cJSON *item, const char *value)
 }
 
 /* Render a value to text. */
-static char *print_value(cJSON *item, int depth, int fmt)
+static char *print_value(cJSON *item, unsigned int depth, int fmt)
 {
 	char *out = 0;
 	if (!item)
@@ -550,13 +552,13 @@ static const char *parse_array(cJSON *item, const char *value)
 }
 
 /* Render an array to text */
-static char *print_array(cJSON *item, int depth, int fmt)
+static char *print_array(cJSON *item, unsigned int depth, int fmt)
 {
 	char **entries;
 	char *out = 0, *ptr, *ret;
 	int len = 5;
 	cJSON *child = item->child;
-	int numentries = 0, i = 0, fail = 0;
+	unsigned int numentries = 0, i = 0, fail = 0;
 
 	/* How many entries in the array? */
 	while (child)
@@ -680,13 +682,13 @@ static const char *parse_object(cJSON *item, const char *value)
 }
 
 /* Render an object to text. */
-static char *print_object(cJSON *item, int depth, int fmt)
+static char *print_object(cJSON *item, unsigned int depth, int fmt)
 {
 	char **entries = 0, **names = 0;
 	char *out = 0, *ptr, *ret, *str;
-	int len = 7, i = 0, j;
+	unsigned int len = 7, i = 0, j;
 	cJSON *child = item->child;
-	int numentries = 0, fail = 0;
+	unsigned int numentries = 0, fail = 0;
 	/* Count the number of entries. */
 	while (child)
 		numentries++, child = child->next;
