@@ -9,33 +9,39 @@ IF(Boost_FOUND)
   ADD_DEFINITIONS(-DBOOST_SYSTEM_NO_DEPRECATED)
 ENDIF(Boost_FOUND)
 
+FILE(COPY
+    ${CMAKE_CURRENT_SOURCE_DIR}/../config.h
+	DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/)
+
 SET(CMAKE_C_FLAGS "-ggdb" CACHE STRING "" FORCE)
 
 ADD_DEFINITIONS(-DTESTING)
 
 SET(READBUFFER_TEST
-	ReadbufferTest.cpp
-	../cJSON.c
+	../../cJSON.c
+	../../response.c
+	../../state.c
 	../peer.c
-	../response.c
-	../state.c
+	ReadbufferTest.cpp
 )
 
 SET(JSON_PARSE_TEST
-	Parse.cpp
-	../cJSON.c
-	../parse.c
+	../../cJSON.c
+	../../parse.c
+	../../response.c
+	../../state.c
 	../peer.c
-	../response.c
-	../state.c
+	Parse.cpp
 )
 
 SET(STATE_TEST
-	State.cpp
-	../cJSON.c
+	../../cJSON.c
+	../../response.c
+	../../state.c
 	../peer.c
-	../response.c
-	../state.c
+	State.cpp
 )
 
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})

@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "../config.h"
-#include "../peer.h"
+#include "config.h"
+#include "../../peer.h"
 
 static const int BADFD = -1;
 static const int TOO_MUCH_DATA = 1;

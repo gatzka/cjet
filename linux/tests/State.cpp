@@ -5,8 +5,8 @@
 #include <boost/test/unit_test.hpp>
 #include <sys/uio.h>
 
-#include "../peer.h"
-#include "../state.h"
+#include "../../peer.h"
+#include "../../state.h"
 
 extern "C" {
 
