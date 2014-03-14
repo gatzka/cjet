@@ -96,6 +96,7 @@ static int accept_all(int listen_fd)
 		} else {
 			struct peer *peer;
 			pthread_t thread_id;
+			pthread_attr_t attr;
 			static const int tcp_nodelay_on = 1;
 
 			if (unlikely(setsockopt(peer_fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on)) < 0)) {
@@ -108,6 +109,14 @@ static int accept_all(int listen_fd)
 				goto alloc_peer_failed;
 			}
 
+			if (pthread_attr_init(&attr) != 0) {
+				fprintf(stderr, "could set init thread attribute!\n");
+				goto pthread_attr_init_failed;
+			}
+			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+				fprintf(stderr, "could set detach attribute for peer thread!\n");
+				goto pthread_setdetach_failed;
+			}
 			if (pthread_create(&thread_id, NULL, handle_client, peer) != 0) {
 				fprintf(stderr, "could not create thread for peer!\n");
 				goto pthread_create_failed;
@@ -115,6 +124,8 @@ static int accept_all(int listen_fd)
 			return 0;
 
 		pthread_create_failed:
+		pthread_setdetach_failed:
+		pthread_attr_init_failed:
 		alloc_peer_failed:
 		no_delay_failed:
 			close(peer_fd);
