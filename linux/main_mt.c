@@ -151,7 +151,7 @@ int main()
 
 	if ((create_setter_hashtable()) == -1) {
 		fprintf(stderr, "Cannot allocate hashtable for states!\n");
-		goto create_setter_hashtable_failed;
+		return EXIT_FAILURE;
 	}
 
 	if ((listen_server = setup_listen_socket()) == NULL)  {
@@ -183,6 +183,5 @@ accept_peer_failed:
 	close_peer_connection(listen_server, listen_server->fd);
 setup_listen_failed:
 	delete_setter_hashtable();
-create_setter_hashtable_failed:
 	return EXIT_FAILURE;
 }
