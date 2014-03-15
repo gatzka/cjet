@@ -24,6 +24,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -std=c99" CACHE STRING "" FORCE)
 
 SET(CJET_FILES
+	io_epoll.c
 	main.c
 	peer.c
 	../cJSON.c
@@ -34,6 +35,7 @@ SET(CJET_FILES
 )
 
 SET(ECHO_FILES
+	io_epoll.c
 	main.c
 	peer.c
 	../cJSON.c
@@ -43,6 +45,7 @@ SET(ECHO_FILES
 )
 
 SET(ECHO_MT_FILES
+	io_mt.c
 	main_mt.c
 	peer.c
 	../cJSON.c
