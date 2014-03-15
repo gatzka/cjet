@@ -10,16 +10,18 @@
 #include <unistd.h>
 
 static const unsigned int MIN_MESSAGE_SIZE = 10;
-static const unsigned int MAX_MESSAGE_SIZE = 12;
+static const unsigned int MAX_MESSAGE_SIZE = 900;
 
 static const unsigned int ROUNDS = 100000;
+
+static const char ip[] = "172.19.191.19";
 
 int main()
 {
 	struct sockaddr_in serv_addr;
 	memset(&serv_addr, 0, sizeof(serv_addr));
 	serv_addr.sin_family = AF_INET;
-	serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+	serv_addr.sin_addr.s_addr = inet_addr(ip);
 	serv_addr.sin_port = htons(11122);
 
 	int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -36,6 +38,7 @@ int main()
 	}
 
 	fprintf(stdout, "MSGSIZE time\n");
+	fflush(stdout);
 
 	uint32_t i;
 	for (i = MIN_MESSAGE_SIZE; i <= MAX_MESSAGE_SIZE; i++) {
@@ -82,6 +85,7 @@ int main()
 		clock_gettime(CLOCK_MONOTONIC, &end);
 		stop = ((end.tv_sec * 1000000) + (end.tv_nsec / 1000)) / 1000000.0;
 		fprintf(stdout, "%u %f\n", i, stop - start);
+		fflush(stdout);
 	}
 
 	close(fd);
