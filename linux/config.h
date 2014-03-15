@@ -17,6 +17,10 @@
 #define STATE_SET_TABLE_ORDER 13
 
 /* Linux specific configs */
+
+//#define LINUX_IO_EPOLL
+#define LINUX_IO_MT
+
 #define MAX_EPOLL_EVENTS 100
 
 #endif

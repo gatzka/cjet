@@ -4,7 +4,7 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 SET(WARN_SWITCHES "-pipe -Wall -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
-SET(CMAKE_C_FLAGS_RELEASE "-O2 -flto -fomit-frame-pointer" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer -flto=16 -fuse-linker-plugin" CACHE STRING "" FORCE)
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb" CACHE STRING "" FORCE)
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu -Wl,--as-needed" CACHE STRING "" FORCE)
@@ -23,10 +23,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/
 
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -std=c99" CACHE STRING "" FORCE)
 
-SET(CJET_FILES
+ADD_LIBRARY(linux_io STATIC
 	io_epoll.c
+	io_mt.c
 	main.c
 	peer.c
+)
+
+SET(CJET_FILES
 	../cJSON.c
 	../lmatch.c
 	../parse.c
@@ -35,19 +39,6 @@ SET(CJET_FILES
 )
 
 SET(ECHO_FILES
-	io_epoll.c
-	main.c
-	peer.c
-	../cJSON.c
-	../echo.c
-	../response.c
-	../state.c
-)
-
-SET(ECHO_MT_FILES
-	io_mt.c
-	main_mt.c
-	peer.c
 	../cJSON.c
 	../echo.c
 	../response.c
@@ -64,21 +55,18 @@ SET(DYNLIBS
 
 ADD_EXECUTABLE(cjet.bin ${CJET_FILES})
 ADD_EXECUTABLE(echo.bin ${ECHO_FILES})
-ADD_EXECUTABLE(echo_mt.bin ${ECHO_MT_FILES})
 ADD_EXECUTABLE(gen_message_hashes.bin ${GEN_MESSAGE_HASHES})
 
 TARGET_LINK_LIBRARIES(
 	cjet.bin
+	linux_io
 	${DYNLIBS}
+	-pthread
 )
 
 TARGET_LINK_LIBRARIES(
 	echo.bin
-	${DYNLIBS}
-)
-
-TARGET_LINK_LIBRARIES(
-	echo_mt.bin
+	linux_io
 	${DYNLIBS}
 	-pthread
 )

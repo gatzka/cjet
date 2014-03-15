@@ -1,5 +1,19 @@
 #ifndef CJET_IO_H
 #define CJET_IO_H
-int run_io(volatile int *shall_close);
+
+#include "config.h"
+
+int run_io_epoll(volatile int *shall_close);
+int run_io_mt(volatile int *shall_close);
+
+#if defined LINUX_IO_EPOLL
+
+#define RUN_IO run_io_epoll
+
+#elif defined LINUX_IO_MT 
+
+#define RUN_IO run_io_mt
+
+#endif
 
 #endif

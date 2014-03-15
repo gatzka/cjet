@@ -25,7 +25,7 @@ int main()
 		goto create_setter_hashtable_failed;
 	}
 
-	if (run_io(&shall_close) < 0) {
+	if (RUN_IO(&shall_close) < 0) {
 		goto run_io_failed;
 	}
 

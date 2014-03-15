@@ -76,7 +76,7 @@ static void *handle_client(void *arg)
 	return NULL;
 }
 
-int run_io(volatile int *shall_close)
+int run_io_mt(volatile int *shall_close)
 {
 	struct peer *listen_server;
 	int listen_fd;
