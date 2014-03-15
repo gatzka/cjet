@@ -173,25 +173,14 @@ static void sighandler(int signum)
 	shall_close = 1;
 }
 
-int main()
-{
+static int run_io(void) {
 	int epoll_fd;
 	struct epoll_event events[MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
 
-	if (signal(SIGTERM, sighandler) == SIG_ERR) {
-		fprintf(stderr, "signal failed!\n");
-		return EXIT_FAILURE;
-	}
-
-	if ((create_setter_hashtable()) == -1) {
-		fprintf(stderr, "Cannot allocate hashtable for states!\n");
-		return EXIT_FAILURE ;
-	}
-
 	if ((epoll_fd = epoll_create(1)) < 0) {
 		fprintf(stderr, "epoll_create failed!\n");
-		goto epoll_create_failed;
+		return -1;
 	}
 
 	if ((listen_server = setup_listen_socket(epoll_fd)) == NULL)  {
@@ -240,26 +229,45 @@ int main()
 		}
 	}
 /*
- * I do not waste code to close all peer fds, because they will be
- * closed by the OS if this process ends.
- */
-
-	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
-	delete_setter_hashtable();
-	close(epoll_fd);
-	return EXIT_SUCCESS;
-
-epoll_wait_failed:
-accept_peer_failed:
-epoll_on_listen_failed:
-/*
  * I do not waste code to close all peer fds, because the will be
  * closed by the OS if this process ends.
  */
 	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
-setup_listen_failed:
-epoll_create_failed:
-	delete_setter_hashtable();
 	close(epoll_fd);
+	return 0;
+
+accept_peer_failed:
+epoll_on_listen_failed:
+epoll_wait_failed:
+	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
+setup_listen_failed:
+	close(epoll_fd);
+	return -1;
+}
+
+int main()
+{
+	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+		fprintf(stderr, "signal failed!\n");
+		return EXIT_FAILURE;
+	}
+
+	if ((create_setter_hashtable()) == -1) {
+		fprintf(stderr, "Cannot allocate hashtable for states!\n");
+		goto create_setter_hashtable_failed;
+	}
+
+	if (run_io() < 0) {
+		goto run_io_failed;
+	}
+
+	delete_setter_hashtable();
+	signal(SIGTERM, SIG_DFL);
+	return EXIT_SUCCESS;
+
+run_io_failed:
+	delete_setter_hashtable();
+create_setter_hashtable_failed:
+	signal(SIGTERM, SIG_DFL);
 	return EXIT_FAILURE;
 }

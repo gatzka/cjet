@@ -81,17 +81,33 @@ static void *handle_client(void *arg)
 	return NULL;
 }
 
-static int accept_all(int listen_fd)
+static void sighandler(int signum)
 {
+	(void)signum;
+	shall_close = 1;
+}
+
+static inline int run_io(void)
+{
+	struct peer *listen_server;
+	int listen_fd;
+
+	if ((listen_server = setup_listen_socket()) == NULL)  {
+		return -1;
+	}
+	listen_fd = listen_server->fd;
+
 	while (1) {
 		int peer_fd;
+		if (unlikely(shall_close)) {
+			break;
+		}
 		peer_fd = accept(listen_fd, NULL, NULL);
 		if (peer_fd == -1) {
-			if ((errno == EAGAIN) ||
-			    (errno == EWOULDBLOCK)) {
-				return 0;
+			if (errno == EINTR) {
+				continue;
 			} else {
-				return -1;
+				goto accept_failed;
 			}
 		} else {
 			struct peer *peer;
@@ -121,7 +137,7 @@ static int accept_all(int listen_fd)
 				fprintf(stderr, "could not create thread for peer!\n");
 				goto pthread_create_failed;
 			}
-			return 0;
+			continue;
 
 		pthread_create_failed:
 		pthread_setdetach_failed:
@@ -129,21 +145,17 @@ static int accept_all(int listen_fd)
 		alloc_peer_failed:
 		no_delay_failed:
 			close(peer_fd);
+		accept_failed:
+			close_peer_connection(listen_server, listen_server->fd);
 			return -1;
 		}
 	}
-}
-
-static void sighandler(int signum)
-{
-	(void)signum;
-	shall_close = 1;
+	close_peer_connection(listen_server, listen_server->fd);
+	return 0;
 }
 
 int main()
 {
-	struct peer *listen_server;
-
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
 		fprintf(stderr, "signal failed!\n");
 		return EXIT_FAILURE;
@@ -151,37 +163,20 @@ int main()
 
 	if ((create_setter_hashtable()) == -1) {
 		fprintf(stderr, "Cannot allocate hashtable for states!\n");
-		return EXIT_FAILURE;
+		goto create_setter_hashtable_failed;
 	}
 
-	if ((listen_server = setup_listen_socket()) == NULL)  {
-		goto setup_listen_failed;
+	if (run_io() < 0) {
+		goto run_io_failed;
 	}
 
-	while (1) {
-		if (unlikely(shall_close)) {
-			break;
-		}
-		if (accept_all(listen_server->fd) < 0) {
-			goto accept_peer_failed;
-		}
-	}
-/*
- * I do not waste code to close all peer fds, because they will be
- * closed by the OS if this process ends.
- */
-
-	close_peer_connection(listen_server, listen_server->fd);
 	delete_setter_hashtable();
+	signal(SIGTERM, SIG_DFL);
 	return EXIT_SUCCESS;
 
-accept_peer_failed:
-/*
- * I do not waste code to close all peer fds, because the will be
- * closed by the OS if this process ends.
- */
-	close_peer_connection(listen_server, listen_server->fd);
-setup_listen_failed:
+run_io_failed:
 	delete_setter_hashtable();
+create_setter_hashtable_failed:
+	signal(SIGTERM, SIG_DFL);
 	return EXIT_FAILURE;
 }
