@@ -159,7 +159,6 @@ int main()
 	}
 
 	while (1) {
-
 		if (unlikely(shall_close)) {
 			break;
 		}
