@@ -31,14 +31,14 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
-static int add_epoll(int epoll_fd, int epoll_op, int fd, void *cookie)
+static int add_epoll(int epoll_fd, int fd, void *cookie)
 {
 	struct epoll_event ev;
 
 	memset(&ev, 0, sizeof(ev));
 	ev.data.ptr = cookie;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, epoll_op, fd, &ev) < 0)) {
+	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0)) {
 		fprintf(stderr, "epoll_ctl failed!\n");
 		return -1;
 	}
@@ -54,7 +54,7 @@ static void *peer_create_wait(int fd, int epoll_fd)
 		goto alloc_peer_failed;
 	}
 
-	if (unlikely(add_epoll(epoll_fd, EPOLL_CTL_ADD, fd, peer) < 0)) {
+	if (unlikely(add_epoll(epoll_fd, fd, peer) < 0)) {
 		goto epollctl_failed;
 	}
 	return peer;
