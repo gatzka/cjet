@@ -6,7 +6,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
+
+static const unsigned int MIN_MESSAGE_SIZE = 10;
+static const unsigned int MAX_MESSAGE_SIZE = 12;
+
+static const unsigned int ROUNDS = 100000;
 
 int main()
 {
@@ -24,48 +30,58 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-
 	if (connect(fd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
 		fprintf(stderr, "Failed to connect with server\n");
 		return EXIT_FAILURE;
 	}
 
-	char buffer[1000];
-	char *write_ptr = buffer;
+	fprintf(stdout, "MSGSIZE time\n");
 
+	uint32_t i;
+	for (i = MIN_MESSAGE_SIZE; i <= MAX_MESSAGE_SIZE; i++) {
+		struct timespec begin;
+		struct timespec end;
+		double start;
+		double stop;
+		char buffer[1000];
+		uint32_t len = htobe32(i);
+		char *write_ptr = buffer;
+		memcpy(write_ptr, &len, sizeof(len));
+		write_ptr += sizeof(len);
+		memset(write_ptr, 'b', i);
+		write_ptr[i] = '\0';
 
-	const char msg[] = "bla";
+		clock_gettime(CLOCK_MONOTONIC, &begin);
+		start = ((begin.tv_sec * 1000000) + (begin.tv_nsec / 1000)) / 1000000.0;
 
-	uint32_t len = strlen(msg);
-	len = htobe32(len);
-	memcpy(write_ptr, &len, sizeof(len));
-	write_ptr += sizeof(len);
-	memcpy(write_ptr, msg, strlen(msg));
+		unsigned int round;
+		for (round = 0; round < ROUNDS; round++) {
+			write(fd, buffer, sizeof(len) + i);
 
-	int i;
-	for (i = 0; i < 1000000; i++) {
-		write(fd, buffer, sizeof(len) + strlen(msg));
+			uint32_t msg_len;
+			ssize_t got = read(fd, &msg_len, sizeof(msg_len));
+			if (got != sizeof(msg_len)) {
+				fprintf(stderr, "could not read enough for msg_len: %zd\n", got);
+				return EXIT_FAILURE;
+			}
+			msg_len = be32toh(msg_len);
+			if (msg_len != be32toh(len)) {
+				fprintf(stderr, "msglen != len\n");
+			}
 
-		uint32_t msg_len;
-		ssize_t got = read(fd, &msg_len, sizeof(msg_len));
-		if (got != sizeof(msg_len)) {
-			fprintf(stderr, "could not read enough for msg_len: %zd\n", got);
-			return EXIT_FAILURE;
+			char read_buffer[1000];
+			got = read(fd, read_buffer, msg_len);
+			if (got != msg_len) {
+				fprintf(stderr, "could not read enough of message!\n");
+			}
+			read_buffer[msg_len] = '\0';
+			if (strcmp(read_buffer, &buffer[sizeof(len)]) != 0) {
+				fprintf(stderr, "received message not the same like send!\n");
+			}
 		}
-		msg_len = be32toh(msg_len);
-		if (msg_len != be32toh(len)) {
-			fprintf(stderr, "msglen != len\n");
-		}
-
-		char read_buffer[1000];
-		got = read(fd, read_buffer, msg_len);
-		if (got != msg_len) {
-			fprintf(stderr, "could not read enough of message!\n");
-		}
-		read_buffer[msg_len] = '\0';
-		if (strcmp(read_buffer, msg) != 0) {
-			fprintf(stderr, "received message not the same like send!\n");
-		}
+		clock_gettime(CLOCK_MONOTONIC, &end);
+		stop = ((end.tv_sec * 1000000) + (end.tv_nsec / 1000)) / 1000000.0;
+		fprintf(stdout, "%u %f\n", i, stop - start);
 	}
 
 	close(fd);
