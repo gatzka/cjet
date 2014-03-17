@@ -10,9 +10,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../compiler.h"
-#include "../peer.h"
+#include "compiler.h"
 #include "io.h"
+#include "list.h"
+#include "peer.h"
+
+static LIST_HEAD(peer_list);
 
 static int set_fd_non_blocking(int fd)
 {
