@@ -2,6 +2,7 @@
 #define CJET_IO_H
 
 #include "config.h"
+#include "list.h"
 
 int run_io_epoll(volatile int *shall_close);
 int run_io_mt(volatile int *shall_close);
@@ -9,6 +10,7 @@ int run_io_mt(volatile int *shall_close);
 #if defined LINUX_IO_EPOLL
 struct io {
 	int fd;
+	struct list_head list;
 };
 
 #define RUN_IO run_io_epoll
@@ -17,6 +19,7 @@ struct io {
 
 struct io {
 	int fd;
+	struct list_head list;
 };
 
 #define RUN_IO run_io_mt
