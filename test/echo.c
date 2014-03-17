@@ -15,6 +15,7 @@ static const unsigned int MAX_MESSAGE_SIZE = 900;
 static const unsigned int ROUNDS = 100000;
 
 static const char ip[] = "172.19.191.19";
+//static const char ip[] = "172.19.204.22";
 
 int main()
 {
@@ -55,7 +56,7 @@ int main()
 		write_ptr[i] = '\0';
 
 		clock_gettime(CLOCK_MONOTONIC, &begin);
-		start = ((begin.tv_sec * 1000000) + (begin.tv_nsec / 1000)) / 1000000.0;
+		start = ((begin.tv_sec * 1000000.0) + (begin.tv_nsec / 1000.0)) / (double)ROUNDS;
 
 		unsigned int round;
 		for (round = 0; round < ROUNDS; round++) {
@@ -83,7 +84,7 @@ int main()
 			}
 		}
 		clock_gettime(CLOCK_MONOTONIC, &end);
-		stop = ((end.tv_sec * 1000000) + (end.tv_nsec / 1000)) / 1000000.0;
+		stop = ((end.tv_sec * 1000000.0) + (end.tv_nsec / 1000.0)) / (double)ROUNDS;
 		fprintf(stdout, "%u %f\n", i, stop - start);
 		fflush(stdout);
 	}
