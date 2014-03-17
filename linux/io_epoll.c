@@ -45,7 +45,7 @@ static int add_epoll(int epoll_fd, int fd, void *cookie)
 	return 0;
 }
 
-static void *peer_create_wait(int fd, int epoll_fd)
+static void *peer_create(int fd, int epoll_fd)
 {
 	struct peer *peer;
 	peer = alloc_peer(fd);
@@ -100,7 +100,7 @@ static struct peer *setup_listen_socket(int epoll_fd)
 		goto listen_failed;
 	}
 
-	peer = peer_create_wait(listen_fd, epoll_fd);
+	peer = peer_create(listen_fd, epoll_fd);
 	if (peer == NULL) {
 		goto peer_create_wait_failed;
 	}
@@ -116,7 +116,7 @@ so_reuse_failed:
 	return NULL;
 }
 
-static void close_peer_connection(struct peer *p, int epoll_fd, int fd)
+static void peer_destroy(struct peer *p, int epoll_fd, int fd)
 {
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
@@ -147,7 +147,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 				goto no_delay_failed;
 			}
 
-			peer = peer_create_wait(peer_fd, epoll_fd);
+			peer = peer_create(peer_fd, epoll_fd);
 			if (unlikely(peer == NULL)) {
 				fprintf(stderr, "Could not allocate peer!\n");
 				goto peer_create_wait_failed;
@@ -201,7 +201,7 @@ int run_io_epoll(volatile int *shall_close) {
 				} else {
 					struct peer *peer = events[i].data.ptr;
 					fprintf(stderr, "epoll error on peer fd!\n");
-					close_peer_connection(peer, epoll_fd, peer->fd);
+					peer_destroy(peer, epoll_fd, peer->fd);
 					continue;
 				}
 			}
@@ -213,23 +213,20 @@ int run_io_epoll(volatile int *shall_close) {
 				struct peer *peer = events[i].data.ptr;
 				int ret = handle_all_peer_operations(peer);
 				if (unlikely(ret == -1)) {
-					close_peer_connection(peer, epoll_fd, peer->fd);
+					peer_destroy(peer, epoll_fd, peer->fd);
 				}
 			}
 		}
 	}
-/*
- * I do not waste code to close all peer fds, because the will be
- * closed by the OS if this process ends.
- */
-	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
+
+	peer_destroy(listen_server, epoll_fd, listen_server->fd);
 	close(epoll_fd);
 	return 0;
 
 accept_peer_failed:
 epoll_on_listen_failed:
 epoll_wait_failed:
-	close_peer_connection(listen_server, epoll_fd, listen_server->fd);
+	peer_destroy(listen_server, epoll_fd, listen_server->fd);
 setup_listen_failed:
 	close(epoll_fd);
 	return -1;
