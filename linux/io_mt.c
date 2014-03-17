@@ -71,7 +71,7 @@ static void *handle_client(void *arg)
 
 	int ret = handle_all_peer_operations(peer);
 	if (unlikely(ret == -1)) {
-		close_peer_connection(peer, peer->fd);
+		close_peer_connection(peer, peer->io.fd);
 	}
 	return NULL;
 }
@@ -84,7 +84,7 @@ int run_io_mt(volatile int *shall_close)
 	if ((listen_server = setup_listen_socket()) == NULL)  {
 		return -1;
 	}
-	listen_fd = listen_server->fd;
+	listen_fd = listen_server->io.fd;
 
 	while (1) {
 		int peer_fd;
@@ -135,11 +135,11 @@ int run_io_mt(volatile int *shall_close)
 		no_delay_failed:
 			close(peer_fd);
 		accept_failed:
-			close_peer_connection(listen_server, listen_server->fd);
+			close_peer_connection(listen_server, listen_server->io.fd);
 			return -1;
 		}
 	}
-	close_peer_connection(listen_server, listen_server->fd);
+	close_peer_connection(listen_server, listen_server->io.fd);
 	return 0;
 }
 

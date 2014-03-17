@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include "config.h"
+#include "io.h"
 #include "list.h"
 
 #ifdef __cplusplus
@@ -16,7 +17,7 @@ extern "C" {
 #define WRITE_MSG 2
 
 struct peer {
-	int fd;
+	struct io io;
 	int op;
 	int next_read_op;
 	unsigned int to_write;

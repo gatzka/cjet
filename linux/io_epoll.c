@@ -1,4 +1,3 @@
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -201,32 +200,32 @@ int run_io_epoll(volatile int *shall_close) {
 				} else {
 					struct peer *peer = events[i].data.ptr;
 					fprintf(stderr, "epoll error on peer fd!\n");
-					peer_destroy(peer, epoll_fd, peer->fd);
+					peer_destroy(peer, epoll_fd, peer->io.fd);
 					continue;
 				}
 			}
 			if (unlikely(events[i].data.ptr == listen_server)) {
-				if (accept_all(epoll_fd, listen_server->fd) < 0) {
+				if (accept_all(epoll_fd, listen_server->io.fd) < 0) {
 					goto accept_peer_failed;
 				}
 			} else {
 				struct peer *peer = events[i].data.ptr;
 				int ret = handle_all_peer_operations(peer);
 				if (unlikely(ret == -1)) {
-					peer_destroy(peer, epoll_fd, peer->fd);
+					peer_destroy(peer, epoll_fd, peer->io.fd);
 				}
 			}
 		}
 	}
 
-	peer_destroy(listen_server, epoll_fd, listen_server->fd);
+	peer_destroy(listen_server, epoll_fd, listen_server->io.fd);
 	close(epoll_fd);
 	return 0;
 
 accept_peer_failed:
 epoll_on_listen_failed:
 epoll_wait_failed:
-	peer_destroy(listen_server, epoll_fd, listen_server->fd);
+	peer_destroy(listen_server, epoll_fd, listen_server->io.fd);
 setup_listen_failed:
 	close(epoll_fd);
 	return -1;

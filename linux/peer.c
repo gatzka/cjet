@@ -28,7 +28,7 @@ struct peer *alloc_peer(int fd)
 		return NULL;
 	}
 	INIT_LIST_HEAD(&p->state_list);
-	p->fd = fd;
+	p->io.fd = fd;
 	p->op = READ_MSG_LENGTH;
 	p->read_ptr = p->read_buffer;
 	p->write_ptr = p->read_buffer;
@@ -81,7 +81,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 			return read_ptr;
 		}
 
-		read_length = READ(p->fd, p->write_ptr, (size_t)free_space(p));
+		read_length = READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			/* peer closed connection */
 			return NULL;
@@ -163,7 +163,7 @@ int send_buffer(struct peer *p)
 	char *write_buffer_ptr = p->write_buffer;
 	while (p->to_write != 0) {
 		ssize_t written;
-		written = SEND(p->fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		written = SEND(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 			             (errno != EWOULDBLOCK))) {
@@ -205,7 +205,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	iov[1].iov_base = rendered;
 	iov[1].iov_len = len;
 
-	sent = WRITEV(p->fd, iov, sizeof(iov) / sizeof(struct iovec));
+	sent = WRITEV(p->io.fd, iov, sizeof(iov) / sizeof(struct iovec));
 	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
 		return 0;
 	}
