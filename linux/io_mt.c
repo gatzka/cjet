@@ -9,19 +9,38 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "../compiler.h"
-#include "../peer.h"
+#include "compiler.h"
 #include "io.h"
+#include "list.h"
+#include "peer.h"
+
+static LIST_HEAD(peer_list);
 
 static inline void *create_peer(int fd)
 {
-	return alloc_peer(fd);
+	struct peer *peer = alloc_peer(fd);
+	if (unlikely(peer == NULL)) {
+		fprintf(stderr, "Could not allocate peer!\n");
+		return NULL;
+	}
+	list_add_tail(&peer->io.list, &peer_list);
+	return peer;
 }
 
 static void destroy_peer(struct peer *p, int fd)
 {
 	close(fd);
 	free_peer(p);
+}
+
+static void destroy_all_peers()
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct peer, io.list);
+		destroy_peer(p, p->io.fd);
+	}
 }
 
 static struct peer *setup_listen_socket()
@@ -94,6 +113,7 @@ int run_io_mt(volatile int *shall_close)
 	while (1) {
 		int peer_fd;
 		if (unlikely(*shall_close)) {
+			destroy_all_peers();
 			break;
 		}
 		peer_fd = accept(listen_fd, NULL, NULL);
@@ -144,7 +164,6 @@ int run_io_mt(volatile int *shall_close)
 			return -1;
 		}
 	}
-	destroy_peer(listen_server, listen_server->io.fd);
 	return 0;
 }
 
