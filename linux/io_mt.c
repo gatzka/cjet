@@ -13,6 +13,7 @@
 #include "io.h"
 #include "list.h"
 #include "peer.h"
+#include "state.h"
 
 static LIST_HEAD(peer_list);
 
@@ -29,6 +30,8 @@ static inline void *create_peer(int fd)
 
 static void destroy_peer(struct peer *p, int fd)
 {
+	remove_all_states_from_peer(p);
+	list_del(&p->io.list);
 	close(fd);
 	free_peer(p);
 }
