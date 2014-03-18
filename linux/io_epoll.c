@@ -121,9 +121,21 @@ so_reuse_failed:
 
 static void peer_destroy(struct peer *p, int epoll_fd, int fd)
 {
+	// TODO: remove all states added by this peer
+	list_del(&p->io.list);
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	free_peer(p);
+}
+
+static void destroy_all_peers(int epoll_fd)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct peer, io.list);
+		peer_destroy(p, epoll_fd, p->io.fd);
+	}
 }
 
 static int accept_all(int epoll_fd, int listen_fd)
@@ -185,6 +197,7 @@ int run_io_epoll(volatile int *shall_close) {
 		int i;
 
 		if (unlikely(*shall_close)) {
+			destroy_all_peers(epoll_fd);
 			break;
 		}
 		num_events = epoll_wait(epoll_fd, events, MAX_EPOLL_EVENTS, -1);
