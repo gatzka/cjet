@@ -14,6 +14,7 @@
 #include "io.h"
 #include "list.h"
 #include "peer.h"
+#include "state.h"
 
 static LIST_HEAD(peer_list);
 
@@ -121,7 +122,7 @@ so_reuse_failed:
 
 static void peer_destroy(struct peer *p, int epoll_fd, int fd)
 {
-	// TODO: remove all states added by this peer
+	remove_all_states_from_peer(p);
 	list_del(&p->io.list);
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
