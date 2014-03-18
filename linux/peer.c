@@ -27,14 +27,15 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	INIT_LIST_HEAD(&p->state_list);
 	p->io.fd = fd;
+	INIT_LIST_HEAD(&p->io.list);
 	p->op = READ_MSG_LENGTH;
+	p->to_write = 0;
+	p->write_buffer = NULL;
 	p->read_ptr = p->read_buffer;
 	p->write_ptr = p->read_buffer;
-	p->write_buffer = NULL;
 	p->write_buffer_size = 0;
-	p->to_write = 0;
+	INIT_LIST_HEAD(&p->state_list);
 	return p;
 }
 

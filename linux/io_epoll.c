@@ -59,6 +59,7 @@ static void *peer_create(int fd, int epoll_fd)
 	if (unlikely(add_epoll(epoll_fd, fd, peer) < 0)) {
 		goto epollctl_failed;
 	}
+	list_add_tail(&peer->io.list, &peer_list);
 	return peer;
 
 epollctl_failed:
