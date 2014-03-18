@@ -98,6 +98,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
 		if (strcmp(s->path, path) == 0) {
+		// TODO: notify all clients interested in this state
 			list_del(&s->list);
 			HASHTABLE_REMOVE(STATE_SET_TABLE, setter_hashtable, s->path);
 			free_state(s);
@@ -113,6 +114,7 @@ void remove_all_states_from_peer(struct peer *p) {
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
+		// TODO: notify all clients interested in this state
 		list_del(&s->list);
 		HASHTABLE_REMOVE(STATE_SET_TABLE, setter_hashtable, s->path);
 		free_state(s);
