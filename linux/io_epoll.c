@@ -235,7 +235,6 @@ int run_io_epoll(volatile int *shall_close) {
 		}
 	}
 
-	peer_destroy(listen_server, epoll_fd, listen_server->io.fd);
 	close(epoll_fd);
 	return 0;
 
