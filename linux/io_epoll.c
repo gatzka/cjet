@@ -48,7 +48,7 @@ static int add_epoll(int epoll_fd, int fd, void *cookie)
 	return 0;
 }
 
-static void *peer_create(int fd, int epoll_fd)
+static void *create_peer(int fd, int epoll_fd)
 {
 	struct peer *peer;
 	peer = alloc_peer(fd);
@@ -104,14 +104,14 @@ static struct peer *setup_listen_socket(int epoll_fd)
 		goto listen_failed;
 	}
 
-	peer = peer_create(listen_fd, epoll_fd);
+	peer = create_peer(listen_fd, epoll_fd);
 	if (peer == NULL) {
-		goto peer_create_wait_failed;
+		goto create_peer_wait_failed;
 	}
 
 	return peer;
 
-peer_create_wait_failed:
+create_peer_wait_failed:
 listen_failed:
 bind_failed:
 nonblock_failed:
@@ -120,7 +120,7 @@ so_reuse_failed:
 	return NULL;
 }
 
-static void peer_destroy(struct peer *p, int epoll_fd, int fd)
+static void destroy_peer(struct peer *p, int epoll_fd, int fd)
 {
 	remove_all_states_from_peer(p);
 	list_del(&p->io.list);
@@ -135,7 +135,7 @@ static void destroy_all_peers(int epoll_fd)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, io.list);
-		peer_destroy(p, epoll_fd, p->io.fd);
+		destroy_peer(p, epoll_fd, p->io.fd);
 	}
 }
 
@@ -163,14 +163,14 @@ static int accept_all(int epoll_fd, int listen_fd)
 				goto no_delay_failed;
 			}
 
-			peer = peer_create(peer_fd, epoll_fd);
+			peer = create_peer(peer_fd, epoll_fd);
 			if (unlikely(peer == NULL)) {
 				fprintf(stderr, "Could not allocate peer!\n");
-				goto peer_create_wait_failed;
+				goto create_peer_wait_failed;
 			}
 			return 0;
 
-		peer_create_wait_failed:
+		create_peer_wait_failed:
 		no_delay_failed:
 		nonblock_failed:
 			close(peer_fd);
@@ -218,7 +218,7 @@ int run_io_epoll(volatile int *shall_close) {
 				} else {
 					struct peer *peer = events[i].data.ptr;
 					fprintf(stderr, "epoll error on peer fd!\n");
-					peer_destroy(peer, epoll_fd, peer->io.fd);
+					destroy_peer(peer, epoll_fd, peer->io.fd);
 					continue;
 				}
 			}
@@ -230,7 +230,7 @@ int run_io_epoll(volatile int *shall_close) {
 				struct peer *peer = events[i].data.ptr;
 				int ret = handle_all_peer_operations(peer);
 				if (unlikely(ret == -1)) {
-					peer_destroy(peer, epoll_fd, peer->io.fd);
+					destroy_peer(peer, epoll_fd, peer->io.fd);
 				}
 			}
 		}
@@ -242,7 +242,7 @@ int run_io_epoll(volatile int *shall_close) {
 accept_peer_failed:
 epoll_on_listen_failed:
 epoll_wait_failed:
-	peer_destroy(listen_server, epoll_fd, listen_server->io.fd);
+	destroy_peer(listen_server, epoll_fd, listen_server->io.fd);
 setup_listen_failed:
 	close(epoll_fd);
 	return -1;

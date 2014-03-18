@@ -13,12 +13,12 @@
 #include "../peer.h"
 #include "io.h"
 
-static inline void *peer_create(int fd)
+static inline void *create_peer(int fd)
 {
 	return alloc_peer(fd);
 }
 
-static void peer_destroy(struct peer *p, int fd)
+static void destroy_peer(struct peer *p, int fd)
 {
 	close(fd);
 	free_peer(p);
@@ -55,7 +55,7 @@ static struct peer *setup_listen_socket()
 		goto listen_failed;
 	}
 
-	peer = peer_create(listen_fd);
+	peer = create_peer(listen_fd);
 	if (peer == NULL) {
 		goto alloc_peer_failed;
 	}
@@ -76,7 +76,7 @@ static void *handle_client(void *arg)
 
 	int ret = handle_all_peer_operations(peer);
 	if (unlikely(ret == -1)) {
-		peer_destroy(peer, peer->io.fd);
+		destroy_peer(peer, peer->io.fd);
 	}
 	return NULL;
 }
@@ -113,7 +113,7 @@ int run_io_mt(volatile int *shall_close)
 				goto no_delay_failed;
 			}
 
-			peer = peer_create(peer_fd);
+			peer = create_peer(peer_fd);
 			if (unlikely(peer == NULL)) {
 				fprintf(stderr, "Could not allocate peer!\n");
 				goto alloc_peer_failed;
@@ -140,11 +140,11 @@ int run_io_mt(volatile int *shall_close)
 		no_delay_failed:
 			close(peer_fd);
 		accept_failed:
-			peer_destroy(listen_server, listen_server->io.fd);
+			destroy_peer(listen_server, listen_server->io.fd);
 			return -1;
 		}
 	}
-	peer_destroy(listen_server, listen_server->io.fd);
+	destroy_peer(listen_server, listen_server->io.fd);
 	return 0;
 }
 
