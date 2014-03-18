@@ -19,6 +19,10 @@ int main()
 		fprintf(stderr, "signal failed!\n");
 		return EXIT_FAILURE;
 	}
+	if (signal(SIGINT, sighandler) == SIG_ERR) {
+		fprintf(stderr, "signal failed!\n");
+		goto signal_failed;
+	}
 
 	if ((create_setter_hashtable()) == -1) {
 		fprintf(stderr, "Cannot allocate hashtable for states!\n");
@@ -30,12 +34,15 @@ int main()
 	}
 
 	delete_setter_hashtable();
+	signal(SIGINT, SIG_DFL);
 	signal(SIGTERM, SIG_DFL);
 	return EXIT_SUCCESS;
 
 run_io_failed:
 	delete_setter_hashtable();
 create_setter_hashtable_failed:
+	signal(SIGINT, SIG_DFL);
+signal_failed:
 	signal(SIGTERM, SIG_DFL);
 	return EXIT_FAILURE;
 }
