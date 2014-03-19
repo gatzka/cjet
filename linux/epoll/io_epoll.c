@@ -179,7 +179,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 	}
 }
 
-int run_io_epoll(volatile int *shall_close) {
+int run_io(volatile int *shall_close) {
 	int epoll_fd;
 	struct epoll_event events[MAX_EPOLL_EVENTS];
 	struct peer *listen_server;

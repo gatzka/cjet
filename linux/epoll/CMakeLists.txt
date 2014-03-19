@@ -1,0 +1,85 @@
+PROJECT("cjet" C)
+
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+SET(WARN_SWITCHES "-pipe -Wall -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+
+SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -std=c99" CACHE STRING "" FORCE)
+
+SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer -flto=16 -fuse-linker-plugin" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb" CACHE STRING "" FORCE)
+
+SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu -Wl,--as-needed" CACHE STRING "" FORCE)
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O2 -Wl,--gc-sections" CACHE STRING "" FORCE)
+SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-Wl,-O0" CACHE STRING "" FORCE)
+
+IF(NOT CMAKE_BUILD_TYPE )
+  SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING "" FORCE)
+ENDIF()
+
+ADD_CUSTOM_COMMAND(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/config.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.h
+)
+ADD_CUSTOM_COMMAND(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/io.h
+)
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
+
+ADD_LIBRARY(linux_io STATIC
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	io_epoll.c
+	main.c
+	peer.c
+)
+
+SET(CJET_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	../../cJSON.c
+	../../lmatch.c
+	../../parse.c
+	../../response.c
+	../../state.c
+)
+
+SET(ECHO_FILES
+	../../cJSON.c
+	../../echo.c
+	../../response.c
+	../../state.c
+)
+
+SET(DYNLIBS
+	-lm
+)
+
+ADD_EXECUTABLE(cjet.bin
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	${CJET_FILES}
+)
+ADD_EXECUTABLE(echo.bin
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	${ECHO_FILES}
+)
+
+TARGET_LINK_LIBRARIES(
+	cjet.bin
+	linux_io
+	${DYNLIBS}
+)
+
+TARGET_LINK_LIBRARIES(
+	echo.bin
+	linux_io
+	${DYNLIBS}
+)
+
