@@ -79,13 +79,11 @@ TARGET_LINK_LIBRARIES(
 	cjet.bin
 	linux_io
 	${DYNLIBS}
-	-pthread
 )
 
 TARGET_LINK_LIBRARIES(
 	echo.bin
 	linux_io
 	${DYNLIBS}
-	-pthread
 )
 
