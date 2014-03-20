@@ -6,9 +6,9 @@
 #include <boost/test/unit_test.hpp>
 #include <sys/uio.h>
 
-#include "../../cJSON.h"
-#include "../../parse.h"
-#include "../../state.h"
+#include "cJSON.h"
+#include "parse.h"
+#include "state.h"
 
 static char correct_json[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";

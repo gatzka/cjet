@@ -183,7 +183,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 	}
 }
 
-static char *get_read_ptr(struct peer *p, unsigned int count)
+char *get_read_ptr(struct peer *p, unsigned int count)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %d!\n", count);
@@ -214,7 +214,7 @@ static char *get_read_ptr(struct peer *p, unsigned int count)
 	}
 }
 
-static int send_buffer(struct peer *p)
+int send_buffer(struct peer *p)
 {
 	char *write_buffer_ptr = p->write_buffer;
 	while (p->to_write != 0) {
@@ -303,7 +303,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	return ret;
 }
 
-static int handle_all_peer_operations(struct peer *p)
+int handle_all_peer_operations(struct peer *p)
 {
 	uint32_t message_length;
 	char *message_ptr;

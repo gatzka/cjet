@@ -15,13 +15,18 @@ ADD_CUSTOM_COMMAND(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../config.h
 )
 ADD_CUSTOM_COMMAND(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../io.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../io.h
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../peer_io.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../peer_io.h
+)
+ADD_CUSTOM_COMMAND(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io_ops.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/../peer_io_ops.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io_ops.h
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/../peer_io_ops.h
 )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 
 SET(CMAKE_C_FLAGS "-ggdb" CACHE STRING "" FORCE)
 
@@ -29,54 +34,52 @@ ADD_DEFINITIONS(-DTESTING)
 
 SET(READBUFFER_TEST
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	../../cJSON.c
-	../../response.c
-	../../state.c
-	../peer.c
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io_ops.h
+	../../../cJSON.c
+	../../../peer.c
+	../../../response.c
+	../../../state.c
+	../io.c
 	ReadbufferTest.cpp
 )
-
-SET(JSON_PARSE_TEST
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	../../cJSON.c
-	../../parse.c
-	../../response.c
-	../../state.c
-	../peer.c
-	Parse.cpp
-)
-
-SET(STATE_TEST
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	../../cJSON.c
-	../../response.c
-	../../state.c
-	../peer.c
-	State.cpp
-)
-
-ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})
-ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
-
-TARGET_LINK_LIBRARIES(
-	parse_test.bin
-	${Boost_LIBRARIES}
-)
-
 TARGET_LINK_LIBRARIES(
 	readbuffer_test.bin
 	${Boost_LIBRARIES}
 )
 
+SET(JSON_PARSE_TEST
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io_ops.h
+	../../../cJSON.c
+	../../../parse.c
+	../../../peer.c
+	../../../response.c
+	../../../state.c
+	../io.c
+	Parse.cpp
+)
+ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
+TARGET_LINK_LIBRARIES(
+	parse_test.bin
+	${Boost_LIBRARIES}
+)
+
+SET(STATE_TEST
+	../../../cJSON.c
+	../../../response.c
+	../../../state.c
+	../../../peer.c
+	State.cpp
+)
+ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 TARGET_LINK_LIBRARIES(
 	state_test.bin
 	${Boost_LIBRARIES}
 )
-
+ 
 ENABLE_TESTING()
 
 ADD_TEST(parse_test parse_test.bin)

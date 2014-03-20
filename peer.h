@@ -58,7 +58,6 @@ static inline void reorganize_read_buffer(struct peer *p)
 	p->read_ptr = p->read_buffer;
 }
 
-
 #ifdef __cplusplus
 }
 #endif
