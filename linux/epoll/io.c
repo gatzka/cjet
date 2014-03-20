@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -21,6 +22,7 @@
 #include "state.h"
 
 static LIST_HEAD(peer_list);
+static int go_ahead = 1;
 
 static int set_fd_non_blocking(int fd)
 {
@@ -214,6 +216,12 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 	}
 }
 
+static void sighandler(int signum)
+{
+	(void)signum;
+	go_ahead = 0;
+}
+
 int send_buffer(struct peer *p)
 {
 	char *write_buffer_ptr = p->write_buffer;
@@ -369,28 +377,33 @@ int handle_all_peer_operations(struct peer *p)
 	}
 }
 
-int run_io(volatile int *shall_close) {
+int run_io(void) {
 	int epoll_fd;
 	struct epoll_event events[MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
 
+	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+		fprintf(stderr, "signal failed!\n");
+		return -1;
+	}
+	if (signal(SIGINT, sighandler) == SIG_ERR) {
+		fprintf(stderr, "signal failed!\n");
+		goto signal_failed;
+	}
+
 	if ((epoll_fd = epoll_create(1)) < 0) {
 		fprintf(stderr, "epoll_create failed!\n");
-		return -1;
+		goto epoll_create_failed;
 	}
 
 	if ((listen_server = setup_listen_socket(epoll_fd)) == NULL)  {
 		goto setup_listen_failed;
 	}
 
-	while (1) {
+	while (likely(go_ahead)) {
 		int num_events;
 		int i;
 
-		if (unlikely(*shall_close)) {
-			destroy_all_peers(epoll_fd);
-			break;
-		}
 		num_events = epoll_wait(epoll_fd, events, MAX_EPOLL_EVENTS, -1);
 		if (unlikely(num_events == -1)) {
 			if (errno == EINTR) {
@@ -426,6 +439,7 @@ int run_io(volatile int *shall_close) {
 		}
 	}
 
+	destroy_all_peers(epoll_fd);
 	close(epoll_fd);
 	return 0;
 
@@ -435,6 +449,10 @@ epoll_wait_failed:
 	destroy_peer(listen_server, epoll_fd, listen_server->io.fd);
 setup_listen_failed:
 	close(epoll_fd);
+epoll_create_failed:
+	signal(SIGINT, SIG_DFL);
+signal_failed:
+	signal(SIGTERM, SIG_DFL);
 	return -1;
 }
 

@@ -9,7 +9,7 @@ extern "C" {
 
 #define IO_WOULD_BLOCK -2
 
-int run_io(volatile int *shall_close);
+int run_io(void);
 char *get_read_ptr(struct peer *p, unsigned int count);
 int handle_all_peer_operations(struct peer *p);
 int send_buffer(struct peer *p);
