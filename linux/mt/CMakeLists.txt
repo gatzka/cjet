@@ -23,64 +23,56 @@ ADD_CUSTOM_COMMAND(
 	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/config.h
 )
 ADD_CUSTOM_COMMAND(
-	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/io.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/io.h
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/peer_io.h ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/peer_io.h
 )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 
-ADD_LIBRARY(linux_io STATIC
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	io_epoll.c
-	io_mt.c
-	main.c
-	peer.c
-)
-
-SET(CJET_FILES
-	../cJSON.c
-	../lmatch.c
-	../parse.c
-	../response.c
-	../state.c
-)
-
-SET(ECHO_FILES
-	../cJSON.c
-	../echo.c
-	../response.c
-	../state.c
-)
-
-SET(GEN_MESSAGE_HASHES
-	../gen_message_hashes/main.c
-)
-
 SET(DYNLIBS
 	-lm
 )
 
-ADD_EXECUTABLE(cjet.bin
+ADD_LIBRARY(linux_io STATIC
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	io.c
+	main.c
+)
+
+SET(CJET_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	../../cJSON.c
+	../../lmatch.c
+	../../parse.c
+	../../peer.c
+	../../response.c
+	../../state.c
+)
+ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
 )
-ADD_EXECUTABLE(echo.bin
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
-	${ECHO_FILES}
-)
-ADD_EXECUTABLE(gen_message_hashes.bin ${GEN_MESSAGE_HASHES})
-
 TARGET_LINK_LIBRARIES(
 	cjet.bin
 	linux_io
 	${DYNLIBS}
 )
 
+SET(ECHO_FILES
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	../../cJSON.c
+	../../echo.c
+	../../peer.c
+	../../response.c
+	../../state.c
+)
+ADD_EXECUTABLE(echo.bin
+	${ECHO_FILES}
+)
 TARGET_LINK_LIBRARIES(
 	echo.bin
 	linux_io
