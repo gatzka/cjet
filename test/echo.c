@@ -14,7 +14,8 @@ static const unsigned int MAX_MESSAGE_SIZE = 900;
 
 static const unsigned int ROUNDS = 100000;
 
-static const char ip[] = "172.19.191.19";
+static const char ip[] = "127.0.0.1";
+//static const char ip[] = "172.19.191.19";
 //static const char ip[] = "172.19.204.22";
 
 int main()
