@@ -6,7 +6,7 @@
 #include <string.h>
 
 #include "config.h"
-#include "io.h"
+#include "peer_io.h"
 #include "list.h"
 
 #ifdef __cplusplus

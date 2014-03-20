@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "state.h"
 #include "io.h"
+#include "state.h"
 
 static int shall_close = 0;
 
