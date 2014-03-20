@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE(eagain)
 	BOOST_REQUIRE(p != NULL);
 
 	char *read_ptr = get_read_ptr(p, MAX_MESSAGE_SIZE);
-	BOOST_CHECK(read_ptr == (char *)-1);
+	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 
 	free_peer(p);
 }
@@ -269,13 +269,13 @@ BOOST_AUTO_TEST_CASE(slow_read)
 	slow_read_counter = 0;
 
 	char *read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)-1);
+	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)-1);
+	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)-1);
+	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
 	memcpy(&value, read_ptr, sizeof(value));
 	BOOST_CHECK(ntohl(value) == 0x01030507);
 	free_peer(p);
@@ -291,14 +291,14 @@ BOOST_AUTO_TEST_CASE(fast_read)
 	BOOST_REQUIRE(p != NULL);
 
 	char *read_ptr = get_read_ptr(p, read_len);
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
 
 	strncpy(buffer, read_ptr, read_len);
 	buffer[read_len] = '\0';
 	BOOST_CHECK(strcmp(buffer, "Hello") == 0);
 
 	read_ptr = get_read_ptr(p, read_len);
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)-1));
+	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
 
 	strncpy(buffer, read_ptr, read_len);
 	buffer[read_len] = '\0';

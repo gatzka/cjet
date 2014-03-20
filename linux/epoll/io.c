@@ -203,12 +203,12 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 			return NULL;
 		}
 		if (read_length == -1) {
-			if ((errno != EAGAIN) &&
-			    (errno != EWOULDBLOCK)) {
+			if (unlikely((errno != EAGAIN) &&
+			             (errno != EWOULDBLOCK))) {
 				fprintf(stderr, "unexpected read error: %s!\n", strerror(errno));
 				return NULL;
 			}
-			return (char *)-1;
+			return (char *)IO_WOULD_BLOCK;
 		}
 		p->write_ptr += read_length;
 	}
@@ -317,7 +317,7 @@ int handle_all_peer_operations(struct peer *p)
 			message_length_ptr = get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
 				return -1;
-			} else if (message_length_ptr == (char *)-1) {
+			} else if (message_length_ptr == (char *)IO_WOULD_BLOCK) {
 				return 0;
 			}
 			memcpy(&message_length, message_length_ptr, sizeof(message_length));
@@ -336,7 +336,7 @@ int handle_all_peer_operations(struct peer *p)
 			message_ptr = get_read_ptr(p, message_length);
 			if (unlikely(message_ptr == NULL)) {
 				return -1;
-			} else if (message_ptr == (char *)-1) {
+			} else if (message_ptr == (char *)IO_WOULD_BLOCK) {
 				return 0;
 			}
 			p->op = READ_MSG_LENGTH;

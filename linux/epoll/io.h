@@ -7,6 +7,8 @@
 extern "C" {
 #endif
 
+#define IO_WOULD_BLOCK -1
+
 int run_io(volatile int *shall_close);
 char *get_read_ptr(struct peer *p, unsigned int count);
 int handle_all_peer_operations(struct peer *p);
