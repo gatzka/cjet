@@ -40,7 +40,7 @@ ADD_LIBRARY(linux_io STATIC
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io_ops.h
-	io_epoll.c
+	io.c
 	main.c
 )
 
