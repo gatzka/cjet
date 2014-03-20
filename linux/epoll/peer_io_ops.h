@@ -1,5 +1,5 @@
-#ifndef CJET_IO_OPS_H
-#define CJET_IO_OPS_H
+#ifndef CJET_PEER_IO_OPS_H
+#define CJET_PEER_IO_OPS_H
 
 #include "peer.h"
 

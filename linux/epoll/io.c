@@ -12,11 +12,11 @@
 
 #include "compiler.h"
 #include "io.h"
-#include "io_ops.h"
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_io.h"
+#include "peer_io_ops.h"
 #include "peer_testing.h"
 #include "state.h"
 
