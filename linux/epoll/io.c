@@ -138,7 +138,7 @@ static void destroy_all_peers(int epoll_fd)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct peer, io.list);
+		struct peer *p = list_entry(item, struct io, list);
 		destroy_peer(p, epoll_fd, p->io.fd);
 	}
 }
