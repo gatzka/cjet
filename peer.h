@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 
 #include "config.h"
 #include "io.h"
@@ -33,17 +34,30 @@ struct peer {
 
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
-
-int handle_all_peer_operations(struct peer *c);
-int send_message(struct peer *p, char *rendered, size_t len);
-
-/*
- * private functions. They prototypes are just here to allow unit
- * testing.
- */
-char *get_read_ptr(struct peer *p, unsigned int count);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
-int send_buffer(struct peer *p);
+
+static inline ptrdiff_t unread_space(const struct peer *p)
+{
+	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
+}
+
+static inline ptrdiff_t free_space(const struct peer *p)
+{
+	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
+}
+
+static inline void reorganize_read_buffer(struct peer *p)
+{
+	ptrdiff_t unread = p->write_ptr - p->read_ptr;
+	if (unread != 0) {
+		memmove(p->read_buffer, p->read_ptr, (size_t)unread);
+		p->write_ptr = p->read_buffer + unread;
+	} else {
+		p->write_ptr = p->read_buffer;
+	}
+	p->read_ptr = p->read_buffer;
+}
+
 
 #ifdef __cplusplus
 }

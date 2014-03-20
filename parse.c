@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "compiler.h"
+#include "io_ops.h"
 #include "cJSON.h"
 #include "parse.h"
 #include "peer.h"
