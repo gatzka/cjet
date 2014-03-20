@@ -52,11 +52,9 @@ SET(CJET_FILES
 	../../response.c
 	../../state.c
 )
-
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
 )
-
 TARGET_LINK_LIBRARIES(
 	cjet.bin
 	linux_io
@@ -72,11 +70,9 @@ SET(ECHO_FILES
 	../../response.c
 	../../state.c
 )
-
 ADD_EXECUTABLE(echo.bin
 	${ECHO_FILES}
 )
-
 TARGET_LINK_LIBRARIES(
 	echo.bin
 	linux_io
