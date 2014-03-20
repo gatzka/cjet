@@ -509,7 +509,7 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 
 	p->to_write = 10;
 	int ret = send_buffer(p);
-	BOOST_CHECK(ret == -2);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 	BOOST_CHECK(p->op == WRITE_MSG);
 
 	free_peer(p);
@@ -530,7 +530,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 	BOOST_REQUIRE(ret == 0);
 
 	ret = send_buffer(p);
-	BOOST_CHECK(ret == -2);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 	BOOST_CHECK(p->op == WRITE_MSG);
 
 	static char check_buffer[sizeof(sw_message) + sizeof(len_be)];

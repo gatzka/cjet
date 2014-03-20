@@ -230,7 +230,7 @@ int send_buffer(struct peer *p)
 				p->next_read_op = p->op;
 				p->op = WRITE_MSG;
 			}
-			return -2;
+			return IO_WOULD_BLOCK;
 		}
 		write_buffer_ptr += written;
 		p->to_write -= written;
@@ -281,14 +281,14 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	}
 
 	if (sent == -1) {
-		/* one of the write calls had blocked */
+		/* the writ call has blocked */
 		p->next_read_op = p->op;
 		p->op = WRITE_MSG;
 		return 0;
 	}
 
 	/* 
-	 * The write calls didn't block, but only wrote parts of the
+	 * The write call didn't block, but only wrote parts of the
 	 * messages. Try to send the rest.
 	 */
 	ret = send_buffer(p);
@@ -297,7 +297,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	 * change ret to 0 (no error). Writing the missing stuff is
 	 * handled via epoll / handle_all_peer_operations.
 	 */
-	if (ret == -2) {
+	if (ret == IO_WOULD_BLOCK) {
 		ret = 0;
 	}
 	return ret;
@@ -356,7 +356,7 @@ int handle_all_peer_operations(struct peer *p)
 				p->op = p->next_read_op;
 			}
 			/*
-			 * ret == -2 shows that send_buffer blocked. Leave
+			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
 			 * everything like it is.
 			 */
 		}
