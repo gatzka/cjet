@@ -412,8 +412,8 @@ int run_io(void)
 	pthread_t listen_thread;
 	int sig;
 
+	memset(&sa, 0, sizeof(sa));
 	sa.sa_handler = sigusr1_handler;
-	sa.sa_flags = 0;
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return -1;
 	}
