@@ -166,53 +166,51 @@ static int handle_all_peer_operations(struct peer *p)
 	uint32_t message_length;
 	char *message_ptr;
 
-	while (1) {
-		char *message_length_ptr;
-		int ret;
+	char *message_length_ptr;
+	int ret;
 
-		switch (p->op) {
-		case READ_MSG_LENGTH:
-			message_length_ptr = get_read_ptr(p, sizeof(message_length));
-			if (unlikely(message_length_ptr == NULL)) {
-				return -1;
-			} else if (unlikely(message_length_ptr == (char *)IO_INTERRUPTED)) {
-				return IO_INTERRUPTED;
-			}
-			memcpy(&message_length, message_length_ptr, sizeof(message_length));
-			message_length = ntohl(message_length);
-			p->op = READ_MSG;
-			p->msg_length = message_length;
-			/*
-			 *  CAUTION! This fall through is by design! Typically, the
-			 *  length of a messages and the message itself will go into
-			 *  a single TCP packet. This fall through eliminates an
-			 *  additional loop iteration.
-			 */
-
-		case READ_MSG:
-			message_length = p->msg_length;
-			message_ptr = get_read_ptr(p, message_length);
-			if (unlikely(message_ptr == NULL)) {
-				return -1;
-			} else if (message_ptr == (char *)IO_INTERRUPTED) {
-				return IO_INTERRUPTED;
-			}
-			p->op = READ_MSG_LENGTH;
-			ret = parse_message(message_ptr, message_length, p);
-			reorganize_read_buffer(p);
-			return ret;
-
-		case WRITE_MSG:
-			ret = send_buffer(p);
-			if (likely(ret == 0)) {
-				p->op = p->next_read_op;
-			}
-			return ret;
-
-		default:
-			fprintf(stderr, "Unknown client operation!\n");
+	switch (p->op) {
+	case READ_MSG_LENGTH:
+		message_length_ptr = get_read_ptr(p, sizeof(message_length));
+		if (unlikely(message_length_ptr == NULL)) {
 			return -1;
+		} else if (unlikely(message_length_ptr == (char *)IO_INTERRUPTED)) {
+			return IO_INTERRUPTED;
 		}
+		memcpy(&message_length, message_length_ptr, sizeof(message_length));
+		message_length = ntohl(message_length);
+		p->op = READ_MSG;
+		p->msg_length = message_length;
+		/*
+		 *  CAUTION! This fall through is by design! Typically, the
+		 *  length of a messages and the message itself will go into
+		 *  a single TCP packet. This fall through eliminates an
+		 *  additional loop iteration.
+		 */
+
+	case READ_MSG:
+		message_length = p->msg_length;
+		message_ptr = get_read_ptr(p, message_length);
+		if (unlikely(message_ptr == NULL)) {
+			return -1;
+		} else if (message_ptr == (char *)IO_INTERRUPTED) {
+			return IO_INTERRUPTED;
+		}
+		p->op = READ_MSG_LENGTH;
+		ret = parse_message(message_ptr, message_length, p);
+		reorganize_read_buffer(p);
+		return ret;
+
+	case WRITE_MSG:
+		ret = send_buffer(p);
+		if (likely(ret == 0)) {
+			p->op = p->next_read_op;
+		}
+		return ret;
+
+	default:
+		fprintf(stderr, "Unknown client operation!\n");
+		return -1;
 	}
 }
 
@@ -276,10 +274,9 @@ so_reuse_failed:
 
 static void *handle_accept()
 {
-	int listen_fd;
-
+	int listen_fd = get_listen_socket();
 	fprintf(stdout, "in accept thread!\n");
-	listen_fd = get_listen_socket();
+
 	while (likely(go_ahead)) {
 		int peer_fd = accept(listen_fd, NULL, NULL);
 		if (unlikely(peer_fd == -1)) {
@@ -346,10 +343,12 @@ static int kill_listen_thread(pthread_t listen_thread) {
 		fprintf(stderr, "could not send kill to listen thread!\n");
 		return -1;
 	}
+	fprintf(stdout, "killed listen thread!\n");
 	if (pthread_join(listen_thread, NULL) != 0) {
 		fprintf(stderr, "Could not join listen thread!\n");
 		return -1;
 	}
+	fprintf(stdout, "joined listen thread!\n");
 	return 0;
 }
 
@@ -363,6 +362,7 @@ int run_io(void)
 	int sig;
 
 	sa.sa_handler = sigusr1_handler;
+	sa.sa_flags = 0;
 	if (sigemptyset(&sa.sa_mask) != 0) {
 		return -1;
 	}
