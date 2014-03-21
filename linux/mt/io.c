@@ -3,6 +3,7 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -12,11 +13,16 @@
 #include "compiler.h"
 #include "io.h"
 #include "list.h"
+#include "parse.h"
 #include "peer.h"
+#include "peer_io_ops.h"
 #include "state.h"
 
-static LIST_HEAD(peer_list);
+#define IO_WOULD_BLOCK -2
 
+static int go_ahead = 1;
+
+static LIST_HEAD(peer_list);
 static inline void *create_peer(int fd)
 {
 	struct peer *peer = alloc_peer(fd);
@@ -41,21 +47,231 @@ static void destroy_all_peers()
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct peer, io.list);
+		struct peer *p = list_entry(item, struct io, list);
+		pthread_t thread_id = p->io.thread_id;
 		destroy_peer(p, p->io.fd);
+		pthread_join(thread_id, NULL);
 	}
 }
 
-static struct peer *setup_listen_socket()
+static void sigusr1_handler()
+{
+}
+
+static char *get_read_ptr(struct peer *p, unsigned int count)
+{
+	if (unlikely((ptrdiff_t)count > unread_space(p))) {
+		fprintf(stderr, "peer asked for too much data: %d!\n", count);
+		return NULL;
+	}
+	while (1) {
+		ssize_t read_length;
+		if (p->write_ptr - p->read_ptr >= (ptrdiff_t)count) {
+			char *read_ptr = p->read_ptr;
+			p->read_ptr += count;
+			return read_ptr;
+		}
+
+		read_length = read(p->io.fd, p->write_ptr, (size_t)free_space(p));
+		if (unlikely(read_length == 0)) {
+			/* peer closed connection */
+			return NULL;
+		}
+		if (read_length == -1) {
+			if (unlikely((errno != EAGAIN) &&
+			             (errno != EWOULDBLOCK))) {
+				fprintf(stderr, "unexpected read error: %s!\n", strerror(errno));
+				return NULL;
+			}
+			return (char *)IO_WOULD_BLOCK;
+		}
+		p->write_ptr += read_length;
+	}
+}
+
+static int send_buffer(struct peer *p)
+{
+	char *write_buffer_ptr = p->write_buffer;
+	while (p->to_write != 0) {
+		ssize_t written;
+		written = send(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		if (unlikely(written == -1)) {
+			if (unlikely((errno != EAGAIN) &&
+			             (errno != EWOULDBLOCK))) {
+				return -1;
+			}
+			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
+			if (p->op != WRITE_MSG) {
+				p->next_read_op = p->op;
+				p->op = WRITE_MSG;
+			}
+			return IO_WOULD_BLOCK;
+		}
+		write_buffer_ptr += written;
+		p->to_write -= written;
+	}
+	return 0;
+}
+
+int send_message(struct peer *p, char *rendered, size_t len)
+{
+	int ret;
+	struct iovec iov[2];
+	ssize_t sent;
+	size_t written = 0;
+	uint32_t message_length = htonl(len);
+
+	if (unlikely(p->op == WRITE_MSG)) {
+		/* 
+		 * There is already something in p->write_buffer, that hasn't
+		 * been written yet because the socket had blocked. In this case
+		 * just append the new message to p->write_buffer.
+		 */
+		 ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
+		 return ret;
+	}
+
+	iov[0].iov_base = &message_length;
+	iov[0].iov_len = sizeof(message_length);
+	iov[1].iov_base = rendered;
+	iov[1].iov_len = len;
+
+	sent = writev(p->io.fd, iov, sizeof(iov) / sizeof(struct iovec));
+	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
+		return 0;
+	}
+
+	if (sent > 0) {
+		written += (size_t)sent;
+	}
+
+	if (unlikely((sent == -1) &&
+	             ((errno != EAGAIN) &&
+	              (errno != EWOULDBLOCK)))) {
+		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
+		return -1;
+	}
+	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length, written) == -1)) {
+		return -1;
+	}
+
+	if (sent == -1) {
+		/* the writ call has blocked */
+		p->next_read_op = p->op;
+		p->op = WRITE_MSG;
+		return 0;
+	}
+
+	/* 
+	 * The write call didn't block, but only wrote parts of the
+	 * messages. Try to send the rest.
+	 */
+	ret = send_buffer(p);
+	/*
+	 * write in send_buffer blocked. This is not an error, so
+	 * change ret to 0 (no error). Writing the missing stuff is
+	 * handled via epoll / handle_all_peer_operations.
+	 */
+	if (ret == IO_WOULD_BLOCK) {
+		ret = 0;
+	}
+	return ret;
+}
+
+static int handle_all_peer_operations(struct peer *p)
+{
+	uint32_t message_length;
+	char *message_ptr;
+
+	while (1) {
+		char *message_length_ptr;
+		int ret;
+
+		switch (p->op) {
+		case READ_MSG_LENGTH:
+			message_length_ptr = get_read_ptr(p, sizeof(message_length));
+			if (unlikely(message_length_ptr == NULL)) {
+				return -1;
+			} else if (message_length_ptr == (char *)IO_WOULD_BLOCK) {
+				return 0;
+			}
+			memcpy(&message_length, message_length_ptr, sizeof(message_length));
+			message_length = ntohl(message_length);
+			p->op = READ_MSG;
+			p->msg_length = message_length;
+			/*
+			 *  CAUTION! This fall through is by design! Typically, the
+			 *  length of a messages and the message itself will go into
+			 *  a single TCP packet. This fall through eliminates an
+			 *  additional loop iteration.
+			 */
+
+		case READ_MSG:
+			message_length = p->msg_length;
+			message_ptr = get_read_ptr(p, message_length);
+			if (unlikely(message_ptr == NULL)) {
+				return -1;
+			} else if (message_ptr == (char *)IO_WOULD_BLOCK) {
+				return 0;
+			}
+			p->op = READ_MSG_LENGTH;
+			ret = parse_message(message_ptr, message_length, p);
+			if (unlikely(ret == -1)) {
+				return -1;
+			}
+			reorganize_read_buffer(p);
+			break;
+
+		case WRITE_MSG: {
+			ret = send_buffer(p);
+			if (unlikely(ret == -1)) {
+				return -1;
+			}
+			if (likely(ret == 0)) {
+				p->op = p->next_read_op;
+			}
+			/*
+			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
+			 * everything like it is.
+			 */
+		}
+			break;
+
+		default:
+			fprintf(stderr, "Unknown client operation!\n");
+			return -1;
+		}
+	}
+}
+
+static void *handle_client(void *arg)
+{
+	struct peer *peer = arg;
+	while (likely(go_ahead)) {
+		#if 0
+		int ret = handle_all_peer_operations(peer);
+		if (ret != IO_INTERRUPTED) {
+			/*
+			 * An error occured or the client closed the connection.
+			 */
+			break;
+		}
+		#endif
+	}
+	destroy_peer(peer, peer->io.fd);
+
+	return NULL;
+}
+
+static int get_listen_socket()
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
 	static const int reuse_on = 1;
-	struct peer *peer;
 
 	if ((listen_fd = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
 		fprintf(stderr, "Could not create listen socket!\n");
-		return NULL;
+		return -1;
 	}
 
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on, sizeof(reuse_on)) < 0) {
@@ -77,53 +293,30 @@ static struct peer *setup_listen_socket()
 		goto listen_failed;
 	}
 
-	peer = create_peer(listen_fd);
-	if (peer == NULL) {
-		goto alloc_peer_failed;
-	}
+	return listen_fd;
 
-	return peer;
-
-alloc_peer_failed:
 listen_failed:
 bind_failed:
 so_reuse_failed:
 	close(listen_fd);
-	return NULL;
+	return -1;
 }
 
-static void *handle_client(void *arg)
+static void *handle_accept()
 {
-	struct peer *peer = arg;
-
-	int ret = handle_all_peer_operations(peer);
-	if (unlikely(ret == -1)) {
-		destroy_peer(peer, peer->io.fd);
-	}
-	return NULL;
-}
-
-int run_io(volatile int *shall_close)
-{
-	struct peer *listen_server;
 	int listen_fd;
 
-	if ((listen_server = setup_listen_socket()) == NULL)  {
-		return -1;
-	}
-	listen_fd = listen_server->io.fd;
-
-	while (1) {
+	fprintf(stdout, "in accept thread!\n");
+	listen_fd = get_listen_socket();
+	while (likely(go_ahead)) {
 		int peer_fd;
-		if (unlikely(*shall_close)) {
-			destroy_all_peers();
-			break;
-		}
+
 		peer_fd = accept(listen_fd, NULL, NULL);
-		if (peer_fd == -1) {
+		if (unlikely(peer_fd == -1)) {
 			if (errno == EINTR) {
 				continue;
 			} else {
+				fprintf(stderr, "Accept failed!\n");
 				goto accept_failed;
 			}
 		} else {
@@ -154,19 +347,92 @@ int run_io(volatile int *shall_close)
 				fprintf(stderr, "could not create thread for peer!\n");
 				goto pthread_create_failed;
 			}
+			peer->io.thread_id = thread_id;
 			continue;
 
 		pthread_create_failed:
 		pthread_setdetach_failed:
 		pthread_attr_init_failed:
+			destroy_peer(peer, peer_fd);
 		alloc_peer_failed:
 		no_delay_failed:
 			close(peer_fd);
 		accept_failed:
-			destroy_peer(listen_server, listen_server->io.fd);
-			return -1;
+			fprintf(stdout, "accept finish unexpectedly!\n");
+			close(listen_fd);
+			return (void *)-1;
 		}
 	}
+
+	fprintf(stdout, "accept finish!\n");
+	close(listen_fd);
+	return NULL;
+}
+
+static int kill_listen_thread(pthread_t listen_thread) {
+	if (pthread_kill(listen_thread, SIGUSR1) != 0) {
+		fprintf(stderr, "could not send kill to listen thread!\n");
+		return -1;
+	}
+	if (pthread_join(listen_thread, NULL) != 0) {
+		fprintf(stderr, "Could not join listen thread!\n");
+		return -1;
+	}
+	return 0;
+}
+
+int run_io(void)
+{
+	sigset_t set;
+	sigset_t old_set;
+	struct sigaction sa;
+	pthread_attr_t attr;
+	pthread_t listen_thread;
+	int sig;
+
+	sa.sa_handler = sigusr1_handler;
+	if (sigemptyset(&sa.sa_mask) != 0) {
+		return -1;
+	}
+	if (sigaction(SIGUSR1, &sa, NULL) != 0) {
+		return -1;
+	}
+	if (sigemptyset(&set) != 0) {
+		return -1;
+	}
+	if (sigaddset(&set, SIGTERM) != 0) {
+		return -1;
+	}
+	if (sigaddset(&set, SIGINT) != 0) {
+		return -1;
+	}
+	if (pthread_sigmask(SIG_BLOCK, &set, &old_set) != 0) {
+		return -1;
+	}
+
+	if (pthread_attr_init(&attr) != 0) {
+		fprintf(stderr, "could set init thread attribute!\n");
+		return -1;
+	}
+	if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) != 0) {
+		fprintf(stderr, "could set detach attribute for peer thread!\n");
+		return -1;
+	}
+	if (pthread_create(&listen_thread, NULL, handle_accept, NULL) != 0) {
+		fprintf(stderr, "could not create thread for peer!\n");
+		return -1;
+	}
+
+	if (sigwait(&set, &sig) != 0) {
+		return -1;
+	}
+	fprintf(stdout, "stopping everything!\n");
+	go_ahead = 0;
+
+	if (kill_listen_thread(listen_thread) != 0) {
+		return -1;
+	}
+	destroy_all_peers();
 	return 0;
 }
 
