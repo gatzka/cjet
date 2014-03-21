@@ -18,7 +18,7 @@
 #include "peer_io_ops.h"
 #include "state.h"
 
-#define IO_WOULD_BLOCK -2
+#define IO_INTERRUPTED -2
 
 static int go_ahead = 1;
 
@@ -34,11 +34,15 @@ static inline void *create_peer(int fd)
 	return peer;
 }
 
-static void destroy_peer(struct peer *p, int fd)
+static void shutdown_peer(struct peer *p, int fd)
 {
 	remove_all_states_from_peer(p);
-	list_del(&p->io.list);
 	close(fd);
+}
+
+static void destroy_peer(struct peer *p)
+{
+	list_del(&p->io.list);
 	free_peer(p);
 }
 
@@ -49,7 +53,7 @@ static void destroy_all_peers()
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct io, list);
 		pthread_t thread_id = p->io.thread_id;
-		destroy_peer(p, p->io.fd);
+		destroy_peer(p);
 		pthread_join(thread_id, NULL);
 	}
 }
@@ -78,12 +82,11 @@ static char *get_read_ptr(struct peer *p, unsigned int count)
 			return NULL;
 		}
 		if (read_length == -1) {
-			if (unlikely((errno != EAGAIN) &&
-			             (errno != EWOULDBLOCK))) {
+			if (unlikely(errno != EINTR)) {
 				fprintf(stderr, "unexpected read error: %s!\n", strerror(errno));
 				return NULL;
 			}
-			return (char *)IO_WOULD_BLOCK;
+			return (char *)IO_INTERRUPTED;
 		}
 		p->write_ptr += read_length;
 	}
@@ -96,16 +99,11 @@ static int send_buffer(struct peer *p)
 		ssize_t written;
 		written = send(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
-			if (unlikely((errno != EAGAIN) &&
-			             (errno != EWOULDBLOCK))) {
+			if (unlikely(errno != EINTR)) {
 				return -1;
 			}
 			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
-			if (p->op != WRITE_MSG) {
-				p->next_read_op = p->op;
-				p->op = WRITE_MSG;
-			}
-			return IO_WOULD_BLOCK;
+			return IO_INTERRUPTED;
 		}
 		write_buffer_ptr += written;
 		p->to_write -= written;
@@ -115,7 +113,6 @@ static int send_buffer(struct peer *p)
 
 int send_message(struct peer *p, char *rendered, size_t len)
 {
-	int ret;
 	struct iovec iov[2];
 	ssize_t sent;
 	size_t written = 0;
@@ -124,11 +121,10 @@ int send_message(struct peer *p, char *rendered, size_t len)
 	if (unlikely(p->op == WRITE_MSG)) {
 		/* 
 		 * There is already something in p->write_buffer, that hasn't
-		 * been written yet because the socket had blocked. In this case
+		 * been written yet because the socket was interrupted. In this case
 		 * just append the new message to p->write_buffer.
 		 */
-		 ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
-		 return ret;
+		 return copy_msg_to_write_buffer(p, rendered, message_length, 0);
 	}
 
 	iov[0].iov_base = &message_length;
@@ -141,13 +137,12 @@ int send_message(struct peer *p, char *rendered, size_t len)
 		return 0;
 	}
 
-	if (sent > 0) {
+	if (sent >= 0) {
 		written += (size_t)sent;
 	}
 
 	if (unlikely((sent == -1) &&
-	             ((errno != EAGAIN) &&
-	              (errno != EWOULDBLOCK)))) {
+	             ((errno != EINTR)))) {
 		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
 		return -1;
 	}
@@ -155,27 +150,15 @@ int send_message(struct peer *p, char *rendered, size_t len)
 		return -1;
 	}
 
+	p->next_read_op = p->op;
+	p->op = WRITE_MSG;
 	if (sent == -1) {
-		/* the writ call has blocked */
-		p->next_read_op = p->op;
-		p->op = WRITE_MSG;
+		/* the write call was interrupted */
+		return IO_INTERRUPTED;
+	} else {
+		/* only parts had been written */
 		return 0;
 	}
-
-	/* 
-	 * The write call didn't block, but only wrote parts of the
-	 * messages. Try to send the rest.
-	 */
-	ret = send_buffer(p);
-	/*
-	 * write in send_buffer blocked. This is not an error, so
-	 * change ret to 0 (no error). Writing the missing stuff is
-	 * handled via epoll / handle_all_peer_operations.
-	 */
-	if (ret == IO_WOULD_BLOCK) {
-		ret = 0;
-	}
-	return ret;
 }
 
 static int handle_all_peer_operations(struct peer *p)
@@ -192,8 +175,8 @@ static int handle_all_peer_operations(struct peer *p)
 			message_length_ptr = get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
 				return -1;
-			} else if (message_length_ptr == (char *)IO_WOULD_BLOCK) {
-				return 0;
+			} else if (unlikely(message_length_ptr == (char *)IO_INTERRUPTED)) {
+				return IO_INTERRUPTED;
 			}
 			memcpy(&message_length, message_length_ptr, sizeof(message_length));
 			message_length = ntohl(message_length);
@@ -211,30 +194,20 @@ static int handle_all_peer_operations(struct peer *p)
 			message_ptr = get_read_ptr(p, message_length);
 			if (unlikely(message_ptr == NULL)) {
 				return -1;
-			} else if (message_ptr == (char *)IO_WOULD_BLOCK) {
-				return 0;
+			} else if (message_ptr == (char *)IO_INTERRUPTED) {
+				return IO_INTERRUPTED;
 			}
 			p->op = READ_MSG_LENGTH;
 			ret = parse_message(message_ptr, message_length, p);
-			if (unlikely(ret == -1)) {
-				return -1;
-			}
 			reorganize_read_buffer(p);
-			break;
+			return ret;
 
 		case WRITE_MSG:
 			ret = send_buffer(p);
-			if (unlikely(ret == -1)) {
-				return -1;
-			}
 			if (likely(ret == 0)) {
 				p->op = p->next_read_op;
 			}
-			/*
-			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
-			 * everything like it is.
-			 */
-			break;
+			return ret;
 
 		default:
 			fprintf(stderr, "Unknown client operation!\n");
@@ -248,16 +221,16 @@ static void *handle_client(void *arg)
 	struct peer *peer = arg;
 	while (likely(go_ahead)) {
 		int ret = handle_all_peer_operations(peer);
-		#if 0
-		if (ret != IO_INTERRUPTED) {
+		if (ret == -1) {
 			/*
 			 * An error occured or the client closed the connection.
 			 */
 			break;
 		}
-		#endif
 	}
-	destroy_peer(peer, peer->io.fd);
+	fprintf(stdout, "closing peer!\n");
+	shutdown_peer(peer, peer->io.fd);
+	fprintf(stdout, "peer closed!\n");
 
 	return NULL;
 }
@@ -308,11 +281,10 @@ static void *handle_accept()
 	fprintf(stdout, "in accept thread!\n");
 	listen_fd = get_listen_socket();
 	while (likely(go_ahead)) {
-		int peer_fd;
-
-		peer_fd = accept(listen_fd, NULL, NULL);
+		int peer_fd = accept(listen_fd, NULL, NULL);
 		if (unlikely(peer_fd == -1)) {
 			if (errno == EINTR) {
+				fprintf(stdout, "accept interrupted\n");
 				continue;
 			} else {
 				fprintf(stderr, "Accept failed!\n");
@@ -338,7 +310,7 @@ static void *handle_accept()
 				fprintf(stderr, "could set init thread attribute!\n");
 				goto pthread_attr_init_failed;
 			}
-			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED) != 0) {
+			if (pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE) != 0) {
 				fprintf(stderr, "could set detach attribute for peer thread!\n");
 				goto pthread_setdetach_failed;
 			}
@@ -352,7 +324,8 @@ static void *handle_accept()
 		pthread_create_failed:
 		pthread_setdetach_failed:
 		pthread_attr_init_failed:
-			destroy_peer(peer, peer_fd);
+			shutdown_peer(peer, peer_fd);
+			destroy_peer(peer);
 		alloc_peer_failed:
 		no_delay_failed:
 			close(peer_fd);
@@ -431,6 +404,7 @@ int run_io(void)
 	if (kill_listen_thread(listen_thread) != 0) {
 		return -1;
 	}
+	fprintf(stdout, "destroy peers!\n");
 	destroy_all_peers();
 	return 0;
 }
