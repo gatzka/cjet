@@ -1,3 +1,4 @@
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -6,6 +7,8 @@
 
 int main()
 {
+	signal(SIGPIPE, SIG_IGN);
+
 	if ((create_setter_hashtable()) == -1) {
 		fprintf(stderr, "Cannot allocate hashtable for states!\n");
 		return EXIT_FAILURE;
