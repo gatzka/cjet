@@ -23,6 +23,7 @@
 
 static LIST_HEAD(peer_list);
 static int go_ahead = 1;
+static int number_of_peers = 0;
 
 static int set_fd_non_blocking(int fd)
 {
@@ -133,6 +134,7 @@ static void destroy_peer(struct peer *p, int epoll_fd, int fd)
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	free_peer(p);
+	number_of_peers--;
 }
 
 static void destroy_all_peers(int epoll_fd)
@@ -161,6 +163,11 @@ static int accept_all(int epoll_fd, int listen_fd)
 			struct peer *peer;
 			static const int tcp_nodelay_on = 1;
 
+			if (unlikely(number_of_peers >= MAX_NUMBER_OF_PEERS)) {
+				close(peer_fd);
+				continue;
+			}
+
 			if (unlikely(set_fd_non_blocking(peer_fd) < 0)) {
 				goto nonblock_failed;
 			}
@@ -174,7 +181,8 @@ static int accept_all(int epoll_fd, int listen_fd)
 				fprintf(stderr, "Could not allocate peer!\n");
 				goto create_peer_wait_failed;
 			}
-			return 0;
+			number_of_peers++;
+			continue;
 
 		create_peer_wait_failed:
 		no_delay_failed:

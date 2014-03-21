@@ -16,8 +16,10 @@
  */
 #define STATE_SET_TABLE_ORDER 13
 
+#define MAX_NUMBER_OF_PEERS 10
+
 /* Linux specific configs */
 
-#define MAX_EPOLL_EVENTS 100
+#define MAX_EPOLL_EVENTS (MAX_NUMBER_OF_PEERS + 1)
 
 #endif
