@@ -6,7 +6,7 @@ SET(WARN_SWITCHES "-pipe -Wall -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 
 
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -pthread" CACHE STRING "" FORCE)
 
-SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer -flto=16 -fuse-linker-plugin" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer -flto" CACHE STRING "" FORCE)
 SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb" CACHE STRING "" FORCE)
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu -Wl,--as-needed" CACHE STRING "" FORCE)
