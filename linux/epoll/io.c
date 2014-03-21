@@ -355,7 +355,7 @@ int handle_all_peer_operations(struct peer *p)
 			reorganize_read_buffer(p);
 			break;
 
-		case WRITE_MSG: {
+		case WRITE_MSG:
 			ret = send_buffer(p);
 			if (unlikely(ret == -1)) {
 				return -1;
@@ -367,7 +367,6 @@ int handle_all_peer_operations(struct peer *p)
 			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
 			 * everything like it is.
 			 */
-		}
 			break;
 
 		default:
