@@ -23,6 +23,7 @@
 static int go_ahead = 1;
 
 static LIST_HEAD(peer_list);
+
 static inline void *create_peer(int fd)
 {
 	struct peer *peer = alloc_peer(fd);
@@ -34,10 +35,28 @@ static inline void *create_peer(int fd)
 	return peer;
 }
 
+static void wait_for_death(struct peer *p)
+{
+	pthread_mutex_lock(&p->io.death_mutex);
+	while (!p->io.is_dead) {
+		pthread_cond_wait(&p->io.death_cv, &p->io.death_mutex);
+	}
+	pthread_mutex_unlock(&p->io.death_mutex);
+}
+
+static void signal_peer_death(struct peer *p)
+{
+	pthread_mutex_lock(&p->io.death_mutex);
+	p->io.is_dead = 1;
+	pthread_cond_signal(&p->io.death_cv);
+	pthread_mutex_unlock(&p->io.death_mutex);
+}
+
 static void shutdown_peer(struct peer *p, int fd)
 {
 	remove_all_states_from_peer(p);
 	close(fd);
+	signal_peer_death(p);
 }
 
 static void destroy_peer(struct peer *p)
@@ -46,15 +65,34 @@ static void destroy_peer(struct peer *p)
 	free_peer(p);
 }
 
-static void destroy_all_peers()
+static void scan_for_dead_peers(void)
 {
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct io, list);
 		pthread_t thread_id = p->io.thread_id;
-		destroy_peer(p);
+
+		pthread_mutex_lock(&p->io.death_mutex);
+		if (p->io.is_dead) {
+			pthread_join(thread_id, NULL);
+			destroy_peer(p);
+		};
+		pthread_mutex_unlock(&p->io.death_mutex);
+	}
+}
+
+static void destroy_all_peers(void)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct io, list);
+		pthread_t thread_id = p->io.thread_id;
+		pthread_kill(thread_id, SIGUSR1);
+		wait_for_death(p);
 		pthread_join(thread_id, NULL);
+		destroy_peer(p);
 	}
 }
 
@@ -278,6 +316,7 @@ static void *handle_accept()
 	fprintf(stdout, "in accept thread!\n");
 
 	while (likely(go_ahead)) {
+		scan_for_dead_peers();
 		int peer_fd = accept(listen_fd, NULL, NULL);
 		if (unlikely(peer_fd == -1)) {
 			if (errno == EINTR) {
@@ -300,7 +339,16 @@ static void *handle_accept()
 			peer = create_peer(peer_fd);
 			if (unlikely(peer == NULL)) {
 				fprintf(stderr, "Could not allocate peer!\n");
-				goto alloc_peer_failed;
+				goto create_peer_failed;
+			}
+			peer->io.is_dead = 0;
+			if (pthread_mutex_init(&peer->io.death_mutex, NULL) != 0) {
+				fprintf(stderr, "Could not init mutex!\n");
+				goto pthread_mutex_init_failed;
+			}
+			if (pthread_cond_init(&peer->io.death_cv, NULL) != 0) {
+				fprintf(stderr, "Could not init condition variable!\n");
+				goto pthread_cond_init_failed;
 			}
 
 			if (pthread_attr_init(&attr) != 0) {
@@ -316,14 +364,17 @@ static void *handle_accept()
 				goto pthread_create_failed;
 			}
 			peer->io.thread_id = thread_id;
+
 			continue;
 
 		pthread_create_failed:
 		pthread_setdetach_failed:
 		pthread_attr_init_failed:
+		pthread_cond_init_failed:
+		pthread_mutex_init_failed:
 			shutdown_peer(peer, peer_fd);
 			destroy_peer(peer);
-		alloc_peer_failed:
+		create_peer_failed:
 		no_delay_failed:
 			close(peer_fd);
 		accept_failed:
