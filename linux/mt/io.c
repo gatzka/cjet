@@ -20,6 +20,32 @@
 
 #define IO_INTERRUPTED -2
 
+static pthread_mutex_t num_peers_mtx = PTHREAD_MUTEX_INITIALIZER;
+static int num_peers = 0;
+
+static int get_number_of_peers(void)
+{
+	int peers;
+	pthread_mutex_lock(&num_peers_mtx);
+	peers = num_peers;
+	pthread_mutex_unlock(&num_peers_mtx);
+	return peers;
+}
+
+static void increment_number_of_peers(void)
+{
+	pthread_mutex_lock(&num_peers_mtx);
+	num_peers++;
+	pthread_mutex_unlock(&num_peers_mtx);
+}
+
+static void decrement_number_of_peers(void)
+{
+	pthread_mutex_lock(&num_peers_mtx);
+	num_peers--;
+	pthread_mutex_unlock(&num_peers_mtx);
+}
+
 static int go_ahead = 1;
 
 static LIST_HEAD(peer_list);
@@ -63,6 +89,7 @@ static void destroy_peer(struct peer *p)
 {
 	list_del(&p->io.list);
 	free_peer(p);
+	decrement_number_of_peers();
 }
 
 static void scan_for_dead_peers(void)
@@ -332,6 +359,11 @@ static void *handle_accept()
 			pthread_attr_t attr;
 			static const int tcp_nodelay_on = 1;
 
+			if (unlikely(get_number_of_peers() >= MAX_NUMBER_OF_PEERS)) {
+				close(peer_fd);
+				continue;
+			}
+
 			if (unlikely(setsockopt(peer_fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on)) < 0)) {
 				goto no_delay_failed;
 			}
@@ -364,6 +396,7 @@ static void *handle_accept()
 				goto pthread_create_failed;
 			}
 			peer->io.thread_id = thread_id;
+			increment_number_of_peers();
 
 			continue;
 

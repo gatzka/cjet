@@ -16,4 +16,6 @@
  */
 #define STATE_SET_TABLE_ORDER 13
 
+#define MAX_NUMBER_OF_PEERS 10
+
 #endif
