@@ -222,7 +222,7 @@ static int handle_all_peer_operations(struct peer *p)
 			reorganize_read_buffer(p);
 			break;
 
-		case WRITE_MSG: {
+		case WRITE_MSG:
 			ret = send_buffer(p);
 			if (unlikely(ret == -1)) {
 				return -1;
@@ -234,7 +234,6 @@ static int handle_all_peer_operations(struct peer *p)
 			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
 			 * everything like it is.
 			 */
-		}
 			break;
 
 		default:
@@ -248,8 +247,8 @@ static void *handle_client(void *arg)
 {
 	struct peer *peer = arg;
 	while (likely(go_ahead)) {
-		#if 0
 		int ret = handle_all_peer_operations(peer);
+		#if 0
 		if (ret != IO_INTERRUPTED) {
 			/*
 			 * An error occured or the client closed the connection.
