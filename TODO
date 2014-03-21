@@ -1,6 +1,6 @@
-- try valgrind for epoll and multithread
 - limit number of connected clients
 
 - fetcher/setter-Suche per radix/prefix/patricia trie
 - evtl. HAT-trie
-- close_peer_connection -> close_connection_and_delete_peer
+
+- copy_msg_to_write_buffer für multithread synchronisieren
