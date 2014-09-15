@@ -40,17 +40,12 @@ SET(DYNLIBS
 	-lm
 )
 
-ADD_LIBRARY(linux_io STATIC
+SET(CJET_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	io.c
 	../main.c
-)
-
-SET(CJET_FILES
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
-	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	../../cJSON.c
 	../../lmatch.c
 	../../parse.c
@@ -63,13 +58,15 @@ ADD_EXECUTABLE(cjet.bin
 )
 TARGET_LINK_LIBRARIES(
 	cjet.bin
-	linux_io
 	${DYNLIBS}
 )
 
 SET(ECHO_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
+	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/io.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
+	io.c
+	../main.c
 	../../cJSON.c
 	../../echo.c
 	../../peer.c
@@ -81,7 +78,6 @@ ADD_EXECUTABLE(echo.bin
 )
 TARGET_LINK_LIBRARIES(
 	echo.bin
-	linux_io
 	${DYNLIBS}
 )
 
