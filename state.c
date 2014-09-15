@@ -87,6 +87,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	}
 	HASHTABLE_PUT(STATE_SET_TABLE, setter_hashtable, s->path, s, NULL);
 	list_add_tail(&s->list, &p->state_list);
+	// TODO: notify all clients interested in this state
 	return NULL;
 }
 
