@@ -28,6 +28,11 @@ static cJSON *get_path_from_params(cJSON *params, cJSON **err)
 	return path;
 }
 
+static cJSON *process_change(cJSON *params, struct peer *p)
+{
+	return NULL;
+}
+
 static cJSON *process_add(cJSON *params, struct peer *p)
 {
 	cJSON *value;
@@ -126,8 +131,8 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	method_string = method->valuestring;
 	if (strcmp(method_string, "set") == 0) {
 		error = NULL;
-	} else if (strcmp(method_string, "post") == 0) {
-		error = NULL;
+	} else if (strcmp(method_string, "change") == 0) {
+		error = process_change(params, p);
 	} else if (strcmp(method_string, "add") == 0) {
 		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
