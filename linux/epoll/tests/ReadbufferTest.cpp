@@ -504,14 +504,17 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 
 BOOST_AUTO_TEST_CASE(write_blocks)
 {
+	char buffer[10];
 	struct peer *p = alloc_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
-	p->to_write = 10;
+	p->write_buffer = buffer;
+	p->to_write = sizeof(buffer);
 	int ret = send_buffer(p);
 	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 	BOOST_CHECK(p->op == WRITE_MSG);
 
+	p->write_buffer = NULL;
 	free_peer(p);
 }
 
