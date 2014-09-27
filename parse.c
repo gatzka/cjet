@@ -11,7 +11,7 @@
 #include "response.h"
 #include "state.h"
 
-static cJSON *get_path_from_params(cJSON *params, cJSON **err)
+static const char *get_path_from_params(cJSON *params, cJSON **err)
 {
 	cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
@@ -25,7 +25,7 @@ static cJSON *get_path_from_params(cJSON *params, cJSON **err)
 		return NULL;
 	}
 	*err = NULL;
-	return path;
+	return path->valuestring;
 }
 
 static cJSON *process_change(cJSON *params, struct peer *p)
@@ -37,7 +37,7 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 {
 	cJSON *value;
 	cJSON *error;
-	cJSON *path = get_path_from_params(params, &error);
+	const char *path = get_path_from_params(params, &error);
 
 	if (unlikely(path == NULL)) {
 		return error;
@@ -49,19 +49,19 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 		return error;
 	}
 
-	error = add_state_to_peer(p, path->valuestring, value);
+	error = add_state_to_peer(p, path, value);
 	return error;
 }
 
 static cJSON *process_remove(cJSON *params, struct peer *p)
 {
 	cJSON *error;
-	cJSON *path = get_path_from_params(params, &error);
+	const char *path = get_path_from_params(params, &error);
 	if (unlikely(path == NULL)) {
 		return error;
 	}
 
-	error = remove_state_from_peer(p, path->valuestring);
+	error = remove_state_from_peer(p, path);
 	return error;
 }
 
