@@ -64,11 +64,11 @@ extern "C" {
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	struct peer *p = alloc_peer(-1);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(correct_json, strlen(correct_json), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 }
 
 BOOST_AUTO_TEST_CASE(length_too_long)
@@ -86,11 +86,11 @@ BOOST_AUTO_TEST_CASE(length_too_short)
 BOOST_AUTO_TEST_CASE(two_method)
 {
 	struct peer *p = alloc_peer(-1);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(json_two_method, strlen(json_two_method), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 }
 
 BOOST_AUTO_TEST_CASE(wrong_array)
@@ -105,11 +105,11 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(ADD_WITHOUT_PATH);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(add_without_path, strlen(add_without_path), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -146,11 +146,11 @@ BOOST_AUTO_TEST_CASE(path_no_string_test)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(PATH_NO_STRING);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(path_no_string, strlen(path_no_string), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -187,11 +187,11 @@ BOOST_AUTO_TEST_CASE(no_value_test)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(NO_VALUE);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(no_value, strlen(no_value), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -228,11 +228,11 @@ BOOST_AUTO_TEST_CASE(no_params_test)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(NO_PARAMS);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(no_params, strlen(no_params), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -269,11 +269,11 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(json_unsupported_method, strlen(json_unsupported_method), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -310,11 +310,11 @@ BOOST_AUTO_TEST_CASE(no_method)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(json_no_method, strlen(json_no_method), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;
@@ -352,11 +352,11 @@ BOOST_AUTO_TEST_CASE(no_string_method)
 	memset(readback_buffer, 0x00, sizeof(readback_buffer));
 
 	struct peer *p = alloc_peer(UNSUPPORTED_METHOD);
-	create_setter_hashtable();
+	create_state_hashtable();
 	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), p);
 	BOOST_CHECK(ret == 0);
 	free_peer(p);
-	delete_setter_hashtable();
+	delete_state_hashtable();
 
 	uint32_t len;
 	char *readback_ptr = readback_buffer;

@@ -12,9 +12,9 @@
 
 /*
  * This config parameter the maximum amount of states that can be
- * handled in a jet. The number of states is 2^STATE_SET_TABLE_ORDER.
+ * handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
  */
-#define STATE_SET_TABLE_ORDER 13
+#define STATE_TABLE_ORDER 13
 
 #define MAX_NUMBER_OF_PEERS 10
 

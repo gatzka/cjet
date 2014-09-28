@@ -9,7 +9,7 @@ int main()
 {
 	signal(SIGPIPE, SIG_IGN);
 
-	if ((create_setter_hashtable()) == -1) {
+	if ((create_state_hashtable()) == -1) {
 		fprintf(stderr, "Cannot allocate hashtable for states!\n");
 		return EXIT_FAILURE;
 	}
@@ -18,10 +18,10 @@ int main()
 		goto run_io_failed;
 	}
 
-	delete_setter_hashtable();
+	delete_state_hashtable();
 	return EXIT_SUCCESS;
 
 run_io_failed:
-	delete_setter_hashtable();
+	delete_state_hashtable();
 	return EXIT_FAILURE;
 }

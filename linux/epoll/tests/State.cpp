@@ -38,13 +38,13 @@ extern "C" {
 struct F {
 	F()
 	{
-		create_setter_hashtable();
+		create_state_hashtable();
 		p = alloc_peer(-1);
 	}
 	~F()
 	{
 		free_peer(p);
-		delete_setter_hashtable();
+		delete_state_hashtable();
 	}
 
 	struct peer *p;
