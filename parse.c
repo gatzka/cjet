@@ -78,6 +78,11 @@ static cJSON *process_remove(cJSON *params, struct peer *p)
 	return error;
 }
 
+static cJSON *process_fetch(cJSON *params, struct peer *p)
+{
+	return NULL;
+}
+
 static cJSON *process_config() {
 	return NULL;
 }
@@ -151,7 +156,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	} else if (strcmp(method_string, "call") == 0) {
 		error = NULL;
 	} else if (strcmp(method_string, "fetch") == 0) {
-		error = NULL;
+		error = process_fetch(params, p);
 	} else if (strcmp(method_string, "unfetch") == 0) {
 		error = NULL;
 	} else if (strcmp(method_string, "config") == 0) {
