@@ -133,7 +133,7 @@ BOOST_FIXTURE_TEST_CASE(double_free_state, F)
 
 BOOST_FIXTURE_TEST_CASE(change, F)
 {
-	const char *path= "/foo/bar/";
+	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
 	cJSON *error = add_state_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
@@ -146,4 +146,19 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 
 	struct state *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == 4321);
+}
+
+BOOST_FIXTURE_TEST_CASE(change_wrong_path, F)
+{
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, "/foo/bar/", value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	error = change_state("/bar/foo/", new_value);
+	BOOST_CHECK(error != NULL);
+	cJSON_Delete(new_value);
+	check_invalid_params(error);
+	cJSON_Delete(error);
 }
