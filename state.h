@@ -22,6 +22,7 @@ void remove_all_states_from_peer(struct peer *p);
 
 int create_setter_hashtable(void);
 void delete_setter_hashtable(void);
+struct state *get_state(const char *path);
 
 #ifdef __cplusplus
 }

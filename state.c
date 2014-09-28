@@ -29,6 +29,11 @@ void delete_setter_hashtable(void)
 	HASHTABLE_DELETE(STATE_SET_TABLE, setter_hashtable);
 }
 
+struct state *get_state(const char *path)
+{
+	return HASHTABLE_GET(STATE_SET_TABLE, setter_hashtable, path);
+}
+
 static struct state *alloc_state(const char *path, cJSON *value_object) {
 	struct state *s;
 	char *p;
