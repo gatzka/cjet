@@ -73,6 +73,21 @@ static void free_state(struct state *s)
 	free(s);
 }
 
+cJSON *change_state(const char *path, cJSON *value)
+{
+	struct state *s = HASHTABLE_GET(STATE_SET_TABLE, setter_hashtable, path);
+	if (unlikely(s == NULL)) {
+		cJSON *error = create_invalid_params_error("not exists", path);
+		return error;
+	}
+	cJSON *value_copy = cJSON_Duplicate(value, 1);
+	/* TODO: enter state mutex for multithread IO */
+	cJSON_Delete(s->value);
+	s->value = value_copy;
+	/* TODO: exit state mutex for multithread IO */
+	return NULL;
+}
+
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
 	struct state *s = HASHTABLE_GET(STATE_SET_TABLE, setter_hashtable, path);

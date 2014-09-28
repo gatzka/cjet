@@ -15,6 +15,7 @@ struct state {
 	cJSON *value;
 };
 
+cJSON *change_state(const char *path, cJSON *value);
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value);
 cJSON *remove_state_from_peer(struct peer *p, const char *path);
 void remove_all_states_from_peer(struct peer *p);

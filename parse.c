@@ -28,22 +28,34 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 	return path->valuestring;
 }
 
-static cJSON *process_change(cJSON *params, struct peer *p)
+static cJSON *process_change(cJSON *params)
 {
-	return NULL;
-}
-
-static cJSON *process_add(cJSON *params, struct peer *p)
-{
-	cJSON *value;
 	cJSON *error;
-	const char *path = get_path_from_params(params, &error);
 
+	const char *path = get_path_from_params(params, &error);
 	if (unlikely(path == NULL)) {
 		return error;
 	}
 
-	value = cJSON_GetObjectItem(params, "value");
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL) ) {
+		error = create_invalid_params_error("reason", "no value given");
+		return error;
+	}
+	error = change_state(path, value);
+	return error;
+}
+
+static cJSON *process_add(cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return error;
+	}
+
+	cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL) ) {
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
@@ -56,6 +68,7 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 static cJSON *process_remove(cJSON *params, struct peer *p)
 {
 	cJSON *error;
+
 	const char *path = get_path_from_params(params, &error);
 	if (unlikely(path == NULL)) {
 		return error;
@@ -129,10 +142,10 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	}
 
 	method_string = method->valuestring;
-	if (strcmp(method_string, "set") == 0) {
+	if (strcmp(method_string, "change") == 0) {
+		error = process_change(params);
+	} else if (strcmp(method_string, "set") == 0) {
 		error = NULL;
-	} else if (strcmp(method_string, "change") == 0) {
-		error = process_change(params, p);
 	} else if (strcmp(method_string, "add") == 0) {
 		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
