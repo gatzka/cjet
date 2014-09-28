@@ -14,8 +14,7 @@
 
 struct peer *alloc_peer(int fd)
 {
-	struct peer *p;
-	p = malloc(sizeof(*p));
+	struct peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
@@ -40,13 +39,11 @@ void free_peer(struct peer *p)
 
 static int allocate_new_write_buffer(struct peer *p, size_t bytes_to_copy)
 {
-	char *new_write_buffer;
-
 	size_t new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
 	if (unlikely(new_buffer_size > MAX_WRITE_BUFFER_SIZE)) {
 		return -1;
 	}
-	new_write_buffer = realloc(p->write_buffer, new_buffer_size);
+	char *new_write_buffer = realloc(p->write_buffer, new_buffer_size);
 	if (new_write_buffer == NULL) {
 		fprintf(stderr, "Allocation for write buffer failed!\n");
 		goto realloc_failed;
@@ -61,10 +58,7 @@ realloc_failed:
 
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written)
 {
-	const char *message_ptr;
-	size_t msg_offset;
 	size_t to_write;
-	char *write_buffer_ptr;
 	uint32_t msg_len = ntohl(msg_len_be);
 	size_t free_space_in_buf = p->write_buffer_size - p->to_write;
 	size_t bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
@@ -75,7 +69,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 		}
 	}
 
-	write_buffer_ptr = p->write_buffer + p->to_write;
+	char *write_buffer_ptr = p->write_buffer + p->to_write;
 	if (already_written < sizeof(msg_len_be)) {
 		char *msg_len_ptr = (char*)(&msg_len_be);
 		msg_len_ptr += already_written;
@@ -86,8 +80,8 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 		p->to_write += to_write;
 	}
 
-	msg_offset = already_written - sizeof(msg_len_be);
-	message_ptr = (const char *)rendered + msg_offset;
+	size_t msg_offset = already_written - sizeof(msg_len_be);
+	const char *message_ptr = (const char *)rendered + msg_offset;
 	to_write = msg_len - msg_offset;
 	memcpy(write_buffer_ptr, message_ptr, to_write);
 	p->to_write += to_write;

@@ -118,11 +118,9 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
+	int ret;
 	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
-	const char *method_string;
-	cJSON *params;
 	cJSON *error = NULL;
-	int ret = 0;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
@@ -135,13 +133,13 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		goto no_method;
 	}
 
-	params = cJSON_GetObjectItem(json_rpc, "params");
+	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		error = create_invalid_params_error("reason", "no params found");
 		goto no_params;
 	}
 
-	method_string = method->valuestring;
+	const char *method_string = method->valuestring;
 	if (strcmp(method_string, "change") == 0) {
 		error = process_change(params);
 	} else if (strcmp(method_string, "set") == 0) {
@@ -173,18 +171,16 @@ unsupported_method:
 
 int parse_message(char *msg, uint32_t length, struct peer *p)
 {
-	cJSON *root;
-	const char *end_parse;
-	ptrdiff_t parsed_length;
 	int ret = 0;
 
-	root = cJSON_ParseWithOpts(msg, &end_parse, 0);
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(msg, &end_parse, 0);
 	if (unlikely(root == NULL)) {
 		fprintf(stderr, "Could not parse JSON!\n");
 		return -1;
 	}
 
-	parsed_length = end_parse - msg;
+	ptrdiff_t parsed_length = end_parse - msg;
 	if (unlikely(parsed_length != (ptrdiff_t)length)) {
 		fprintf(stderr, "length of parsed JSON (%td) does not match message length (%d)!\n", parsed_length, length);
 		ret = -1;
