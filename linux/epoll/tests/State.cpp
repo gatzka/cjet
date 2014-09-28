@@ -64,12 +64,17 @@ static void check_invalid_params(cJSON *error)
 
 BOOST_FIXTURE_TEST_CASE(add_state, F)
 {
-	cJSON *value = cJSON_CreateNumber(1234);
+	const char *path = "/foo/bar/";
+	int state_value = 12345;
+	cJSON *value = cJSON_CreateNumber(state_value);
 
-	cJSON *error = add_state_to_peer(p, "/foo/bar/", value);
+	cJSON *error = add_state_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
+
+	struct state *s = get_state(path);
+	BOOST_CHECK(s->value->valueint == state_value);
 }
 
 BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
@@ -124,4 +129,21 @@ BOOST_FIXTURE_TEST_CASE(double_free_state, F)
 	BOOST_CHECK(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(change, F)
+{
+	const char *path= "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	error = change_state(path, new_value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(new_value);
+
+	struct state *s = get_state(path);
+	BOOST_CHECK(s->value->valueint == 4321);
 }
