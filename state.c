@@ -35,18 +35,13 @@ struct state *get_state(const char *path)
 }
 
 static struct state *alloc_state(const char *path, cJSON *value_object) {
-	struct state *s;
-	char *p;
-	size_t path_length;
-	cJSON *value_copy;
-
-	s = malloc(sizeof(*s));
+	struct state *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
 		fprintf(stderr, "Could not allocate memory for state object!\n");
 		return NULL;
 	}
-	path_length = strlen(path);
-	p = malloc(path_length + 1);
+	size_t path_length = strlen(path);
+	char *p = malloc(path_length + 1);
 	if (unlikely(p == NULL)) {
 		fprintf(stderr, "Could not allocate memory for path object!\n");
 		goto alloc_path_failed;
@@ -54,7 +49,7 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 	strncpy(p, path, path_length);
 	p[path_length] = '\0';
 	s->path = p;
-	value_copy = cJSON_Duplicate(value_object, 1);
+	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
 		fprintf(stderr, "Could not copy value object!\n");
 		goto value_copy_failed;
@@ -115,7 +110,6 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	cJSON *error;
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
 		if (strcmp(s->path, path) == 0) {
@@ -126,7 +120,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 			return NULL;
 		}
 	}
-	error = create_invalid_params_error("notExists", path);
+	cJSON *error = create_invalid_params_error("notExists", path);
 	return error;
 }
 
