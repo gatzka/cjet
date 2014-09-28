@@ -85,6 +85,7 @@ cJSON *change_state(const char *path, cJSON *value)
 	cJSON_Delete(s->value);
 	s->value = value_copy;
 	/* TODO: exit state mutex for multithread IO */
+	// TODO: notify all clients interested in this state
 	return NULL;
 }
 
