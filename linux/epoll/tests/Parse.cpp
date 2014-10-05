@@ -76,6 +76,37 @@ struct F {
 	struct peer *p;
 };
 
+static void check_invalid_params_message(const char *buffer)
+{
+	uint32_t len;
+	const char *readback_ptr = buffer;
+	memcpy(&len, readback_ptr, sizeof(len));
+	len = ntohl(len);
+	readback_ptr += sizeof(len);
+
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
+	BOOST_CHECK(root != NULL);
+
+	uint32_t parsed_length = end_parse - readback_ptr;
+	BOOST_CHECK(parsed_length == len);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_REQUIRE(error != NULL);
+
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_CHECK(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32602);
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	BOOST_REQUIRE(message != NULL);
+	BOOST_CHECK(message->type == cJSON_String);
+	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
+
+	cJSON_Delete(root);
+}
+
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	F f(-1);
@@ -117,33 +148,7 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	int ret = parse_message(add_without_path, strlen(add_without_path), f.p);
 	BOOST_CHECK(ret == 0);
 
-	uint32_t len;
-	char *readback_ptr = readback_buffer;
-	memcpy(&len, readback_ptr, sizeof(len));
-	len = ntohl(len);
-	readback_ptr += sizeof(len);
-
-	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
-	BOOST_CHECK(root != NULL);
-
-	uint32_t parsed_length = end_parse - readback_ptr;
-	BOOST_CHECK(parsed_length == len);
-
-	cJSON *error = cJSON_GetObjectItem(root, "error");
-	BOOST_REQUIRE(error != NULL);
-
-	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_CHECK(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
-
-	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
-
-	cJSON_Delete(root);
+	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(path_no_string_test)
@@ -155,33 +160,7 @@ BOOST_AUTO_TEST_CASE(path_no_string_test)
 	int ret = parse_message(path_no_string, strlen(path_no_string), f.p);
 	BOOST_CHECK(ret == 0);
 
-	uint32_t len;
-	char *readback_ptr = readback_buffer;
-	memcpy(&len, readback_ptr, sizeof(len));
-	len = ntohl(len);
-	readback_ptr += sizeof(len);
-
-	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
-	BOOST_CHECK(root != NULL);
-
-	uint32_t parsed_length = end_parse - readback_ptr;
-	BOOST_CHECK(parsed_length == len);
-
-	cJSON *error = cJSON_GetObjectItem(root, "error");
-	BOOST_REQUIRE(error != NULL);
-
-	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_CHECK(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
-
-	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
-
-	cJSON_Delete(root);
+	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(no_value_test)
@@ -193,33 +172,7 @@ BOOST_AUTO_TEST_CASE(no_value_test)
 	int ret = parse_message(no_value, strlen(no_value), f.p);
 	BOOST_CHECK(ret == 0);
 
-	uint32_t len;
-	char *readback_ptr = readback_buffer;
-	memcpy(&len, readback_ptr, sizeof(len));
-	len = ntohl(len);
-	readback_ptr += sizeof(len);
-
-	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
-	BOOST_CHECK(root != NULL);
-
-	uint32_t parsed_length = end_parse - readback_ptr;
-	BOOST_CHECK(parsed_length == len);
-
-	cJSON *error = cJSON_GetObjectItem(root, "error");
-	BOOST_REQUIRE(error != NULL);
-
-	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_CHECK(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
-
-	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
-
-	cJSON_Delete(root);
+	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(no_params_test)
@@ -231,33 +184,7 @@ BOOST_AUTO_TEST_CASE(no_params_test)
 	int ret = parse_message(no_params, strlen(no_params), f.p);
 	BOOST_CHECK(ret == 0);
 
-	uint32_t len;
-	char *readback_ptr = readback_buffer;
-	memcpy(&len, readback_ptr, sizeof(len));
-	len = ntohl(len);
-	readback_ptr += sizeof(len);
-
-	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
-	BOOST_CHECK(root != NULL);
-
-	uint32_t parsed_length = end_parse - readback_ptr;
-	BOOST_CHECK(parsed_length == len);
-
-	cJSON *error = cJSON_GetObjectItem(root, "error");
-	BOOST_REQUIRE(error != NULL);
-
-	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_CHECK(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
-
-	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
-
-	cJSON_Delete(root);
+	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(unsupported_method)
