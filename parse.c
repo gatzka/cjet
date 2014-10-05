@@ -141,7 +141,6 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	int ret;
-	/* TODO: check if there is a tag "jsonrpc" with value "2.0" */
 	cJSON *error = NULL;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 

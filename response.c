@@ -11,7 +11,6 @@ static cJSON *create_common_response(const cJSON *id)
 		return NULL;
 	}
 
-	cJSON_AddStringToObject(root, "jsonrpc", "2.0");
 	switch (id->type) {
 
 	case cJSON_String:
