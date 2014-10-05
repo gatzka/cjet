@@ -21,7 +21,8 @@ static char json_unsupported_method[] = "{\"id\": 7384,\"method\": \"horst\",\"p
 static char wrong_jet_array[] = "[1, 2]";
 static char add_without_path[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"value\": 123}}";
 static char remove_without_path[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"value\": 123}}";
-static char fetch_without_id[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"path\": {\"startsWith\": \"person\"}}}";
+static char fetch_without_id[] = "{\"id\": 7384,\"method\": \"fetch\",\"params\":{\"path\": {\"startsWith\": \"person\"}}}";
+static char correct_fetch[] = "{\"id\": 7384,\"method\": \"fetch\",\"params\":{\"id\": \"123456\",\"path\": {\"startsWith\": \"person\"}}}";
 static char path_no_string[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": 123,\"value\": 123}}";
 static char no_value[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\"}}";
 static char no_params[] = "{\"id\": 7384,\"method\": \"add\"}";
@@ -33,6 +34,7 @@ static const int NO_PARAMS = 4;
 static const int UNSUPPORTED_METHOD = 5;
 static const int REMOVE_WITHOUT_PATH = 6;
 static const int FETCH_WITHOUT_ID = 7;
+static const int CORRECT_FETCH = 7;
 
 static char readback_buffer[10000];
 static char *readback_buffer_ptr = readback_buffer;
@@ -249,4 +251,12 @@ BOOST_AUTO_TEST_CASE(fetch_without_id_test)
 	BOOST_CHECK(ret == 0);
 
 	check_invalid_params_message(readback_buffer);
+}
+
+BOOST_AUTO_TEST_CASE(correct_fetch_test)
+{
+	F f(CORRECT_FETCH);
+	int ret = parse_message(correct_fetch, strlen(correct_fetch), f.p);
+	BOOST_CHECK(ret == 0);
+
 }
