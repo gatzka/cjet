@@ -12,7 +12,6 @@
 #include "parse.h"
 #include "state.h"
 
-static char correct_json[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_no_method[] = "{\"id\": 7384,\"meth\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_no_string_method[] = "{\"id\": 7384,\"method\": 123,\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
@@ -128,6 +127,19 @@ static void check_method_not_found_message(const char *buffer)
 	check_invalid_message(buffer, -32601, "Method not found");
 }
 
+static cJSON *create_correct_json()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "add");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddNumberToObject(params, "value", 123);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static void check_invalid_request_message(const char *buffer)
 {
 	check_invalid_message(buffer, -32600, "Invalid Request");
@@ -136,19 +148,33 @@ static void check_invalid_request_message(const char *buffer)
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	F f(-1);
-	int ret = parse_message(correct_json, strlen(correct_json), f.p);
+	cJSON *correct_json = create_correct_json();
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
 }
 
 BOOST_AUTO_TEST_CASE(length_too_long)
 {
-	int ret = parse_message(correct_json, strlen(correct_json) + 1, NULL);
+	cJSON *correct_json = create_correct_json();
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json) + 1, NULL);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+
 	BOOST_CHECK(ret == -1);
 }
 
 BOOST_AUTO_TEST_CASE(length_too_short)
 {
-	int ret = parse_message(correct_json, strlen(correct_json) - 1, NULL);
+	cJSON *correct_json = create_correct_json();
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json) -1, NULL);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+
 	BOOST_CHECK(ret == -1);
 }
 
