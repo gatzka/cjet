@@ -131,7 +131,7 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 			goto render_error;
 		}
 		ret = send_message(p, rendered, strlen(rendered));
-		free(rendered);
+		cJSON_free(rendered);
 	render_error:
 		cJSON_Delete(root);
 	}
