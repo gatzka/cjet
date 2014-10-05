@@ -6,6 +6,8 @@
 #include <boost/test/unit_test.hpp>
 #include <sys/uio.h>
 
+#include <cstring>
+
 #include "cJSON.h"
 #include "parse.h"
 #include "state.h"
@@ -66,6 +68,9 @@ struct F {
 	{
 		create_state_hashtable();
 		p = alloc_peer(fd);
+
+		readback_buffer_ptr = readback_buffer;
+		std::memset(readback_buffer, 0x00, sizeof(readback_buffer));
 	}
 	~F()
 	{
@@ -156,9 +161,6 @@ BOOST_AUTO_TEST_CASE(wrong_array)
 
 BOOST_AUTO_TEST_CASE(add_without_path_test)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(ADD_WITHOUT_PATH);
 	int ret = parse_message(add_without_path, strlen(add_without_path), f.p);
 	BOOST_CHECK(ret == 0);
@@ -168,9 +170,6 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 
 BOOST_AUTO_TEST_CASE(path_no_string_test)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(PATH_NO_STRING);
 	int ret = parse_message(path_no_string, strlen(path_no_string), f.p);
 	BOOST_CHECK(ret == 0);
@@ -180,9 +179,6 @@ BOOST_AUTO_TEST_CASE(path_no_string_test)
 
 BOOST_AUTO_TEST_CASE(no_value_test)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(NO_VALUE);
 	int ret = parse_message(no_value, strlen(no_value), f.p);
 	BOOST_CHECK(ret == 0);
@@ -192,9 +188,6 @@ BOOST_AUTO_TEST_CASE(no_value_test)
 
 BOOST_AUTO_TEST_CASE(no_params_test)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(NO_PARAMS);
 	int ret = parse_message(no_params, strlen(no_params), f.p);
 	BOOST_CHECK(ret == 0);
@@ -204,9 +197,6 @@ BOOST_AUTO_TEST_CASE(no_params_test)
 
 BOOST_AUTO_TEST_CASE(unsupported_method)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(UNSUPPORTED_METHOD);
 	int ret = parse_message(json_unsupported_method, strlen(json_unsupported_method), f.p);
 	BOOST_CHECK(ret == 0);
@@ -216,9 +206,6 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 
 BOOST_AUTO_TEST_CASE(no_method)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(UNSUPPORTED_METHOD);
 	int ret = parse_message(json_no_method, strlen(json_no_method), f.p);
 	BOOST_CHECK(ret == 0);
@@ -229,9 +216,6 @@ BOOST_AUTO_TEST_CASE(no_method)
 
 BOOST_AUTO_TEST_CASE(no_string_method)
 {
-	readback_buffer_ptr = readback_buffer;
-	memset(readback_buffer, 0x00, sizeof(readback_buffer));
-
 	F f(UNSUPPORTED_METHOD);
 	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), f.p);
 	BOOST_CHECK(ret == 0);
