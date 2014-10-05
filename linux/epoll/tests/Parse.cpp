@@ -17,7 +17,6 @@ static char json_no_method[] = "{\"id\": 7384,\"meth\": \"add\",\"params\":{\"pa
 static char json_no_string_method[] = "{\"id\": 7384,\"method\": 123,\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_two_method[] = "[{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}, {\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/state\",\"value\": 321}}]";
 static char json_unsupported_method[] = "{\"id\": 7384,\"method\": \"horst\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-static char wrong_jet_array[] = "[1, 2]";
 static char add_without_path[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"value\": 123}}";
 static char remove_without_path[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"value\": 123}}";
 static char fetch_without_id[] = "{\"id\": 7384,\"method\": \"fetch\",\"params\":{\"path\": {\"startsWith\": \"person\"}}}";
@@ -187,7 +186,13 @@ BOOST_AUTO_TEST_CASE(two_method)
 
 BOOST_AUTO_TEST_CASE(wrong_array)
 {
-	int ret = parse_message(wrong_jet_array, strlen(wrong_jet_array), NULL);
+	const int numbers[2] = {1,2};
+	cJSON *root = cJSON_CreateIntArray(numbers, 2);
+	char *unformatted_json = cJSON_PrintUnformatted(root);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), NULL);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(root);
+
 	BOOST_CHECK(ret == -1);
 }
 
