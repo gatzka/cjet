@@ -50,7 +50,6 @@ static cJSON *create_error_object(const char *message, int code, const char *tag
 		}
 	}
 	return error;
-
 }
 
 cJSON *create_invalid_request_error(const char *tag, const char *reason)
