@@ -20,6 +20,8 @@ static char json_two_method[] = "[{\"id\": 7384,\"method\": \"add\",\"params\":{
 static char json_unsupported_method[] = "{\"id\": 7384,\"method\": \"horst\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char wrong_jet_array[] = "[1, 2]";
 static char add_without_path[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"value\": 123}}";
+static char remove_without_path[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"value\": 123}}";
+static char fetch_without_id[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"path\": {\"startsWith\": \"person\"}}}";
 static char path_no_string[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": 123,\"value\": 123}}";
 static char no_value[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\"}}";
 static char no_params[] = "{\"id\": 7384,\"method\": \"add\"}";
@@ -29,6 +31,8 @@ static const int PATH_NO_STRING = 2;
 static const int NO_VALUE = 3;
 static const int NO_PARAMS = 4;
 static const int UNSUPPORTED_METHOD = 5;
+static const int REMOVE_WITHOUT_PATH = 6;
+static const int FETCH_WITHOUT_ID = 7;
 
 static char readback_buffer[10000];
 static char *readback_buffer_ptr = readback_buffer;
@@ -229,3 +233,20 @@ BOOST_AUTO_TEST_CASE(parse_wrong_json)
 	BOOST_CHECK(ret == -1);
 }
 
+BOOST_AUTO_TEST_CASE(remove_without_path_test)
+{
+	F f(REMOVE_WITHOUT_PATH);
+	int ret = parse_message(remove_without_path, strlen(remove_without_path), f.p);
+	BOOST_CHECK(ret == 0);
+
+	check_invalid_params_message(readback_buffer);
+}
+
+BOOST_AUTO_TEST_CASE(fetch_without_id_test)
+{
+	F f(FETCH_WITHOUT_ID);
+	int ret = parse_message(fetch_without_id, strlen(fetch_without_id), f.p);
+	BOOST_CHECK(ret == 0);
+
+	check_invalid_params_message(readback_buffer);
+}
