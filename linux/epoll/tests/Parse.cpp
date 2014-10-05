@@ -258,5 +258,4 @@ BOOST_AUTO_TEST_CASE(correct_fetch_test)
 	F f(CORRECT_FETCH);
 	int ret = parse_message(correct_fetch, strlen(correct_fetch), f.p);
 	BOOST_CHECK(ret == 0);
-
 }
