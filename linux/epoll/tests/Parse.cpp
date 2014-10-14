@@ -15,7 +15,6 @@
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_no_method[] = "{\"id\": 7384,\"meth\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_no_string_method[] = "{\"id\": 7384,\"method\": 123,\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-static char json_two_method[] = "[{\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}, {\"id\": 7384,\"method\": \"add\",\"params\":{\"path\": \"foo/state\",\"value\": 321}}]";
 static char json_unsupported_method[] = "{\"id\": 7384,\"method\": \"horst\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char add_without_path[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"value\": 123}}";
 static char remove_without_path[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"value\": 123}}";
@@ -139,6 +138,16 @@ static cJSON *create_correct_json()
 	return root;
 }
 
+static cJSON *create_two_method_json()
+{
+	cJSON *array = cJSON_CreateArray();
+	cJSON *method_1 = create_correct_json();
+	cJSON *method_2 = create_correct_json();
+	cJSON_AddItemToArray(array, method_1);
+	cJSON_AddItemToArray(array, method_2);
+	return array;
+}
+
 static void check_invalid_request_message(const char *buffer)
 {
 	check_invalid_message(buffer, -32600, "Invalid Request");
@@ -180,7 +189,11 @@ BOOST_AUTO_TEST_CASE(length_too_short)
 BOOST_AUTO_TEST_CASE(two_method)
 {
 	F f(-1);
-	int ret = parse_message(json_two_method, strlen(json_two_method), f.p);
+	cJSON *array = create_two_method_json();
+	char *unformatted_json = cJSON_PrintUnformatted(array);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(array);
 	BOOST_CHECK(ret == 0);
 }
 
