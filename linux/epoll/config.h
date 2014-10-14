@@ -3,6 +3,8 @@
 
 #define SERVER_PORT	11122
 #define LISTEN_BACKLOG 40
+
+static const unsigned int CONFIG_CHECK_JSON_LENGTH = 0;
 /*
  * It is somehow beneficial if this size is 32 bit aligned.
  */

@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include "cJSON.h"
+#include "config.h"
 #include "parse.h"
 #include "peer.h"
 #include "state.h"
@@ -284,24 +285,28 @@ BOOST_AUTO_TEST_CASE(parse_correct_json)
 
 BOOST_AUTO_TEST_CASE(length_too_long)
 {
-	cJSON *correct_json = create_correct_json();
-	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json) + 1, NULL);
-	cJSON_free(unformatted_json);
-	cJSON_Delete(correct_json);
+	if (CONFIG_CHECK_JSON_LENGTH) {
+		cJSON *correct_json = create_correct_json();
+		char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+		int ret = parse_message(unformatted_json, strlen(unformatted_json) + 1, NULL);
+		cJSON_free(unformatted_json);
+		cJSON_Delete(correct_json);
 
-	BOOST_CHECK(ret == -1);
+		BOOST_CHECK(ret == -1);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(length_too_short)
 {
-	cJSON *correct_json = create_correct_json();
-	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json) - 1, NULL);
-	cJSON_free(unformatted_json);
-	cJSON_Delete(correct_json);
+	if (CONFIG_CHECK_JSON_LENGTH) {
+		cJSON *correct_json = create_correct_json();
+		char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+		int ret = parse_message(unformatted_json, strlen(unformatted_json) - 1, NULL);
+		cJSON_free(unformatted_json);
+		cJSON_Delete(correct_json);
 
-	BOOST_CHECK(ret == -1);
+		BOOST_CHECK(ret == -1);
+	}
 }
 
 BOOST_AUTO_TEST_CASE(two_method)
