@@ -14,7 +14,6 @@
 #include "state.h"
 
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-static char fetch_without_id[] = "{\"id\": 7384,\"method\": \"fetch\",\"params\":{\"path\": {\"startsWith\": \"person\"}}}";
 
 static const int ADD_WITHOUT_PATH = 1;
 static const int PATH_NO_STRING = 2;
@@ -252,6 +251,21 @@ static cJSON *create_correct_fetch()
 	return root;
 }
 
+static cJSON *create_fetch_without_id()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "fetch");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+
+	cJSON *path = cJSON_CreateObject();
+	cJSON_AddStringToObject(path, "startsWith", "person");
+	cJSON_AddItemToObject(params, "path", path);
+	return root;
+}
+
 static void check_invalid_request_message(const char *buffer)
 {
 	check_invalid_message(buffer, -32600, "Invalid Request");
@@ -430,7 +444,11 @@ BOOST_AUTO_TEST_CASE(parse_wrong_json)
 BOOST_AUTO_TEST_CASE(fetch_without_id_test)
 {
 	F f(FETCH_WITHOUT_ID);
-	int ret = parse_message(fetch_without_id, strlen(fetch_without_id), f.p);
+	cJSON *json = create_fetch_without_id();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
 
 	check_invalid_params_message(readback_buffer);
