@@ -14,7 +14,6 @@
 #include "state.h"
 
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-static char json_no_string_method[] = "{\"id\": 7384,\"method\": 123,\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char json_unsupported_method[] = "{\"id\": 7384,\"method\": \"horst\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 static char add_without_path[] = "{\"id\": 7384,\"method\": \"add\",\"params\":{\"value\": 123}}";
 static char remove_without_path[] = "{\"id\": 7384,\"method\": \"remove\",\"params\":{\"value\": 123}}";
@@ -161,6 +160,19 @@ static cJSON *create_json_no_method()
 	return root;
 }
 
+static cJSON *create_json_no_string_method()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddNumberToObject(root, "method", 123);
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddNumberToObject(params, "value", 123);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static void check_invalid_request_message(const char *buffer)
 {
 	check_invalid_message(buffer, -32600, "Invalid Request");
@@ -284,7 +296,11 @@ BOOST_AUTO_TEST_CASE(no_method)
 BOOST_AUTO_TEST_CASE(no_string_method)
 {
 	F f(UNSUPPORTED_METHOD);
-	int ret = parse_message(json_no_string_method, strlen(json_no_string_method), f.p);
+	cJSON *json = create_json_no_string_method();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
 
 	check_invalid_request_message(readback_buffer);
