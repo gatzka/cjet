@@ -9,6 +9,7 @@ extern "C" {
 
 int fake_read(int fd, void *buf, size_t count);
 int fake_send(int fd, void *buf, size_t count, int flags);
+int fake_writev(int fd, const struct iovec *iov, int iovcnt);
 
 #ifdef __cplusplus
 }
