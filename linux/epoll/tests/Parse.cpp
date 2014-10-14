@@ -10,6 +10,7 @@
 
 #include "cJSON.h"
 #include "parse.h"
+#include "peer.h"
 #include "state.h"
 
 static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
