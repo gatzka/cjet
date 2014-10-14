@@ -170,7 +170,7 @@ BOOST_AUTO_TEST_CASE(length_too_short)
 {
 	cJSON *correct_json = create_correct_json();
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json) -1, NULL);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json) - 1, NULL);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 
