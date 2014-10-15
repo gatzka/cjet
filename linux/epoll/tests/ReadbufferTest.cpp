@@ -446,46 +446,6 @@ BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 	free_peer(p);
 }
 
-BOOST_AUTO_TEST_CASE(copy_two_messages_of_chunk_size)
-{
-	struct peer *p = alloc_peer(BADFD);
-	BOOST_REQUIRE(p != NULL);
-
-	char message1[CONFIG_WRITE_BUFFER_CHUNK];
-	memset(message1, 'A', sizeof(message1));
-	message1[sizeof(message1) - 1] = '\0';
-	uint32_t len1 = ::strlen(message1);
-	uint32_t len1_be = htonl(len1);
-	int ret = copy_msg_to_write_buffer(p, message1, len1_be, 0);
-	BOOST_CHECK(ret == 0);
-
-	char message2[CONFIG_WRITE_BUFFER_CHUNK];
-	memset(message2, 'B', sizeof(message2));
-	message2[sizeof(message2) - 1] = '\0';
-	uint32_t len2 = ::strlen(message2);
-	uint32_t len2_be = htonl(len2);
-	ret = copy_msg_to_write_buffer(p, message2, len2_be, 0);
-	BOOST_CHECK(ret == 0);
-
-	uint32_t readback_len1;
-	char *write_buffer = p->write_buffer;
-	memcpy(&readback_len1, write_buffer, sizeof(readback_len1));
-	readback_len1 = ntohl(readback_len1);
-	BOOST_CHECK(readback_len1 == len1);
-	write_buffer += sizeof(readback_len1);
-	BOOST_CHECK(memcmp(write_buffer, message1, len1) == 0);
-	write_buffer += len1;
-
-	uint32_t readback_len2;
-	memcpy(&readback_len2, write_buffer, sizeof(readback_len2));
-	readback_len2 = ntohl(readback_len2);
-	BOOST_CHECK(readback_len2 == len2);
-	write_buffer += sizeof(readback_len2);
-	BOOST_CHECK(memcmp(write_buffer, message2, len2) == 0);
-
-	free_peer(p);
-}
-
 BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(send_buffer_test)
