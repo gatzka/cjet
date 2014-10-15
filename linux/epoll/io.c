@@ -99,14 +99,14 @@ static struct peer *setup_listen_socket(int epoll_fd)
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin6_family = AF_INET6;
-	serveraddr.sin6_port = htons(SERVER_PORT);
+	serveraddr.sin6_port = htons(CONFIG_SERVER_PORT);
 	serveraddr.sin6_addr = in6addr_any;
 	if (bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0) {
 		fprintf(stderr, "bind failed!\n");
 		goto bind_failed;
 	}
 
-	if (listen(listen_fd, LISTEN_BACKLOG) < 0) {
+	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
 		fprintf(stderr, "listen failed!\n");
 		goto listen_failed;
 	}
@@ -163,7 +163,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 			struct peer *peer;
 			static const int tcp_nodelay_on = 1;
 
-			if (unlikely(number_of_peers >= MAX_NUMBER_OF_PEERS)) {
+			if (unlikely(number_of_peers >= CONFIG_MAX_NUMBER_OF_PEERS)) {
 				close(peer_fd);
 				continue;
 			}
@@ -386,7 +386,7 @@ int handle_all_peer_operations(struct peer *p)
 
 int run_io(void) {
 	int epoll_fd;
-	struct epoll_event events[MAX_EPOLL_EVENTS];
+	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
 
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
@@ -411,7 +411,7 @@ int run_io(void) {
 		int num_events;
 		int i;
 
-		num_events = epoll_wait(epoll_fd, events, MAX_EPOLL_EVENTS, -1);
+		num_events = epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 		if (unlikely(num_events == -1)) {
 			if (errno == EINTR) {
 				continue;

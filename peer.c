@@ -39,8 +39,8 @@ void free_peer(struct peer *p)
 
 static int allocate_new_write_buffer(struct peer *p, size_t bytes_to_copy)
 {
-	size_t new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), WRITE_BUFFER_CHUNK);
-	if (unlikely(new_buffer_size > MAX_WRITE_BUFFER_SIZE)) {
+	size_t new_buffer_size = ROUND_UP((p->write_buffer_size + bytes_to_copy), CONFIG_WRITE_BUFFER_CHUNK);
+	if (unlikely(new_buffer_size > CONFIG_MAX_WRITE_BUFFER_SIZE)) {
 		return -1;
 	}
 	char *new_write_buffer = realloc(p->write_buffer, new_buffer_size);

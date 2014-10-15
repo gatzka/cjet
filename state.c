@@ -11,7 +11,7 @@
 #include "response.h"
 #include "state.h"
 
-DECLARE_HASHTABLE_STRING(STATE_TABLE, STATE_TABLE_ORDER)
+DECLARE_HASHTABLE_STRING(STATE_TABLE, CONFIG_STATE_TABLE_ORDER)
 
 static struct hashtable_string *state_hashtable = NULL;
 

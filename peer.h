@@ -25,7 +25,7 @@ struct peer {
 	uint32_t msg_length;
 	size_t write_buffer_size;
 	struct list_head state_list;
-	char read_buffer[MAX_MESSAGE_SIZE];
+	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char *write_buffer;
 	char *read_ptr;
 	char *write_ptr;
@@ -38,12 +38,12 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 static inline ptrdiff_t unread_space(const struct peer *p)
 {
-	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->read_ptr;
+	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->read_ptr;
 }
 
 static inline ptrdiff_t free_space(const struct peer *p)
 {
-	return &(p->read_buffer[MAX_MESSAGE_SIZE]) - p->write_ptr;
+	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->write_ptr;
 }
 
 static inline void reorganize_read_buffer(struct peer *p)
