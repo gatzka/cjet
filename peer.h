@@ -26,7 +26,7 @@ struct peer {
 	size_t write_buffer_size;
 	struct list_head state_list;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	char *write_buffer;
+	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 	char *read_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
