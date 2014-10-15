@@ -41,7 +41,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - p->to_write;
 	size_t bytes_to_copy = msg_len + sizeof(msg_len_be) - already_written;
 
-	if (bytes_to_copy > free_space_in_buf) {
+	if (unlikely(bytes_to_copy > free_space_in_buf)) {
 		goto write_buffer_too_small;
 	}
 
