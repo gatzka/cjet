@@ -48,7 +48,7 @@ static int handle_slow_peer_count = 0;
 static unsigned int incomplete_write_counter = 0;
 static unsigned int incomplete_write_written_before_blocking = 0;
 
-static char incomplete_write_check_buffer[MAX_MESSAGE_SIZE];
+static char incomplete_write_check_buffer[CONFIG_MAX_MESSAGE_SIZE];
 static char *incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 
 int fake_writev(int fd, const struct iovec *iov, int iovcnt)
@@ -231,7 +231,7 @@ BOOST_AUTO_TEST_CASE(too_much_data_requested)
 	struct peer *p = alloc_peer(TOO_MUCH_DATA);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, MAX_MESSAGE_SIZE + 1);
+	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE + 1);
 	BOOST_CHECK(read_ptr == NULL);
 
 	free_peer(p);
@@ -242,7 +242,7 @@ BOOST_AUTO_TEST_CASE(client_closed_connection)
 	struct peer *p = alloc_peer(CLIENT_CLOSE);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, MAX_MESSAGE_SIZE);
+	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE);
 	BOOST_CHECK(read_ptr == NULL);
 
 	free_peer(p);
@@ -253,7 +253,7 @@ BOOST_AUTO_TEST_CASE(eagain)
 	struct peer *p = alloc_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, MAX_MESSAGE_SIZE);
+	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE);
 	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 
 	free_peer(p);
@@ -403,7 +403,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 	static const size_t already_written = 3;
 	unsigned int len_part = sizeof(uint32_t) - already_written;
 
-	char message[MAX_MESSAGE_SIZE - len_part];
+	char message[CONFIG_MAX_MESSAGE_SIZE - len_part];
 	for (int i = 0; i < sizeof(message); ++i) {
 		message[i] = (i + 13) & 0xff;
 	}
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 	BOOST_CHECK(ret == 0);
 
 	read_back_ptr += len_part;
-	ret = memcmp(read_back_ptr, message, (MAX_MESSAGE_SIZE - len_part));
+	ret = memcmp(read_back_ptr, message, (CONFIG_MAX_MESSAGE_SIZE - len_part));
 	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(copy_two_messages_of_chunk_size)
 	struct peer *p = alloc_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
-	char message1[WRITE_BUFFER_CHUNK];
+	char message1[CONFIG_WRITE_BUFFER_CHUNK];
 	memset(message1, 'A', sizeof(message1));
 	message1[sizeof(message1) - 1] = '\0';
 	uint32_t len1 = ::strlen(message1);
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(copy_two_messages_of_chunk_size)
 	int ret = copy_msg_to_write_buffer(p, message1, len1_be, 0);
 	BOOST_CHECK(ret == 0);
 
-	char message2[WRITE_BUFFER_CHUNK];
+	char message2[CONFIG_WRITE_BUFFER_CHUNK];
 	memset(message2, 'B', sizeof(message2));
 	message2[sizeof(message2) - 1] = '\0';
 	uint32_t len2 = ::strlen(message2);
@@ -584,9 +584,9 @@ BOOST_AUTO_TEST_CASE(max_message_length)
 	BOOST_REQUIRE(p != NULL);
 	p->op = WRITE_MSG;
 
-	static char message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
+	static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
 	memset(message, 0x42, sizeof(message));
-	message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
+	message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
 	int ret = send_message(p, message, ::strlen(message));
 	BOOST_CHECK(ret == 0);
 
@@ -599,9 +599,9 @@ BOOST_AUTO_TEST_CASE(message_too_large)
 	BOOST_REQUIRE(p != NULL);
 	p->op = WRITE_MSG;
 
-	static char message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
+	static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
 	memset(message, 0x42, sizeof(message));
-	message[MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
+	message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
 	int ret = send_message(p, message, ::strlen(message));
 	BOOST_CHECK(ret == -1);
 
@@ -620,7 +620,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
 	int ret = send_message(p, message, ::strlen(message));
 	BOOST_CHECK(ret == 0);
 
-	static char check_buffer[MAX_MESSAGE_SIZE];
+	static char check_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	uint32_t len_be = htonl(::strlen(message));
 	char *buf_ptr = check_buffer;
 
@@ -648,7 +648,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(p->op == WRITE_MSG);
 
-	static char check_buffer[MAX_MESSAGE_SIZE];
+	static char check_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	uint32_t len_be = htonl(::strlen(message));
 	char *buf_ptr = check_buffer;
 
