@@ -6,8 +6,9 @@ env:
    #   via the "travis encrypt" command using the project repo's public key
     - secure: "QHBCY7S3ZYOtu5zujyMnyHg74srAIfFSKJbrlBdETk2T6YStPug3Z5PuY7ahXfPyM/4w7og8KyvuGZL0YsJrNaJSpsbDETtwvKEorzLjfKyRwDV2SyTpnSLauGgZmjPZnkXzp8lQIR+cIo7of6frjxd47E8WCKCGFJKa0pUG5Bw="
   matrix:
-    - COMPILER=gcc
-    - COMPILER=clang
+    - BUILD=gcc
+    - BUILD=clang
+    - BUILD=tests
 
 install:
   - sudo apt-get install cmake
@@ -18,7 +19,7 @@ before_script:
 
 script:
   - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
-      case ${COMPILER} in
+      case ${BUILD} in
         gcc)
           cmake ../linux/epoll/  &&
           make
@@ -26,6 +27,11 @@ script:
         clang)
           cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
           make
+          ;;
+        tests)
+          cmake ../linux/epoll/tests  &&
+          make &&
+		  ctest
           ;;
       esac ;
     fi
