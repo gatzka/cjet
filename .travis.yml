@@ -13,16 +13,14 @@ before_script:
   - cd build
 
 script:
-  - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
-      case $COMPILER in
-        gcc)
-          cmake ../linux/epoll/  &&
-          cmake --build .
-          ;;
-        clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
-          cmake --build .
-          ;;
-      esac ;
-    fi
+  - case ${COMPILER} in
+      gcc)
+        cmake ../linux/epoll/  &&
+        make
+        ;;
+      clang)
+        cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
+        make
+        ;;
+    esac ;
 
