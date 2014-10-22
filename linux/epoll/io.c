@@ -254,7 +254,7 @@ int send_buffer(struct peer *p)
 	return 0;
 }
 
-int send_message(struct peer *p, char *rendered, size_t len)
+int send_message(struct peer *p, const char *rendered, size_t len)
 {
 	int ret;
 	struct iovec iov[2];
@@ -274,7 +274,10 @@ int send_message(struct peer *p, char *rendered, size_t len)
 
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);
-	iov[1].iov_base = rendered;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	iov[1].iov_base = (void *)rendered;
+#pragma GCC diagnostic pop
 	iov[1].iov_len = len;
 
 	sent = WRITEV(p->io.fd, iov, sizeof(iov) / sizeof(struct iovec));

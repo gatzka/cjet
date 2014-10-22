@@ -7,7 +7,7 @@
 extern "C" {
 #endif
 
-int send_message(struct peer *p, char *rendered, size_t len);
+int send_message(struct peer *p, const char *rendered, size_t len);
 
 #ifdef __cplusplus
 }
