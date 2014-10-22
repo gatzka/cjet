@@ -29,7 +29,7 @@ script:
           make
           ;;
         tests)
-          cmake ../linux/epoll/tests  &&
+          cmake ../linux/epoll/tests/  &&
           make &&
 		  ctest
           ;;
