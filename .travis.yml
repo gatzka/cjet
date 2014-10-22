@@ -1,11 +1,28 @@
 language: cpp
 
-compiler:
-  - gcc
+env:
+  matrix:
+   - COMPILER=gcc
+   - COMPILER=clang
+
+install:
+  - sudo apt-get install cmake
 
 before_script:
   - mkdir build
   - cd build
-  - cmake ../linux/epoll/
 
-script: make
+script:
+  - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
+      case $COMPILER in
+        gcc)
+          cmake ../linux/epoll/  &&
+          cmake --build .
+          ;;
+        clang)
+          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
+          cmake --build .
+          ;;
+      esac ;
+    fi
+
