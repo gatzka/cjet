@@ -14,7 +14,6 @@
 #include "peer.h"
 #include "state.h"
 
-static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 
 static const int ADD_WITHOUT_PATH = 1;
 static const int PATH_NO_STRING = 2;
@@ -442,7 +441,15 @@ BOOST_AUTO_TEST_CASE(no_string_method)
 
 BOOST_AUTO_TEST_CASE(parse_wrong_json)
 {
+	static char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
 	int ret = parse_message(wrong_json, strlen(wrong_json), NULL);
+	BOOST_CHECK(ret == -1);
+}
+
+BOOST_AUTO_TEST_CASE(parse_json_no_object_or_array)
+{
+	static char json[] = "\"foo\"";
+	int ret = parse_message(json, strlen(json), NULL);
 	BOOST_CHECK(ret == -1);
 }
 
