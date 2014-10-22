@@ -1,9 +1,13 @@
 language: cpp
 
 env:
+  global:
+   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
+   #   via the "travis encrypt" command using the project repo's public key
+    - secure: "QHBCY7S3ZYOtu5zujyMnyHg74srAIfFSKJbrlBdETk2T6YStPug3Z5PuY7ahXfPyM/4w7og8KyvuGZL0YsJrNaJSpsbDETtwvKEorzLjfKyRwDV2SyTpnSLauGgZmjPZnkXzp8lQIR+cIo7of6frjxd47E8WCKCGFJKa0pUG5Bw="
   matrix:
-   - COMPILER=gcc
-   - COMPILER=clang
+    - COMPILER=gcc
+    - COMPILER=clang
 
 install:
   - sudo apt-get install cmake
@@ -13,14 +17,26 @@ before_script:
   - cd build
 
 script:
-  - case ${COMPILER} in
-      gcc)
-        cmake ../linux/epoll/  &&
-        make
-        ;;
-      clang)
-        cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
-        make
-        ;;
-    esac ;
+  - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
+      case ${COMPILER} in
+        gcc)
+          cmake ../linux/epoll/  &&
+          make
+          ;;
+        clang)
+          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
+          make
+          ;;
+      esac ;
+    fi
+
+addons:
+  coverity_scan:
+    project:
+      name: "gatzka/cjet"
+      description: "Build submitted via Travis CI"
+    notification_email: stephan.gatzka@gmail.com
+    build_command_prepend: "cmake ../linux/epoll/"
+    build_command: "make"
+    branch_pattern: coverity_scan
 
