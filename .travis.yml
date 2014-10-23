@@ -45,4 +45,3 @@ addons:
     build_command_prepend: "cmake ../linux/epoll/"
     build_command: "make"
     branch_pattern: coverity_scan
-
