@@ -31,7 +31,7 @@ script:
         tests)
           cmake ../linux/epoll/tests/  &&
           make &&
-          ctest
+          ctest -V
           ;;
       esac ;
     fi
