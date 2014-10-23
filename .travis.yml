@@ -11,7 +11,7 @@ env:
     - BUILD=tests
 
 install:
-  - sudo apt-get install cmake
+  - sudo apt-get install cmake libboost-dev
 
 before_script:
   - mkdir build
