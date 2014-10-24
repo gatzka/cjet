@@ -30,19 +30,6 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 	return path->valuestring;
 }
 
-static cJSON *check_for_fetch_id(cJSON *params)
-{
-	cJSON *id = cJSON_GetObjectItem(params, "id");
-	if (unlikely(id == NULL)) {
-		return create_invalid_params_error("reason", "no fetch id given");
-	}
-	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number)) ) {
-		return create_invalid_params_error("reason", "fetch id is neither string nor number");
-	}
-
-	return NULL;
-}
-
 static cJSON *process_change(cJSON *params)
 {
 	cJSON *error;
@@ -95,12 +82,7 @@ static cJSON *process_remove(cJSON *params, struct peer *p)
 
 static cJSON *process_fetch(cJSON *params, struct peer *p)
 {
-	cJSON *error = check_for_fetch_id(params);
-	if (unlikely(error != NULL)) {
-		return error;
-	}
-	error = add_fetch_to_peer(p, params);
-	return error;
+	return add_fetch_to_peer(p, params);
 }
 
 static cJSON *process_config() {
