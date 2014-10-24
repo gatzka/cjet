@@ -1,7 +1,7 @@
 #ifndef CJET_RESPONSE_H
 #define CJET_RESPONSE_H
 
-#include "cJSON.h"
+#include "json/cJSON.h"
 
 static const int TRUE = 1;
 static const int FALSE = 0;

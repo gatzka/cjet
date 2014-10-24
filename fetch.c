@@ -2,6 +2,7 @@
 
 #include "compiler.h"
 #include "fetch.h"
+#include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
 

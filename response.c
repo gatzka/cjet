@@ -1,7 +1,7 @@
 #include <stdio.h>
 
-#include "cJSON.h"
 #include "compiler.h"
+#include "json/cJSON.h"
 #include "response.h"
 
 static cJSON *create_common_response(const cJSON *id)

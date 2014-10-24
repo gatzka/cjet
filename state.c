@@ -2,10 +2,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cJSON.h"
 #include "compiler.h"
 #include "config.h"
 #include "hashtable.h"
+#include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
 #include "response.h"

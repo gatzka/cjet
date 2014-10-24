@@ -33,7 +33,7 @@ ADD_DEFINITIONS(-DTESTING)
 SET(READBUFFER_TEST
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
-	../../../cJSON.c
+	../../../json/cJSON.c
 	../../../peer.c
 	../../../response.c
 	../../../state.c
@@ -49,7 +49,7 @@ TARGET_LINK_LIBRARIES(
 SET(JSON_PARSE_TEST
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
-	../../../cJSON.c
+	../../../json/cJSON.c
 	../../../fetch.c
 	../../../parse.c
 	../../../peer.c
@@ -65,7 +65,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
-	../../../cJSON.c
+	../../../json/cJSON.c
 	../../../response.c
 	../../../state.c
 	../../../peer.c

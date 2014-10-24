@@ -8,12 +8,11 @@
 
 #include <cstring>
 
-#include "cJSON.h"
 #include "config.h"
+#include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "state.h"
-
 
 static const int ADD_WITHOUT_PATH = 1;
 static const int PATH_NO_STRING = 2;

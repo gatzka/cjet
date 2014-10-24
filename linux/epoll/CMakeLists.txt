@@ -46,7 +46,7 @@ SET(CJET_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	io.c
 	../main.c
-	../../cJSON.c
+	../../json/cJSON.c
 	../../fetch.c
 	../../parse.c
 	../../peer.c
@@ -67,7 +67,7 @@ SET(ECHO_FILES
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	io.c
 	../main.c
-	../../cJSON.c
+	../../json/cJSON.c
 	../../echo.c
 	../../peer.c
 	../../response.c

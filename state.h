@@ -1,7 +1,7 @@
 #ifndef CJET_STATE_H
 #define CJET_STATE_H
 
-#include "cJSON.h"
+#include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
 

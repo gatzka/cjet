@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cJSON.h"
+#include "json/cJSON.h"
 #include "compiler.h"
 #include "config.h"
 #include "fetch.h"
