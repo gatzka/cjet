@@ -98,7 +98,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	}
 	s = alloc_state(path, value);
 	if (unlikely(s == NULL)) {
-		cJSON *error = create_invalid_params_error("reason", "not enough memory");
+		cJSON *error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
 	HASHTABLE_PUT(STATE_TABLE, state_hashtable, s->path, s, NULL);

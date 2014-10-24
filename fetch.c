@@ -40,7 +40,7 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 
 	struct fetch *f = alloc_fetch();
 	if (unlikely(f == NULL)) {
-		error = create_invalid_params_error("reason", "not enough memory");
+		error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
 	return NULL;
