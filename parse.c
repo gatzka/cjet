@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "compiler.h"
 #include "config.h"
+#include "fetch.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_io_ops.h"
@@ -98,7 +99,8 @@ static cJSON *process_fetch(cJSON *params, struct peer *p)
 	if (unlikely(error != NULL)) {
 		return error;
 	}
-	return NULL;
+	error = add_fetch_to_peer(p, params);
+	return error;
 }
 
 static cJSON *process_config() {

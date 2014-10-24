@@ -47,7 +47,7 @@ SET(CJET_FILES
 	io.c
 	../main.c
 	../../cJSON.c
-	../../lmatch.c
+	../../fetch.c
 	../../parse.c
 	../../peer.c
 	../../response.c
