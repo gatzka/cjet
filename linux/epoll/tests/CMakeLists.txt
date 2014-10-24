@@ -2,6 +2,8 @@ PROJECT("cjet tests" C CXX)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+INCLUDE(CTest)
+
 FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework)
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -76,6 +78,8 @@ TARGET_LINK_LIBRARIES(
 )
  
 ENABLE_TESTING()
+SET(CTEST_MEMORYCHECK_COMMAND "valgrind")
+SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--tool=memcheck -v")
 
 ADD_TEST(parse_test parse_test.bin)
 ADD_TEST(readbuffer_test readbuffer_test.bin)
