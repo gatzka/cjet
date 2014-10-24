@@ -32,6 +32,7 @@ static struct fetch *alloc_fetch(void)
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
+	// TODO: check if fetch ID already used by this peer
 	cJSON *error = check_for_fetch_id(params);
 	if (unlikely(error != NULL)) {
 		return error;
