@@ -48,6 +48,7 @@ SET(JSON_PARSE_TEST
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	../../../cJSON.c
+	../../../fetch.c
 	../../../parse.c
 	../../../peer.c
 	../../../response.c
