@@ -30,7 +30,7 @@ struct peer {
 	char *read_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
-	struct list_head list;
+	struct list_head next_peer;
 };
 
 struct peer *alloc_peer(int fd);
