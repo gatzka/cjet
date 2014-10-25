@@ -8,33 +8,6 @@
 #include "peer.h"
 #include "state.h"
 
-extern "C" {
-
-	int parse_message(const char *msg, uint32_t length, struct peer *p)
-	{
-		return 0;
-	}
-
-	int fake_read(int fd, void *buf, size_t count)
-	{
-		return 0;
-	}
-
-	int fake_send(int fd, void *buf, size_t count, int flags)
-	{
-		return count;
-	}
-
-	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
-	{
-		int count = 0;
-		for (int i = 0; i < iovcnt; ++i) {
-			count += iov[i].iov_len;
-		}
-		return count;
-	}
-}
-
 struct F {
 	F()
 	{
