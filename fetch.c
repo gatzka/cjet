@@ -32,6 +32,11 @@ static struct fetch *alloc_fetch(const struct peer *p)
 	return f;
 }
 
+static void free_fetch(struct fetch *f)
+{
+	free(f);
+}
+
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
 	// TODO: check if fetch ID already used by this peer (invalid params)
@@ -51,5 +56,11 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 
 void remove_all_fetchers_from_peer(struct peer *p)
 {
-	//TODO
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->fetch_list) {
+		struct fetch *f = list_entry(item, struct fetch, next_fetch);
+		list_del(&f->next_fetch);
+		free_fetch(f);
+	}
 }
