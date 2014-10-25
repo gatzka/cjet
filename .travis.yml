@@ -11,7 +11,7 @@ env:
     - BUILD=tests
 
 install:
-  - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
+  - sudo apt-get install -qq cmake clang-3.5 libboost-dev libboost-test-dev || /bin/true
 
 before_script:
   - mkdir build
