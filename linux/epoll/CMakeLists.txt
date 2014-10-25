@@ -69,6 +69,7 @@ SET(ECHO_FILES
 	../main.c
 	../../json/cJSON.c
 	../../echo.c
+	../../fetch.c
 	../../peer.c
 	../../response.c
 	../../state.c

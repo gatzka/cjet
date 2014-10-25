@@ -48,3 +48,8 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	return NULL;
 }
+
+void remove_all_fetchers_from_peer(struct peer *p)
+{
+	//TODO
+}

@@ -34,6 +34,7 @@ SET(READBUFFER_TEST
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/config.h
 	${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_FILES_DIRECTORY}/config/peer_io.h
 	../../../json/cJSON.c
+	../../../fetch.c
 	../../../peer.c
 	../../../response.c
 	../../../state.c
@@ -66,6 +67,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(STATE_TEST
 	../../../json/cJSON.c
+	../../../fetch.c
 	../../../response.c
 	../../../state.c
 	../../../peer.c

@@ -13,6 +13,7 @@ struct fetch {
 };
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params);
+void remove_all_fetchers_from_peer(struct peer *p);
 
 #endif
 

@@ -6,6 +6,7 @@
 
 #include "compiler.h"
 #include "config.h"
+#include "fetch.h"
 #include "list.h"
 #include "peer.h"
 #include "state.h"
@@ -31,6 +32,7 @@ struct peer *alloc_peer(int fd)
 
 void free_peer(struct peer *p)
 {
+	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
 	free(p);
 }
