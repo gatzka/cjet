@@ -3,7 +3,7 @@
 #include <string.h>
 
 #include "compiler.h"
-#include "config.h"
+#include "config/config.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"

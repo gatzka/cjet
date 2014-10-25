@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "config.h"
-#include "peer_io.h"
+#include "config/config.h"
+#include "config/peer_io.h"
 #include "list.h"
 
 #ifdef __cplusplus

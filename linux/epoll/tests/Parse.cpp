@@ -8,7 +8,7 @@
 
 #include <cstring>
 
-#include "config.h"
+#include "config/config.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"

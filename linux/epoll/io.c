@@ -12,11 +12,11 @@
 #include <unistd.h>
 
 #include "compiler.h"
-#include "io.h"
+#include "config/io.h"
+#include "config/peer_io.h"
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_io.h"
 #include "peer_io_ops.h"
 #include "peer_testing.h"
 #include "state.h"

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "compiler.h"
-#include "config.h"
+#include "config/config.h"
 #include "fetch.h"
 #include "list.h"
 #include "peer.h"

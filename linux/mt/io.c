@@ -11,7 +11,7 @@
 #include <unistd.h>
 
 #include "compiler.h"
-#include "io.h"
+#include "config/io.h"
 #include "list.h"
 #include "parse.h"
 #include "peer.h"

@@ -3,10 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "json/cJSON.h"
 #include "compiler.h"
-#include "config.h"
+#include "config/config.h"
 #include "fetch.h"
+#include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_io_ops.h"
