@@ -6,7 +6,7 @@
 #include "peer.h"
 
 struct fetch {
-	const char *fetch_id;
+	char *fetch_id;
 	const struct peer *peer;
 	struct list_head next_fetch;
 	struct list_head matcher_list;

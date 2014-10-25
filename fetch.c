@@ -1,51 +1,81 @@
+#include <stdio.h>
 #include <stdlib.h>
 
 #include "compiler.h"
 #include "fetch.h"
+#include "jet_string.h"
 #include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
 
-static cJSON *check_for_fetch_id(cJSON *params)
+static const char *get_fetch_id(cJSON *params, cJSON **err)
 {
 	cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
-		return create_invalid_params_error("reason", "no fetch id given");
+		*err = create_invalid_params_error("reason", "no fetch id given");
+		return NULL;
 	}
-	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number)) ) {
-		return create_invalid_params_error("reason", "fetch id is neither string nor number");
+	if (unlikely(id->type != cJSON_String)) {
+		*err =  create_invalid_params_error("reason", "fetch ID is not a string");
+		return NULL;
 	}
-
-	return NULL;
+	*err = NULL;
+	return id->valuestring;
 }
 
-static struct fetch *alloc_fetch(const struct peer *p)
+static struct fetch *alloc_fetch(const struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
+		fprintf(stderr, "Could not allocate memory for fetch object!\n");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	INIT_LIST_HEAD(&f->matcher_list);
 	f->peer = p;
+	f->fetch_id = duplicate_string(id);
+	if (unlikely(f->fetch_id == NULL)) {
+		fprintf(stderr, "Could not allocate memory for fetch ID object!\n");
+		free(f);
+		return NULL;
+	}
 
 	return f;
 }
 
 static void free_fetch(struct fetch *f)
 {
+	free(f->fetch_id);
 	free(f);
+}
+
+static struct fetch *find_fetch(const struct peer *p, const char *id)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->fetch_list) {
+		struct fetch *f = list_entry(item, struct fetch, next_fetch);
+		if (strcmp(f->fetch_id, id) == 0) {
+			return f;
+		}
+	}
+	return NULL;
 }
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
-	// TODO: check if fetch ID already used by this peer (invalid params)
-	cJSON *error = check_for_fetch_id(params);
-	if (unlikely(error != NULL)) {
+	cJSON *error;
+	const char *id = get_fetch_id(params, &error);
+	if (unlikely(id == NULL)) {
+		return error;
+	}
+	struct fetch *f = find_fetch(p, id);
+	if (f != NULL) {
+		error = create_invalid_params_error("reason", "fetch ID already in use");
 		return error;
 	}
 
-	struct fetch *f = alloc_fetch(p);
+	f = alloc_fetch(p, id);
 	if (unlikely(f == NULL)) {
 		error = create_internal_error("reason", "not enough memory");
 		return error;

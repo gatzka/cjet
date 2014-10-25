@@ -5,6 +5,7 @@
 #include "compiler.h"
 #include "config.h"
 #include "hashtable.h"
+#include "jet_string.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
@@ -40,15 +41,11 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 		fprintf(stderr, "Could not allocate memory for state object!\n");
 		return NULL;
 	}
-	size_t path_length = strlen(path);
-	char *p = malloc(path_length + 1);
-	if (unlikely(p == NULL)) {
+	s->path = duplicate_string(path);
+	if (unlikely(s->path == NULL)) {
 		fprintf(stderr, "Could not allocate memory for path object!\n");
 		goto alloc_path_failed;
 	}
-	strncpy(p, path, path_length);
-	p[path_length] = '\0';
-	s->path = p;
 	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
 		fprintf(stderr, "Could not copy value object!\n");
@@ -60,7 +57,7 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 	return s;
 
 value_copy_failed:
-	free(p);
+	free(s->path);
 alloc_path_failed:
 	free(s);
 	return NULL;
