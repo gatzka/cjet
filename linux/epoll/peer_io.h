@@ -5,7 +5,6 @@
 
 struct io {
 	int fd;
-	struct list_head list;
 };
 
 #endif

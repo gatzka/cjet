@@ -19,7 +19,7 @@ struct peer *alloc_peer(int fd)
 		return NULL;
 	}
 	p->io.fd = fd;
-	INIT_LIST_HEAD(&p->io.list);
+	INIT_LIST_HEAD(&p->list);
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
 	p->read_ptr = p->read_buffer;

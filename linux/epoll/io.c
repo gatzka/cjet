@@ -67,7 +67,7 @@ static void *create_peer(int fd, int epoll_fd)
 	if (unlikely(add_epoll(epoll_fd, fd, peer) < 0)) {
 		goto epollctl_failed;
 	}
-	list_add_tail(&peer->io.list, &peer_list);
+	list_add_tail(&peer->list, &peer_list);
 	return peer;
 
 epollctl_failed:
@@ -130,7 +130,7 @@ so_reuse_failed:
 static void destroy_peer(struct peer *p, int epoll_fd, int fd)
 {
 	remove_all_states_from_peer(p);
-	list_del(&p->io.list);
+	list_del(&p->list);
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	free_peer(p);
@@ -142,7 +142,7 @@ static void destroy_all_peers(int epoll_fd)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct io, list);
+		struct peer *p = list_entry(item, struct peer, list);
 		destroy_peer(p, epoll_fd, p->io.fd);
 	}
 }

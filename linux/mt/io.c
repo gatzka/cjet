@@ -57,7 +57,7 @@ static inline void *create_peer(int fd)
 		fprintf(stderr, "Could not allocate peer!\n");
 		return NULL;
 	}
-	list_add_tail(&peer->io.list, &peer_list);
+	list_add_tail(&peer->list, &peer_list);
 	return peer;
 }
 
@@ -87,7 +87,7 @@ static void shutdown_peer(struct peer *p, int fd)
 
 static void destroy_peer(struct peer *p)
 {
-	list_del(&p->io.list);
+	list_del(&p->list);
 	free_peer(p);
 	decrement_number_of_peers();
 }
@@ -97,7 +97,7 @@ static void scan_for_dead_peers(void)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct io, list);
+		struct peer *p = list_entry(item, struct peer, list);
 		pthread_t thread_id = p->io.thread_id;
 
 		pthread_mutex_lock(&p->io.death_mutex);
@@ -114,7 +114,7 @@ static void destroy_all_peers(void)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct io, list);
+		struct peer *p = list_entry(item, struct peer, list);
 		pthread_t thread_id = p->io.thread_id;
 		pthread_kill(thread_id, SIGUSR1);
 		wait_for_death(p);
