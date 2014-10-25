@@ -19,7 +19,7 @@ static cJSON *check_for_fetch_id(cJSON *params)
 	return NULL;
 }
 
-static struct fetch *alloc_fetch(void)
+static struct fetch *alloc_fetch(const struct peer *p)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
@@ -27,19 +27,20 @@ static struct fetch *alloc_fetch(void)
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	INIT_LIST_HEAD(&f->matcher_list);
+	f->peer = p;
 
 	return f;
 }
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
-	// TODO: check if fetch ID already used by this peer
+	// TODO: check if fetch ID already used by this peer (invalid params)
 	cJSON *error = check_for_fetch_id(params);
 	if (unlikely(error != NULL)) {
 		return error;
 	}
 
-	struct fetch *f = alloc_fetch();
+	struct fetch *f = alloc_fetch(p);
 	if (unlikely(f == NULL)) {
 		error = create_internal_error("reason", "not enough memory");
 		return error;
