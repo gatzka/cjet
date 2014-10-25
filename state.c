@@ -118,7 +118,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 			return NULL;
 		}
 	}
-	cJSON *error = create_invalid_params_error("notExists", path);
+	cJSON *error = create_invalid_params_error("not exists", path);
 	return error;
 }
 
