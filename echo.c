@@ -1,8 +1,8 @@
 #include <stdint.h>
 
+#include "config/io.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_io_ops.h"
 
 int parse_message(const char *msg, uint32_t length, struct peer *p)
 {

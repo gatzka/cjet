@@ -5,11 +5,11 @@
 
 #include "compiler.h"
 #include "config/config.h"
+#include "config/io.h"
 #include "fetch.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_io_ops.h"
 #include "response.h"
 #include "state.h"
 

@@ -15,7 +15,6 @@
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_io_ops.h"
 #include "state.h"
 
 #define IO_INTERRUPTED -2

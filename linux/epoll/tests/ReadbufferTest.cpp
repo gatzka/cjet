@@ -10,7 +10,6 @@
 
 #include "config/config.h"
 #include "config/io.h"
-#include "peer_io_ops.h"
 #include "peer.h"
 
 static const int BADFD = -1;

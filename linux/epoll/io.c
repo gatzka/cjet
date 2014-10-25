@@ -17,7 +17,6 @@
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_io_ops.h"
 #include "peer_testing.h"
 #include "state.h"
 
