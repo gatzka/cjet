@@ -45,5 +45,6 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
+	list_add_tail(&f->next_fetch, &p->fetch_list);
 	return NULL;
 }

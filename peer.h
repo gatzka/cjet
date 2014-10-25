@@ -25,12 +25,13 @@ struct peer {
 	uint32_t msg_length;
 	size_t write_buffer_size;
 	struct list_head state_list;
-	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
+	struct list_head next_peer;
+	struct list_head fetch_list;
 	char *read_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
-	struct list_head next_peer;
+	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
+	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 };
 
 struct peer *alloc_peer(int fd);
