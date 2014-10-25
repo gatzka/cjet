@@ -282,7 +282,6 @@ BOOST_AUTO_TEST_CASE(slow_read)
 
 BOOST_AUTO_TEST_CASE(fast_read)
 {
-	uint32_t value;
 	static const int read_len = 5;
 	char buffer[read_len + 1];
 
@@ -403,7 +402,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 	unsigned int len_part = sizeof(uint32_t) - already_written;
 
 	char message[CONFIG_MAX_MESSAGE_SIZE - len_part];
-	for (int i = 0; i < sizeof(message); ++i) {
+	for (unsigned int i = 0; i < sizeof(message); ++i) {
 		message[i] = (i + 13) & 0xff;
 	}
 	uint32_t len = sizeof(message);
