@@ -7,8 +7,6 @@ SET(WARN_SWITCHES "-pipe -Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-ove
 SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -fvisibility=hidden -fno-common -std=c99" CACHE STRING "" FORCE)
 IF(NOT DEFINED ENV{CI})
 	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto" CACHE STRING "" FORCE)
-ELSE()
-	MESSAGE("running travis")
 ENDIF()
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fomit-frame-pointer" CACHE STRING "" FORCE)
