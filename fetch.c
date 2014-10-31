@@ -62,6 +62,34 @@ static struct fetch *find_fetch(const struct peer *p, const char *id)
 	return NULL;
 }
 
+static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
+{
+	cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (path == NULL) {
+		return NULL;
+	}
+	if (unlikely(path->type != cJSON_Object)) {
+		return create_invalid_params_error("reason", "fetch path is not an object");
+	}
+
+	cJSON *matcher = path->child;
+	while (matcher)	{
+		printf("%s\n", matcher->string);
+		matcher = matcher->next;
+	}
+	f = f;
+	return NULL;
+}
+
+static cJSON *add_matchers(struct fetch *f, cJSON *params)
+{
+	cJSON *error = add_path_matchers(f, params);
+	if (unlikely(error != NULL)) {
+		return error;
+	}
+	return NULL;
+}
+
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
 	cJSON *error;
@@ -80,6 +108,7 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
+	add_matchers(f, params);
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	return NULL;
 }
