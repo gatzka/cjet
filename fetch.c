@@ -70,7 +70,7 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		return error;
 	}
 	struct fetch *f = find_fetch(p, id);
-	if (f != NULL) {
+	if (unlikely(f != NULL)) {
 		error = create_invalid_params_error("reason", "fetch ID already in use");
 		return error;
 	}
