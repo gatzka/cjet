@@ -77,7 +77,7 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 		printf("%s\n", matcher->string);
 		matcher = matcher->next;
 	}
-	f = f;
+	(void)f;
 	return NULL;
 }
 
