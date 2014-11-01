@@ -1,5 +1,9 @@
 # cjet - An ANSI C conformant JET implementation
 
+## License
+Copyright (c) 2014 Stephan Gatzka. See the LICENSE file for license rights and
+limitations (AFL 3.0).
+
 ## Build Status
 Travis CI: <a href="https://travis-ci.org/gatzka/cjet">
   <img alt="Travis CI Build Status"
