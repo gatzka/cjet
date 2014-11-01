@@ -1,7 +1,7 @@
 # cjet - An ANSI C conformant JET implementation
 
 ## License
-Copyright (c) 2014 Stephan Gatzka. See the LICENSE file for license rights and
+Copyright (c) 2014 Stephan Gatzka. See the [LICENSE](LICENSE) file for license rights and
 limitations (AFL 3.0).
 
 ## Build Status
