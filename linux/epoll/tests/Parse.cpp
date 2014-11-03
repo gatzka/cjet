@@ -66,6 +66,7 @@ struct F {
 		readback_buffer_ptr = readback_buffer;
 		std::memset(readback_buffer, 0x00, sizeof(readback_buffer));
 	}
+
 	~F()
 	{
 		free_peer(p);
@@ -246,7 +247,7 @@ static cJSON *create_correct_fetch()
 	cJSON_AddItemToObject(root, "params", params);
 
 	cJSON *path = cJSON_CreateObject();
-	cJSON_AddStringToObject(path, "startsWith", "person");
+	cJSON_AddStringToObject(path, "equals", "person");
 	cJSON_AddItemToObject(params, "path", path);
 	return root;
 }

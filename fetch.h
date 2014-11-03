@@ -5,11 +5,18 @@
 #include "list.h"
 #include "peer.h"
 
+typedef int (*match_func)(const char *fetch_path, const char *state_path);
+
+struct path_matcher {
+	char *fetch_path;
+	match_func match_function;
+};
+
 struct fetch {
 	char *fetch_id;
 	const struct peer *peer;
 	struct list_head next_fetch;
-	struct list_head matcher_list;
+	struct path_matcher matcher[12];
 };
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params);
