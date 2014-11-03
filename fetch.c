@@ -76,10 +76,19 @@ static int equals_match(const char *fetch_path, const char *state_path)
 	return strcmp(fetch_path, state_path);
 }
 
+static int startswith_match(const char *fetch_path, const char *state_path)
+{
+	size_t length = strlen(fetch_path);
+	return strncmp(fetch_path, state_path, length);
+}
+
 static match_func get_match_function(const char *fetch_type)
 {
 	if (strcmp(fetch_type, "equals") == 0) {
 		return equals_match;
+	}
+	if (strcmp(fetch_type, "startsWith") == 0) {
+		return startswith_match;
 	}
 	return NULL;
 }

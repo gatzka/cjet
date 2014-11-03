@@ -248,6 +248,7 @@ static cJSON *create_correct_fetch()
 
 	cJSON *path = cJSON_CreateObject();
 	cJSON_AddStringToObject(path, "equals", "person");
+	cJSON_AddStringToObject(path, "startsWith", "per");
 	cJSON_AddItemToObject(params, "path", path);
 	return root;
 }
