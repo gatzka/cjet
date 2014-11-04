@@ -130,7 +130,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 
 	if (unlikely(method == NULL)) {
-		error = create_invalid_request_error("reason", "no method tag found");
+		error = create_invalid_request_error("reason", "no method found");
 		goto no_method;
 	}
 
