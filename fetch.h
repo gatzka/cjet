@@ -5,7 +5,9 @@
 #include "list.h"
 #include "peer.h"
 
-typedef int (*match_func)(const char *fetch_path, const char *state_path);
+struct path_matcher;
+
+typedef int (*match_func)(const struct path_matcher *pm, const char *state_path);
 
 struct path_matcher {
 	char *fetch_path;

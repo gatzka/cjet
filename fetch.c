@@ -71,32 +71,34 @@ static struct fetch *find_fetch(const struct peer *p, const char *id)
 	return NULL;
 }
 
-static int equals_match(const char *fetch_path, const char *state_path)
+static int equals_match(const struct path_matcher *pm, const char *state_path)
 {
-	return strcmp(fetch_path, state_path);
+	return strcmp(pm->fetch_path, state_path);
 }
 
-static int startswith_match(const char *fetch_path, const char *state_path)
+static int startswith_match(const struct path_matcher *pm, const char *state_path)
 {
-	size_t length = strlen(fetch_path);
-	return strncmp(fetch_path, state_path, length);
+	size_t length = pm->cookie;
+	return strncmp(pm->fetch_path, state_path, length);
 }
 
-static match_func get_match_function(const char *fetch_type)
+static int get_match_function(struct path_matcher *pm, const char *path, const char *fetch_type)
 {
 	if (strcmp(fetch_type, "equals") == 0) {
-		return equals_match;
+		pm->match_function = equals_match;
+		return 0;
 	}
 	if (strcmp(fetch_type, "startsWith") == 0) {
-		return startswith_match;
+		pm->match_function = startswith_match;
+		pm->cookie = strlen(path);
+		return 0;
 	}
-	return NULL;
+	return -1;
 }
 
 static cJSON *fill_matcher(struct path_matcher *matcher, const char *fetch_type, const char *path)
 {
-	matcher->match_function = get_match_function(fetch_type);
-	if (unlikely(matcher->match_function == NULL)) {
+	if (unlikely(get_match_function(matcher, path, fetch_type) < 0)) {
 		return create_internal_error("reason", "match function not implemented");
 	}
 	matcher->fetch_path = duplicate_string(path);
