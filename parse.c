@@ -135,7 +135,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	}
 
 	if (unlikely(method->type != cJSON_String)) {
-		error = create_invalid_request_error("reason", "method tag is not a string");
+		error = create_invalid_request_error("reason", "method value is not a string");
 		goto no_method;
 	}
 
