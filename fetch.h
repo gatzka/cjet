@@ -10,6 +10,7 @@ typedef int (*match_func)(const char *fetch_path, const char *state_path);
 struct path_matcher {
 	char *fetch_path;
 	match_func match_function;
+	uintptr_t cookie;
 };
 
 struct fetch {
