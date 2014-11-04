@@ -127,8 +127,6 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 		if (unlikely(error != NULL)) {
 			return error;
 		}
-		printf("%s: %s\n", matcher->string, matcher->valuestring);
-
 		matcher = matcher->next;
 		path_matcher++;
 	}
