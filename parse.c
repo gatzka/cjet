@@ -126,8 +126,24 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	int ret;
-	cJSON *error = NULL;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
+	if (method != NULL) {
+		ret = handle_method();
+		return ret;
+	}
+
+	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
+	if (result != NULL) {
+		ret = handle_success_response();
+		return ret;
+	}
+
+	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
+	if (result != NULL) {
+		ret = handle_error_response();
+		return ret;
+	}
+
 
 	if (unlikely(method == NULL)) {
 		error = create_invalid_request_error("reason", "no method found");
