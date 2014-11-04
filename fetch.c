@@ -144,6 +144,14 @@ static cJSON *add_matchers(struct fetch *f, cJSON *params)
 	return NULL;
 }
 
+static void find_and_notify_states(struct fetch *f)
+{
+	// get all peers
+	// iterate over all states belonging to a peer
+	// if match then notify fetch peer
+	(void)f;
+}
+
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 {
 	cJSON *error;
@@ -167,6 +175,9 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		free_fetch(f);
 		return error;
 	}
+
+	find_and_notify_states(f);
+
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	return NULL;
 }
