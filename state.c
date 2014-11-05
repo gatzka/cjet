@@ -91,6 +91,29 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 	return NULL;
 }
 
+static cJSON *create_routed_message(const char *path, cJSON *value)
+{
+	(void)path;
+	(void)value;
+	return NULL;
+}
+
+cJSON *set_state(struct peer *p, const char *path, cJSON *value)
+{
+	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	if (unlikely(s == NULL)) {
+		cJSON *error = create_invalid_params_error("not exists", path);
+		return error;
+	}
+	if (unlikely(s->peer == p)) {
+		cJSON *error = create_invalid_params_error("owner of state shall use change instead of set", path);
+		return error;
+	}
+	cJSON *routed_message = create_routed_message(path, value);
+	(void)routed_message;
+	return NULL;
+}
+
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
 	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);

@@ -48,6 +48,24 @@ static cJSON *process_change(cJSON *params, struct peer *p)
 	return error;
 }
 
+static cJSON *process_set(cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return error;
+	}
+
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL) ) {
+		error = create_invalid_params_error("reason", "no value given");
+		return error;
+	}
+	error = set_state(p, path, value);
+	return error;
+}
+
 static cJSON *process_add(cJSON *params, struct peer *p)
 {
 	cJSON *error;
@@ -142,7 +160,7 @@ static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 	if (strcmp(method_string, "change") == 0) {
 		error = process_change(params, p);
 	} else if (strcmp(method_string, "set") == 0) {
-		error = NULL;
+		error = process_set(params, p);
 	} else if (strcmp(method_string, "add") == 0) {
 		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
@@ -172,8 +190,14 @@ static int handle_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
+		fprintf(stderr, "no id in response!\n");
 		return -1;
 	}
+	if (unlikely(id->type != cJSON_Number)) {
+		fprintf(stderr, "id is not a number!\n");
+		return -1;
+	}
+
 	(void)response;
 	(void)p;
 	return 0;
