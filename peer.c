@@ -7,11 +7,14 @@
 #include "compiler.h"
 #include "config/config.h"
 #include "fetch.h"
+#include "hashtable.h"
 #include "list.h"
 #include "peer.h"
 #include "state.h"
 
 #define ROUND_UP(n,d) ((((n) + (d) - 1) / (d)) * (d))
+
+DECLARE_HASHTABLE_STRING(ROUTING_TABLE, CONFIG_ROUTING_TABLE_ORDER)
 
 struct peer *alloc_peer(int fd)
 {

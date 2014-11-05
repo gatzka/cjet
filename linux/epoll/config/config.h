@@ -16,6 +16,7 @@ enum {CONFIG_MAX_WRITE_BUFFER_SIZE = 5120};
  * handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
  */
 enum {CONFIG_STATE_TABLE_ORDER = 13};
+enum {CONFIG_ROUTING_TABLE_ORDER = 6};
 enum {CONFIG_MAX_NUMBER_OF_PEERS = 10};
 
 /* Linux specific configs */
