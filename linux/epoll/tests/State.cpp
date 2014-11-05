@@ -113,7 +113,7 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	cJSON_Delete(value);
 
 	cJSON *new_value = cJSON_CreateNumber(4321);
-	error = change_state(path, new_value);
+	error = change_state(p, path, new_value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(new_value);
 
@@ -129,7 +129,7 @@ BOOST_FIXTURE_TEST_CASE(change_wrong_path, F)
 	cJSON_Delete(value);
 
 	cJSON *new_value = cJSON_CreateNumber(4321);
-	error = change_state("/bar/foo/", new_value);
+	error = change_state(p, "/bar/foo/", new_value);
 	BOOST_CHECK(error != NULL);
 	cJSON_Delete(new_value);
 	check_invalid_params(error);

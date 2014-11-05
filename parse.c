@@ -30,7 +30,7 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 	return path->valuestring;
 }
 
-static cJSON *process_change(cJSON *params)
+static cJSON *process_change(cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -44,7 +44,7 @@ static cJSON *process_change(cJSON *params)
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
 	}
-	error = change_state(path, value);
+	error = change_state(p, path, value);
 	return error;
 }
 
@@ -140,7 +140,7 @@ static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 
 	const char *method_string = method->valuestring;
 	if (strcmp(method_string, "change") == 0) {
-		error = process_change(params);
+		error = process_change(params, p);
 	} else if (strcmp(method_string, "set") == 0) {
 		error = NULL;
 	} else if (strcmp(method_string, "add") == 0) {
@@ -168,13 +168,14 @@ unsupported_method:
 	return ret;
 }
 
-static int handle_success_response()
+static int handle_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 {
-	return 0;
-}
-
-static int handle_error_response()
-{
+	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
+	if (unlikely(id == NULL)) {
+		return -1;
+	}
+	(void)response;
+	(void)p;
 	return 0;
 }
 
@@ -189,13 +190,13 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 
 	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
 	if (result != NULL) {
-		ret = handle_success_response();
+		ret = handle_response(json_rpc, result, p);
 		return ret;
 	}
 
 	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
 	if (error != NULL) {
-		ret = handle_error_response();
+		ret = handle_response(json_rpc, error, p);
 		return ret;
 	}
 

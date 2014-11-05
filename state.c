@@ -35,7 +35,7 @@ struct state *get_state(const char *path)
 	return HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 }
 
-static struct state *alloc_state(const char *path, cJSON *value_object) {
+static struct state *alloc_state(const char *path, cJSON *value_object, struct peer *p) {
 	struct state *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
 		fprintf(stderr, "Could not allocate memory for state object!\n");
@@ -53,6 +53,7 @@ static struct state *alloc_state(const char *path, cJSON *value_object) {
 	}
 	s->value = value_copy;
 	INIT_LIST_HEAD(&s->list);
+	s->peer = p;
 
 	return s;
 
@@ -70,11 +71,15 @@ static void free_state(struct state *s)
 	free(s);
 }
 
-cJSON *change_state(const char *path, cJSON *value)
+cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
 	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	if (unlikely(s == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
+		return error;
+	}
+	if (unlikely(s->peer != p)) {
+		cJSON *error = create_invalid_params_error("not owner of state", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
@@ -93,7 +98,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 		cJSON *error = create_invalid_params_error("exists", path);
 		return error;
 	}
-	s = alloc_state(path, value);
+	s = alloc_state(path, value, p);
 	if (unlikely(s == NULL)) {
 		cJSON *error = create_internal_error("reason", "not enough memory");
 		return error;
