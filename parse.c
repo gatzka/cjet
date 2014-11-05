@@ -123,33 +123,10 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 	return ret;
 }
 
-static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
+static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 {
 	int ret;
-	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
-	if (method != NULL) {
-		ret = handle_method();
-		return ret;
-	}
-
-	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
-	if (result != NULL) {
-		ret = handle_success_response();
-		return ret;
-	}
-
-	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
-	if (result != NULL) {
-		ret = handle_error_response();
-		return ret;
-	}
-
-
-	if (unlikely(method == NULL)) {
-		error = create_invalid_request_error("reason", "no method found");
-		goto no_method;
-	}
-
+	cJSON *error;
 	if (unlikely(method->type != cJSON_String)) {
 		error = create_invalid_request_error("reason", "method value is not a string");
 		goto no_method;
@@ -188,6 +165,42 @@ no_params:
 unsupported_method:
 	ret = possibly_send_response(json_rpc, error, p);
 
+	return ret;
+}
+
+static int handle_success_response()
+{
+	return 0;
+}
+
+static int handle_error_response()
+{
+	return 0;
+}
+
+static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
+{
+	int ret;
+	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
+	if (method != NULL) {
+		ret = handle_method(json_rpc, method, p);
+		return ret;
+	}
+
+	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
+	if (result != NULL) {
+		ret = handle_success_response();
+		return ret;
+	}
+
+	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
+	if (error != NULL) {
+		ret = handle_error_response();
+		return ret;
+	}
+
+	error = create_invalid_request_error("reason", "no method found");
+	ret = possibly_send_response(json_rpc, error, p);
 	return ret;
 }
 
