@@ -299,7 +299,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	}
 
 	if (sent == -1) {
-		/* the writ call has blocked */
+		/* the write call has blocked */
 		p->next_read_op = p->op;
 		p->op = WRITE_MSG;
 		return 0;
