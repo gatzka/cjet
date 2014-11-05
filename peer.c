@@ -22,6 +22,11 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+	p->routing_table = HASHTABLE_CREATE(ROUTING_TABLE);
+	if (unlikely(p->routing_table == NULL)) {
+		free(p);
+		return NULL;
+	}
 	p->io.fd = fd;
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
@@ -37,6 +42,7 @@ void free_peer(struct peer *p)
 {
 	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
+	HASHTABLE_DELETE(ROUTING_TABLE, p->routing_table);
 	free(p);
 }
 

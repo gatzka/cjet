@@ -30,6 +30,7 @@ struct peer {
 	char *read_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
+	void *routing_table;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 };
