@@ -124,6 +124,7 @@ static cJSON *create_routed_message(const char *path, cJSON *value)
 	return message;
 
 error:
+	fprintf(stderr, "Could not allocate memory for routed object!\n");
 	cJSON_Delete(message);
 	return NULL;
 }
