@@ -37,8 +37,24 @@ struct peer *alloc_peer(int fd)
 	return p;
 }
 
+static void remove_routing_information_from_peer(struct peer *p)
+{
+	unsigned int i;
+	struct hashtable_u32 *table = p->routing_table;
+	for (i = 0; i < table_size_ROUTING_TABLE; i++) {
+		struct hashtable_u32 *entry = &(table[i]);
+		if (entry->key != (u32)HASHTABLE_INVALIDENTRY) {
+			struct value_2 val = HASHTABLE_REMOVE(ROUTING_TABLE, p->routing_table, entry->key);
+			//struct peer *origin_peer = val.vals[0]; TODO: the origin peer should be notified
+			cJSON *value = val.vals[1];
+			cJSON_Delete(value);
+		}
+	}
+}
+
 void free_peer(struct peer *p)
 {
+	remove_routing_information_from_peer(p);
 	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
 	HASHTABLE_DELETE(ROUTING_TABLE, p->routing_table);
