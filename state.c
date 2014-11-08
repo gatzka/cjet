@@ -93,18 +93,18 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 	return NULL;
 }
 
-static cJSON *create_routed_message(const char *path, cJSON *value)
+static cJSON *create_routed_message(const char *path, cJSON *value, int id)
 {
 	cJSON *message = cJSON_CreateObject();
 	if (unlikely(message == NULL)) {
 		return NULL;
 	}
 
-	cJSON *id = cJSON_CreateNumber(1);
-	if (unlikely(id == NULL)) {
+	cJSON *json_id = cJSON_CreateNumber(id);
+	if (unlikely(json_id == NULL)) {
 		goto error;
 	}
-	cJSON_AddItemToObject(message, "id", id);
+	cJSON_AddItemToObject(message, "id", json_id);
 
 	cJSON *method = cJSON_CreateString(path);
 	if (unlikely(method == NULL)) {
@@ -143,12 +143,16 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 		cJSON *error = create_invalid_params_error("owner of state shall use change instead of set", path);
 		return error;
 	}
-	cJSON *routed_message = create_routed_message(path, value);
+	cJSON *routed_message = create_routed_message(path, value, 1);
 	if (unlikely(routed_message == NULL)) {
 		cJSON *error = create_internal_error("reason", "could not create routed JSON object");
 		return error;
 	}
-	// setup routing information in s->peer
+	if (unlikely(setup_routing_information(s->peer, p, value, 1) != 0)) {
+		cJSON_Delete(routed_message);
+		cJSON *error = create_internal_error("reason", "could not setup routing information");
+		return error;
+	}
 
 	//ret = send_message(s->p, rendered, strlen(rendered));
 	// if error, then remove routing information

@@ -8,6 +8,7 @@
 #include "config/config.h"
 #include "fetch.h"
 #include "hashtable.h"
+#include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
 #include "state.h"
@@ -76,4 +77,20 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 write_buffer_too_small:
 	return -1;
+}
+
+int setup_routing_information(struct peer *routing_peer, struct peer *origin_peer, cJSON *value, int id)
+{
+	cJSON *value_copy = cJSON_Duplicate(value, 1);
+	if (unlikely(value_copy == NULL)) {
+		fprintf(stderr, "Could not copy value object!\n");
+		return -1;
+	}
+	struct value val;
+	val.vals[0] = origin_peer;
+	val.vals[1] = value_copy;
+	if (unlikely(HASHTABLE_PUT(ROUTING_TABLE, routing_peer->routing_table, id, val, NULL) != 0)) {
+		cJSON_Delete(value_copy);
+	}
+	return 0;
 }
