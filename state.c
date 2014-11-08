@@ -39,12 +39,12 @@ struct state *get_state(const char *path)
 static struct state *alloc_state(const char *path, cJSON *value_object, struct peer *p) {
 	struct state *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
-		fprintf(stderr, "Could not allocate memory for state object!\n");
+		fprintf(stderr, "Could not allocate memory for %s object!\n", "state");
 		return NULL;
 	}
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
-		fprintf(stderr, "Could not allocate memory for path object!\n");
+		fprintf(stderr, "Could not allocate memory for %s object!\n", "path");
 		goto alloc_path_failed;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
@@ -126,7 +126,7 @@ static cJSON *create_routed_message(const char *path, cJSON *value)
 	return message;
 
 error:
-	fprintf(stderr, "Could not allocate memory for routed object!\n");
+	fprintf(stderr, "Could not allocate memory for %s object!\n", "routed");
 	cJSON_Delete(message);
 	return NULL;
 }

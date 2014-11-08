@@ -27,14 +27,14 @@ static struct fetch *alloc_fetch(const struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
-		fprintf(stderr, "Could not allocate memory for fetch object!\n");
+		fprintf(stderr, "Could not allocate memory for %s object!\n", "fetch");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
 	f->fetch_id = duplicate_string(id);
 	if (unlikely(f->fetch_id == NULL)) {
-		fprintf(stderr, "Could not allocate memory for fetch ID object!\n");
+		fprintf(stderr, "Could not allocate memory for %s object!\n", "fetch ID");
 		free(f);
 		return NULL;
 	}
