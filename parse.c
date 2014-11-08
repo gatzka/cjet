@@ -21,7 +21,7 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 		*err = error;
 		return NULL;
 	}
-	if (unlikely(path->type != cJSON_String) ) {
+	if (unlikely(path->type != cJSON_String)) {
 		cJSON *error = create_invalid_params_error("reason", "path is not a string");
 		*err = error;
 		return NULL;
@@ -40,7 +40,7 @@ static cJSON *process_change(cJSON *params, struct peer *p)
 	}
 
 	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL) ) {
+	if (unlikely(value == NULL)) {
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
 	}
@@ -58,7 +58,7 @@ static cJSON *process_set(cJSON *params, struct peer *p)
 	}
 
 	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL) ) {
+	if (unlikely(value == NULL)) {
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
 	}
@@ -76,7 +76,7 @@ static cJSON *process_add(cJSON *params, struct peer *p)
 	}
 
 	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL) ) {
+	if (unlikely(value == NULL)) {
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
 	}
