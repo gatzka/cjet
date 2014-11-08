@@ -3,6 +3,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+
 static inline char *duplicate_string(const char *s)
 {
 	size_t length = strlen(s);
