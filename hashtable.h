@@ -44,24 +44,6 @@ typedef uint64_t u64;
 #define HASHTABLE_KEYINVAL -2
 #define HASHTABLE_INVALIDENTRY	-1
 
-struct hashtable_u32 {
-	u32 hop_info;
-	u32 key;
-	void *value;
-};
-
-struct hashtable_u64 {
-	u32 hop_info;
-	u64 key;
-	void *value;
-};
-
-struct hashtable_string {
-	u32 hop_info;
-	const char *key;
-	void *value;
-};
-
 static const u32 hash32_magic = 2654435769U;
 static const u64 hash64_magic = 0xd43ece626aa9260aull;
 
@@ -103,6 +85,24 @@ static inline int is_equal_u64(u64 a, u64 b)
  * DECLARE_HASHTABLE_STRING.
  */
 #define DECLARE_HASHTABLE(name, order, type_name, type) \
+\
+struct hashtable_u32 { \
+	u32 hop_info; \
+	u32 key; \
+	void *value; \
+}; \
+\
+struct hashtable_u64 { \
+	u32 hop_info; \
+	u64 key; \
+	void *value; \
+}; \
+\
+struct hashtable_string { \
+	u32 hop_info; \
+	const char *key; \
+	void *value; \
+}; \
 \
 static const u32 add_range_##name = (1 << (order - 1)); \
 static const u32 table_size_##name = (1 << (order)); \
