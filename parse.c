@@ -189,23 +189,6 @@ unsupported_method:
 	return ret;
 }
 
-static int handle_response(cJSON *json_rpc, cJSON *response, struct peer *p)
-{
-	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
-	if (unlikely(id == NULL)) {
-		fprintf(stderr, "no id in response!\n");
-		return -1;
-	}
-	if (unlikely(id->type != cJSON_Number)) {
-		fprintf(stderr, "id is not a number!\n");
-		return -1;
-	}
-
-	(void)response;
-	(void)p;
-	return 0;
-}
-
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 {
 	int ret;
@@ -217,13 +200,13 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 
 	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
 	if (result != NULL) {
-		ret = handle_response(json_rpc, result, p);
+		ret = handle_routing_response(json_rpc, result, p);
 		return ret;
 	}
 
 	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
 	if (error != NULL) {
-		ret = handle_response(json_rpc, error, p);
+		ret = handle_routing_response(json_rpc, error, p);
 		return ret;
 	}
 

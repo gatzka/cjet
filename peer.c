@@ -110,3 +110,27 @@ int setup_routing_information(struct peer *routing_peer, struct peer *origin_pee
 	}
 	return 0;
 }
+
+int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
+{
+	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
+	if (unlikely(id == NULL)) {
+		fprintf(stderr, "no id in response!\n");
+		return -1;
+	}
+	if (unlikely(id->type != cJSON_Number)) {
+		fprintf(stderr, "id is not a number!\n");
+		return -1;
+	}
+	struct value_2 *val = HASHTABLE_GET(ROUTING_TABLE, p->routing_table, id->valueint);
+	if (val != NULL) {
+		printf("got routed answer!\n");
+		char *res = cJSON_Print(response);
+		printf("%s\n", res);
+		free(res);
+	}
+
+	//REMOVE_HASHTABLE_ENTRY
+	return 0;
+}
+
