@@ -64,14 +64,6 @@ static inline int is_equal_u64(u64 a, u64 b)
 }
 
 /*
- * The bit position in hop_info shows the relative distance beginning
- * from the hash position where to find collision entries. So the
- * HOP_RANGE is the size of the hop_info field in bytes multiplied be
- * the number of bits per byte (8).
- */
-#define HOP_RANGE (sizeof(((struct hashtable_u32*)0)->hop_info) * 8)
-
-/*
  * Declares a hash table of name "name" and size 2^order. This macro is
  * just for internal use. Do not use it to declare a hash table, use
  * DECLARE_HASHTABLE_STRING, DECLARE_HASHTABLE_UINT32 or
@@ -87,49 +79,12 @@ static inline int is_equal_u64(u64 a, u64 b)
  */
 #define DECLARE_HASHTABLE(name, order, type_name, type, value_entries) \
 \
-struct value_##value_entries { \
-	void *vals[value_entries]; \
-};\
-\
-struct hashtable_u32 { \
-	u32 hop_info; \
-	u32 key; \
-	struct value_##value_entries value; \
-}; \
-\
-struct hashtable_u64 { \
-	u32 hop_info; \
-	u64 key; \
-	struct value_##value_entries value; \
-}; \
-\
-struct hashtable_string { \
-	u32 hop_info; \
-	const char *key; \
-	struct value_##value_entries value; \
-}; \
-\
 static const u32 add_range_##name = (1 << (order - 1)); \
 static const u32 table_size_##name = (1 << (order)); \
 \
 static inline u32 wrap_pos##name(u32 pos) \
 { \
 	return pos & (table_size_##name - 1); \
-} \
-\
-static inline u32 hash_func_##name##_u32(u32 key) \
-{ \
-	return (key * (hash32_magic) >> (32 - (order))); \
-} \
-\
-static inline u32 hash_func_##name##_string(const char* key) \
-{ \
-	u32 hash = 0; \
-	u32 c; \
-	while ((c = (u32)*key++) != 0) \
-		hash = c + (hash << 6u) + (hash << 16u) - hash; \
-	hash = (hash * (hash32_magic)) >> (32u - (order)); \
-	return hash; \
 } \
 \
 static inline struct hashtable_##type_name *hashtable_create_##name(void) \
@@ -168,9 +123,14 @@ static inline struct value_##value_entries *hashtable_get_##name(struct hashtabl
 	return NULL; \
 } \
 \
+static inline u32 HOP_RANGE() \
+{ \
+	return sizeof(((struct hashtable_##type_name*)0)->hop_info) * 8; \
+}\
+\
 static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, u32 free_position) \
 { \
-	u32 check_distance = (HOP_RANGE - 1); \
+	u32 check_distance = (HOP_RANGE() - 1); \
 	while (check_distance > 0) { \
 		u32 check_position = wrap_pos##name(free_position - check_distance); \
 		u32 check_hop_info = table[check_position].hop_info; \
@@ -244,7 +204,7 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	free_pos = pos; \
 	if (free_distance < add_range_##name) { \
 		do { \
-			if (free_distance < HOP_RANGE) { \
+			if (free_distance < HOP_RANGE()) { \
 				table[free_pos].value = value; \
 				table[free_pos].key = key; \
 				wmb(); \
@@ -289,9 +249,48 @@ static inline struct value_##value_entries hashtable_remove_##name(struct hashta
 	return ret; \
 }
 
-#define DECLARE_HASHTABLE_STRING(name, order, value_entries) DECLARE_HASHTABLE(name, order, string, const char *, value_entries)
-#define DECLARE_HASHTABLE_UINT32(name, order, value_entries) DECLARE_HASHTABLE(name, order, u32, u32, value_entries)
-#define DECLARE_HASHTABLE_UINT64(name, order, value_entries) DECLARE_HASHTABLE(name, order, u64, u64, value_entries)
+#define DECLARE_HASHTABLE_STRING(name, order, value_entries) \
+struct value_##value_entries { \
+	void *vals[value_entries]; \
+};\
+\
+struct hashtable_string { \
+	u32 hop_info; \
+	const char *key; \
+	struct value_##value_entries value; \
+}; \
+\
+static inline u32 hash_func_##name##_string(const char* key) \
+{ \
+	u32 hash = 0; \
+	u32 c; \
+	while ((c = (u32)*key++) != 0) \
+		hash = c + (hash << 6u) + (hash << 16u) - hash; \
+	hash = (hash * (hash32_magic)) >> (32u - (order)); \
+	return hash; \
+} \
+\
+DECLARE_HASHTABLE(name, order, string, const char *, value_entries)
+
+
+
+#define DECLARE_HASHTABLE_UINT32(name, order, value_entries) \
+struct value_##value_entries { \
+	void *vals[value_entries]; \
+};\
+\
+struct hashtable_u32 { \
+	u32 hop_info; \
+	u32 key; \
+	struct value_##value_entries value; \
+}; \
+\
+static inline u32 hash_func_##name##_u32(u32 key) \
+{ \
+	return (key * (hash32_magic) >> (32 - (order))); \
+} \
+\
+DECLARE_HASHTABLE(name, order, u32, u32, value_entries)
 
 /*
  * Creates a hash table.
