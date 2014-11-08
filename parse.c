@@ -110,6 +110,9 @@ static cJSON *process_config() {
 static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 {
 	int ret = 0;
+	if (error == (cJSON*)ROUTED_MESSAGE) {
+		return ret;
+	}
 
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (likely(id != NULL)) {

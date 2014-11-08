@@ -170,7 +170,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	struct peer *set_peer = alloc_peer(-1);
 	cJSON *new_value = cJSON_CreateNumber(4321);
 	error = set_state(set_peer, path, new_value);
-	BOOST_CHECK(error == NULL);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 	cJSON_Delete(new_value);
 	free_peer(set_peer);
 /*

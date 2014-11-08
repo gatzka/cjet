@@ -154,7 +154,7 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 		error = create_internal_error("reason", "could not setup routing information");
 		goto delete_json;
 	}
-	error = NULL;
+	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(send_message(s->peer, rendered_message, strlen(rendered_message)) != 0)) {
 		error = create_internal_error("reason", "could not send routing information");

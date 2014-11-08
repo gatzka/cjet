@@ -26,6 +26,8 @@ int create_state_hashtable(void);
 void delete_state_hashtable(void);
 struct state *get_state(const char *path);
 
+#define ROUTED_MESSAGE -1
+
 #ifdef __cplusplus
 }
 #endif
