@@ -33,6 +33,7 @@
 #define HASHTABLE_H
 
 #include <stdint.h>
+#include <string.h>
 
 typedef uint32_t u32;
 typedef uint64_t u64;
@@ -86,22 +87,26 @@ static inline int is_equal_u64(u64 a, u64 b)
  */
 #define DECLARE_HASHTABLE(name, order, type_name, type) \
 \
+struct value { \
+	void *vals[1]; \
+};\
+\
 struct hashtable_u32 { \
 	u32 hop_info; \
 	u32 key; \
-	void *value; \
+	struct value value; \
 }; \
 \
 struct hashtable_u64 { \
 	u32 hop_info; \
 	u64 key; \
-	void *value; \
+	struct value value; \
 }; \
 \
 struct hashtable_string { \
 	u32 hop_info; \
 	const char *key; \
-	void *value; \
+	struct value value; \
 }; \
 \
 static const u32 add_range_##name = (1 << (order - 1)); \
@@ -133,9 +138,8 @@ static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 	struct hashtable_##type_name *table = (struct hashtable_##type_name *)malloc(table_size_##name * sizeof(struct hashtable_##type_name)); \
 	if (table != NULL) { \
 		for (i = 0; i < table_size_##name; i++) { \
+			memset(&table[i], 0, sizeof(table[0])); \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
-			table[i].hop_info = 0; \
-			table[i].value = NULL; \
 		} \
 	} \
 	return table; \
@@ -147,7 +151,7 @@ static inline void hashtable_delete_##name(struct hashtable_##type_name *table) 
 	return; \
 } \
 \
-static inline void *hashtable_get_##name(struct hashtable_##type_name *table, type key) \
+static inline struct value *hashtable_get_##name(struct hashtable_##type_name *table, type key) \
 { \
 	u32 hash_pos = hash_func_##name##_##type_name(key); \
 	u32 pos = hash_pos; \
@@ -155,7 +159,7 @@ static inline void *hashtable_get_##name(struct hashtable_##type_name *table, ty
 	while (hop_info != 0) { \
 		if ((hop_info & 0x1) == 1) { \
 			if (is_equal_##type_name(table[pos].key, key)) { \
-				return table[pos].value; \
+				return &(table[pos].value); \
 			} \
 		} \
 		hop_info = hop_info >> 1; \
@@ -194,7 +198,7 @@ static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, 
 	return 0xffffffff; \
 } \
 \
-static inline int hashtable_put_##name(struct hashtable_##type_name *table, type key, void *value, void **prev_value) \
+static inline int hashtable_put_##name(struct hashtable_##type_name *table, type key, struct value value, struct value *prev_value) \
 { \
 	u32 hash_pos; \
 	u32 pos; \
@@ -202,7 +206,7 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	u32 free_distance; \
 	u32 free_pos; \
 	if (prev_value != NULL) { \
-		*prev_value = NULL; \
+		memset(prev_value, 0, sizeof(*prev_value)); \
 	} \
 	if (key == (type)HASHTABLE_INVALIDENTRY) { \
 		return HASHTABLE_KEYINVAL; \
@@ -258,9 +262,10 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	return HASHTABLE_FULL; \
 } \
 \
-static inline void *hashtable_remove_##name(struct hashtable_##type_name *table, type key) \
+static inline struct value hashtable_remove_##name(struct hashtable_##type_name *table, type key) \
 { \
-	void *ret = NULL; \
+	struct value ret; \
+	memset(&ret, 0, sizeof(ret)); \
 	u32 hash_pos = hash_func_##name##_##type_name(key); \
 	u32 pos = hash_pos; \
 	u32 hop_info = table[hash_pos].hop_info; \
@@ -272,7 +277,7 @@ static inline void *hashtable_remove_##name(struct hashtable_##type_name *table,
 				ret = table[pos].value; \
 				table[pos].key = (type)HASHTABLE_INVALIDENTRY; \
 				wmb(); \
-				table[pos].value = NULL; \
+				memset(&table[pos].value, 0, sizeof(table[pos].value)); \
 				distance = wrap_pos##name(pos - hash_pos); \
 				table[hash_pos].hop_info = hop_info & ~(1 << distance); \
 				break; \

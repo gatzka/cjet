@@ -32,7 +32,8 @@ void delete_state_hashtable(void)
 
 struct state *get_state(const char *path)
 {
-	return HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	return val->vals[0];
 }
 
 static struct state *alloc_state(const char *path, cJSON *value_object, struct peer *p) {
@@ -73,11 +74,12 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
-	if (unlikely(s == NULL)) {
+	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	if (unlikely(val == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
 	}
+	struct state *s = val->vals[0];
 	if (unlikely(s->peer != p)) {
 		cJSON *error = create_invalid_params_error("not owner of state", path);
 		return error;
@@ -131,11 +133,12 @@ error:
 
 cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
-	if (unlikely(s == NULL)) {
+	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	if (unlikely(val == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
 	}
+	struct state *s = val->vals[0];
 	if (unlikely(s->peer == p)) {
 		cJSON *error = create_invalid_params_error("owner of state shall use change instead of set", path);
 		return error;
@@ -154,17 +157,19 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
-	struct state *s = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
-	if (unlikely(s != NULL)) {
+	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	if (unlikely(val != NULL)) {
 		cJSON *error = create_invalid_params_error("exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, p);
+	struct state *s = alloc_state(path, value, p);
 	if (unlikely(s == NULL)) {
 		cJSON *error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
-	HASHTABLE_PUT(STATE_TABLE, state_hashtable, s->path, s, NULL);
+	struct value new_val;
+	new_val.vals[0] = s;
+	HASHTABLE_PUT(STATE_TABLE, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->list, &p->state_list);
 	// TODO: notify all clients interested in this state
 	return NULL;
