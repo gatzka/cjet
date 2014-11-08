@@ -12,9 +12,7 @@
 #include "peer.h"
 #include "state.h"
 
-#define ROUND_UP(n,d) ((((n) + (d) - 1) / (d)) * (d))
-
-DECLARE_HASHTABLE_UINT32(ROUTING_TABLE, CONFIG_ROUTING_TABLE_ORDER, 1)
+DECLARE_HASHTABLE_UINT32(ROUTING_TABLE, CONFIG_ROUTING_TABLE_ORDER, 2)
 
 struct peer *alloc_peer(int fd)
 {
