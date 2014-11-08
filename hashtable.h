@@ -85,10 +85,10 @@ static inline int is_equal_u64(u64 a, u64 b)
  * string" and type "const char *". Please see also
  * DECLARE_HASHTABLE_STRING.
  */
-#define DECLARE_HASHTABLE(name, order, type_name, type) \
+#define DECLARE_HASHTABLE(name, order, type_name, type, value_entries) \
 \
 struct value { \
-	void *vals[1]; \
+	void *vals[value_entries]; \
 };\
 \
 struct hashtable_u32 { \
@@ -289,9 +289,9 @@ static inline struct value hashtable_remove_##name(struct hashtable_##type_name 
 	return ret; \
 }
 
-#define DECLARE_HASHTABLE_STRING(name, order) DECLARE_HASHTABLE(name, order, string, const char *)
-#define DECLARE_HASHTABLE_UINT32(name, order) DECLARE_HASHTABLE(name, order, u32, u32)
-#define DECLARE_HASHTABLE_UINT64(name, order) DECLARE_HASHTABLE(name, order, u64, u64)
+#define DECLARE_HASHTABLE_STRING(name, order, value_entries) DECLARE_HASHTABLE(name, order, string, const char *, value_entries)
+#define DECLARE_HASHTABLE_UINT32(name, order, value_entries) DECLARE_HASHTABLE(name, order, u32, u32, value_entries)
+#define DECLARE_HASHTABLE_UINT64(name, order, value_entries) DECLARE_HASHTABLE(name, order, u64, u64, value_entries)
 
 /*
  * Creates a hash table.
