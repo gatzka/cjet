@@ -16,7 +16,7 @@ static const char *get_fetch_id(cJSON *params, cJSON **err)
 		return NULL;
 	}
 	if (unlikely(id->type != cJSON_String)) {
-		*err =  create_invalid_params_error("reason", "fetch ID is not a string");
+		*err = create_invalid_params_error("reason", "fetch ID is not a string");
 		return NULL;
 	}
 	*err = NULL;
