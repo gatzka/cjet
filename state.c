@@ -4,6 +4,7 @@
 
 #include "compiler.h"
 #include "config/config.h"
+#include "config/io.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -133,30 +134,36 @@ error:
 
 cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 {
+	cJSON *error;
 	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	if (unlikely(val == NULL)) {
-		cJSON *error = create_invalid_params_error("not exists", path);
+		error = create_invalid_params_error("not exists", path);
 		return error;
 	}
 	struct state *s = val->vals[0];
 	if (unlikely(s->peer == p)) {
-		cJSON *error = create_invalid_params_error("owner of state shall use change instead of set", path);
+		error = create_invalid_params_error("owner of state shall use change instead of set", path);
 		return error;
 	}
 	cJSON *routed_message = create_routed_message(path, value, 1);
 	if (unlikely(routed_message == NULL)) {
-		cJSON *error = create_internal_error("reason", "could not create routed JSON object");
+		error = create_internal_error("reason", "could not create routed JSON object");
 		return error;
 	}
 	if (unlikely(setup_routing_information(s->peer, p, value, 1) != 0)) {
-		cJSON_Delete(routed_message);
-		cJSON *error = create_internal_error("reason", "could not setup routing information");
-		return error;
+		error = create_internal_error("reason", "could not setup routing information");
+		goto delete_json;
 	}
-	//ret = send_message(s->p, rendered, strlen(rendered));
-	// if error, then remove routing information
+	error = NULL;
+	char *rendered_message = cJSON_PrintUnformatted(routed_message);
+	if (unlikely(send_message(s->peer, rendered_message, strlen(rendered_message)) != 0)) {
+		error = create_internal_error("reason", "could not send routing information");
+	}
+
+	free(rendered_message);
+delete_json:
 	cJSON_Delete(routed_message);
-	return NULL;
+	return error;
 }
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)

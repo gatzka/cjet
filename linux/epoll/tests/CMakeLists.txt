@@ -53,9 +53,11 @@ TARGET_LINK_LIBRARIES(
 SET(STATE_TEST
 	../../../json/cJSON.c
 	../../../fetch.c
+	../../../parse.c
 	../../../response.c
 	../../../state.c
 	../../../peer.c
+	../io.c
 	State.cpp
 )
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})

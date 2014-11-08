@@ -8,6 +8,29 @@
 #include "peer.h"
 #include "state.h"
 
+extern "C" {
+
+	int fake_read(int fd, void *buf, size_t count)
+	{
+		return 0;
+	}
+
+	int fake_send(int fd, void *buf, size_t count, int flags)
+	{
+		return 0;
+	}
+
+	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
+	{
+		int len = 0;
+		int i;
+		for (i = 0; i < iovcnt; i++) {
+			len += iov[i].iov_len;
+		}
+		return len;
+	}
+}
+
 struct F {
 	F()
 	{
