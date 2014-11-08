@@ -87,26 +87,26 @@ static inline int is_equal_u64(u64 a, u64 b)
  */
 #define DECLARE_HASHTABLE(name, order, type_name, type, value_entries) \
 \
-struct value { \
+struct value_##value_entries { \
 	void *vals[value_entries]; \
 };\
 \
 struct hashtable_u32 { \
 	u32 hop_info; \
 	u32 key; \
-	struct value value; \
+	struct value_##value_entries value; \
 }; \
 \
 struct hashtable_u64 { \
 	u32 hop_info; \
 	u64 key; \
-	struct value value; \
+	struct value_##value_entries value; \
 }; \
 \
 struct hashtable_string { \
 	u32 hop_info; \
 	const char *key; \
-	struct value value; \
+	struct value_##value_entries value; \
 }; \
 \
 static const u32 add_range_##name = (1 << (order - 1)); \
@@ -151,7 +151,7 @@ static inline void hashtable_delete_##name(struct hashtable_##type_name *table) 
 	return; \
 } \
 \
-static inline struct value *hashtable_get_##name(struct hashtable_##type_name *table, type key) \
+static inline struct value_##value_entries *hashtable_get_##name(struct hashtable_##type_name *table, type key) \
 { \
 	u32 hash_pos = hash_func_##name##_##type_name(key); \
 	u32 pos = hash_pos; \
@@ -198,7 +198,7 @@ static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, 
 	return 0xffffffff; \
 } \
 \
-static inline int hashtable_put_##name(struct hashtable_##type_name *table, type key, struct value value, struct value *prev_value) \
+static inline int hashtable_put_##name(struct hashtable_##type_name *table, type key, struct value_##value_entries value, struct value_##value_entries *prev_value) \
 { \
 	u32 hash_pos; \
 	u32 pos; \
@@ -262,9 +262,9 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	return HASHTABLE_FULL; \
 } \
 \
-static inline struct value hashtable_remove_##name(struct hashtable_##type_name *table, type key) \
+static inline struct value_##value_entries hashtable_remove_##name(struct hashtable_##type_name *table, type key) \
 { \
-	struct value ret; \
+	struct value_##value_entries ret; \
 	memset(&ret, 0, sizeof(ret)); \
 	u32 hash_pos = hash_func_##name##_##type_name(key); \
 	u32 pos = hash_pos; \

@@ -86,7 +86,7 @@ int setup_routing_information(struct peer *routing_peer, struct peer *origin_pee
 		fprintf(stderr, "Could not copy value object!\n");
 		return -1;
 	}
-	struct value val;
+	struct value_2 val;
 	val.vals[0] = origin_peer;
 	val.vals[1] = value_copy;
 	if (unlikely(HASHTABLE_PUT(ROUTING_TABLE, routing_peer->routing_table, id, val, NULL) != 0)) {

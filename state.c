@@ -32,7 +32,7 @@ void delete_state_hashtable(void)
 
 struct state *get_state(const char *path)
 {
-	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	return val->vals[0];
 }
 
@@ -74,7 +74,7 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	if (unlikely(val == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
@@ -133,7 +133,7 @@ error:
 
 cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	if (unlikely(val == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
@@ -161,7 +161,7 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
-	struct value *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
 	if (unlikely(val != NULL)) {
 		cJSON *error = create_invalid_params_error("exists", path);
 		return error;
@@ -171,7 +171,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 		cJSON *error = create_internal_error("reason", "not enough memory");
 		return error;
 	}
-	struct value new_val;
+	struct value_1 new_val;
 	new_val.vals[0] = s;
 	HASHTABLE_PUT(STATE_TABLE, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->list, &p->state_list);
