@@ -129,7 +129,7 @@ static void sigusr1_handler()
 static char *get_read_ptr(struct peer *p, unsigned int count)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
-		fprintf(stderr, "peer asked for too much data: %d!\n", count);
+		fprintf(stderr, "peer asked for too much data: %u!\n", count);
 		return NULL;
 	}
 	while (1) {

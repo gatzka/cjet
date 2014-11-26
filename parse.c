@@ -229,7 +229,7 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 	if (CONFIG_CHECK_JSON_LENGTH) {
 		ptrdiff_t parsed_length = end_parse - msg;
 		if (unlikely(parsed_length != (ptrdiff_t)length)) {
-			fprintf(stderr, "length of parsed JSON (%td) does not match message length (%d)!\n", parsed_length, length);
+			fprintf(stderr, "length of parsed JSON (%td) does not match message length (%u)!\n", parsed_length, length);
 			ret = -1;
 			goto out;
 		}
