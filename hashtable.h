@@ -149,7 +149,7 @@ static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, 
 			table[check_position].hop_info = check_hop_info; \
 			return hop_position ;\
 		} \
-		check_distance--; \
+		--check_distance; \
 	} \
 	return 0xffffffff; \
 } \
