@@ -5,7 +5,7 @@
  * the distance to the calculated hash position in a bitmap associated
  * with each hash index. When inserting a key/value pair the algorithm
  * tries to reorder hash table entries that each entry is in the maximum
- * distance the bitmap can contain. (HOP_RANGE in this implementation).
+ * distance the bitmap can contain. (hop_range in this implementation).
  *
  * This implementation is lock free but only ensure the following
  * condition. Every HASHTABLE_REMOVE or HASHTABLE_PUT call can be
@@ -123,14 +123,14 @@ static inline struct value_##value_entries *hashtable_get_##name(struct hashtabl
 	return NULL; \
 } \
 \
-static inline u32 HOP_RANGE() \
+static inline u32 hop_range() \
 { \
 	return sizeof(((struct hashtable_##type_name*)0)->hop_info) * 8; \
 }\
 \
 static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, u32 free_position) \
 { \
-	u32 check_distance = (HOP_RANGE() - 1); \
+	u32 check_distance = (hop_range() - 1); \
 	while (check_distance > 0) { \
 		u32 check_position = wrap_pos##name(free_position - check_distance); \
 		u32 check_hop_info = table[check_position].hop_info; \
@@ -204,7 +204,7 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	free_pos = pos; \
 	if (free_distance < add_range_##name) { \
 		do { \
-			if (free_distance < HOP_RANGE()) { \
+			if (free_distance < hop_range()) { \
 				table[free_pos].value = value; \
 				table[free_pos].key = key; \
 				wmb(); \
