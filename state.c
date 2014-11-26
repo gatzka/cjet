@@ -13,13 +13,13 @@
 #include "response.h"
 #include "state.h"
 
-DECLARE_HASHTABLE_STRING(STATE_TABLE, CONFIG_STATE_TABLE_ORDER, 1)
+DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1)
 
 static struct hashtable_string *state_hashtable = NULL;
 
 int create_state_hashtable(void)
 {
-	state_hashtable = HASHTABLE_CREATE(STATE_TABLE);
+	state_hashtable = HASHTABLE_CREATE(state_table);
 	if (unlikely(state_hashtable == NULL)) {
 		return -1;
 	}
@@ -28,12 +28,12 @@ int create_state_hashtable(void)
 
 void delete_state_hashtable(void)
 {
-	HASHTABLE_DELETE(STATE_TABLE, state_hashtable);
+	HASHTABLE_DELETE(state_table, state_hashtable);
 }
 
 struct state *get_state(const char *path)
 {
-	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
 	return val->vals[0];
 }
 
@@ -75,7 +75,7 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
 	if (unlikely(val == NULL)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
@@ -135,7 +135,7 @@ error:
 cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 {
 	cJSON *error;
-	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
 	if (unlikely(val == NULL)) {
 		error = create_invalid_params_error("not exists", path);
 		return error;
@@ -168,7 +168,7 @@ delete_json:
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
-	struct value_1 *val = HASHTABLE_GET(STATE_TABLE, state_hashtable, path);
+	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
 	if (unlikely(val != NULL)) {
 		cJSON *error = create_invalid_params_error("exists", path);
 		return error;
@@ -180,7 +180,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	}
 	struct value_1 new_val;
 	new_val.vals[0] = s;
-	HASHTABLE_PUT(STATE_TABLE, state_hashtable, s->path, new_val, NULL);
+	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->list, &p->state_list);
 	// TODO: notify all clients interested in this state
 	return NULL;
@@ -195,7 +195,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 		if (strcmp(s->path, path) == 0) {
 		// TODO: notify all clients interested in this state
 			list_del(&s->list);
-			HASHTABLE_REMOVE(STATE_TABLE, state_hashtable, s->path);
+			HASHTABLE_REMOVE(state_table, state_hashtable, s->path);
 			free_state(s);
 			return NULL;
 		}
@@ -211,7 +211,7 @@ void remove_all_states_from_peer(struct peer *p) {
 		struct state *s = list_entry(item, struct state, list);
 		// TODO: notify all clients interested in this state
 		list_del(&s->list);
-		HASHTABLE_REMOVE(STATE_TABLE, state_hashtable, s->path);
+		HASHTABLE_REMOVE(state_table, state_hashtable, s->path);
 		free_state(s);
 	}
 }
