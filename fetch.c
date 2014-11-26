@@ -47,7 +47,7 @@ static void remove_matchers(struct fetch *f)
 	struct path_matcher *path_matcher = f->matcher;
 	while (path_matcher->fetch_path != NULL)	{
 		free(path_matcher->fetch_path);
-		path_matcher++;
+		++path_matcher;
 	}
 }
 
@@ -130,7 +130,7 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 			return error;
 		}
 		matcher = matcher->next;
-		path_matcher++;
+		++path_matcher;
 	}
 	return NULL;
 }

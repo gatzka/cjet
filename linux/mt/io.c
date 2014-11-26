@@ -34,14 +34,14 @@ static int get_number_of_peers(void)
 static void increment_number_of_peers(void)
 {
 	pthread_mutex_lock(&num_peers_mtx);
-	num_peers++;
+	++num_peers;
 	pthread_mutex_unlock(&num_peers_mtx);
 }
 
 static void decrement_number_of_peers(void)
 {
 	pthread_mutex_lock(&num_peers_mtx);
-	num_peers--;
+	--num_peers;
 	pthread_mutex_unlock(&num_peers_mtx);
 }
 

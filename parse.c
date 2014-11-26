@@ -239,7 +239,7 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 	case cJSON_Array: {
 		unsigned int i;
 		unsigned int array_size = cJSON_GetArraySize(root);
-		for (i = 0; i < array_size; i++) {
+		for (i = 0; i < array_size; ++i) {
 			cJSON *sub_item = cJSON_GetArrayItem(root, i);
 			if (likely(sub_item->type == cJSON_Object)) {
 				ret = parse_json_rpc(sub_item, p);

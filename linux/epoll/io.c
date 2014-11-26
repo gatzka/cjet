@@ -133,7 +133,7 @@ static void destroy_peer(struct peer *p, int epoll_fd, int fd)
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
 	close(fd);
 	free_peer(p);
-	number_of_peers--;
+	--number_of_peers;
 }
 
 static void destroy_all_peers(int epoll_fd)
@@ -180,7 +180,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 				fprintf(stderr, "Could not allocate peer!\n");
 				goto create_peer_wait_failed;
 			}
-			number_of_peers++;
+			++number_of_peers;
 			continue;
 
 		create_peer_wait_failed:
@@ -421,7 +421,7 @@ int run_io(void) {
 				goto epoll_wait_failed;
 			}
 		}
-		for (i = 0; i < num_events; i++) {
+		for (i = 0; i < num_events; ++i) {
 			if (unlikely((events[i].events & EPOLLERR) ||
 			             (events[i].events & EPOLLHUP))) {
 				if (events[i].data.ptr == listen_server) {

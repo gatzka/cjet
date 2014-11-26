@@ -41,7 +41,7 @@ static void remove_routing_information_from_peer(struct peer *p)
 {
 	unsigned int i;
 	struct hashtable_u32 *table = p->routing_table;
-	for (i = 0; i < table_size_routing_table; i++) {
+	for (i = 0; i < table_size_routing_table; ++i) {
 		struct hashtable_u32 *entry = &(table[i]);
 		if (entry->key != (u32)HASHTABLE_INVALIDENTRY) {
 			struct value_2 val = HASHTABLE_REMOVE(routing_table, p->routing_table, entry->key);
