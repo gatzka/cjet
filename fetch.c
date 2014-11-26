@@ -183,9 +183,11 @@ static cJSON *add_matchers(struct fetch *f, cJSON *params)
 
 static void find_and_notify_states(struct fetch *f)
 {
-	// get all peers
-	// iterate over all states belonging to a peer
-	// if match then notify fetch peer
+	/*
+	 * get all peers
+	 * iterate over all states belonging to a peer
+	 * if match then notify fetch peer
+	 */
 	(void)f;
 }
 

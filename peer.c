@@ -72,8 +72,9 @@ static void remove_routing_information_from_peer(struct peer *p)
 		if (entry->key != (u32)HASHTABLE_INVALIDENTRY) {
 			struct value_2 val = HASHTABLE_REMOVE(
 				routing_table, p->routing_table, entry->key);
-				// struct peer *origin_peer = val.vals[0]; TODO: the
-				// origin peer should be notified
+				/* struct peer *origin_peer = val.vals[0];
+				 * TODO: the origin peer should be notified
+				 */
 			cJSON *value = val.vals[1];
 			cJSON_Delete(value);
 		}
@@ -162,6 +163,6 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 		free(res);
 	}
 
-	// REMOVE_HASHTABLE_ENTRY
+	/* REMOVE_HASHTABLE_ENTRY */
 	return 0;
 }

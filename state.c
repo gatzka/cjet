@@ -121,7 +121,7 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 	cJSON_Delete(s->value);
 	s->value = value_copy;
 	/* TODO: exit state mutex for multithread IO */
-	// TODO: notify all clients interested in this state
+	/* TODO: notify all clients interested in this state */
 	return NULL;
 }
 
@@ -219,7 +219,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	new_val.vals[0] = s;
 	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->list, &p->state_list);
-	// TODO: notify all clients interested in this state
+	/* TODO: notify all clients interested in this state */
 	return NULL;
 }
 
@@ -230,7 +230,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
 		if (strcmp(s->path, path) == 0) {
-			// TODO: notify all clients interested in this state
+			/* TODO: notify all clients interested in this state */
 			list_del(&s->list);
 			HASHTABLE_REMOVE(state_table, state_hashtable, s->path);
 			free_state(s);
@@ -247,7 +247,7 @@ void remove_all_states_from_peer(struct peer *p)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
-		// TODO: notify all clients interested in this state
+		/* TODO: notify all clients interested in this state */
 		list_del(&s->list);
 		HASHTABLE_REMOVE(state_table, state_hashtable, s->path);
 		free_state(s);
