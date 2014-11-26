@@ -31,7 +31,7 @@
 #include "config/io.h"
 #include "state.h"
 
-int main()
+int main(void)
 {
 	signal(SIGPIPE, SIG_IGN);
 
