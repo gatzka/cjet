@@ -425,21 +425,35 @@ int handle_all_peer_operations(struct peer *p)
 	}
 }
 
-int run_io(void)
+static int register_signal_handler(void)
 {
-	int epoll_fd;
-	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
-	struct peer *listen_server;
-
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
 		fprintf(stderr, "signal failed!\n");
 		return -1;
 	}
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
 		fprintf(stderr, "signal failed!\n");
-		goto signal_failed;
+		signal(SIGTERM, SIG_DFL);
+		return -1;
 	}
+	return 0;
+}
 
+static void unregister_signal_handler(void)
+{
+	signal(SIGINT, SIG_DFL);
+	signal(SIGTERM, SIG_DFL);
+}
+
+int run_io(void)
+{
+	int epoll_fd;
+	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
+	struct peer *listen_server;
+
+	if (register_signal_handler() < 0) {
+		return -1;
+	}
 	epoll_fd = epoll_create(1);
 	if (epoll_fd < 0) {
 		fprintf(stderr, "epoll_create failed!\n");
@@ -504,8 +518,6 @@ epoll_wait_failed:
 setup_listen_failed:
 	close(epoll_fd);
 epoll_create_failed:
-	signal(SIGINT, SIG_DFL);
-signal_failed:
-	signal(SIGTERM, SIG_DFL);
+	unregister_signal_handler();
 	return -1;
 }
