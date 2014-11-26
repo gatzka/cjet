@@ -63,7 +63,7 @@ struct peer *alloc_peer(int fd)
 	return p;
 }
 
-static void remove_routing_information_from_peer(struct peer *p)
+static void remove_routing_info_from_peer(struct peer *p)
 {
 	unsigned int i;
 	struct hashtable_u32 *table = p->routing_table;
@@ -83,7 +83,7 @@ static void remove_routing_information_from_peer(struct peer *p)
 
 void free_peer(struct peer *p)
 {
-	remove_routing_information_from_peer(p);
+	remove_routing_info_from_peer(p);
 	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
 	HASHTABLE_DELETE(routing_table, p->routing_table);
