@@ -63,15 +63,19 @@ struct state *get_state(const char *path)
 	return val->vals[0];
 }
 
-static struct state *alloc_state(const char *path, cJSON *value_object, struct peer *p) {
+static struct state *alloc_state(const char *path, cJSON *value_object,
+				struct peer *p)
+{
 	struct state *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", "state");
+		fprintf(stderr, "Could not allocate memory for %s object!\n",
+			"state");
 		return NULL;
 	}
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", "path");
+		fprintf(stderr, "Could not allocate memory for %s object!\n",
+			"path");
 		goto alloc_path_failed;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
@@ -108,7 +112,8 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 	}
 	struct state *s = val->vals[0];
 	if (unlikely(s->peer != p)) {
-		cJSON *error = create_invalid_params_error("not owner of state", path);
+		cJSON *error =
+			create_invalid_params_error("not owner of state", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
@@ -168,22 +173,27 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 	}
 	struct state *s = val->vals[0];
 	if (unlikely(s->peer == p)) {
-		error = create_invalid_params_error("owner of state shall use change instead of set", path);
+		error = create_invalid_params_error(
+			"owner of state shall use change instead of set", path);
 		return error;
 	}
 	cJSON *routed_message = create_routed_message(path, value, 1);
 	if (unlikely(routed_message == NULL)) {
-		error = create_internal_error("reason", "could not create routed JSON object");
+		error = create_internal_error(
+			"reason", "could not create routed JSON object");
 		return error;
 	}
 	if (unlikely(setup_routing_information(s->peer, p, value, 1) != 0)) {
-		error = create_internal_error("reason", "could not setup routing information");
+		error = create_internal_error(
+			"reason", "could not setup routing information");
 		goto delete_json;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
-	if (unlikely(send_message(s->peer, rendered_message, strlen(rendered_message)) != 0)) {
-		error = create_internal_error("reason", "could not send routing information");
+	if (unlikely(send_message(s->peer, rendered_message,
+			strlen(rendered_message)) != 0)) {
+		error = create_internal_error(
+			"reason", "could not send routing information");
 	}
 
 	free(rendered_message);
@@ -201,7 +211,8 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	}
 	struct state *s = alloc_state(path, value, p);
 	if (unlikely(s == NULL)) {
-		cJSON *error = create_internal_error("reason", "not enough memory");
+		cJSON *error =
+		    create_internal_error("reason", "not enough memory");
 		return error;
 	}
 	struct value_1 new_val;
@@ -219,7 +230,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, list);
 		if (strcmp(s->path, path) == 0) {
-		// TODO: notify all clients interested in this state
+			// TODO: notify all clients interested in this state
 			list_del(&s->list);
 			HASHTABLE_REMOVE(state_table, state_hashtable, s->path);
 			free_state(s);
@@ -230,7 +241,8 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 	return error;
 }
 
-void remove_all_states_from_peer(struct peer *p) {
+void remove_all_states_from_peer(struct peer *p)
+{
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
@@ -241,4 +253,3 @@ void remove_all_states_from_peer(struct peer *p) {
 		free_state(s);
 	}
 }
-

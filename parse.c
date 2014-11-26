@@ -43,12 +43,14 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 {
 	cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
-		cJSON *error = create_invalid_params_error("reason", "no path given");
+		cJSON *error =
+			create_invalid_params_error("reason", "no path given");
 		*err = error;
 		return NULL;
 	}
 	if (unlikely(path->type != cJSON_String)) {
-		cJSON *error = create_invalid_params_error("reason", "path is not a string");
+		cJSON *error = create_invalid_params_error(
+			"reason", "path is not a string");
 		*err = error;
 		return NULL;
 	}
@@ -129,14 +131,15 @@ static cJSON *process_fetch(cJSON *params, struct peer *p)
 	return add_fetch_to_peer(p, params);
 }
 
-static cJSON *process_config() {
+static cJSON *process_config(void)
+{
 	return NULL;
 }
 
 static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 {
 	int ret = 0;
-	if (error == (cJSON*)ROUTED_MESSAGE) {
+	if (error == (cJSON *)ROUTED_MESSAGE) {
 		return ret;
 	}
 
@@ -158,7 +161,8 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 		}
 		rendered = cJSON_PrintUnformatted(root);
 		if (unlikely(rendered == NULL)) {
-			fprintf(stderr, "Could not render JSON into a string!\n");
+			fprintf(stderr,
+				"Could not render JSON into a string!\n");
 			ret = -1;
 			goto render_error;
 		}
@@ -175,13 +179,15 @@ static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 	int ret;
 	cJSON *error;
 	if (unlikely(method->type != cJSON_String)) {
-		error = create_invalid_request_error("reason", "method value is not a string");
+		error = create_invalid_request_error(
+			"reason", "method value is not a string");
 		goto no_method;
 	}
 
 	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		error = create_invalid_params_error("reason", "no params found");
+		error =
+			create_invalid_params_error("reason", "no params found");
 		goto no_params;
 	}
 
@@ -255,7 +261,9 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 	if (CONFIG_CHECK_JSON_LENGTH) {
 		ptrdiff_t parsed_length = end_parse - msg;
 		if (unlikely(parsed_length != (ptrdiff_t)length)) {
-			fprintf(stderr, "length of parsed JSON (%td) does not match message length (%u)!\n", parsed_length, length);
+			fprintf(stderr, "length of parsed JSON (%td) does not "
+				"match message length (%u)!\n",
+				parsed_length, length);
 			ret = -1;
 			goto out;
 		}

@@ -70,8 +70,10 @@ static void remove_routing_information_from_peer(struct peer *p)
 	for (i = 0; i < table_size_routing_table; ++i) {
 		struct hashtable_u32 *entry = &(table[i]);
 		if (entry->key != (u32)HASHTABLE_INVALIDENTRY) {
-			struct value_2 val = HASHTABLE_REMOVE(routing_table, p->routing_table, entry->key);
-			//struct peer *origin_peer = val.vals[0]; TODO: the origin peer should be notified
+			struct value_2 val = HASHTABLE_REMOVE(
+				routing_table, p->routing_table, entry->key);
+				// struct peer *origin_peer = val.vals[0]; TODO: the
+				// origin peer should be notified
 			cJSON *value = val.vals[1];
 			cJSON_Delete(value);
 		}
@@ -87,7 +89,8 @@ void free_peer(struct peer *p)
 	free(p);
 }
 
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written)
+int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
+			 uint32_t msg_len_be, size_t already_written)
 {
 	size_t to_write;
 	uint32_t msg_len = ntohl(msg_len_be);
@@ -100,7 +103,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 
 	char *write_buffer_ptr = p->write_buffer + p->to_write;
 	if (already_written < sizeof(msg_len_be)) {
-		char *msg_len_ptr = (char*)(&msg_len_be);
+		char *msg_len_ptr = (char *)(&msg_len_be);
 		msg_len_ptr += already_written;
 		to_write = sizeof(msg_len_be) - already_written;
 		memcpy(write_buffer_ptr, msg_len_ptr, to_write);
@@ -121,7 +124,8 @@ write_buffer_too_small:
 	return -1;
 }
 
-int setup_routing_information(struct peer *routing_peer, struct peer *origin_peer, cJSON *value, int id)
+int setup_routing_information(struct peer *routing_peer,
+			 struct peer *origin_peer, cJSON *value, int id)
 {
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (unlikely(value_copy == NULL)) {
@@ -131,7 +135,8 @@ int setup_routing_information(struct peer *routing_peer, struct peer *origin_pee
 	struct value_2 val;
 	val.vals[0] = origin_peer;
 	val.vals[1] = value_copy;
-	if (unlikely(HASHTABLE_PUT(routing_table, routing_peer->routing_table, id, val, NULL) != 0)) {
+	if (unlikely(HASHTABLE_PUT(routing_table, routing_peer->routing_table,
+				 id, val, NULL) != 0)) {
 		cJSON_Delete(value_copy);
 	}
 	return 0;
@@ -148,7 +153,8 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 		fprintf(stderr, "id is not a number!\n");
 		return -1;
 	}
-	struct value_2 *val = HASHTABLE_GET(routing_table, p->routing_table, id->valueint);
+	struct value_2 *val =
+		 HASHTABLE_GET(routing_table, p->routing_table, id->valueint);
 	if (val != NULL) {
 		printf("got routed answer!\n");
 		char *res = cJSON_Print(response);
@@ -156,7 +162,6 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 		free(res);
 	}
 
-	//REMOVE_HASHTABLE_ENTRY
+	// REMOVE_HASHTABLE_ENTRY
 	return 0;
 }
-

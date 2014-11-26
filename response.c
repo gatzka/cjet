@@ -50,7 +50,6 @@ static cJSON *create_common_response(const cJSON *id)
 	default:
 		fprintf(stderr, "Unsupported method id type!");
 		goto unsupported_type;
-
 	}
 	return root;
 
@@ -59,7 +58,8 @@ unsupported_type:
 	return NULL;
 }
 
-static cJSON *create_error_object(const char *message, int code, const char *tag, const char *reason)
+static cJSON *create_error_object(const char *message, int code,
+	const char *tag, const char *reason)
 {
 	cJSON *error = cJSON_CreateObject();
 	if (unlikely(error == NULL)) {

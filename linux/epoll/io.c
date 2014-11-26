@@ -55,7 +55,7 @@ static int set_fd_non_blocking(int fd)
 	int fd_flags;
 
 	fd_flags = fcntl(fd, F_GETFL, 0);
-	if (unlikely(fd_flags  < 0)) {
+	if (unlikely(fd_flags < 0)) {
 		fprintf(stderr, "Could not get fd flags!\n");
 		return -1;
 	}
@@ -115,7 +115,8 @@ static struct peer *setup_listen_socket(int epoll_fd)
 		return NULL;
 	}
 
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on, sizeof(reuse_on)) < 0) {
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+			sizeof(reuse_on)) < 0) {
 		fprintf(stderr, "Could not set SO_REUSEADDR!\n");
 		goto so_reuse_failed;
 	}
@@ -128,7 +129,8 @@ static struct peer *setup_listen_socket(int epoll_fd)
 	serveraddr.sin6_family = AF_INET6;
 	serveraddr.sin6_port = htons(CONFIG_SERVER_PORT);
 	serveraddr.sin6_addr = in6addr_any;
-	if (bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0) {
+	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
+		sizeof(serveraddr)) < 0) {
 		fprintf(stderr, "bind failed!\n");
 		goto bind_failed;
 	}
@@ -180,8 +182,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 		int peer_fd;
 		peer_fd = accept(listen_fd, NULL, NULL);
 		if (peer_fd == -1) {
-			if ((errno == EAGAIN) ||
-			    (errno == EWOULDBLOCK)) {
+			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return 0;
 			} else {
 				return -1;
@@ -190,7 +191,8 @@ static int accept_all(int epoll_fd, int listen_fd)
 			struct peer *peer;
 			static const int tcp_nodelay_on = 1;
 
-			if (unlikely(number_of_peers >= CONFIG_MAX_NUMBER_OF_PEERS)) {
+			if (unlikely(number_of_peers >=
+				 CONFIG_MAX_NUMBER_OF_PEERS)) {
 				close(peer_fd);
 				continue;
 			}
@@ -199,7 +201,9 @@ static int accept_all(int epoll_fd, int listen_fd)
 				goto nonblock_failed;
 			}
 
-			if (unlikely(setsockopt(peer_fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on)) < 0)) {
+			if (unlikely(setsockopt(peer_fd, IPPROTO_TCP,
+						TCP_NODELAY, &tcp_nodelay_on,
+						sizeof(tcp_nodelay_on)) < 0)) {
 				goto no_delay_failed;
 			}
 
@@ -234,15 +238,17 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 			return read_ptr;
 		}
 
-		read_length = READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
+		read_length =
+			READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			/* peer closed connection */
 			return NULL;
 		}
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
-			             (errno != EWOULDBLOCK))) {
-				fprintf(stderr, "unexpected read error: %s!\n", strerror(errno));
+				(errno != EWOULDBLOCK))) {
+				fprintf(stderr, "unexpected read error: %s!\n",
+					strerror(errno));
 				return NULL;
 			}
 			return (char *)IO_WOULD_BLOCK;
@@ -262,10 +268,11 @@ int send_buffer(struct peer *p)
 	char *write_buffer_ptr = p->write_buffer;
 	while (p->to_write != 0) {
 		ssize_t written;
-		written = SEND(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		written =
+			SEND(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
-			             (errno != EWOULDBLOCK))) {
+				(errno != EWOULDBLOCK))) {
 				return -1;
 			}
 			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
@@ -290,13 +297,13 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	uint32_t message_length = htonl(len);
 
 	if (unlikely(p->op == WRITE_MSG)) {
-		/* 
+		/*
 		 * There is already something in p->write_buffer, that hasn't
 		 * been written yet because the socket had blocked. In this case
 		 * just append the new message to p->write_buffer.
 		 */
-		 ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
-		 return ret;
+		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
+		return ret;
 	}
 
 	iov[0].iov_base = &message_length;
@@ -317,12 +324,13 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	}
 
 	if (unlikely((sent == -1) &&
-	             ((errno != EAGAIN) &&
-	              (errno != EWOULDBLOCK)))) {
-		fprintf(stderr, "unexpected write error: %s!\n", strerror(errno));
+		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
+		fprintf(stderr, "unexpected write error: %s!\n",
+			strerror(errno));
 		return -1;
 	}
-	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length, written) == -1)) {
+	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length,
+		written) == -1)) {
 		return -1;
 	}
 
@@ -333,7 +341,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 		return 0;
 	}
 
-	/* 
+	/*
 	 * The write call didn't block, but only wrote parts of the
 	 * messages. Try to send the rest.
 	 */
@@ -360,22 +368,25 @@ int handle_all_peer_operations(struct peer *p)
 
 		switch (p->op) {
 		case READ_MSG_LENGTH:
-			message_length_ptr = get_read_ptr(p, sizeof(message_length));
+			message_length_ptr =
+				get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
 				return -1;
-			} else if (message_length_ptr == (char *)IO_WOULD_BLOCK) {
+			} else if (message_length_ptr ==
+				(char *)IO_WOULD_BLOCK) {
 				return 0;
 			}
-			memcpy(&message_length, message_length_ptr, sizeof(message_length));
+			memcpy(&message_length, message_length_ptr,
+				sizeof(message_length));
 			message_length = ntohl(message_length);
 			p->op = READ_MSG;
 			p->msg_length = message_length;
-			/*
-			 *  CAUTION! This fall through is by design! Typically, the
-			 *  length of a messages and the message itself will go into
-			 *  a single TCP packet. This fall through eliminates an
-			 *  additional loop iteration.
-			 */
+		/*
+		 *  CAUTION! This fall through is by design! Typically, the
+		 *  length of a messages and the message itself will go into
+		 *  a single TCP packet. This fall through eliminates an
+		 *  additional loop iteration.
+		 */
 
 		case READ_MSG:
 			message_length = p->msg_length;
@@ -402,8 +413,8 @@ int handle_all_peer_operations(struct peer *p)
 				p->op = p->next_read_op;
 			}
 			/*
-			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked. Leave
-			 * everything like it is.
+			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked.
+			 * Leave everything like it is.
 			 */
 			break;
 
@@ -414,7 +425,8 @@ int handle_all_peer_operations(struct peer *p)
 	}
 }
 
-int run_io(void) {
+int run_io(void)
+{
 	int epoll_fd;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
@@ -435,7 +447,7 @@ int run_io(void) {
 	}
 
 	listen_server = setup_listen_socket(epoll_fd);
-	if (listen_server == NULL)  {
+	if (listen_server == NULL) {
 		goto setup_listen_failed;
 	}
 
@@ -443,7 +455,8 @@ int run_io(void) {
 		int num_events;
 		int i;
 
-		num_events = epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
+		num_events =
+		    epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 		if (unlikely(num_events == -1)) {
 			if (errno == EINTR) {
 				continue;
@@ -453,13 +466,15 @@ int run_io(void) {
 		}
 		for (i = 0; i < num_events; ++i) {
 			if (unlikely((events[i].events & EPOLLERR) ||
-			             (events[i].events & EPOLLHUP))) {
+				(events[i].events & EPOLLHUP))) {
 				if (events[i].data.ptr == listen_server) {
-					fprintf(stderr, "epoll error on listen fd!\n");
+					fprintf(stderr,
+						"epoll error on listen fd!\n");
 					goto epoll_on_listen_failed;
 				} else {
 					struct peer *peer = events[i].data.ptr;
-					fprintf(stderr, "epoll error on peer fd!\n");
+					fprintf(stderr,
+						"epoll error on peer fd!\n");
 					destroy_peer(peer, epoll_fd, peer->io.fd);
 					continue;
 				}
@@ -494,4 +509,3 @@ signal_failed:
 	signal(SIGTERM, SIG_DFL);
 	return -1;
 }
-

@@ -38,11 +38,13 @@ static const char *get_fetch_id(cJSON *params, cJSON **err)
 {
 	cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
-		*err = create_invalid_params_error("reason", "no fetch id given");
+		*err =
+			 create_invalid_params_error("reason", "no fetch id given");
 		return NULL;
 	}
 	if (unlikely(id->type != cJSON_String)) {
-		*err = create_invalid_params_error("reason", "fetch ID is not a string");
+		*err = create_invalid_params_error("reason",
+			"fetch ID is not a string");
 		return NULL;
 	}
 	*err = NULL;
@@ -53,14 +55,16 @@ static struct fetch *alloc_fetch(const struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", "fetch");
+		fprintf(stderr, "Could not allocate memory for %s object!\n",
+			"fetch");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
 	f->fetch_id = duplicate_string(id);
 	if (unlikely(f->fetch_id == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", "fetch ID");
+		fprintf(stderr, "Could not allocate memory for %s object!\n",
+			"fetch ID");
 		free(f);
 		return NULL;
 	}
@@ -71,7 +75,7 @@ static struct fetch *alloc_fetch(const struct peer *p, const char *id)
 static void remove_matchers(struct fetch *f)
 {
 	struct path_matcher *path_matcher = f->matcher;
-	while (path_matcher->fetch_path != NULL)	{
+	while (path_matcher->fetch_path != NULL) {
 		free(path_matcher->fetch_path);
 		++path_matcher;
 	}
@@ -102,13 +106,15 @@ static int equals_match(const struct path_matcher *pm, const char *state_path)
 	return strcmp(pm->fetch_path, state_path);
 }
 
-static int startswith_match(const struct path_matcher *pm, const char *state_path)
+static int startswith_match(const struct path_matcher *pm,
+	const char *state_path)
 {
 	size_t length = pm->cookie;
 	return strncmp(pm->fetch_path, state_path, length);
 }
 
-static int get_match_function(struct path_matcher *pm, const char *path, const char *fetch_type)
+static int get_match_function(struct path_matcher *pm, const char *path,
+	const char *fetch_type)
 {
 	if (strcmp(fetch_type, "equals") == 0) {
 		pm->match_function = equals_match;
@@ -122,10 +128,12 @@ static int get_match_function(struct path_matcher *pm, const char *path, const c
 	return -1;
 }
 
-static cJSON *fill_matcher(struct path_matcher *matcher, const char *fetch_type, const char *path)
+static cJSON *fill_matcher(struct path_matcher *matcher, const char *fetch_type,
+	const char *path)
 {
 	if (unlikely(get_match_function(matcher, path, fetch_type) < 0)) {
-		return create_internal_error("reason", "match function not implemented");
+		return create_internal_error("reason",
+			"match function not implemented");
 	}
 	matcher->fetch_path = duplicate_string(path);
 	if (unlikely(matcher->fetch_path == NULL)) {
@@ -142,16 +150,19 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 		return NULL;
 	}
 	if (unlikely(path->type != cJSON_Object)) {
-		return create_invalid_params_error("reason", "fetch path is not an object");
+		return create_invalid_params_error(
+			"reason", "fetch path is not an object");
 	}
 
 	cJSON *matcher = path->child;
 	struct path_matcher *path_matcher = f->matcher;
-	while (matcher)	{
+	while (matcher) {
 		if (unlikely(matcher->type != cJSON_String)) {
-			return create_invalid_params_error("reason", "match path is not a string");
+			return create_invalid_params_error(
+				"reason", "match path is not a string");
 		}
-		cJSON *error = fill_matcher(path_matcher, matcher->string, matcher->valuestring);
+		cJSON *error = fill_matcher(path_matcher, matcher->string,
+			matcher->valuestring);
 		if (unlikely(error != NULL)) {
 			return error;
 		}
@@ -187,7 +198,8 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
-		error = create_invalid_params_error("reason", "fetch ID already in use");
+		error = create_invalid_params_error("reason",
+			"fetch ID already in use");
 		return error;
 	}
 
