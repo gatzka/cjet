@@ -232,7 +232,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 	}
 	while (1) {
 		ssize_t read_length;
-		if (p->write_ptr - p->read_ptr >= (ptrdiff_t)count) {
+		if ((p->write_ptr - p->read_ptr) >= (ptrdiff_t)count) {
 			char *read_ptr = p->read_ptr;
 			p->read_ptr += count;
 			return read_ptr;
