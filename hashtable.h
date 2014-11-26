@@ -91,7 +91,7 @@ static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 { \
 	struct hashtable_##type_name *table = (struct hashtable_##type_name *)malloc(table_size_##name * sizeof(struct hashtable_##type_name)); \
 	if (table != NULL) { \
-		for (size_t i = 0; i < table_size_##name; i++) { \
+		for (size_t i = 0; i < table_size_##name; ++i) { \
 			memset(&table[i], 0, sizeof(table[0])); \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
 		} \
@@ -135,7 +135,7 @@ static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, 
 		u32 check_hop_info = table[check_position].hop_info; \
 		u32 mask = 1; \
 		u32 hop_position = 0xffffffff; \
-		for (u32 i = 0; i < check_distance; i++, mask <<= 1) { \
+		for (u32 i = 0; i < check_distance; ++i, mask <<= 1) { \
 			if ((mask & check_hop_info) != 0) { \
 				hop_position = wrap_pos##name(check_position + i); \
 				break; \
@@ -196,7 +196,7 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 		if (table[pos].key == (type)HASHTABLE_INVALIDENTRY) { \
 			break; \
 		} \
-		free_distance++; \
+		++free_distance; \
 		pos = wrap_pos##name(pos + 1); \
 	} \
 	free_pos = pos; \
