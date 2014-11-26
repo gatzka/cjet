@@ -54,7 +54,8 @@ static int set_fd_non_blocking(int fd)
 {
 	int fd_flags;
 
-	if (unlikely((fd_flags = fcntl(fd, F_GETFL, 0)) < 0)) {
+	fd_flags = fcntl(fd, F_GETFL, 0);
+	if (unlikely(fd_flags  < 0)) {
 		fprintf(stderr, "Could not get fd flags!\n");
 		return -1;
 	}
@@ -108,7 +109,8 @@ static struct peer *setup_listen_socket(int epoll_fd)
 	static const int reuse_on = 1;
 	struct peer *peer;
 
-	if ((listen_fd = socket(AF_INET6, SOCK_STREAM, 0)) < 0) {
+	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
+	if (listen_fd < 0) {
 		fprintf(stderr, "Could not create listen socket!\n");
 		return NULL;
 	}
