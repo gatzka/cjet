@@ -255,10 +255,12 @@ struct hashtable_string { \
 static inline u32 hash_func_##name##_string(const char* key) \
 { \
 	u32 hash = 0; \
-	u32 c = (u32)*key++; \
+	u32 c = (u32)*key; \
+	++key; \
 	while (c != 0) { \
 		hash = c + (hash << 6u) + (hash << 16u) - hash; \
-		c = (u32)*key++; \
+		c = (u32)*key; \
+		++key; \
 	} \
 	hash = (hash * (hash32_magic)) >> (32u - (order)); \
 	return hash; \
