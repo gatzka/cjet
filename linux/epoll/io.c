@@ -308,6 +308,11 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);
+/*
+ * This pragma is used because iov_base is not declared const.
+ * Nevertheless, I want to have the rendered paramter const. Therefore I
+ * selectively disabled the cast-qual warning.
+ */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	iov[1].iov_base = (void *)rendered;
