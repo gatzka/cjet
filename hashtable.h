@@ -232,7 +232,7 @@ static inline struct value_##value_entries hashtable_remove_##name(struct hashta
 			wmb(); \
 			memset(&table[pos].value, 0, sizeof(table[pos].value)); \
 			distance = wrap_pos##name(pos - hash_pos); \
-			table[hash_pos].hop_info = hop_info & ~(1 << distance); \
+			table[hash_pos].hop_info = hop_info & (~(1 << distance)); \
 			break; \
 		} \
 		check_hop_info = check_hop_info >> 1; \
@@ -283,7 +283,7 @@ struct hashtable_u32 { \
 \
 static inline u32 hash_func_##name##_u32(u32 key) \
 { \
-	return (key * (hash32_magic) >> (32 - (order))); \
+	return ((key * (hash32_magic)) >> (32 - (order))); \
 } \
 \
 DECLARE_HASHTABLE(name, order, u32, u32, value_entries)
