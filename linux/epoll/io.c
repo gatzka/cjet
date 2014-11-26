@@ -372,8 +372,9 @@ int handle_all_peer_operations(struct peer *p)
 				get_read_ptr(p, sizeof(message_length));
 			if (unlikely(message_length_ptr == NULL)) {
 				return -1;
-			} else if (message_length_ptr ==
-				(char *)IO_WOULD_BLOCK) {
+			}
+			if (unlikely(message_length_ptr ==
+				(char *)IO_WOULD_BLOCK)) {
 				return 0;
 			}
 			memcpy(&message_length, message_length_ptr,
@@ -393,7 +394,8 @@ int handle_all_peer_operations(struct peer *p)
 			message_ptr = get_read_ptr(p, message_length);
 			if (unlikely(message_ptr == NULL)) {
 				return -1;
-			} else if (message_ptr == (char *)IO_WOULD_BLOCK) {
+			}
+			if (unlikely(message_ptr == (char *)IO_WOULD_BLOCK)) {
 				return 0;
 			}
 			p->op = READ_MSG_LENGTH;
