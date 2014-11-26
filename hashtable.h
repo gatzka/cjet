@@ -120,7 +120,7 @@ static inline struct value_##value_entries *hashtable_get_##name(struct hashtabl
 	return NULL; \
 } \
 \
-static inline u32 hop_range() \
+static inline u32 hop_range(void) \
 { \
 	return sizeof(((struct hashtable_##type_name*)0)->hop_info) * 8; \
 }\
