@@ -89,10 +89,9 @@ static inline u32 wrap_pos##name(u32 pos) \
 \
 static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 { \
-	size_t i; \
 	struct hashtable_##type_name *table = (struct hashtable_##type_name *)malloc(table_size_##name * sizeof(struct hashtable_##type_name)); \
 	if (table != NULL) { \
-		for (i = 0; i < table_size_##name; i++) { \
+		for (size_t i = 0; i < table_size_##name; i++) { \
 			memset(&table[i], 0, sizeof(table[0])); \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
 		} \
@@ -134,10 +133,9 @@ static inline u32 find_closer_entry_##name(struct hashtable_##type_name *table, 
 	while (check_distance > 0) { \
 		u32 check_position = wrap_pos##name(free_position - check_distance); \
 		u32 check_hop_info = table[check_position].hop_info; \
-		u32 i; \
 		u32 mask = 1; \
 		u32 hop_position = 0xffffffff; \
-		for (i = 0; i < check_distance; i++, mask <<= 1) { \
+		for (u32 i = 0; i < check_distance; i++, mask <<= 1) { \
 			if ((mask & check_hop_info) != 0) { \
 				hop_position = wrap_pos##name(check_position + i); \
 				break; \
