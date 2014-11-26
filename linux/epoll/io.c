@@ -428,12 +428,14 @@ int run_io(void) {
 		goto signal_failed;
 	}
 
-	if ((epoll_fd = epoll_create(1)) < 0) {
+	epoll_fd = epoll_create(1);
+	if (epoll_fd < 0) {
 		fprintf(stderr, "epoll_create failed!\n");
 		goto epoll_create_failed;
 	}
 
-	if ((listen_server = setup_listen_socket(epoll_fd)) == NULL)  {
+	listen_server = setup_listen_socket(epoll_fd);
+	if (listen_server == NULL)  {
 		goto setup_listen_failed;
 	}
 
