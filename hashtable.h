@@ -151,11 +151,9 @@ static inline int hashtable_get_##name(struct hashtable_##type_name *table, type
 	uint32_t pos = hash_pos; \
 	uint32_t hop_info = table[hash_pos].hop_info; \
 	while (hop_info != 0) { \
-		if ((hop_info & 0x1) == 1) { \
-			if (is_equal_##type_name(table[pos].key, key)) { \
-				*value = table[pos].value; \
-				return HASHTABLE_SUCCESS; \
-			} \
+		if (((hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			*value = table[pos].value; \
+			return HASHTABLE_SUCCESS; \
 		} \
 		hop_info = hop_info >> 1; \
 		pos = wrap_pos##name(pos + 1); \
@@ -217,14 +215,12 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	pos = hash_pos; \
 	hop_info = table[hash_pos].hop_info; \
 	while (hop_info != 0) { \
-		if ((hop_info & 0x1) == 1) { \
-			if (is_equal_##type_name(table[pos].key, key)) { \
-				if (prev_value != NULL) { \
-					*prev_value = table[pos].value; \
-				} \
-				table[pos].value = value; \
-				return HASHTABLE_SUCCESS; \
+		if (((hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			if (prev_value != NULL) { \
+				*prev_value = table[pos].value; \
 			} \
+			table[pos].value = value; \
+			return HASHTABLE_SUCCESS; \
 		} \
 		hop_info = hop_info >> 1; \
 		pos = wrap_pos##name(pos + 1); \
@@ -271,17 +267,15 @@ static inline struct value_##name hashtable_remove_##name(struct hashtable_##typ
 	uint32_t hop_info = table[hash_pos].hop_info; \
 	uint32_t check_hop_info = hop_info; \
 	while (check_hop_info != 0) { \
-		if ((check_hop_info & 0x1) == 1) { \
-			if (is_equal_##type_name(table[pos].key, key)) { \
-				uint32_t distance; \
-				ret = table[pos].value; \
-				table[pos].key = (type)HASHTABLE_INVALIDENTRY; \
-				wmb(); \
-				memset(&table[pos].value, 0, sizeof(table[pos].value)); \
-				distance = wrap_pos##name(pos - hash_pos); \
-				table[hash_pos].hop_info = hop_info & ~(1 << distance); \
-				break; \
-			} \
+		if (((check_hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			uint32_t distance; \
+			ret = table[pos].value; \
+			table[pos].key = (type)HASHTABLE_INVALIDENTRY; \
+			wmb(); \
+			memset(&table[pos].value, 0, sizeof(table[pos].value)); \
+			distance = wrap_pos##name(pos - hash_pos); \
+			table[hash_pos].hop_info = hop_info & ~(1 << distance); \
+			break; \
 		} \
 		check_hop_info = check_hop_info >> 1; \
 		pos = wrap_pos##name(pos + 1); \
