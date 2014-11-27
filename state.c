@@ -39,7 +39,7 @@
 #include "response.h"
 #include "state.h"
 
-DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1)
+DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
 
 static struct hashtable_string *state_hashtable = NULL;
 
