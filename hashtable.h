@@ -347,7 +347,7 @@ DECLARE_HASHTABLE(name, order, uint64_t, uint64_t, value_entries)
  */
 #define HASHTABLE_DELETE(name, table) \
 	hashtable_delete_##name((table)); \
-	table = NULL;
+	table = NULL
 
 /*
  * Maps the key to the value in table. Return values:
