@@ -131,7 +131,7 @@ static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 	size_t i; \
 	struct hashtable_##type_name *table = (struct hashtable_##type_name *)kmalloc(table_size_##name * sizeof(struct hashtable_##type_name), GFP_KERNEL) ; \
 	if (table != NULL) { \
-		for (i = 0; i < table_size_##name; i++) { \
+		for (i = 0; i < table_size_##name; ++i) { \
 			memset(&table[i], 0, sizeof(table[0])); \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
 		} \
@@ -177,7 +177,7 @@ static inline uint32_t find_closer_entry_##name(struct hashtable_##type_name *ta
 		uint32_t i; \
 		uint32_t mask = 1; \
 		uint32_t hop_position = 0xffffffff; \
-		for (i = 0; i < check_distance; i++, mask <<= 1) { \
+		for (i = 0; i < check_distance; ++i, mask <<= 1) { \
 			if ((mask & check_hop_info) != 0) { \
 				hop_position = wrap_pos##name(check_position + i); \
 				break; \
@@ -193,7 +193,7 @@ static inline uint32_t find_closer_entry_##name(struct hashtable_##type_name *ta
 			table[check_position].hop_info = check_hop_info; \
 			return hop_position ;\
 		} \
-		check_distance--; \
+		--check_distance; \
 	} \
 	return 0xffffffff; \
 } \
@@ -238,7 +238,7 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 		if (table[pos].key == (type)HASHTABLE_INVALIDENTRY) { \
 			break; \
 		} \
-		free_distance++; \
+		++free_distance; \
 		pos = wrap_pos##name(pos + 1); \
 	} \
 	free_pos = pos; \
@@ -301,9 +301,13 @@ struct hashtable_string { \
 static inline uint32_t hash_func_##name##_string(const char* key) \
 { \
 	uint32_t hash = 0; \
-	uint32_t c; \
-	while ((c = *key++) != 0) \
+	uint32_t c = *key; \
+	++key; \
+	while (c != 0) { \
 		hash = c + (hash << 6u) + (hash << 16u) - hash; \
+		c = *key; \
+		++key; \
+	} \
 	hash = (hash * (hash32_magic)) >> (32u - (order)); \
 	return hash; \
 } \
