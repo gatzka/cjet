@@ -297,11 +297,11 @@ static inline uint32_t hash_func_##name##_string(const char* key) \
 	uint32_t c = *key; \
 	++key; \
 	while (c != 0) { \
-		hash = c + (hash << 6u) + (hash << 16u) - hash; \
+		hash = ((c + (hash << 6U)) + (hash << 16U)) - hash; \
 		c = *key; \
 		++key; \
 	} \
-	hash = (hash * (hash32_magic)) >> (32u - (order)); \
+	hash = (hash * (hash32_magic)) >> (32U - (order)); \
 	return hash; \
 } \
 DECLARE_HASHTABLE(name, order, string, const char *, value_entries)
@@ -317,7 +317,7 @@ struct hashtable_uint32_t { \
 }; \
 static inline uint32_t hash_func_##name##_uint32_t(uint32_t key) \
 { \
-	return (key * (hash32_magic) >> (32 - (order))); \
+	return ((key * (hash32_magic)) >> (32U - (order))); \
 } \
 DECLARE_HASHTABLE(name, order, uint32_t, uint32_t, value_entries)
 
