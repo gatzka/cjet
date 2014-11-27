@@ -128,10 +128,9 @@ static inline uint32_t wrap_pos##name(uint32_t pos) \
 \
 static inline struct hashtable_##type_name *hashtable_create_##name(void) \
 { \
-	size_t i; \
 	struct hashtable_##type_name *table = (struct hashtable_##type_name *)kmalloc(table_size_##name * sizeof(struct hashtable_##type_name), GFP_KERNEL) ; \
 	if (table != NULL) { \
-		for (i = 0; i < table_size_##name; ++i) { \
+		for (size_t i = 0; i < table_size_##name; ++i) { \
 			memset(&table[i], 0, sizeof(table[0])); \
 			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
 		} \
@@ -172,10 +171,9 @@ static inline uint32_t find_closer_entry_##name(struct hashtable_##type_name *ta
 	while (check_distance > 0) { \
 		uint32_t check_position = wrap_pos##name(free_position - check_distance); \
 		uint32_t check_hop_info = table[check_position].hop_info; \
-		uint32_t i; \
 		uint32_t mask = 1; \
 		uint32_t hop_position = 0xffffffff; \
-		for (i = 0; i < check_distance; ++i, mask <<= 1) { \
+		for (uint32_t i = 0; i < check_distance; ++i, mask <<= 1) { \
 			if ((mask & check_hop_info) != 0) { \
 				hop_position = wrap_pos##name(check_position + i); \
 				break; \
