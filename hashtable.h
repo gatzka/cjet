@@ -173,11 +173,12 @@ static inline uint32_t find_closer_entry_##name(struct hashtable_##type_name *ta
 		uint32_t check_hop_info = table[check_position].hop_info; \
 		uint32_t mask = 1; \
 		uint32_t hop_position = 0xffffffff; \
-		for (uint32_t i = 0; i < check_distance; ++i, mask <<= 1) { \
+		for (uint32_t i = 0; i < check_distance; ++i) { \
 			if ((mask & check_hop_info) != 0) { \
 				hop_position = wrap_pos##name(check_position + i); \
 				break; \
 			} \
+			mask = mask << 1; \
 		} \
 		if (hop_position != 0xffffffff) { \
 /* We found a table entry to swap the free entry with. */ \
