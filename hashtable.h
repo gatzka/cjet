@@ -85,7 +85,7 @@
 #define HASHTABLE_INVALIDENTRY	-1
 
 static const uint32_t hash32_magic = 2654435769U;
-static const uint64_t hash64_magic = 0xd43ece626aa9260aull;
+static const uint64_t hash64_magic = 0xd43ece626aa9260aULL;
 
 static inline int is_equal_string(const char *s1, const char *s2)
 {
