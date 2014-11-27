@@ -473,10 +473,7 @@ int run_io(void)
 	}
 
 	while (likely(go_ahead)) {
-		int num_events;
-		int i;
-
-		num_events =
+		int num_events =
 		    epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 		if (unlikely(num_events == -1)) {
 			if (errno == EINTR) {
@@ -485,7 +482,7 @@ int run_io(void)
 				goto epoll_wait_failed;
 			}
 		}
-		for (i = 0; i < num_events; ++i) {
+		for (int i = 0; i < num_events; ++i) {
 			if (unlikely((events[i].events & EPOLLERR) ||
 				(events[i].events & EPOLLHUP))) {
 				if (events[i].data.ptr == listen_server) {
