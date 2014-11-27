@@ -59,8 +59,13 @@ void delete_state_hashtable(void)
 
 struct state *get_state(const char *path)
 {
-	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
-	return val->vals[0];
+	struct value_state_table val;
+	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
+	if (ret == HASHTABLE_SUCCESS) {
+		return val.vals[0];
+	} else {
+		return NULL;
+	}
 }
 
 static struct state *alloc_state(const char *path, cJSON *value_object,
@@ -105,12 +110,13 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
-	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
-	if (unlikely(val == NULL)) {
+	struct value_state_table val;
+	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
+	if (unlikely(ret != HASHTABLE_SUCCESS)) {
 		cJSON *error = create_invalid_params_error("not exists", path);
 		return error;
 	}
-	struct state *s = val->vals[0];
+	struct state *s = val.vals[0];
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
 			create_invalid_params_error("not owner of state", path);
@@ -166,12 +172,13 @@ error:
 cJSON *set_state(struct peer *p, const char *path, cJSON *value)
 {
 	cJSON *error;
-	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
-	if (unlikely(val == NULL)) {
+	struct value_state_table val;
+	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
+	if (unlikely(ret != HASHTABLE_SUCCESS)) {
 		error = create_invalid_params_error("not exists", path);
 		return error;
 	}
-	struct state *s = val->vals[0];
+	struct state *s = val.vals[0];
 	if (unlikely(s->peer == p)) {
 		error = create_invalid_params_error(
 			"owner of state shall use change instead of set", path);
@@ -204,8 +211,9 @@ delete_json:
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
-	struct value_1 *val = HASHTABLE_GET(state_table, state_hashtable, path);
-	if (unlikely(val != NULL)) {
+	struct value_state_table val;
+	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
+	if (unlikely(ret == HASHTABLE_SUCCESS)) {
 		cJSON *error = create_invalid_params_error("exists", path);
 		return error;
 	}
@@ -215,7 +223,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 		    create_internal_error("reason", "not enough memory");
 		return error;
 	}
-	struct value_1 new_val;
+	struct value_state_table new_val;
 	new_val.vals[0] = s;
 	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->list, &p->state_list);

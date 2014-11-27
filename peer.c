@@ -66,11 +66,11 @@ struct peer *alloc_peer(int fd)
 static void remove_routing_info_from_peer(struct peer *p)
 {
 	unsigned int i;
-	struct hashtable_u32 *table = p->routing_table;
+	struct hashtable_uint32_t *table = p->routing_table;
 	for (i = 0; i < table_size_routing_table; ++i) {
-		struct hashtable_u32 *entry = &(table[i]);
-		if (entry->key != (u32)HASHTABLE_INVALIDENTRY) {
-			struct value_2 val = HASHTABLE_REMOVE(
+		struct hashtable_uint32_t *entry = &(table[i]);
+		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
+			struct value_routing_table val = HASHTABLE_REMOVE(
 				routing_table, p->routing_table, entry->key);
 				/* struct peer *origin_peer = val.vals[0];
 				 * TODO: the origin peer should be notified
@@ -133,7 +133,7 @@ int setup_routing_information(struct peer *routing_peer,
 		fprintf(stderr, "Could not copy value object!\n");
 		return -1;
 	}
-	struct value_2 val;
+	struct value_routing_table val;
 	val.vals[0] = origin_peer;
 	val.vals[1] = value_copy;
 	if (unlikely(HASHTABLE_PUT(routing_table, routing_peer->routing_table,
@@ -154,9 +154,9 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 		fprintf(stderr, "id is not a number!\n");
 		return -1;
 	}
-	struct value_2 *val =
-		 HASHTABLE_GET(routing_table, p->routing_table, id->valueint);
-	if (val != NULL) {
+	struct value_routing_table val;
+	int ret = HASHTABLE_GET(routing_table, p->routing_table, id->valueint, &val);
+	if (ret == HASHTABLE_SUCCESS) {
 		printf("got routed answer!\n");
 		char *res = cJSON_Print(response);
 		printf("%s\n", res);
