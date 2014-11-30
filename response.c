@@ -95,7 +95,7 @@ cJSON *create_invalid_params_error(const char *tag, const char *reason)
 
 cJSON *create_internal_error(const char *tag, const char *reason)
 {
-	return create_error_object("Invalid params", -32603, tag, reason);
+	return create_error_object("Internal error", -32603, tag, reason);
 }
 
 cJSON *create_error_response(const cJSON *id, cJSON *error)
