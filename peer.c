@@ -65,7 +65,7 @@ struct peer *alloc_peer(int fd)
 	return p;
 }
 
-static void remove_routing_info_from_peer(struct peer *p)
+static void remove_routing_info_from_peer(const struct peer *p)
 {
 	unsigned int i;
 	struct hashtable_uint32_t *table = p->routing_table;
@@ -130,7 +130,7 @@ write_buffer_too_small:
 	return -1;
 }
 
-int setup_routing_information(struct peer *routing_peer,
+int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, cJSON *origin_request_id, int id)
 {
 	cJSON *id_copy = cJSON_Duplicate(origin_request_id, 1);
