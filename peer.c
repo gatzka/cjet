@@ -65,6 +65,30 @@ struct peer *alloc_peer(int fd)
 	return p;
 }
 
+static void send_shutdown_response(struct peer *p,
+	cJSON *origin_request_id)
+{
+	cJSON *error = create_internal_error("reason", "peer shuts down");
+	if (error != NULL) {
+		cJSON *error_response =
+			create_error_response(origin_request_id, error);
+		if (unlikely(error_response == NULL)) {
+			fprintf(stderr, "Could create error response!\n");
+			cJSON_Delete(error);
+		} else {
+			char *rendered = cJSON_PrintUnformatted(error_response);
+			if (unlikely(rendered == NULL)) {
+				fprintf(stderr,
+					"Could not render JSON into a string!\n");
+			} else {
+				send_message(p, rendered, strlen(rendered));
+				cJSON_free(rendered);
+			}
+			cJSON_Delete(error_response);
+		}
+	}
+}
+
 static void remove_routing_info_from_peer(const struct peer *p)
 {
 	unsigned int i;
@@ -76,19 +100,31 @@ static void remove_routing_info_from_peer(const struct peer *p)
 			int ret = HASHTABLE_REMOVE(route_table,
 					p->routing_table, entry->key, &val);
 			if (ret == HASHTABLE_SUCCESS) {
-				/* struct peer *origin_peer = val.vals[0];
-				 * TODO: the origin peer should be notified
-				 */
-				cJSON *value = val.vals[1];
-				cJSON_Delete(value);
+				struct peer *origin_peer = val.vals[0];
+				cJSON *origin_request_id = val.vals[1];
+				send_shutdown_response(origin_peer, origin_request_id);
+				cJSON_Delete(origin_request_id);
 			}
 		}
 	}
 }
 
+static void remove_peer_from_routes(const struct peer *p)
+{
+	(void)p;
+/*
+ * Iterate over all peers
+ * Check if p is in routing table
+ * Remove p from routing table
+ * Send error response to p
+ */
+	return;
+}
+
 void free_peer(struct peer *p)
 {
 	remove_routing_info_from_peer(p);
+	remove_peer_from_routes(p);
 	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
 	HASHTABLE_DELETE(route_table, p->routing_table);
