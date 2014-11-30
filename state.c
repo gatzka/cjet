@@ -38,6 +38,7 @@
 #include "peer.h"
 #include "response.h"
 #include "state.h"
+#include "uuid.h"
 
 DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
 
@@ -194,13 +195,14 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value, cJSON *json_rpc
 		return error;
 	}
 
-	cJSON *routed_message = create_routed_message(path, value, 1);
+	int routed_request_id = get_routed_request_uuid();
+	cJSON *routed_message = create_routed_message(path, value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 			"reason", "could not create routed JSON object");
 		return error;
 	}
-	if (unlikely(setup_routing_information(s->peer, p, origin_request_id, 1) != 0)) {
+	if (unlikely(setup_routing_information(s->peer, p, origin_request_id, routed_request_id) != 0)) {
 		error = create_internal_error(
 			"reason", "could not setup routing information");
 		goto delete_json;

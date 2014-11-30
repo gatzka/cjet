@@ -42,6 +42,7 @@ SET(CJET_FILES
 	../../peer.c
 	../../response.c
 	../../state.c
+	../../uuid.c
 )
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
@@ -60,6 +61,7 @@ SET(ECHO_FILES
 	../../peer.c
 	../../response.c
 	../../state.c
+	../../uuid.c
 )
 ADD_EXECUTABLE(echo.bin
 	${ECHO_FILES}
