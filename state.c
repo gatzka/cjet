@@ -170,7 +170,8 @@ error:
 	return NULL;
 }
 
-cJSON *set_state(struct peer *p, const char *path, cJSON *value, cJSON *json_rpc)
+cJSON *set_state(struct peer *p, const char *path,
+	cJSON *value, cJSON *json_rpc)
 {
 	cJSON *error;
 	struct value_state_table val;
@@ -202,7 +203,8 @@ cJSON *set_state(struct peer *p, const char *path, cJSON *value, cJSON *json_rpc
 			"reason", "could not create routed JSON object");
 		return error;
 	}
-	if (unlikely(setup_routing_information(s->peer, p, origin_request_id, routed_request_id) != 0)) {
+	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
+			routed_request_id) != 0)) {
 		error = create_internal_error(
 			"reason", "could not setup routing information");
 		goto delete_json;

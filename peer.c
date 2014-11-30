@@ -148,7 +148,8 @@ int setup_routing_information(const struct peer *routing_peer,
 	return 0;
 }
 
-int handle_routing_response(cJSON *json_rpc, cJSON *response, const struct peer *p)
+int handle_routing_response(cJSON *json_rpc, cJSON *response,
+	const struct peer *p)
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
