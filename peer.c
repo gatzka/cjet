@@ -65,26 +65,47 @@ struct peer *alloc_peer(int fd)
 	return p;
 }
 
+static void format_and_send_response(struct peer *p, cJSON *response)
+{
+	char *rendered = cJSON_PrintUnformatted(response);
+	if (likely(rendered != NULL)) {
+		send_message(p, rendered, strlen(rendered));
+		cJSON_free(rendered);
+	} else {
+		fprintf(stderr, "Could not render JSON into a string!\n");
+	}
+}
+
 static void send_shutdown_response(struct peer *p,
 	cJSON *origin_request_id)
 {
 	cJSON *error = create_internal_error("reason", "peer shuts down");
-	if (error != NULL) {
+	if (likely(error != NULL)) {
 		cJSON *error_response =
 			create_error_response(origin_request_id, error);
-		if (unlikely(error_response == NULL)) {
+		if (likely(error_response != NULL)) {
+			format_and_send_response(p, error_response);
+			cJSON_Delete(error_response);
+		} else {
 			fprintf(stderr, "Could create error response!\n");
 			cJSON_Delete(error);
+		}
+	}
+}
+
+static void send_routing_response(struct peer *p,
+	cJSON *origin_request_id, cJSON *response)
+{
+	cJSON *response_copy = cJSON_Duplicate(response, 1);
+	if (likely(response_copy != NULL)) {
+		cJSON *result_response =
+			create_result_response(origin_request_id, response_copy);
+		if (likely(result_response != NULL)) {
+			format_and_send_response(p, result_response);
+			cJSON_Delete(result_response);
 		} else {
-			char *rendered = cJSON_PrintUnformatted(error_response);
-			if (unlikely(rendered == NULL)) {
-				fprintf(stderr,
-					"Could not render JSON into a string!\n");
-			} else {
-				send_message(p, rendered, strlen(rendered));
-				cJSON_free(rendered);
-			}
-			cJSON_Delete(error_response);
+			fprintf(stderr, "Could create result response!\n");
+			cJSON_Delete(response_copy);
 		}
 	}
 }
@@ -201,33 +222,7 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 	if (likely(ret == HASHTABLE_SUCCESS)) {
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
-
-		cJSON *response_copy = cJSON_Duplicate(response, 1);
-		if (unlikely(response_copy == NULL)) {
-			fprintf(stderr, "Could not copy response!\n");
-			ret = -1;
-			goto out;
-		}
-		cJSON *result_response =
-			create_result_response(origin_request_id, response_copy);
-		if (unlikely(result_response == NULL)) {
-			fprintf(stderr, "Could create result response!\n");
-			cJSON_Delete(response_copy);
-			ret = -1;
-			goto out;
-		}
-
-		char *rendered = cJSON_PrintUnformatted(result_response);
-		if (unlikely(rendered == NULL)) {
-			fprintf(stderr,
-				"Could not render JSON into a string!\n");
-			ret = -1;
-		} else {
-			ret = send_message(origin_peer, rendered, strlen(rendered));
-			cJSON_free(rendered);
-		}
-		cJSON_Delete(result_response);
-out:
+		send_routing_response(origin_peer, origin_request_id, response);
 		cJSON_Delete(origin_request_id);
 	}
 	return ret;
