@@ -168,10 +168,20 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON_Delete(value);
 
 	struct peer *set_peer = alloc_peer(-1);
+
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "id", "request1");
+	cJSON_AddStringToObject(set_request, "method", "set");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/");
 	cJSON *new_value = cJSON_CreateNumber(4321);
-	error = set_state(set_peer, path, new_value);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+
+	error = set_state(set_peer, path, new_value, set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
-	cJSON_Delete(new_value);
+	cJSON_Delete(set_request);
 	free_peer(set_peer);
 /*
 	struct state *s = get_state(path);
