@@ -155,7 +155,7 @@ cJSON *set_state(struct peer *p, const char *path,
 		 ((origin_request_id->type != cJSON_String) &&
 		  (origin_request_id->type != cJSON_Number))) {
 		error = create_invalid_params_error(
-			"set request contains no request id", "");
+			"reason", "set request contains no request id");
 		return error;
 	}
 
