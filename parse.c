@@ -76,7 +76,7 @@ static cJSON *process_change(cJSON *params, struct peer *p)
 	return error;
 }
 
-static cJSON *process_set(cJSON *params, struct peer *p)
+static cJSON *process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -90,7 +90,7 @@ static cJSON *process_set(cJSON *params, struct peer *p)
 		error = create_invalid_params_error("reason", "no value given");
 		return error;
 	}
-	error = set_state(p, path, value);
+	error = set_state(p, path, value, json_rpc);
 	return error;
 }
 
@@ -195,7 +195,7 @@ static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 	if (strcmp(method_string, "change") == 0) {
 		error = process_change(params, p);
 	} else if (strcmp(method_string, "set") == 0) {
-		error = process_set(params, p);
+		error = process_set(json_rpc, params,  p);
 	} else if (strcmp(method_string, "add") == 0) {
 		error = process_add(params, p);
 	} else if (strcmp(method_string, "remove") == 0) {

@@ -121,3 +121,13 @@ cJSON *create_boolean_success_response(const cJSON *id, int true_false)
 	}
 	return root;
 }
+
+cJSON *create_result_response(const cJSON *id, cJSON *result)
+{
+	cJSON *root = create_common_response(id);
+	if (unlikely(root == NULL)) {
+		return NULL;
+	}
+	cJSON_AddItemToObject(root, "result", result);
+	return root;
+}

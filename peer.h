@@ -38,9 +38,12 @@ struct peer {
 
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
-int setup_routing_information(struct peer *routing_peer, struct peer *origin_peer, cJSON *value, int id);
-int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p);
+int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
+	uint32_t msg_len_be, size_t already_written);
+int setup_routing_information(struct peer *routing_peer,
+	struct peer *origin_peer, cJSON *origin_request_id, int id);
+int handle_routing_response(cJSON *json_rpc, cJSON *response,
+	const struct peer *p);
 
 static inline ptrdiff_t unread_space(const struct peer *p)
 {

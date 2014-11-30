@@ -32,11 +32,13 @@
 
 #include "compiler.h"
 #include "config/config.h"
+#include "config/io.h"
 #include "fetch.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
+#include "response.h"
 #include "state.h"
 
 DECLARE_HASHTABLE_UINT32(route_table, CONFIG_ROUTING_TABLE_ORDER, 2)
@@ -126,24 +128,24 @@ write_buffer_too_small:
 }
 
 int setup_routing_information(struct peer *routing_peer,
-			 struct peer *origin_peer, cJSON *value, int id)
+	struct peer *origin_peer, cJSON *origin_request_id, int id)
 {
-	cJSON *value_copy = cJSON_Duplicate(value, 1);
-	if (unlikely(value_copy == NULL)) {
+	cJSON *id_copy = cJSON_Duplicate(origin_request_id, 1);
+	if (unlikely(id_copy == NULL)) {
 		fprintf(stderr, "Could not copy value object!\n");
 		return -1;
 	}
 	struct value_route_table val;
 	val.vals[0] = origin_peer;
-	val.vals[1] = value_copy;
+	val.vals[1] = id_copy;
 	if (unlikely(HASHTABLE_PUT(route_table, routing_peer->routing_table,
-				 id, val, NULL) != 0)) {
-		cJSON_Delete(value_copy);
+			id, val, NULL) != 0)) {
+		cJSON_Delete(id_copy);
 	}
 	return 0;
 }
 
-int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
+int handle_routing_response(cJSON *json_rpc, cJSON *response, const struct peer *p)
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
@@ -156,13 +158,38 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, struct peer *p)
 	}
 	struct value_route_table val;
 	int ret = HASHTABLE_GET(route_table, p->routing_table, id->valueint, &val);
-	if (ret == HASHTABLE_SUCCESS) {
-		printf("got routed answer!\n");
-		char *res = cJSON_Print(response);
-		printf("%s\n", res);
-		free(res);
-	}
+	if (likely(ret == HASHTABLE_SUCCESS)) {
+		struct peer *origin_peer = val.vals[0];
+		cJSON *origin_request_id = val.vals[1];
 
-	/* REMOVE_HASHTABLE_ENTRY */
-	return 0;
+		cJSON *response_copy = cJSON_Duplicate(response, 1);
+		if (unlikely(response_copy == NULL)) {
+			fprintf(stderr, "Could not copy response!\n");
+			ret = -1;
+			goto out;
+		}
+		cJSON *result_response =
+			create_result_response(origin_request_id, response_copy);
+		if (unlikely(result_response == NULL)) {
+			fprintf(stderr, "Could create result response!\n");
+			cJSON_Delete(response_copy);
+			ret = -1;
+			goto out;
+		}
+
+		char *rendered = cJSON_PrintUnformatted(result_response);
+		if (unlikely(rendered == NULL)) {
+			fprintf(stderr,
+				"Could not render JSON into a string!\n");
+			ret = -1;
+		} else {
+			ret = send_message(origin_peer, rendered, strlen(rendered));
+			cJSON_free(rendered);
+		}
+		cJSON_Delete(result_response);
+out:
+		cJSON_Delete(origin_request_id);
+		HASHTABLE_REMOVE(route_table, p->routing_table, id->valueint);
+	}
+	return ret;
 }
