@@ -42,6 +42,7 @@ SET(CJET_FILES
 	../../parse.c
 	../../peer.c
 	../../response.c
+	../../router.c
 	../../state.c
 	../../uuid.c
 )
@@ -61,6 +62,7 @@ SET(ECHO_FILES
 	../../fetch.c
 	../../peer.c
 	../../response.c
+	../../router.c
 	../../state.c
 	../../uuid.c
 )

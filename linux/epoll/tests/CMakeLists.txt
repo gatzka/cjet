@@ -24,6 +24,7 @@ SET(READBUFFER_TEST
 	../../../fetch.c
 	../../../peer.c
 	../../../response.c
+	../../../router.c
 	../../../state.c
 	../../../uuid.c
 	../io.c
@@ -41,6 +42,7 @@ SET(JSON_PARSE_TEST
 	../../../parse.c
 	../../../peer.c
 	../../../response.c
+	../../../router.c
 	../../../state.c
 	../../../uuid.c
 	../io.c
@@ -57,6 +59,7 @@ SET(STATE_TEST
 	../../../fetch.c
 	../../../parse.c
 	../../../response.c
+	../../../router.c
 	../../../state.c
 	../../../peer.c
 	../../../uuid.c
