@@ -261,10 +261,8 @@ static inline int hashtable_put_##name(struct hashtable_##type_name *table, type
 	return HASHTABLE_FULL; \
 } \
 \
-static inline struct value_##name hashtable_remove_##name(struct hashtable_##type_name *table, type key) \
+static inline int hashtable_remove_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
 { \
-	struct value_##name ret; \
-	memset(&ret, 0, sizeof(ret)); \
 	uint32_t hash_pos = hash_func_##name##_##type_name(key); \
 	uint32_t pos = hash_pos; \
 	uint32_t hop_info = table[hash_pos].hop_info; \
@@ -272,18 +270,20 @@ static inline struct value_##name hashtable_remove_##name(struct hashtable_##typ
 	while (check_hop_info != 0) { \
 		if (((check_hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
 			uint32_t distance; \
-			ret = table[pos].value; \
+			if (value != NULL) { \
+				*value = table[pos].value; \
+			} \
 			table[pos].key = (type)HASHTABLE_INVALIDENTRY; \
 			wmb(); \
 			memset(&table[pos].value, 0, sizeof(table[pos].value)); \
 			distance = wrap_pos##name(pos - hash_pos); \
 			table[hash_pos].hop_info = hop_info & ~(1 << distance); \
-			break; \
+			return HASHTABLE_SUCCESS; \
 		} \
 		check_hop_info = check_hop_info >> 1; \
 		pos = wrap_pos##name(pos + 1); \
 	} \
-	return ret; \
+	return HASHTABLE_INVALIDENTRY; \
 }
 
 #define DECLARE_HASHTABLE_STRING(name, order, value_entries) \
@@ -376,7 +376,7 @@ DECLARE_HASHTABLE(name, order, uint64_t, uint64_t, value_entries)
  * Removes a key/value pair from table. If a value was found for
  * key, it will be returned, NULL otherwise.
  */
-#define HASHTABLE_REMOVE(name, table, key) \
-	hashtable_remove_##name((table), (key))
+#define HASHTABLE_REMOVE(name, table, key, value) \
+	hashtable_remove_##name((table), (key), (value))
 
 #endif

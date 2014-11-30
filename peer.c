@@ -72,13 +72,16 @@ static void remove_routing_info_from_peer(struct peer *p)
 	for (i = 0; i < table_size_route_table; ++i) {
 		struct hashtable_uint32_t *entry = &(table[i]);
 		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
-			struct value_route_table val = HASHTABLE_REMOVE(
-				route_table, p->routing_table, entry->key);
+			struct value_route_table val;
+			int ret = HASHTABLE_REMOVE(route_table,
+					p->routing_table, entry->key, &val);
+			if (ret == HASHTABLE_SUCCESS) {
 				/* struct peer *origin_peer = val.vals[0];
 				 * TODO: the origin peer should be notified
 				 */
-			cJSON *value = val.vals[1];
-			cJSON_Delete(value);
+				cJSON *value = val.vals[1];
+				cJSON_Delete(value);
+			}
 		}
 	}
 }
@@ -157,7 +160,7 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, const struct peer 
 		return -1;
 	}
 	struct value_route_table val;
-	int ret = HASHTABLE_GET(route_table, p->routing_table, id->valueint, &val);
+	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valueint, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
@@ -189,7 +192,6 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response, const struct peer 
 		cJSON_Delete(result_response);
 out:
 		cJSON_Delete(origin_request_id);
-		HASHTABLE_REMOVE(route_table, p->routing_table, id->valueint);
 	}
 	return ret;
 }
