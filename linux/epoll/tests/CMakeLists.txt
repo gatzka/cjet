@@ -25,6 +25,7 @@ SET(READBUFFER_TEST
 	../../../peer.c
 	../../../response.c
 	../../../state.c
+	../../../uuid.c
 	../io.c
 	ReadbufferTest.cpp
 )
@@ -41,6 +42,7 @@ SET(JSON_PARSE_TEST
 	../../../peer.c
 	../../../response.c
 	../../../state.c
+	../../../uuid.c
 	../io.c
 	Parse.cpp
 )
@@ -57,6 +59,7 @@ SET(STATE_TEST
 	../../../response.c
 	../../../state.c
 	../../../peer.c
+	../../../uuid.c
 	../io.c
 	State.cpp
 )
