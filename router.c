@@ -175,11 +175,33 @@ static void send_shutdown_response(struct peer *p,
 	}
 }
 
+void remove_peer_from_routing_table(const struct peer *p,
+	const struct peer *peer_to_remove)
+{
+	struct hashtable_uint32_t *table = p->routing_table;
+	for (unsigned int i = 0; i < table_size_route_table; ++i) {
+		struct hashtable_uint32_t *entry = &(table[i]);
+		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
+			struct value_route_table val;
+			int ret = HASHTABLE_GET(route_table,
+					p->routing_table, entry->key, &val);
+			if (ret == HASHTABLE_SUCCESS) {
+				struct peer *origin_peer = val.vals[0];
+				if (origin_peer == peer_to_remove) {
+					cJSON *origin_request_id = val.vals[1];
+					send_shutdown_response(origin_peer, origin_request_id);
+					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, &val);
+					cJSON_Delete(origin_request_id);
+				}
+			}
+		}
+	}
+}
+
 void remove_routing_info_from_peer(const struct peer *p)
 {
-	unsigned int i;
 	struct hashtable_uint32_t *table = p->routing_table;
-	for (i = 0; i < table_size_route_table; ++i) {
+	for (unsigned int i = 0; i < table_size_route_table; ++i) {
 		struct hashtable_uint32_t *entry = &(table[i]);
 		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
 			struct value_route_table val;
@@ -195,14 +217,3 @@ void remove_routing_info_from_peer(const struct peer *p)
 	}
 }
 
-void remove_peer_from_routes(const struct peer *p)
-{
-	(void)p;
-/*
- * Iterate over all peers
- * Check if p is in routing table
- * Remove p from routing table
- * Send error response to p
- */
-	return;
-}

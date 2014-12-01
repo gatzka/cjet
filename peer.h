@@ -44,6 +44,8 @@ void destroy_all_peers(void);
 
 int get_number_of_peers(void);
 
+void remove_peer_from_routes(const struct peer *p);
+
 static inline ptrdiff_t unread_space(const struct peer *p)
 {
 	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->read_ptr;

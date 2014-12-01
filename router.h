@@ -11,7 +11,8 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 	const struct peer *p);
 
 void remove_routing_info_from_peer(const struct peer *p);
-void remove_peer_from_routes(const struct peer *p);
+void remove_peer_from_routing_table(const struct peer *p,
+	const struct peer *peer_to_remove);
 
 int add_routing_table(struct peer *p);
 void delete_routing_table(struct peer *p);
