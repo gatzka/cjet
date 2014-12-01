@@ -125,10 +125,8 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
-	/* TODO: enter state mutex for multithread IO */
 	cJSON_Delete(s->value);
 	s->value = value_copy;
-	/* TODO: exit state mutex for multithread IO */
 	/* TODO: notify all clients interested in this state */
 	return NULL;
 }
