@@ -179,7 +179,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
 		fprintf(stderr, "peer asked for too much data: %u!\n", count);
-		return NULL;
+		return 0;
 	}
 	while (1) {
 		ssize_t read_length;
@@ -193,14 +193,14 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 			READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			/* peer closed connection */
-			return NULL;
+			return 0;
 		}
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
 				fprintf(stderr, "unexpected read error: %s!\n",
 					strerror(errno));
-				return NULL;
+				return 0;
 			}
 			return (char *)IO_WOULD_BLOCK;
 		}
@@ -313,67 +313,93 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	return ret;
 }
 
-int handle_all_peer_operations(struct peer *p)
+static int read_msg_length(struct peer *p)
 {
 	uint32_t message_length;
-	char *message_ptr;
+	char *message_length_ptr =
+		get_read_ptr(p, sizeof(message_length));
+	intptr_t ret = (intptr_t)message_length_ptr;
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		} else {
+			return ret;
+		}
+	} else {
+		memcpy(&message_length, message_length_ptr,
+			sizeof(message_length));
+		message_length = ntohl(message_length);
+		p->op = READ_MSG;
+		p->msg_length = message_length;
+		return 1;
+	}
+}
+
+static int read_msg(struct peer *p)
+{
+	uint32_t message_length = p->msg_length;
+	char *message_ptr = get_read_ptr(p, message_length);
+	intptr_t ret = (intptr_t)message_ptr;
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		} else {
+			return ret;
+		}
+	} else {
+		p->op = READ_MSG_LENGTH;
+		ret = parse_message(message_ptr, message_length, p);
+		if (unlikely(ret == -1)) {
+			return -1;
+		}
+		reorganize_read_buffer(p);
+		return 1;
+	}
+}
+
+static int write_msg(struct peer *p)
+{
+	int ret = send_buffer(p);
+	if (likely(ret == 0)) {
+		p->op = p->next_read_op;
+		return 0;
+	}
+	if (unlikely(ret == -1)) {
+		return -1;
+	}
+	/*
+	 * ret == IO_WOULD_BLOCK shows that send_buffer blocked.
+	 * Leave everything like it is.
+	 */
+	 return 0;
+}
+
+int handle_all_peer_operations(struct peer *p)
+{
 
 	while (1) {
-		char *message_length_ptr;
 		int ret;
 
 		switch (p->op) {
 		case READ_MSG_LENGTH:
-			message_length_ptr =
-				get_read_ptr(p, sizeof(message_length));
-			if (unlikely(message_length_ptr == NULL)) {
-				return -1;
+			ret = read_msg_length(p);
+			if (unlikely(ret <= 0)) {
+				return ret;
 			}
-			if (unlikely(message_length_ptr ==
-				(char *)IO_WOULD_BLOCK)) {
-				return 0;
-			}
-			memcpy(&message_length, message_length_ptr,
-				sizeof(message_length));
-			message_length = ntohl(message_length);
-			p->op = READ_MSG;
-			p->msg_length = message_length;
-		/*
-		 *  CAUTION! This fall through is by design! Typically, the
-		 *  length of a messages and the message itself will go into
-		 *  a single TCP packet. This fall through eliminates an
-		 *  additional loop iteration.
-		 */
+			break;
 
 		case READ_MSG:
-			message_length = p->msg_length;
-			message_ptr = get_read_ptr(p, message_length);
-			if (unlikely(message_ptr == NULL)) {
-				return -1;
+			ret = read_msg(p);
+			if (unlikely(ret <= 0)) {
+				return ret;
 			}
-			if (unlikely(message_ptr == (char *)IO_WOULD_BLOCK)) {
-				return 0;
-			}
-			p->op = READ_MSG_LENGTH;
-			ret = parse_message(message_ptr, message_length, p);
-			if (unlikely(ret == -1)) {
-				return -1;
-			}
-			reorganize_read_buffer(p);
 			break;
 
 		case WRITE_MSG:
-			ret = send_buffer(p);
-			if (unlikely(ret == -1)) {
-				return -1;
+			ret = write_msg(p);
+			if (ret < 0) {
+				return ret;
 			}
-			if (likely(ret == 0)) {
-				p->op = p->next_read_op;
-			}
-			/*
-			 * ret == IO_WOULD_BLOCK shows that send_buffer blocked.
-			 * Leave everything like it is.
-			 */
 			break;
 
 		default:
