@@ -206,6 +206,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		}
 		p->write_ptr += read_length;
 	}
+	return 0;
 }
 
 int send_buffer(struct peer *p)
@@ -370,7 +371,6 @@ static int write_msg(struct peer *p)
 
 int handle_all_peer_operations(struct peer *p)
 {
-
 	while (1) {
 		int ret;
 
@@ -402,6 +402,7 @@ int handle_all_peer_operations(struct peer *p)
 			break;
 		}
 	}
+	return -1;
 }
 
 static void sighandler(int signum)
