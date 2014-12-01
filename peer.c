@@ -41,28 +41,15 @@
 #include "response.h"
 #include "state.h"
 
+static LIST_HEAD(peer_list);
+
+static int number_of_peers = 0;
+
 DECLARE_HASHTABLE_UINT32(route_table, CONFIG_ROUTING_TABLE_ORDER, 2)
 
-struct peer *alloc_peer(int fd)
+int get_number_of_peers(void)
 {
-	struct peer *p = malloc(sizeof(*p));
-	if (unlikely(p == NULL)) {
-		return NULL;
-	}
-	p->routing_table = HASHTABLE_CREATE(route_table);
-	if (unlikely(p->routing_table == NULL)) {
-		free(p);
-		return NULL;
-	}
-	p->io.fd = fd;
-	p->op = READ_MSG_LENGTH;
-	p->to_write = 0;
-	p->read_ptr = p->read_buffer;
-	p->write_ptr = p->read_buffer;
-	INIT_LIST_HEAD(&p->next_peer);
-	INIT_LIST_HEAD(&p->state_list);
-	INIT_LIST_HEAD(&p->fetch_list);
-	return p;
+	return number_of_peers;
 }
 
 static void format_and_send_response(struct peer *p, cJSON *response)
@@ -89,23 +76,6 @@ static void send_shutdown_response(struct peer *p,
 		} else {
 			fprintf(stderr, "Could create error response!\n");
 			cJSON_Delete(error);
-		}
-	}
-}
-
-static void send_routing_response(struct peer *p,
-	cJSON *origin_request_id, cJSON *response)
-{
-	cJSON *response_copy = cJSON_Duplicate(response, 1);
-	if (likely(response_copy != NULL)) {
-		cJSON *result_response =
-			create_result_response(origin_request_id, response_copy);
-		if (likely(result_response != NULL)) {
-			format_and_send_response(p, result_response);
-			cJSON_Delete(result_response);
-		} else {
-			fprintf(stderr, "Could create result response!\n");
-			cJSON_Delete(response_copy);
 		}
 	}
 }
@@ -142,14 +112,70 @@ static void remove_peer_from_routes(const struct peer *p)
 	return;
 }
 
-void free_peer(struct peer *p)
+static void free_peer_resources(struct peer *p)
 {
 	remove_routing_info_from_peer(p);
 	remove_peer_from_routes(p);
 	remove_all_fetchers_from_peer(p);
 	remove_all_states_from_peer(p);
 	HASHTABLE_DELETE(route_table, p->routing_table);
+	list_del(&p->next_peer);
 	free(p);
+	--number_of_peers;
+}
+
+struct peer *alloc_peer(int fd)
+{
+	struct peer *p = malloc(sizeof(*p));
+	if (unlikely(p == NULL)) {
+		return NULL;
+	}
+	p->routing_table = HASHTABLE_CREATE(route_table);
+	if (unlikely(p->routing_table == NULL)) {
+		free(p);
+		return NULL;
+	}
+	p->io.fd = fd;
+	p->op = READ_MSG_LENGTH;
+	p->to_write = 0;
+	p->read_ptr = p->read_buffer;
+	p->write_ptr = p->read_buffer;
+	INIT_LIST_HEAD(&p->next_peer);
+	INIT_LIST_HEAD(&p->state_list);
+	INIT_LIST_HEAD(&p->fetch_list);
+
+	list_add_tail(&p->next_peer, &peer_list);
+	++number_of_peers;
+
+	if (add_io(p) < 0) {
+		free_peer_resources(p);
+		return NULL;
+	} else {
+		return p;
+	}
+}
+
+void free_peer(struct peer *p)
+{
+	remove_io(p);
+	free_peer_resources(p);
+}
+
+static void send_routing_response(struct peer *p,
+	cJSON *origin_request_id, cJSON *response)
+{
+	cJSON *response_copy = cJSON_Duplicate(response, 1);
+	if (likely(response_copy != NULL)) {
+		cJSON *result_response =
+			create_result_response(origin_request_id, response_copy);
+		if (likely(result_response != NULL)) {
+			format_and_send_response(p, result_response);
+			cJSON_Delete(result_response);
+		} else {
+			fprintf(stderr, "Could create result response!\n");
+			cJSON_Delete(response_copy);
+		}
+	}
 }
 
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
@@ -227,3 +253,14 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 	}
 	return ret;
 }
+
+void destroy_all_peers(void)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		free_peer(p);
+	}
+}
+

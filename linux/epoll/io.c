@@ -40,15 +40,15 @@
 #include "compiler.h"
 #include "config/io.h"
 #include "config/peer_io.h"
+#include "io_loop.h"
 #include "list.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_testing.h"
 #include "state.h"
 
-static LIST_HEAD(peer_list);
 static int go_ahead = 1;
-static int number_of_peers = 0;
+static int epoll_fd;
 
 static int set_fd_non_blocking(int fd)
 {
@@ -67,42 +67,7 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
-static int add_epoll(int epoll_fd, int fd, void *cookie)
-{
-	struct epoll_event ev;
-
-	memset(&ev, 0, sizeof(ev));
-	ev.data.ptr = cookie;
-	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0)) {
-		fprintf(stderr, "epoll_ctl failed!\n");
-		return -1;
-	}
-	return 0;
-}
-
-static void *create_peer(int fd, int epoll_fd)
-{
-	struct peer *peer;
-	peer = alloc_peer(fd);
-	if (unlikely(peer == NULL)) {
-		fprintf(stderr, "Could not allocate peer!\n");
-		goto alloc_peer_failed;
-	}
-
-	if (unlikely(add_epoll(epoll_fd, fd, peer) < 0)) {
-		goto epollctl_failed;
-	}
-	list_add_tail(&peer->next_peer, &peer_list);
-	return peer;
-
-epollctl_failed:
-	free_peer(peer);
-alloc_peer_failed:
-	return NULL;
-}
-
-static struct peer *setup_listen_socket(int epoll_fd)
+static struct peer *setup_listen_socket(void)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
@@ -140,14 +105,14 @@ static struct peer *setup_listen_socket(int epoll_fd)
 		goto listen_failed;
 	}
 
-	peer = create_peer(listen_fd, epoll_fd);
+	peer = alloc_peer(listen_fd);
 	if (peer == NULL) {
-		goto create_peer_wait_failed;
+		goto alloc_peer_wait_failed;
 	}
 
 	return peer;
 
-create_peer_wait_failed:
+alloc_peer_wait_failed:
 listen_failed:
 bind_failed:
 nonblock_failed:
@@ -156,27 +121,17 @@ so_reuse_failed:
 	return NULL;
 }
 
-static void destroy_peer(struct peer *p, int epoll_fd, int fd)
+int add_io(struct peer *p)
 {
-	remove_all_states_from_peer(p);
-	list_del(&p->next_peer);
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-	close(fd);
-	free_peer(p);
-	--number_of_peers;
+	return add_epoll(p->io.fd, epoll_fd, p);
 }
 
-static void destroy_all_peers(int epoll_fd)
+void remove_io(const struct peer *p)
 {
-	struct list_head *item;
-	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct peer, next_peer);
-		destroy_peer(p, epoll_fd, p->io.fd);
-	}
+	remove_epoll(p->io.fd, epoll_fd);
 }
 
-static int accept_all(int epoll_fd, int listen_fd)
+static int accept_all(int listen_fd)
 {
 	while (1) {
 		int peer_fd;
@@ -191,7 +146,7 @@ static int accept_all(int epoll_fd, int listen_fd)
 			struct peer *peer;
 			static const int tcp_nodelay_on = 1;
 
-			if (unlikely(number_of_peers >=
+			if (unlikely(get_number_of_peers() >=
 				 CONFIG_MAX_NUMBER_OF_PEERS)) {
 				close(peer_fd);
 				continue;
@@ -207,15 +162,14 @@ static int accept_all(int epoll_fd, int listen_fd)
 				goto no_delay_failed;
 			}
 
-			peer = create_peer(peer_fd, epoll_fd);
+			peer = alloc_peer(peer_fd);
 			if (unlikely(peer == NULL)) {
 				fprintf(stderr, "Could not allocate peer!\n");
-				goto create_peer_wait_failed;
+				goto alloc_peer_wait_failed;
 			}
-			++number_of_peers;
 			continue;
 
-		create_peer_wait_failed:
+		alloc_peer_wait_failed:
 		no_delay_failed:
 		nonblock_failed:
 			close(peer_fd);
@@ -454,7 +408,6 @@ static void unregister_signal_handler(void)
 
 int run_io(void)
 {
-	int epoll_fd;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 	struct peer *listen_server;
 
@@ -467,7 +420,7 @@ int run_io(void)
 		goto epoll_create_failed;
 	}
 
-	listen_server = setup_listen_socket(epoll_fd);
+	listen_server = setup_listen_socket();
 	if (listen_server == NULL) {
 		goto setup_listen_failed;
 	}
@@ -493,32 +446,32 @@ int run_io(void)
 					struct peer *peer = events[i].data.ptr;
 					fprintf(stderr,
 						"epoll error on peer fd!\n");
-					destroy_peer(peer, epoll_fd, peer->io.fd);
+					free_peer(peer);
 					continue;
 				}
 			}
 			if (unlikely(events[i].data.ptr == listen_server)) {
-				if (accept_all(epoll_fd, listen_server->io.fd) < 0) {
+				if (accept_all(listen_server->io.fd) < 0) {
 					goto accept_peer_failed;
 				}
 			} else {
 				struct peer *peer = events[i].data.ptr;
 				int ret = handle_all_peer_operations(peer);
 				if (unlikely(ret == -1)) {
-					destroy_peer(peer, epoll_fd, peer->io.fd);
+					free_peer(peer);
 				}
 			}
 		}
 	}
 
-	destroy_all_peers(epoll_fd);
+	destroy_all_peers();
 	close(epoll_fd);
 	return 0;
 
 accept_peer_failed:
 epoll_on_listen_failed:
 epoll_wait_failed:
-	destroy_peer(listen_server, epoll_fd, listen_server->io.fd);
+	free_peer(listen_server);
 setup_listen_failed:
 	close(epoll_fd);
 epoll_create_failed:

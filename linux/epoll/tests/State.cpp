@@ -9,25 +9,18 @@
 #include "state.h"
 
 extern "C" {
-
-	int fake_read(int fd, void *buf, size_t count)
+	int send_message(struct peer *p, const char *rendered, size_t len)
+	{
+		return 0;
+	}
+	int add_io(struct peer *p)
 	{
 		return 0;
 	}
 
-	int fake_send(int fd, void *buf, size_t count, int flags)
+	void remove_io(const struct peer *p)
 	{
-		return 0;
-	}
-
-	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
-	{
-		int len = 0;
-		int i;
-		for (i = 0; i < iovcnt; i++) {
-			len += iov[i].iov_len;
-		}
-		return len;
+		return;
 	}
 }
 

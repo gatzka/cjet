@@ -45,7 +45,6 @@ SET(JSON_PARSE_TEST
 	../../../router.c
 	../../../state.c
 	../../../uuid.c
-	../io.c
 	Parse.cpp
 )
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
@@ -63,7 +62,6 @@ SET(STATE_TEST
 	../../../state.c
 	../../../peer.c
 	../../../uuid.c
-	../io.c
 	State.cpp
 )
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})

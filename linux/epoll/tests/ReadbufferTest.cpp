@@ -38,6 +38,16 @@ int parse_message(char *msg, uint32_t length)
 	return 0;
 }
 
+int add_epoll(int fd, int epoll_fd, void *cookie)
+{
+	return 0;
+}
+
+void remove_epoll(int fd, int epoll_fd)
+{
+	return;
+}
+
 static unsigned char slow_read_counter = 0;
 static const char fast_read_msg[] = "HelloWorld";
 static const char handle_fast_peer_msg[] = "Hello World!";

@@ -28,32 +28,24 @@ static char readback_buffer[10000];
 static char *readback_buffer_ptr = readback_buffer;
 
 extern "C" {
+	int send_message(struct peer *p, const char *rendered, size_t len)
+	{
+		char *ptr = readback_buffer;
+		uint32_t message_length = htonl(len);
+		memcpy(ptr, &message_length, sizeof(message_length));
+		ptr += 4;
+		memcpy(ptr, rendered, len);
+		return 0;
+	}
 
-	int fake_read(int fd, void *buf, size_t count)
+	int add_io(struct peer *p)
 	{
 		return 0;
 	}
 
-	int fake_send(int fd, void *buf, size_t count, int flags)
+	void remove_io(const struct peer *p)
 	{
-		return 0;
-	}
-
-	static int copy_iov(const struct iovec *iov, int iovcnt)
-	{
-		int count = 0;
-		for (int i = 0; i < iovcnt; ++i) {
-			memcpy(readback_buffer_ptr, iov[i].iov_base, iov[i].iov_len);
-			readback_buffer_ptr += iov[i].iov_len;
-			count += iov[i].iov_len;
-		}
-		return count;
-	}
-
-	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
-	{
-		int count = copy_iov(iov, iovcnt);
-		return count;
+		return;
 	}
 }
 
@@ -482,6 +474,4 @@ BOOST_AUTO_TEST_CASE(correct_fetch_test)
 BOOST_AUTO_TEST_CASE(correct_change)
 {
 	F f(CORRECT_CHANGE);
-
-
 }

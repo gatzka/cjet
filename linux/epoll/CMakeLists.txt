@@ -36,6 +36,7 @@ SET(DYNLIBS
 
 SET(CJET_FILES
 	io.c
+	io_loop.c
 	../main.c
 	../../json/cJSON.c
 	../../fetch.c
@@ -56,6 +57,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(ECHO_FILES
 	io.c
+	io_loop.c
 	../main.c
 	../../json/cJSON.c
 	../../echo.c

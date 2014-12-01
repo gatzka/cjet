@@ -45,6 +45,10 @@ int setup_routing_information(const struct peer *routing_peer,
 int handle_routing_response(cJSON *json_rpc, cJSON *response,
 	const struct peer *p);
 
+void destroy_all_peers(void);
+
+int get_number_of_peers(void);
+
 static inline ptrdiff_t unread_space(const struct peer *p)
 {
 	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->read_ptr;
