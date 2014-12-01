@@ -406,75 +406,78 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
+static int handle_events(int num_events, struct epoll_event *events,
+	struct peer *listen_server)
+{
+	if (unlikely(num_events == -1)) {
+		if (errno == EINTR) {
+			return 0;
+		} else {
+			return -1;
+		}
+	}
+	for (int i = 0; i < num_events; ++i) {
+		if (unlikely((events[i].events & EPOLLERR) ||
+			(events[i].events & EPOLLHUP))) {
+			if (events[i].data.ptr == listen_server) {
+				fprintf(stderr,
+					"epoll error on listen fd!\n");
+				return -1;
+			} else {
+				struct peer *peer = events[i].data.ptr;
+				fprintf(stderr,
+					"epoll error on peer fd!\n");
+				free_peer(peer);
+				continue;
+			}
+		}
+		if (unlikely(events[i].data.ptr == listen_server)) {
+			if (accept_all(listen_server->io.fd) < 0) {
+				return -1;
+			}
+		} else {
+			struct peer *peer = events[i].data.ptr;
+			int ret = handle_all_peer_operations(peer);
+			if (unlikely(ret == -1)) {
+				free_peer(peer);
+			}
+		}
+	}
+	return 0;
+}
+
 int run_io(void)
 {
+	int ret = 0;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
-	struct peer *listen_server;
 
 	if (register_signal_handler() < 0) {
 		return -1;
 	}
 	epoll_fd = epoll_create(1);
 	if (epoll_fd < 0) {
-		fprintf(stderr, "epoll_create failed!\n");
-		goto epoll_create_failed;
+		go_ahead = 0;
+		ret = -1;
 	}
 
-	listen_server = setup_listen_socket();
+	struct peer *listen_server = setup_listen_socket();
 	if (listen_server == NULL) {
-		goto setup_listen_failed;
+		go_ahead = 0;
+		ret = -1;
 	}
 
 	while (likely(go_ahead)) {
 		int num_events =
 		    epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
-		if (unlikely(num_events == -1)) {
-			if (errno == EINTR) {
-				continue;
-			} else {
-				goto epoll_wait_failed;
-			}
-		}
-		for (int i = 0; i < num_events; ++i) {
-			if (unlikely((events[i].events & EPOLLERR) ||
-				(events[i].events & EPOLLHUP))) {
-				if (events[i].data.ptr == listen_server) {
-					fprintf(stderr,
-						"epoll error on listen fd!\n");
-					goto epoll_on_listen_failed;
-				} else {
-					struct peer *peer = events[i].data.ptr;
-					fprintf(stderr,
-						"epoll error on peer fd!\n");
-					free_peer(peer);
-					continue;
-				}
-			}
-			if (unlikely(events[i].data.ptr == listen_server)) {
-				if (accept_all(listen_server->io.fd) < 0) {
-					goto accept_peer_failed;
-				}
-			} else {
-				struct peer *peer = events[i].data.ptr;
-				int ret = handle_all_peer_operations(peer);
-				if (unlikely(ret == -1)) {
-					free_peer(peer);
-				}
-			}
+
+		if (unlikely(handle_events(num_events, events, listen_server) != 0)) {
+			ret = -1;
+			break;
 		}
 	}
 
 	destroy_all_peers();
 	close(epoll_fd);
-	return 0;
-
-accept_peer_failed:
-epoll_on_listen_failed:
-epoll_wait_failed:
-	free_peer(listen_server);
-setup_listen_failed:
-	close(epoll_fd);
-epoll_create_failed:
 	unregister_signal_handler();
-	return -1;
+	return ret;
 }
