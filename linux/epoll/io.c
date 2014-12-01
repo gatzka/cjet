@@ -403,6 +403,39 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
+static int handle_error_events(struct peer *p,
+	const struct peer *listen_server)
+{
+	if (p == listen_server) {
+		fprintf(stderr,
+			"epoll error on listen fd!\n");
+		return -1;
+	} else {
+		fprintf(stderr,
+			"epoll error on peer fd!\n");
+		free_peer(p);
+		return 0;
+	}
+}
+
+static int handle_normal_events(struct peer *p,
+	const struct peer *listen_server)
+{
+	if (unlikely(p == listen_server)) {
+		if (accept_all(listen_server->io.fd) < 0) {
+			return -1;
+		} else {
+			return 0;
+		}
+	} else {
+		int ret = handle_all_peer_operations(p);
+		if (unlikely(ret == -1)) {
+			free_peer(p);
+		}
+		return 0;
+	}
+}
+
 static int handle_events(int num_events, struct epoll_event *events,
 	struct peer *listen_server)
 {
@@ -415,28 +448,14 @@ static int handle_events(int num_events, struct epoll_event *events,
 	}
 	for (int i = 0; i < num_events; ++i) {
 		if (unlikely((events[i].events & EPOLLERR) ||
-			(events[i].events & EPOLLHUP))) {
-			if (events[i].data.ptr == listen_server) {
-				fprintf(stderr,
-					"epoll error on listen fd!\n");
+				(events[i].events & EPOLLHUP))) {
+			if (handle_error_events(events[i].data.ptr, listen_server) != 0) {
 				return -1;
-			} else {
-				struct peer *peer = events[i].data.ptr;
-				fprintf(stderr,
-					"epoll error on peer fd!\n");
-				free_peer(peer);
 			}
 		} else {
-			if (unlikely(events[i].data.ptr == listen_server)) {
-				if (accept_all(listen_server->io.fd) < 0) {
-					return -1;
-				}
-			} else {
-				struct peer *peer = events[i].data.ptr;
-				int ret = handle_all_peer_operations(peer);
-				if (unlikely(ret == -1)) {
-					free_peer(peer);
-				}
+			if (unlikely(handle_normal_events(events[i].data.ptr,
+					listen_server) != 0)) {
+				return -1;
 			}
 		}
 	}
