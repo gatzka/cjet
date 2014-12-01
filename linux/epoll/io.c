@@ -131,6 +131,31 @@ void remove_io(const struct peer *p)
 	remove_epoll(p->io.fd, epoll_fd);
 }
 
+static int handle_new_connection(int fd)
+{
+	static const int tcp_nodelay_on = 1;
+
+	if (get_number_of_peers() >= CONFIG_MAX_NUMBER_OF_PEERS) {
+		close(fd);
+		return 0;
+	}
+
+	if ((set_fd_non_blocking(fd) < 0) ||
+		(setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
+			sizeof(tcp_nodelay_on)) < 0)) {
+		close(fd);
+		return -1;
+	}
+	struct peer *peer = alloc_peer(fd);
+	if (unlikely(peer == NULL)) {
+		fprintf(stderr, "Could not allocate peer!\n");
+		close(fd);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int accept_all(int listen_fd)
 {
 	while (1) {
@@ -143,37 +168,9 @@ static int accept_all(int listen_fd)
 				return -1;
 			}
 		} else {
-			struct peer *peer;
-			static const int tcp_nodelay_on = 1;
-
-			if (unlikely(get_number_of_peers() >=
-				 CONFIG_MAX_NUMBER_OF_PEERS)) {
-				close(peer_fd);
-				continue;
+			if (unlikely(handle_new_connection(peer_fd) != 0)) {
+				return -1;
 			}
-
-			if (unlikely(set_fd_non_blocking(peer_fd) < 0)) {
-				goto nonblock_failed;
-			}
-
-			if (unlikely(setsockopt(peer_fd, IPPROTO_TCP,
-						TCP_NODELAY, &tcp_nodelay_on,
-						sizeof(tcp_nodelay_on)) < 0)) {
-				goto no_delay_failed;
-			}
-
-			peer = alloc_peer(peer_fd);
-			if (unlikely(peer == NULL)) {
-				fprintf(stderr, "Could not allocate peer!\n");
-				goto alloc_peer_wait_failed;
-			}
-			continue;
-
-		alloc_peer_wait_failed:
-		no_delay_failed:
-		nonblock_failed:
-			close(peer_fd);
-			return -1;
 		}
 	}
 }
