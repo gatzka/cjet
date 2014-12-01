@@ -208,12 +208,6 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 	}
 }
 
-static void sighandler(int signum)
-{
-	(void)signum;
-	go_ahead = 0;
-}
-
 int send_buffer(struct peer *p)
 {
 	char *write_buffer_ptr = p->write_buffer;
@@ -408,6 +402,12 @@ int handle_all_peer_operations(struct peer *p)
 			break;
 		}
 	}
+}
+
+static void sighandler(int signum)
+{
+	(void)signum;
+	go_ahead = 0;
 }
 
 static int register_signal_handler(void)
