@@ -49,13 +49,11 @@ static cJSON *create_common_response(const cJSON *id)
 
 	default:
 		fprintf(stderr, "Unsupported method id type!");
-		goto unsupported_type;
+		cJSON_Delete(root);
+		root = NULL;
+		break;
 	}
 	return root;
-
-unsupported_type:
-	cJSON_Delete(root);
-	return NULL;
 }
 
 static cJSON *create_error_object(const char *message, int code,
