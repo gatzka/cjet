@@ -499,6 +499,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 	memcpy(buf_ptr, sw_message, strlen(sw_message));
 
 	ret = memcmp(p->write_buffer, check_buffer + incomplete_write_written_before_blocking, p->to_write);
+	BOOST_CHECK(ret == 0);
 
 	free_peer(p);
 }
