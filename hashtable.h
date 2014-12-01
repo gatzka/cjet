@@ -91,21 +91,6 @@
 static const uint32_t hash32_magic = 2654435769U;
 static const uint64_t hash64_magic = 0xd43ece626aa9260aULL;
 
-static inline int is_equal_string(const char *s1, const char *s2)
-{
-	return !strcmp(s1, s2);
-}
-
-static inline int is_equal_uint32_t(uint32_t a, uint32_t b)
-{
-	return a == b;
-}
-
-static inline int is_equal_uint64_t(uint64_t a, uint64_t b)
-{
-	return a == b;
-}
-
 /*
  * Declares a hash table of name "name" and size 2^order. This macro is
  * just for internal use. Do not use it to declare a hash table, use
@@ -286,6 +271,8 @@ static inline int hashtable_remove_##name(struct hashtable_##type_name *table, t
 	return HASHTABLE_INVALIDENTRY; \
 }
 
+
+
 #define DECLARE_HASHTABLE_STRING(name, order, value_entries) \
 struct value_##name { \
 	void *vals[value_entries]; \
@@ -308,7 +295,13 @@ static inline uint32_t hash_func_##name##_string(const char* key) \
 	hash = (hash * (hash32_magic)) >> (32U - (order)); \
 	return hash; \
 } \
+static inline int is_equal_string(const char *s1, const char *s2) \
+{ \
+	return !strcmp(s1, s2); \
+} \
 DECLARE_HASHTABLE(name, order, string, const char *, value_entries)
+
+
 
 #define DECLARE_HASHTABLE_UINT32(name, order, value_entries) \
 struct value_##name { \
@@ -323,7 +316,15 @@ static inline uint32_t hash_func_##name##_uint32_t(uint32_t key) \
 { \
 	return ((key * (hash32_magic)) >> (32U - (order))); \
 } \
+\
+static inline int is_equal_uint32_t(uint32_t a, uint32_t b) \
+{ \
+	return a == b; \
+} \
+\
 DECLARE_HASHTABLE(name, order, uint32_t, uint32_t, value_entries)
+
+
 
 #define DECLARE_HASHTABLE_UINT64(name, order, value_entries) \
 struct value_##name { \
@@ -338,7 +339,15 @@ static inline uint32_t hash_func_##name##_uint64_t(uint64_t key) \
 { \
 	return (uint32_t)((key * (hash64_magic)) >> (64 - (order))); \
 } \
+\
+static inline int is_equal_uint64_t(uint64_t a, uint64_t b) \
+{ \
+	return a == b; \
+} \
+\
 DECLARE_HASHTABLE(name, order, uint64_t, uint64_t, value_entries)
+
+
 
 /*
  * Creates a hash table.
