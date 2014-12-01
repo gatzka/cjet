@@ -37,6 +37,7 @@
 #include "parse.h"
 #include "peer.h"
 #include "response.h"
+#include "router.h"
 #include "state.h"
 
 static const char *get_path_from_params(cJSON *params, cJSON **err)
