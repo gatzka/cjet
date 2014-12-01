@@ -250,22 +250,20 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 
 static int parse_json_array(cJSON *root, struct peer *p)
 {
-	int ret = 0;
 	unsigned int array_size = cJSON_GetArraySize(root);
 	for (unsigned int i = 0; i < array_size; ++i) {
 		cJSON *sub_item = cJSON_GetArrayItem(root, i);
 		if (likely(sub_item->type == cJSON_Object)) {
-			ret = parse_json_rpc(sub_item, p);
+			int ret = parse_json_rpc(sub_item, p);
 			if (unlikely(ret == -1)) {
-				break;
+				return -1;
 			}
 		} else {
 			fprintf(stderr, "JSON is not an object!\n");
-			ret = -1;
-			break;
+			return -1;
 		}
 	}
-	return ret;
+	return 0;
 }
 
 int parse_message(const char *msg, uint32_t length, struct peer *p)
