@@ -425,18 +425,18 @@ static int handle_events(int num_events, struct epoll_event *events,
 				fprintf(stderr,
 					"epoll error on peer fd!\n");
 				free_peer(peer);
-				continue;
-			}
-		}
-		if (unlikely(events[i].data.ptr == listen_server)) {
-			if (accept_all(listen_server->io.fd) < 0) {
-				return -1;
 			}
 		} else {
-			struct peer *peer = events[i].data.ptr;
-			int ret = handle_all_peer_operations(peer);
-			if (unlikely(ret == -1)) {
-				free_peer(peer);
+			if (unlikely(events[i].data.ptr == listen_server)) {
+				if (accept_all(listen_server->io.fd) < 0) {
+					return -1;
+				}
+			} else {
+				struct peer *peer = events[i].data.ptr;
+				int ret = handle_all_peer_operations(peer);
+				if (unlikely(ret == -1)) {
+					free_peer(peer);
+				}
 			}
 		}
 	}
