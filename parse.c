@@ -59,84 +59,6 @@ static const char *get_path_from_params(cJSON *params, cJSON **err)
 	return path->valuestring;
 }
 
-static cJSON *process_change(cJSON *params, struct peer *p)
-{
-	cJSON *error;
-
-	const char *path = get_path_from_params(params, &error);
-	if (unlikely(path == NULL)) {
-		return error;
-	}
-
-	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		error = create_invalid_params_error("reason", "no value given");
-		return error;
-	}
-	error = change_state(p, path, value);
-	return error;
-}
-
-static cJSON *process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
-{
-	cJSON *error;
-
-	const char *path = get_path_from_params(params, &error);
-	if (unlikely(path == NULL)) {
-		return error;
-	}
-
-	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		error = create_invalid_params_error("reason", "no value given");
-		return error;
-	}
-	error = set_state(p, path, value, json_rpc);
-	return error;
-}
-
-static cJSON *process_add(cJSON *params, struct peer *p)
-{
-	cJSON *error;
-
-	const char *path = get_path_from_params(params, &error);
-	if (unlikely(path == NULL)) {
-		return error;
-	}
-
-	cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		error = create_invalid_params_error("reason", "no value given");
-		return error;
-	}
-
-	error = add_state_to_peer(p, path, value);
-	return error;
-}
-
-static cJSON *process_remove(cJSON *params, struct peer *p)
-{
-	cJSON *error;
-
-	const char *path = get_path_from_params(params, &error);
-	if (unlikely(path == NULL)) {
-		return error;
-	}
-
-	error = remove_state_from_peer(p, path);
-	return error;
-}
-
-static cJSON *process_fetch(cJSON *params, struct peer *p)
-{
-	return add_fetch_to_peer(p, params);
-}
-
-static cJSON *process_config(void)
-{
-	return NULL;
-}
-
 static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 {
 	int ret = 0;
@@ -175,51 +97,121 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 	return ret;
 }
 
+static int process_change(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL)) {
+		error = create_invalid_params_error("reason", "no value given");
+		return possibly_send_response(json_rpc, error, p);
+	}
+	error = change_state(p, path, value);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL)) {
+		error = create_invalid_params_error("reason", "no value given");
+		return possibly_send_response(json_rpc, error, p);
+	}
+	error = set_state(p, path, value, json_rpc);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL)) {
+		error = create_invalid_params_error("reason", "no value given");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	error = add_state_to_peer(p, path, value);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_remove(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	error = remove_state_from_peer(p, path);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error = add_fetch_to_peer(p, params);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_config(void)
+{
+	return 0;
+}
+
 static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 {
-	int ret;
-	cJSON *error;
 	if (unlikely(method->type != cJSON_String)) {
-		error = create_invalid_request_error(
+		cJSON *error = create_invalid_request_error(
 			"reason", "method value is not a string");
-		goto no_method;
+		return possibly_send_response(json_rpc, error, p);
 	}
 
 	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		error =
+		cJSON *error =
 			create_invalid_params_error("reason", "no params found");
-		goto no_params;
+		return possibly_send_response(json_rpc, error, p);
 	}
 
 	const char *method_string = method->valuestring;
 	if (strcmp(method_string, "change") == 0) {
-		error = process_change(params, p);
+		return process_change(json_rpc, params, p);
 	} else if (strcmp(method_string, "set") == 0) {
-		error = process_set(json_rpc, params,  p);
+		return process_set(json_rpc, params,  p);
 	} else if (strcmp(method_string, "add") == 0) {
-		error = process_add(params, p);
+		return process_add(json_rpc, params, p);
 	} else if (strcmp(method_string, "remove") == 0) {
-		error = process_remove(params, p);
+		return process_remove(json_rpc, params, p);
 	} else if (strcmp(method_string, "call") == 0) {
-		error = NULL;
+		return 0;
 	} else if (strcmp(method_string, "fetch") == 0) {
-		error = process_fetch(params, p);
+		return process_fetch(json_rpc, params, p);
 	} else if (strcmp(method_string, "unfetch") == 0) {
-		error = NULL;
+		return 0;
 	} else if (strcmp(method_string, "config") == 0) {
-		error = process_config();
+		return process_config();
 	} else {
-		error = create_method_not_found_error("reason", method_string);
-		goto unsupported_method;
+		cJSON *error = create_method_not_found_error("reason", method_string);
+		return possibly_send_response(json_rpc, error, p);
 	}
-
-no_method:
-no_params:
-unsupported_method:
-	ret = possibly_send_response(json_rpc, error, p);
-
-	return ret;
 }
 
 static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
