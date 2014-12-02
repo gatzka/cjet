@@ -203,7 +203,7 @@ static void find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, list);
+		struct state *s = list_entry(item, struct state, state_list);
 		if (state_matches(s, f)) {
 			/* link fetch to state */
 			/* notify fetching peer */

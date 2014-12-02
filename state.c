@@ -91,7 +91,7 @@ static struct state *alloc_state(const char *path, cJSON *value_object,
 		goto value_copy_failed;
 	}
 	s->value = value_copy;
-	INIT_LIST_HEAD(&s->list);
+	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
 	return s;
@@ -201,7 +201,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	struct value_state_table new_val;
 	new_val.vals[0] = s;
 	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
-	list_add_tail(&s->list, &p->state_list);
+	list_add_tail(&s->state_list, &p->state_list);
 	/* TODO: notify all clients interested in this state */
 	return NULL;
 }
@@ -209,7 +209,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 static void remove_state(struct state *s)
 {
 	/* TODO: notify all clients interested in this state */
-	list_del(&s->list);
+	list_del(&s->state_list);
 	HASHTABLE_REMOVE(state_table, state_hashtable, s->path, NULL);
 	free_state(s);
 }
@@ -219,7 +219,7 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, list);
+		struct state *s = list_entry(item, struct state, state_list);
 		if (strcmp(s->path, path) == 0) {
 			remove_state(s);
 			return NULL;
@@ -234,7 +234,7 @@ void remove_all_states_from_peer(struct peer *p)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, list);
+		struct state *s = list_entry(item, struct state, state_list);
 		remove_state(s);
 	}
 }
