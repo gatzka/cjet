@@ -172,6 +172,11 @@ cJSON *set_state(struct peer *p, const char *path,
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
+	if (unlikely(rendered_message == NULL)) {
+		error = create_internal_error(
+			"reason", "could not render message");
+		goto delete_json;
+	}
 	if (unlikely(send_message(s->peer, rendered_message,
 			strlen(rendered_message)) != 0)) {
 		error = create_internal_error(

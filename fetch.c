@@ -28,6 +28,7 @@
 #include <stdlib.h>
 
 #include "compiler.h"
+#include "config/io.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -54,7 +55,7 @@ static const char *get_fetch_id(cJSON *params, cJSON **err)
 	return id->valuestring;
 }
 
-static struct fetch *alloc_fetch(const struct peer *p, const char *id)
+static struct fetch *alloc_fetch(struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
@@ -208,6 +209,65 @@ static int add_fetch_to_state(struct state *s, struct fetch *f)
 	return 0;
 }
 
+static int notify_fetching_peer(struct state *s, struct fetch *f)
+{
+	cJSON *root = cJSON_CreateObject();
+	if (unlikely(root == NULL)) {
+		return -1;
+	}
+	cJSON *fetch_id = cJSON_CreateString(f->fetch_id);
+	if (unlikely(fetch_id == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	cJSON_AddItemToObject(root, "method", fetch_id);
+
+	cJSON *param = cJSON_CreateObject();
+	if (unlikely(param == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	cJSON_AddItemToObject(root, "params", param);
+
+	cJSON *value = cJSON_Duplicate(s->value, 1);
+	if (unlikely(value == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	cJSON_AddItemToObject(param, "value", value);
+
+	cJSON *path = cJSON_CreateString(s->path);
+	if (unlikely(path == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	cJSON_AddItemToObject(param, "path", path);
+
+	cJSON *event = cJSON_CreateString("add");
+	if (unlikely(event == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	cJSON_AddItemToObject(param, "event", event);
+
+	char *rendered_message = cJSON_PrintUnformatted(root);
+	if (unlikely(rendered_message == NULL)) {
+		cJSON_Delete(root);
+		return -1;
+	}
+	if (unlikely(send_message(f->peer, rendered_message,
+			strlen(rendered_message)) != 0)) {
+		cJSON_Delete(root);
+		free(rendered_message);
+		return -1;
+	}
+
+	cJSON_Delete(root);
+	free(rendered_message);
+
+	return 0;
+}
+
 static cJSON *find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
@@ -220,7 +280,11 @@ static cJSON *find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 					"Can't add fetch to state");
 				return error;
 			}
-			/* notify fetching peer */
+			if (unlikely(notify_fetching_peer(s, f) != 0)) {
+				cJSON *error = create_internal_error("reason",
+					"Can't notify fetching peer");
+				return error;
+			}
 		}
 	}
 	return NULL;

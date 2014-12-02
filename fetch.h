@@ -17,7 +17,7 @@ struct path_matcher {
 
 struct fetch {
 	char *fetch_id;
-	const struct peer *peer;
+	struct peer *peer;
 	struct list_head next_fetch;
 	struct path_matcher matcher[12];
 };
