@@ -1,6 +1,7 @@
 #ifndef CJET_STATE_H
 #define CJET_STATE_H
 
+#include "fetch.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
@@ -14,6 +15,8 @@ struct state {
 	char *path;
 	struct peer *peer; // The peer the state belongs to
 	cJSON *value;
+	struct fetch *fetchers[CONFIG_MAX_FETCHES_PER_STATE];
+	unsigned int num_fetchers;
 };
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value);

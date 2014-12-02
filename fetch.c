@@ -198,28 +198,47 @@ static int state_matches(struct state *s, struct fetch *f)
 	return 0;
 }
 
-static void find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
+static int add_fetch_to_state(struct state *s, struct fetch *f)
+{
+	unsigned int num_fetchers = s->num_fetchers;
+	if (num_fetchers >= CONFIG_MAX_FETCHES_PER_STATE) {
+		return -1;
+	}
+	s->fetchers[num_fetchers] = f;
+	return 0;
+}
+
+static cJSON *find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, state_list);
 		if (state_matches(s, f)) {
-			/* link fetch to state */
+			if (unlikely(add_fetch_to_state(s, f) != 0)) {
+				cJSON *error = create_internal_error("reason",
+					"Can't add fetch to state");
+				return error;
+			}
 			/* notify fetching peer */
 		}
 	}
+	return NULL;
 }
 
-static void find_and_notify_states(struct fetch *f)
+static cJSON *find_and_notify_states(struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
 	struct list_head * peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		find_and_notify_states_in_peer(p, f);
+		cJSON *error = find_and_notify_states_in_peer(p, f);
+		if (unlikely(error != NULL)) {
+			return error;
+		}
 	}
+	return NULL;
 }
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
@@ -247,7 +266,11 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		return error;
 	}
 
-	find_and_notify_states(f);
+	error = find_and_notify_states(f);
+	if (unlikely(error != NULL)) {
+		free_fetch(f);
+		return error;
+	}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	return NULL;
