@@ -22,8 +22,10 @@ struct fetch {
 	struct path_matcher matcher[12];
 };
 
-cJSON *add_fetch_to_peer(struct peer *p, cJSON *params);
+cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
+	struct fetch **fetch_return);
 void remove_all_fetchers_from_peer(struct peer *p);
+int find_and_notify_states(struct fetch *f);
 
 #endif
 

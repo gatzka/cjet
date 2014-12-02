@@ -268,7 +268,7 @@ static int notify_fetching_peer(struct state *s, struct fetch *f)
 	return 0;
 }
 
-static cJSON *find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
+static int find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -276,36 +276,36 @@ static cJSON *find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 		struct state *s = list_entry(item, struct state, state_list);
 		if (state_matches(s, f)) {
 			if (unlikely(add_fetch_to_state(s, f) != 0)) {
-				cJSON *error = create_internal_error("reason",
-					"Can't add fetch to state");
-				return error;
+				fprintf(stderr, "Can't add fetch to state");
+				return -1;
 			}
 			if (unlikely(notify_fetching_peer(s, f) != 0)) {
-				cJSON *error = create_internal_error("reason",
-					"Can't notify fetching peer");
-				return error;
+				fprintf(stderr, "Can't notify fetching peer");
+				return -1;
 			}
 		}
 	}
-	return NULL;
+	return 0;
 }
 
-static cJSON *find_and_notify_states(struct fetch *f)
+int find_and_notify_states(struct fetch *f)
 {
+	int ret = 0;
 	struct list_head *item;
 	struct list_head *tmp;
 	struct list_head * peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		cJSON *error = find_and_notify_states_in_peer(p, f);
-		if (unlikely(error != NULL)) {
-			return error;
+		ret = find_and_notify_states_in_peer(p, f);
+		if (unlikely(ret != 0)) {
+			return ret;
 		}
 	}
-	return NULL;
+	return ret;
 }
 
-cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
+cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
+	struct fetch **fetch_return)
 {
 	cJSON *error;
 	const char *id = get_fetch_id(params, &error);
@@ -330,13 +330,8 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
 		return error;
 	}
 
-	error = find_and_notify_states(f);
-	if (unlikely(error != NULL)) {
-		free_fetch(f);
-		return error;
-	}
-
 	list_add_tail(&f->next_fetch, &p->fetch_list);
+	*fetch_return = f;
 	return NULL;
 }
 

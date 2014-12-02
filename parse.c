@@ -167,8 +167,17 @@ static int process_remove(cJSON *json_rpc, cJSON *params, struct peer *p)
 
 static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 {
-	cJSON *error = add_fetch_to_peer(p, params);
-	return possibly_send_response(json_rpc, error, p);
+	struct fetch *f = NULL;
+	cJSON *error = add_fetch_to_peer(p, params, &f);
+	int ret = possibly_send_response(json_rpc, error, p);
+	if (ret != 0) {
+		return -1;
+	}
+	if (error == NULL) {
+		return find_and_notify_states(f);
+	} else {
+		return 0;
+	}
 }
 
 static int process_config(void)
