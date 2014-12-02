@@ -33,6 +33,9 @@
 #include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
+#include "state.h"
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 static const char *get_fetch_id(cJSON *params, cJSON **err)
 {
@@ -103,14 +106,14 @@ static struct fetch *find_fetch(const struct peer *p, const char *id)
 
 static int equals_match(const struct path_matcher *pm, const char *state_path)
 {
-	return strcmp(pm->fetch_path, state_path);
+	return !strcmp(pm->fetch_path, state_path);
 }
 
 static int startswith_match(const struct path_matcher *pm,
 	const char *state_path)
 {
 	size_t length = pm->cookie;
-	return strncmp(pm->fetch_path, state_path, length);
+	return !strncmp(pm->fetch_path, state_path, length);
 }
 
 static int get_match_function(struct path_matcher *pm, const char *path,
@@ -181,14 +184,42 @@ static cJSON *add_matchers(struct fetch *f, cJSON *params)
 	return NULL;
 }
 
+static int state_matches(struct state *s, struct fetch *f)
+{
+	unsigned int match_array_size = ARRAY_SIZE(f->matcher);
+	for (unsigned int i = 0; i < match_array_size; ++i) {
+		if (f->matcher[i].match_function != NULL) {
+			int ret = f->matcher[i].match_function(&(f->matcher[i]), s->path);
+			if (ret != 0) {
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+static void find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->state_list) {
+		struct state *s = list_entry(item, struct state, list);
+		if (state_matches(s, f)) {
+			/* link fetch to state */
+			/* notify fetching peer */
+		}
+	}
+}
+
 static void find_and_notify_states(struct fetch *f)
 {
-	/*
-	 * get all peers
-	 * iterate over all states belonging to a peer
-	 * if match then notify fetch peer
-	 */
-	(void)f;
+	struct list_head *item;
+	struct list_head *tmp;
+	struct list_head * peer_list = get_peer_list();
+	list_for_each_safe(item, tmp, peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		find_and_notify_states_in_peer(p, f);
+	}
 }
 
 cJSON *add_fetch_to_peer(struct peer *p, cJSON *params)
