@@ -404,6 +404,25 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 	return NULL;
 }
 
+cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
+{
+	cJSON *error;
+	const char *id = get_fetch_id(params, &error);
+	if (unlikely(id == NULL)) {
+		return error;
+	}
+	struct fetch *f = find_fetch(p, id);
+	if (unlikely(f == NULL)) {
+		error = create_invalid_params_error("reason",
+			"fetch ID not found for unfetch");
+		return error;
+	}
+	remove_fetch_from_states(f);
+	list_del(&f->next_fetch);
+	free_fetch(f);
+	return NULL;
+}
+
 void remove_all_fetchers_from_peer(struct peer *p)
 {
 	struct list_head *item;

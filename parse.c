@@ -180,6 +180,12 @@ static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 	}
 }
 
+static int process_unfetch(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error = remove_fetch_from_peer(p, params);
+	return possibly_send_response(json_rpc, error, p);
+}
+
 static int process_config(void)
 {
 	return 0;
@@ -208,7 +214,7 @@ static int handle_method(cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "fetch") == 0) {
 		return process_fetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
-		return 0;
+		return process_unfetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "config") == 0) {
 		return process_config();
 	} else {
