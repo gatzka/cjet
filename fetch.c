@@ -209,7 +209,8 @@ static int add_fetch_to_state(struct state *s, struct fetch *f)
 	return 0;
 }
 
-static int notify_fetching_peer(struct state *s, struct fetch *f)
+int notify_fetching_peer(struct state *s, struct fetch *f,
+	const char *event_name)
 {
 	cJSON *root = cJSON_CreateObject();
 	if (unlikely(root == NULL)) {
@@ -243,7 +244,7 @@ static int notify_fetching_peer(struct state *s, struct fetch *f)
 	}
 	cJSON_AddItemToObject(param, "path", path);
 
-	cJSON *event = cJSON_CreateString("add");
+	cJSON *event = cJSON_CreateString(event_name);
 	if (unlikely(event == NULL)) {
 		cJSON_Delete(root);
 		return -1;
@@ -279,7 +280,7 @@ static int find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
 				fprintf(stderr, "Can't add fetch to state");
 				return -1;
 			}
-			if (unlikely(notify_fetching_peer(s, f) != 0)) {
+			if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
 				fprintf(stderr, "Can't notify fetching peer");
 				return -1;
 			}

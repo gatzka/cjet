@@ -4,8 +4,10 @@
 #include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
+#include "state.h"
 
 struct path_matcher;
+struct state;
 
 typedef int (*match_func)(const struct path_matcher *pm, const char *state_path);
 
@@ -26,6 +28,9 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 	struct fetch **fetch_return);
 void remove_all_fetchers_from_peer(struct peer *p);
 int find_and_notify_states(struct fetch *f);
+
+int notify_fetching_peer(struct state *s, struct fetch *f,
+	const char *event_name);
 
 #endif
 
