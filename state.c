@@ -229,7 +229,12 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 
 	struct value_state_table new_val;
 	new_val.vals[0] = s;
-	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
+	if (unlikely(HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL) != HASHTABLE_SUCCESS)) {
+		cJSON *error =
+		    create_internal_error("reason", "state table full");
+		return error;
+	}
+
 	list_add_tail(&s->state_list, &p->state_list);
 
 	return NULL;

@@ -1,7 +1,4 @@
 - fetcher/setter search with radix/prefix/patricia trie
 - probably HAT-trie
 
-- synchronize copy_msg_to_write_buffer for multithreaded IO
 - elimination of all cJSON_AddStringToObject etc. These macros do not provide any error handling
-- if routed id is a number the id must not have a negative value!
-- check all return values of HASHTABLE_PUT !!
