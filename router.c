@@ -101,7 +101,7 @@ int setup_routing_information(const struct peer *routing_peer,
 	val.vals[0] = origin_peer;
 	val.vals[1] = id_copy;
 	if (unlikely(HASHTABLE_PUT(route_table, routing_peer->routing_table,
-			id, val, NULL) != 0)) {
+			id, val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON_Delete(id_copy);
 	}
 	return 0;
