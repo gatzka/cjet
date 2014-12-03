@@ -230,7 +230,8 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 	BOOST_REQUIRE(p != NULL);
 
 	char *read_ptr = get_read_ptr(p, 100);
-	BOOST_CHECK(read_ptr == NULL);
+	intptr_t ret = (intptr_t)read_ptr;
+	BOOST_CHECK(ret == IO_ERROR);
 
 	free_peer(p);
 }
@@ -252,7 +253,8 @@ BOOST_AUTO_TEST_CASE(client_closed_connection)
 	BOOST_REQUIRE(p != NULL);
 
 	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE);
-	BOOST_CHECK(read_ptr == NULL);
+	intptr_t ret = (intptr_t)read_ptr;
+	BOOST_CHECK(ret == IO_CLOSE);
 
 	free_peer(p);
 }

@@ -7,7 +7,9 @@
 extern "C" {
 #endif
 
+#define IO_CLOSE -1
 #define IO_WOULD_BLOCK -2
+#define IO_ERROR -3
 
 int run_io(void);
 char *get_read_ptr(struct peer *p, unsigned int count);

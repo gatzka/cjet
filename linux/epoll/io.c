@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -131,6 +132,7 @@ void remove_io(const struct peer *p)
 	remove_epoll(p->io.fd, epoll_fd);
 }
 
+
 static int handle_new_connection(int fd)
 {
 	static const int tcp_nodelay_on = 1;
@@ -146,6 +148,8 @@ static int handle_new_connection(int fd)
 		close(fd);
 		return -1;
 	}
+
+
 	struct peer *peer = alloc_peer(fd);
 	if (unlikely(peer == NULL)) {
 		fprintf(stderr, "Could not allocate peer!\n");
@@ -192,21 +196,19 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		read_length =
 			READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
-			/* peer closed connection */
-			return 0;
+			return (char *)IO_CLOSE;
 		}
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
 				fprintf(stderr, "unexpected read error: %s!\n",
 					strerror(errno));
-				return 0;
+				return (char *)IO_ERROR;
 			}
 			return (char *)IO_WOULD_BLOCK;
 		}
 		p->write_ptr += read_length;
 	}
-	return 0;
 }
 
 int send_buffer(struct peer *p)
