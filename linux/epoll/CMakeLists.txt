@@ -68,6 +68,7 @@ SET(ECHO_FILES
 	../../response.c
 	../../router.c
 	../../state.c
+	../../uuid.c
 )
 ADD_EXECUTABLE(echo.bin
 	${ECHO_FILES}
