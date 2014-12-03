@@ -185,14 +185,9 @@ static int process_config(void)
 	return 0;
 }
 
-static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
+static int handle_method(cJSON *json_rpc, const char *method_name,
+	struct peer *p)
 {
-	if (unlikely(method->type != cJSON_String)) {
-		cJSON *error = create_invalid_request_error(
-			"reason", "method value is not a string");
-		return possibly_send_response(json_rpc, error, p);
-	}
-
 	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error =
@@ -200,25 +195,24 @@ static int handle_method(cJSON *json_rpc, cJSON *method, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	const char *method_string = method->valuestring;
-	if (strcmp(method_string, "change") == 0) {
+	if (strcmp(method_name, "change") == 0) {
 		return process_change(json_rpc, params, p);
-	} else if (strcmp(method_string, "set") == 0) {
+	} else if (strcmp(method_name, "set") == 0) {
 		return process_set(json_rpc, params,  p);
-	} else if (strcmp(method_string, "add") == 0) {
+	} else if (strcmp(method_name, "add") == 0) {
 		return process_add(json_rpc, params, p);
-	} else if (strcmp(method_string, "remove") == 0) {
+	} else if (strcmp(method_name, "remove") == 0) {
 		return process_remove(json_rpc, params, p);
-	} else if (strcmp(method_string, "call") == 0) {
+	} else if (strcmp(method_name, "call") == 0) {
 		return 0;
-	} else if (strcmp(method_string, "fetch") == 0) {
+	} else if (strcmp(method_name, "fetch") == 0) {
 		return process_fetch(json_rpc, params, p);
-	} else if (strcmp(method_string, "unfetch") == 0) {
+	} else if (strcmp(method_name, "unfetch") == 0) {
 		return 0;
-	} else if (strcmp(method_string, "config") == 0) {
+	} else if (strcmp(method_name, "config") == 0) {
 		return process_config();
 	} else {
-		cJSON *error = create_method_not_found_error("reason", method_string);
+		cJSON *error = create_method_not_found_error("reason", method_name);
 		return possibly_send_response(json_rpc, error, p);
 	}
 }
@@ -228,7 +222,13 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 	int ret;
 	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 	if (method != NULL) {
-		ret = handle_method(json_rpc, method, p);
+		if (unlikely(method->type != cJSON_String)) {
+			cJSON *error = create_invalid_request_error(
+				"reason", "method value is not a string");
+			return possibly_send_response(json_rpc, error, p);
+		}
+		const char *method_name = method->valuestring;
+		ret = handle_method(json_rpc, method_name, p);
 		return ret;
 	}
 
