@@ -313,6 +313,36 @@ int add_fetch_to_states(struct fetch *f)
 	return ret;
 }
 
+static void remove_fetch_from_state(struct state *s, struct fetch *f)
+{
+	for (unsigned int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; ++i) {
+		if (s->fetchers[i] == f) {
+			s->fetchers[i] = NULL;
+		}
+	}
+}
+
+static void rem_fetch_from_states_in_peer(struct peer *p, struct fetch *f)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->state_list) {
+		struct state *s = list_entry(item, struct state, state_list);
+		remove_fetch_from_state(s, f);
+	}
+}
+
+static void remove_fetch_from_states(struct fetch *f)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	struct list_head * peer_list = get_peer_list();
+	list_for_each_safe(item, tmp, peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		rem_fetch_from_states_in_peer(p, f);
+	}
+}
+
 static int find_fetchers_for_state_in_peer(const struct peer *p,
 	struct state *s) {
 
@@ -380,6 +410,7 @@ void remove_all_fetchers_from_peer(struct peer *p)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->fetch_list) {
 		struct fetch *f = list_entry(item, struct fetch, next_fetch);
+		remove_fetch_from_states(f);
 		list_del(&f->next_fetch);
 		free_fetch(f);
 	}
