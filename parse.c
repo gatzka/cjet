@@ -174,7 +174,7 @@ static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 		return -1;
 	}
 	if (error == NULL) {
-		return find_and_notify_states(f);
+		return add_fetch_to_states(f);
 	} else {
 		return 0;
 	}

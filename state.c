@@ -73,7 +73,7 @@ struct state *get_state(const char *path)
 static struct state *alloc_state(const char *path, cJSON *value_object,
 				struct peer *p)
 {
-	struct state *s = malloc(sizeof(*s));
+	struct state *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
 		fprintf(stderr, "Could not allocate memory for %s object!\n",
 			"state");
@@ -189,6 +189,19 @@ delete_json:
 	return error;
 }
 
+static int notify_fetchers(struct state *s, const char *event_name)
+{
+	for (unsigned int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; ++i) {
+		struct fetch *f = s->fetchers[i];
+		if (f != NULL) {
+			if (unlikely(notify_fetching_peer(s, f, event_name) != 0)) {
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
 cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 {
 	struct value_state_table val;
@@ -203,17 +216,25 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 		    create_internal_error("reason", "not enough memory");
 		return error;
 	}
+
+	if (unlikely(find_fetchers_for_state(s) != 0)) {
+		cJSON *error =
+		    create_internal_error("reason", "Can't notify fetching peer");
+		free_state(s);
+		return error;
+	}
+
 	struct value_state_table new_val;
 	new_val.vals[0] = s;
 	HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL);
 	list_add_tail(&s->state_list, &p->state_list);
-	/* TODO: notify all clients interested in this state */
+
 	return NULL;
 }
 
 static void remove_state(struct state *s)
 {
-	/* TODO: notify all clients interested in this state */
+	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
 	HASHTABLE_REMOVE(state_table, state_hashtable, s->path, NULL);
 	free_state(s);

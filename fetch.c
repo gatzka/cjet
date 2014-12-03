@@ -269,27 +269,35 @@ int notify_fetching_peer(struct state *s, struct fetch *f,
 	return 0;
 }
 
-static int find_and_notify_states_in_peer(struct peer *p, struct fetch *f)
+static int add_fetch_to_state_and_notify(struct state *s, struct fetch *f)
 {
-	struct list_head *item;
-	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, state_list);
-		if (state_matches(s, f)) {
-			if (unlikely(add_fetch_to_state(s, f) != 0)) {
-				fprintf(stderr, "Can't add fetch to state");
-				return -1;
-			}
-			if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
-				fprintf(stderr, "Can't notify fetching peer");
-				return -1;
-			}
+	if (state_matches(s, f)) {
+		if (unlikely(add_fetch_to_state(s, f) != 0)) {
+			fprintf(stderr, "Can't add fetch to state");
+			return -1;
+		}
+		if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
+			fprintf(stderr, "Can't notify fetching peer");
+			return -1;
 		}
 	}
 	return 0;
 }
 
-int find_and_notify_states(struct fetch *f)
+static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->state_list) {
+		struct state *s = list_entry(item, struct state, state_list);
+		if (unlikely(add_fetch_to_state_and_notify(s, f) != 0)) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int add_fetch_to_states(struct fetch *f)
 {
 	int ret = 0;
 	struct list_head *item;
@@ -297,7 +305,37 @@ int find_and_notify_states(struct fetch *f)
 	struct list_head * peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		ret = find_and_notify_states_in_peer(p, f);
+		ret = add_fetch_to_states_in_peer(p, f);
+		if (unlikely(ret != 0)) {
+			return ret;
+		}
+	}
+	return ret;
+}
+
+static int find_fetchers_for_state_in_peer(const struct peer *p,
+	struct state *s) {
+
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->fetch_list) {
+		struct fetch *f = list_entry(item, struct fetch, next_fetch);
+		if (unlikely(add_fetch_to_state_and_notify(s, f) != 0)) {
+			return -1;
+		}
+	}
+	return 0;
+}
+
+int find_fetchers_for_state(struct state *s)
+{
+	int ret = 0;
+	struct list_head *item;
+	struct list_head *tmp;
+	struct list_head * peer_list = get_peer_list();
+	list_for_each_safe(item, tmp, peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		ret = find_fetchers_for_state_in_peer(p, s);
 		if (unlikely(ret != 0)) {
 			return ret;
 		}
