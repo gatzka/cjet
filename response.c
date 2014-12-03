@@ -30,6 +30,18 @@
 #include "json/cJSON.h"
 #include "response.h"
 
+static cJSON *add_sub_to_object(cJSON *root, cJSON *sub, const char *name)
+{
+	if (unlikely(sub == NULL)) {
+		fprintf(stderr, "Could not allocate memory for object!\n");
+		cJSON_Delete(root);
+		root = NULL;
+	} else {
+		cJSON_AddItemToObject(root, name, sub);
+	}
+	return root;
+}
+
 static cJSON *create_common_response(const cJSON *id)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -40,11 +52,13 @@ static cJSON *create_common_response(const cJSON *id)
 	switch (id->type) {
 
 	case cJSON_String:
-		cJSON_AddStringToObject(root, "id", id->valuestring);
+		root = add_sub_to_object(root,
+			cJSON_CreateString(id->valuestring), "id");
 		break;
 
 	case cJSON_Number:
-		cJSON_AddNumberToObject(root, "id", id->valueint);
+		root = add_sub_to_object(root,
+			cJSON_CreateNumber(id->valueint), "id");
 		break;
 
 	default:
@@ -61,19 +75,32 @@ static cJSON *create_error_object(const char *message, int code,
 {
 	cJSON *error = cJSON_CreateObject();
 	if (unlikely(error == NULL)) {
-		fprintf(stderr, "Could not create error JSON object!\n");
-		return NULL;
+		goto err;
 	}
-	cJSON_AddStringToObject(error, "message", message);
-	cJSON_AddNumberToObject(error, "code", code);
+	error = add_sub_to_object(error, cJSON_CreateString(message), "message");
+	if (unlikely(error == NULL)) {
+		goto err;
+	}
+	error = add_sub_to_object(error, cJSON_CreateNumber(code), "code");
+	if (unlikely(error == NULL)) {
+		goto err;
+	}
 	if ((tag != NULL) && (reason != NULL)) {
 		cJSON *data = cJSON_CreateObject();
-		if (likely(data != NULL)) {
-			cJSON_AddStringToObject(data, tag, reason);
+		error = add_sub_to_object(error, cJSON_CreateObject(), "data");
+		if (likely(error != NULL)) {
 			cJSON_AddItemToObject(error, "data", data);
+			error = add_sub_to_object(error, cJSON_CreateString(reason), tag);
+			if (unlikely(error == NULL)) {
+				goto err;
+			}
 		}
 	}
 	return error;
+
+err:
+	fprintf(stderr, "Could not create error JSON object!\n");
+	return NULL;
 }
 
 cJSON *create_invalid_request_error(const char *tag, const char *reason)
@@ -112,11 +139,13 @@ cJSON *create_boolean_success_response(const cJSON *id, int true_false)
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
+	cJSON *boolean;
 	if (true_false == 0) {
-		cJSON_AddFalseToObject(root, "result");
+		boolean = cJSON_CreateFalse();
 	} else {
-		cJSON_AddTrueToObject(root, "result");
+		boolean = cJSON_CreateTrue();
 	}
+	root = add_sub_to_object(root, boolean, "result");
 	return root;
 }
 

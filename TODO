@@ -1,4 +1,3 @@
 - fetcher/setter search with radix/prefix/patricia trie
 - probably HAT-trie
 
-- elimination of all cJSON_AddStringToObject etc. These macros do not provide any error handling
