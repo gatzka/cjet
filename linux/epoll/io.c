@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#define _DEFAULT_SOURCE 1
 
 #include <arpa/inet.h>
 #include <errno.h>
@@ -132,6 +133,34 @@ void remove_io(const struct peer *p)
 	remove_epoll(p->io.fd, epoll_fd);
 }
 
+static int configure_keepalive(int fd)
+{
+	int opt = 12;
+	if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
+		fprintf(stderr, "error setting socket option TCP_KEEPIDLE");
+		return -1;
+	}
+
+	opt = 3;
+	if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
+		fprintf(stderr, "error setting socket option TCP_KEEPINTVL");
+		return -1;
+	}
+
+	opt = 2;
+	if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
+		fprintf(stderr, "error setting socket option TCP_KEEPCNT");
+		return -1;
+	}
+
+	opt = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
+		fprintf(stderr, "error setting socket option SO_KEEPALIVE");
+		return -1;
+	}
+
+	return 0;
+}
 
 static int handle_new_connection(int fd)
 {
@@ -149,6 +178,10 @@ static int handle_new_connection(int fd)
 		return -1;
 	}
 
+	if (configure_keepalive(fd) < 0) {
+		close(fd);
+		return -1;
+	}
 
 	struct peer *peer = alloc_peer(fd);
 	if (unlikely(peer == NULL)) {
