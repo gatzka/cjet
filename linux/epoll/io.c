@@ -61,7 +61,7 @@ static int set_fd_non_blocking(int fd)
 	}
 	fd_flags |= O_NONBLOCK;
 	if (unlikely(fcntl(fd, F_SETFL, fd_flags) < 0)) {
-		fprintf(stderr, "Could not set O_NONBLOCK!\n");
+		fprintf(stderr, "Could not set %s!\n", "O_NONBLOCK");
 		return -1;
 	}
 	return 0;
@@ -82,7 +82,7 @@ static struct peer *setup_listen_socket(void)
 
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 			sizeof(reuse_on)) < 0) {
-		fprintf(stderr, "Could not set SO_REUSEADDR!\n");
+		fprintf(stderr, "Could not set %s!\n", "SO_REUSEADDR");
 		goto so_reuse_failed;
 	}
 
@@ -135,25 +135,25 @@ static int configure_keepalive(int fd)
 {
 	int opt = 12;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option TCP_KEEPIDLE");
+		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPIDLE");
 		return -1;
 	}
 
 	opt = 3;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option TCP_KEEPINTVL");
+		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPINTVL");
 		return -1;
 	}
 
 	opt = 2;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option TCP_KEEPCNT");
+		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPCNT");
 		return -1;
 	}
 
 	opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option SO_KEEPALIVE");
+		fprintf(stderr, "error setting socket option %s\n", "SO_KEEPALIVE");
 		return -1;
 	}
 
@@ -232,7 +232,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
-				fprintf(stderr, "unexpected read error: %s!\n",
+				fprintf(stderr, "unexpected %s error: %s!\n", "read",
 					strerror(errno));
 				return (char *)IO_ERROR;
 			}
@@ -310,7 +310,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 
 	if (unlikely((sent == -1) &&
 		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
-		fprintf(stderr, "unexpected write error: %s!\n",
+		fprintf(stderr, "unexpected %s error: %s!\n", "write",
 			strerror(errno));
 		return -1;
 	}

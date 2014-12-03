@@ -33,7 +33,7 @@
 static cJSON *add_sub_to_object(cJSON *root, cJSON *sub, const char *name)
 {
 	if (unlikely(sub == NULL)) {
-		fprintf(stderr, "Could not allocate memory for object!\n");
+		fprintf(stderr, "Could not allocate memory for %s object!\n", name);
 		cJSON_Delete(root);
 		root = NULL;
 	} else {

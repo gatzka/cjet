@@ -129,7 +129,7 @@ static void send_routing_response(struct peer *p,
 			format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
 		} else {
-			fprintf(stderr, "Could create result response!\n");
+			fprintf(stderr, "Could not create %s response!\n", "result");
 			cJSON_Delete(response_copy);
 		}
 	}
@@ -169,7 +169,7 @@ static void send_shutdown_response(struct peer *p,
 			format_and_send_response(p, error_response);
 			cJSON_Delete(error_response);
 		} else {
-			fprintf(stderr, "Could create error response!\n");
+			fprintf(stderr, "Could not create %s response!\n", "error");
 			cJSON_Delete(error);
 		}
 	}
