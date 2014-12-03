@@ -2,44 +2,7 @@ PROJECT("cjet" C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-FUNCTION(GLIBC_DETECT _VERSION)
-
-SET(_GLIB_SOURCE_DETECT "
-#include <limits.h>
-#include <stdio.h>
-int main()
-{
-  printf(\"%d%d\",__GLIBC__, __GLIBC_MINOR__);
-  return 0;
-}
-")
-
-FILE(WRITE /tmp/build/cmake/glibc.c "${_GLIB_SOURCE_DETECT}\n")
-
-TRY_RUN(POST26_GLIBC_DETECTED
-		POST26_GLIBC_COMPILE
-        /tmp/build/cmake
-		/tmp/build/cmake/glibc.c
-        RUN_OUTPUT_VARIABLE GLIBC_VERSION)
-
-IF(GLIBC_VERSION AND POST26_GLIBC_COMPILE)
-	MESSAGE(STATUS "GLIBC_VERSION=${GLIBC_VERSION}")
-	SET(${_VERSION} ${GLIBC_VERSION} PARENT_SCOPE)
-else()
-	MESSAGE(STATUS "NOTE: Could not detect GLIBC_VERSION from compiler")
-endif()
-
-ENDFUNCTION(GLIBC_DETECT)
-
-SET(GLIBC_VERSION)
-GLIBC_DETECT(GLIBC_VERSION)
-
-IF(GLIBC_VERSION GREATER 219)
-	add_definitions(-D_DEFAULT_SOURCE=1)
-ELSE()
-	add_definitions(-D_BSD_SOURCE=1)
-ENDIF()
-
+ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 SET(WARN_SWITCHES "-pipe -Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
