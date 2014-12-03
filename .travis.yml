@@ -29,7 +29,7 @@ script:
           make
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/clang.cmake ../linux/epoll/  &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/cmake/clang.cmake ../linux/epoll/  &&
           make
           ;;
         tests)
