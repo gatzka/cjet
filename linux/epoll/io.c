@@ -240,6 +240,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		}
 		p->write_ptr += read_length;
 	}
+	return (char *)IO_ERROR;
 }
 
 int send_buffer(struct peer *p)
