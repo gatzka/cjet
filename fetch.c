@@ -187,6 +187,14 @@ static cJSON *add_matchers(struct fetch *f, cJSON *params)
 
 static int state_matches(struct state *s, struct fetch *f)
 {
+	if (f->matcher[0].match_function == NULL) {
+		/*
+		 * no match function given, so it was a fetch all
+		 * command
+		 */
+		 return 1;
+	}
+
 	unsigned int match_array_size = ARRAY_SIZE(f->matcher);
 	for (unsigned int i = 0; i < match_array_size; ++i) {
 		if (f->matcher[i].match_function != NULL) {
