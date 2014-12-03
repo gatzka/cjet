@@ -24,8 +24,6 @@
  * SOFTWARE.
  */
 
-#define _DEFAULT_SOURCE 1
-
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
