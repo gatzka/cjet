@@ -208,18 +208,6 @@ static cJSON *create_path_no_string()
 	return root;
 }
 
-static cJSON *create_json_no_value()
-{
-	cJSON *root = cJSON_CreateObject();
-	cJSON_AddNumberToObject(root, "id", 7384);
-	cJSON_AddStringToObject(root, "method", "add");
-
-	cJSON *params = cJSON_CreateObject();
-	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
-	cJSON_AddItemToObject(root, "params", params);
-	return root;
-}
-
 static cJSON *create_json_no_params()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -356,19 +344,6 @@ BOOST_AUTO_TEST_CASE(path_no_string_test)
 {
 	F f(PATH_NO_STRING);
 	cJSON *json = create_path_no_string();
-	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
-	cJSON_free(unformatted_json);
-	cJSON_Delete(json);
-	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
-}
-
-BOOST_AUTO_TEST_CASE(no_value_test)
-{
-	F f(NO_VALUE);
-	cJSON *json = create_json_no_value();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
