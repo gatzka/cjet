@@ -29,6 +29,7 @@
 #include <stdlib.h>
 
 #include "config/io.h"
+#include "method.h"
 #include "state.h"
 
 int main(void)
@@ -40,14 +41,22 @@ int main(void)
 		return EXIT_FAILURE;
 	}
 
+	if ((create_method_hashtable()) == -1) {
+		fprintf(stderr, "Cannot allocate hashtable for states!\n");
+		goto create_method_table_failed;
+	}
+
 	if (run_io() < 0) {
 		goto run_io_failed;
 	}
 
+	delete_method_hashtable();
 	delete_state_hashtable();
 	return EXIT_SUCCESS;
 
 run_io_failed:
+	delete_method_hashtable();
+create_method_table_failed:
 	delete_state_hashtable();
 	return EXIT_FAILURE;
 }

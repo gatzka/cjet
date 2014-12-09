@@ -65,6 +65,7 @@ SET(ECHO_FILES
 	../../json/cJSON.c
 	../../echo.c
 	../../fetch.c
+	../../method.c
 	../../peer.c
 	../../response.c
 	../../router.c

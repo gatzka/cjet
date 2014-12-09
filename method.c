@@ -26,8 +26,29 @@
 
 #include "json/cJSON.h"
 
+#include "compiler.h"
+#include "config/config.h"
+#include "hashtable.h"
 #include "method.h"
 #include "peer.h"
+
+DECLARE_HASHTABLE_STRING(method_table, CONFIG_METHOD_TABLE_ORDER, 1U)
+
+static struct hashtable_string *method_hashtable = NULL;
+
+int create_method_hashtable(void)
+{
+	method_hashtable = HASHTABLE_CREATE(method_table);
+	if (unlikely(method_hashtable == NULL)) {
+		return -1;
+	}
+	return 0;
+}
+
+void delete_method_hashtable(void)
+{
+	HASHTABLE_DELETE(method_table, method_hashtable);
+}
 
 cJSON *add_method_to_peer(struct peer *p, const char *path)
 {
