@@ -164,14 +164,13 @@ static int process_remove(cJSON *json_rpc, cJSON *params, struct peer *p)
 
 	int ret = remove_state_from_peer(p, path);
 	if (ret == 0) {
-		return 0;
+		return possibly_send_response(json_rpc, NULL, p);
 	}
 	ret = remove_method_from_peer(p, path);
 	if (ret != 0) {
 		error = create_invalid_params_error("not exists", path);
-		return possibly_send_response(json_rpc, error, p);
 	}
-	return 0;
+	return possibly_send_response(json_rpc, error, p);
 }
 
 static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
