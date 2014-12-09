@@ -249,7 +249,7 @@ static void remove_state(struct state *s)
 	free_state(s);
 }
 
-cJSON *remove_state_from_peer(struct peer *p, const char *path)
+int remove_state_from_peer(struct peer *p, const char *path)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -257,11 +257,10 @@ cJSON *remove_state_from_peer(struct peer *p, const char *path)
 		struct state *s = list_entry(item, struct state, state_list);
 		if (strcmp(s->path, path) == 0) {
 			remove_state(s);
-			return NULL;
+			return 0;
 		}
 	}
-	cJSON *error = create_invalid_params_error("not exists", path);
-	return error;
+	return -1;
 }
 
 void remove_all_states_from_peer(struct peer *p)

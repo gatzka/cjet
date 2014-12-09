@@ -23,6 +23,7 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 SET(READBUFFER_TEST
 	../../../json/cJSON.c
 	../../../fetch.c
+	../../../method.c
 	../../../peer.c
 	../../../response.c
 	../../../router.c

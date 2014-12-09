@@ -26,6 +26,7 @@ struct peer {
 	uint32_t msg_length;
 	size_t write_buffer_size;
 	struct list_head state_list;
+	struct list_head method_list;
 	struct list_head next_peer;
 	struct list_head fetch_list;
 	char *read_ptr;
