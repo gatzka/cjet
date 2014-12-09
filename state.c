@@ -232,6 +232,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	if (unlikely(HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
 		    create_internal_error("reason", "state table full");
+		free_state(s);
 		return error;
 	}
 
