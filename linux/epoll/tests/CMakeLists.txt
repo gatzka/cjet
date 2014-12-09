@@ -40,6 +40,7 @@ TARGET_LINK_LIBRARIES(
 SET(JSON_PARSE_TEST
 	../../../json/cJSON.c
 	../../../fetch.c
+	../../../method.c
 	../../../parse.c
 	../../../peer.c
 	../../../response.c
@@ -57,6 +58,7 @@ TARGET_LINK_LIBRARIES(
 SET(STATE_TEST
 	../../../json/cJSON.c
 	../../../fetch.c
+	../../../method.c
 	../../../parse.c
 	../../../response.c
 	../../../router.c

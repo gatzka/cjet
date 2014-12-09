@@ -42,6 +42,7 @@ SET(CJET_FILES
 	../main.c
 	../../json/cJSON.c
 	../../fetch.c
+	../../method.c
 	../../parse.c
 	../../peer.c
 	../../response.c

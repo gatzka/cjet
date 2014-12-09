@@ -34,6 +34,7 @@
 #include "config/io.h"
 #include "fetch.h"
 #include "json/cJSON.h"
+#include "method.h"
 #include "parse.h"
 #include "peer.h"
 #include "response.h"
@@ -144,11 +145,11 @@ static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
 
 	cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
-		error = create_invalid_params_error("reason", "no value given");
-		return possibly_send_response(json_rpc, error, p);
+		error = add_method_to_peer(p, path);
+	} else {
+		error = add_state_to_peer(p, path, value);
 	}
 
-	error = add_state_to_peer(p, path, value);
 	return possibly_send_response(json_rpc, error, p);
 }
 
