@@ -41,7 +41,11 @@ extern "C" {
 
 	int find_fetchers_for_state(struct state *s)
 	{
-		return 0;
+		if (notify_shall_fail) {
+			return -1;
+		} else {
+			return 0;
+		}
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)
@@ -153,6 +157,20 @@ BOOST_FIXTURE_TEST_CASE(add_state, F)
 
 	struct state *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
+}
+
+BOOST_FIXTURE_TEST_CASE(add_state_notify_fail, F)
+{
+	const char *path = "/foo/bar/";
+	int state_value = 12345;
+	cJSON *value = cJSON_CreateNumber(state_value);
+
+	notify_shall_fail = true;
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error != NULL);
+
+	cJSON_Delete(value);
+	cJSON_Delete(error);
 }
 
 BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
