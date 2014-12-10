@@ -28,6 +28,7 @@
 
 #include "compiler.h"
 #include "config/config.h"
+#include "config/io.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -35,6 +36,8 @@
 #include "method.h"
 #include "peer.h"
 #include "response.h"
+#include "router.h"
+#include "uuid.h"
 
 DECLARE_HASHTABLE_STRING(method_table, CONFIG_METHOD_TABLE_ORDER, 1U)
 
@@ -141,4 +144,65 @@ void remove_all_methods_from_peer(struct peer *p)
 		struct method *m = list_entry(item, struct method, method_list);
 		remove_method(m);
 	}
+}
+
+cJSON *call_method(struct peer *p, const char *path,
+	cJSON *args, cJSON *json_rpc)
+{
+	cJSON *error;
+	struct value_method_table val;
+	int ret = HASHTABLE_GET(method_table, method_hashtable, path, &val);
+	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+		error = create_invalid_params_error("not exists", path);
+		return error;
+	}
+
+	struct method *m = val.vals[0];
+	if (unlikely(m->peer == p)) {
+		error = create_invalid_params_error(
+			"owner of method shall not call method via jet", path);
+		return error;
+	}
+
+	cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
+	if ((origin_request_id != NULL) &&
+		 ((origin_request_id->type != cJSON_String) &&
+		  (origin_request_id->type != cJSON_Number))) {
+		error = create_invalid_params_error(
+			"reason", "request id is neither string nor number");
+		return error;
+	}
+
+	int routed_request_id = get_routed_request_uuid();
+	cJSON *routed_message = create_routed_message(path, NULL, args, routed_request_id);
+	if (unlikely(routed_message == NULL)) {
+		error = create_internal_error(
+			"reason", "could not create routed JSON object");
+		return error;
+	}
+
+	if (unlikely(setup_routing_information(m->peer, p, origin_request_id,
+			routed_request_id) != 0)) {
+		error = create_internal_error(
+			"reason", "could not setup routing information");
+		goto delete_json;
+	}
+	error = (cJSON *)ROUTED_MESSAGE;
+	char *rendered_message = cJSON_PrintUnformatted(routed_message);
+	if (unlikely(rendered_message == NULL)) {
+		error = create_internal_error(
+			"reason", "could not render message");
+		goto delete_json;
+	}
+	if (unlikely(send_message(m->peer, rendered_message,
+			strlen(rendered_message)) != 0)) {
+		error = create_internal_error(
+			"reason", "could not send routing information");
+	}
+
+	free(rendered_message);
+
+delete_json:
+	cJSON_Delete(routed_message);
+	return error;
 }

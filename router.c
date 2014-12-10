@@ -51,7 +51,8 @@ void delete_routing_table(struct peer *p)
 	HASHTABLE_DELETE(route_table, p->routing_table);
 }
 
-cJSON *create_routed_message(const char *path, cJSON *value, int id)
+cJSON *create_routed_message(const char *path, const char *name,
+	cJSON *value, int id)
 {
 	cJSON *message = cJSON_CreateObject();
 	if (unlikely(message == NULL)) {
@@ -70,17 +71,23 @@ cJSON *create_routed_message(const char *path, cJSON *value, int id)
 	}
 	cJSON_AddItemToObject(message, "method", method);
 
-	cJSON *params = cJSON_CreateObject();
-	if (unlikely(params == NULL)) {
-		goto error;
-	}
-	cJSON_AddItemToObject(message, "params", params);
-
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (unlikely(value_copy == NULL)) {
 		goto error;
 	}
-	cJSON_AddItemToObject(params, "value", value_copy);
+
+	if (name == NULL) {
+		cJSON_AddItemToObject(message, "params", value_copy);
+	} else {
+		cJSON *params = cJSON_CreateObject();
+		if (unlikely(params == NULL)) {
+			goto error;
+		}
+		cJSON_AddItemToObject(message, "params", params);
+
+		cJSON_AddItemToObject(params, name, value_copy);
+	}
+
 	return message;
 
 error:

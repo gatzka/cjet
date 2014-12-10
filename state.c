@@ -165,16 +165,16 @@ cJSON *set_state(struct peer *p, const char *path,
 	}
 
 	cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
-	if ((origin_request_id == NULL) ||
+	if ((origin_request_id != NULL) &&
 		 ((origin_request_id->type != cJSON_String) &&
 		  (origin_request_id->type != cJSON_Number))) {
 		error = create_invalid_params_error(
-			"reason", "set request contains no request id");
+			"reason", "request id is neither string nor number");
 		return error;
 	}
 
 	int routed_request_id = get_routed_request_uuid();
-	cJSON *routed_message = create_routed_message(path, value, routed_request_id);
+	cJSON *routed_message = create_routed_message(path, "value", value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 			"reason", "could not create routed JSON object");

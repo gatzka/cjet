@@ -4,7 +4,10 @@
 #include "json/cJSON.h"
 #include "peer.h"
 
-cJSON *create_routed_message(const char *path, cJSON *value, int id);
+#define ROUTED_MESSAGE -1
+
+cJSON *create_routed_message(const char *path, const char *name,
+	cJSON *value, int id);
 int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, cJSON *origin_request_id, int id);
 int handle_routing_response(cJSON *json_rpc, cJSON *response,

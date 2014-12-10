@@ -134,6 +134,19 @@ static int process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
+static int process_call(cJSON *json_rpc, cJSON *params, struct peer *p)
+{
+	cJSON *error;
+
+	const char *path = get_path_from_params(params, &error);
+	if (unlikely(path == NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+	cJSON *args = cJSON_GetObjectItem(params, "args");
+	error = call_method(p, path, args, json_rpc);
+	return possibly_send_response(json_rpc, error, p);
+}
+
 static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
 {
 	cJSON *error;
@@ -218,7 +231,7 @@ static int handle_method(cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "remove") == 0) {
 		return process_remove(json_rpc, params, p);
 	} else if (strcmp(method_name, "call") == 0) {
-		return 0;
+		return process_call(json_rpc, params, p);
 	} else if (strcmp(method_name, "fetch") == 0) {
 		return process_fetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {

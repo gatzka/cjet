@@ -6,6 +6,7 @@
 #include <sys/uio.h>
 
 #include "peer.h"
+#include "router.h"
 #include "state.h"
 
 extern "C" {
