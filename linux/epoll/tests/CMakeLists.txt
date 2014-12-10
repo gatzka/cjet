@@ -22,6 +22,17 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 file(COPY "make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
+SET(RESPONSE_TEST
+	../../../json/cJSON.c
+	../../../response.c
+	Response.cpp
+)
+ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
+TARGET_LINK_LIBRARIES(
+	response_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(READBUFFER_TEST
 	../../../json/cJSON.c
 	../../../fetch.c
@@ -80,4 +91,5 @@ SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--tool=memcheck -v")
 ADD_TEST(parse_test parse_test.bin)
 ADD_TEST(readbuffer_test readbuffer_test.bin)
 ADD_TEST(state_test state_test.bin)
+ADD_TEST(response_test response_test.bin)
 
