@@ -62,7 +62,7 @@ static cJSON *create_common_response(const cJSON *id)
 		break;
 
 	default:
-		fprintf(stderr, "Unsupported method id type!");
+		fprintf(stderr, "Unsupported method id type!\n");
 		cJSON_Delete(root);
 		root = NULL;
 		break;
