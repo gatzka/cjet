@@ -2,6 +2,7 @@
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE state
 
+#include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
 #include <sys/uio.h>
 
@@ -9,9 +10,12 @@
 #include "router.h"
 #include "state.h"
 
+static char send_buffer[100000];
+
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		memcpy(send_buffer, rendered, len);
 		return 0;
 	}
 	int add_io(struct peer *p)
@@ -23,6 +27,39 @@ extern "C" {
 	{
 		return;
 	}
+}
+
+static cJSON *parse_send_buffer(void)
+{
+	char *read_ptr = send_buffer;
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(read_ptr, &end_parse, 0);
+	return root;
+}
+
+static cJSON *create_response_from_message(cJSON *routed_message)
+{
+	cJSON *id = cJSON_GetObjectItem(routed_message, "id");
+	cJSON *duplicated_id = cJSON_Duplicate(id, 1);
+
+	cJSON *response = cJSON_CreateObject();
+	cJSON_AddItemToObject(response, "id", duplicated_id);
+	cJSON *result = cJSON_CreateString("");
+	cJSON_AddItemToObject(response, "result", result);
+	return response;
+}
+
+static cJSON *get_result_from_response(cJSON *response)
+{
+	cJSON *result = cJSON_GetObjectItem(response, "result");
+	if (result != NULL) {
+		return result;
+	}
+	cJSON *error = cJSON_GetObjectItem(response, "error");
+	if (error != NULL) {
+		return result;
+	}
+	return NULL;
 }
 
 struct F {
@@ -171,11 +208,18 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	error = set_state(set_peer, path, new_value, set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	cJSON *routed_message = parse_send_buffer();
+	cJSON *response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+
+	int ret = handle_routing_response(response, result, p);
+	BOOST_CHECK(ret == 0);
+
+	cJSON_Delete(routed_message);
+	cJSON_Delete(response);
+
 	cJSON_Delete(set_request);
 	free_peer(set_peer);
-/*
-	struct state *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == 4321);
 
-*/
 }
