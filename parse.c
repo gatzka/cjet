@@ -271,7 +271,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		return ret;
 	}
 
-	error = create_invalid_request_error("reason", "no method found");
+	error = create_invalid_request_error("reason", "neither request nor response");
 	ret = possibly_send_response(json_rpc, error, p);
 	return ret;
 }
