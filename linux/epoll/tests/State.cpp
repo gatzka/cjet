@@ -28,10 +28,15 @@ extern "C" {
 		return;
 	}
 
-	int notify_fetching_peer(struct state *s, struct fetch *f,
-		const char *event_name)
+	static bool notify_shall_fail = false;
+
+	int notify_fetchers(struct state *s, const char *event_name)
 	{
-		return 0;
+		if (notify_shall_fail) {
+			return -1;
+		} else {
+			return 0;
+		}
 	}
 
 	int find_fetchers_for_state(struct state *s)
@@ -107,6 +112,7 @@ static cJSON *get_result_from_response(cJSON *response)
 struct F {
 	F()
 	{
+		notify_shall_fail = false;
 		create_state_hashtable();
 		p = alloc_peer(-1);
 		set_peer = alloc_peer(-1);
@@ -211,6 +217,25 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	error = change_state(p, path, new_value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(new_value);
+
+	struct state *s = get_state(path);
+	BOOST_CHECK(s->value->valueint == 4321);
+}
+
+BOOST_FIXTURE_TEST_CASE(change_notify_fail, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	notify_shall_fail = true;
+	error = change_state(p, path, new_value);
+	BOOST_CHECK(error != NULL);
+	cJSON_Delete(new_value);
+	cJSON_Delete(error);
 
 	struct state *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == 4321);
