@@ -58,9 +58,6 @@ TARGET_LINK_LIBRARIES(
 
 SET(STATE_TEST
 	../../../json/cJSON.c
-	../../../fetch.c
-	../../../method.c
-	../../../parse.c
 	../../../response.c
 	../../../router.c
 	../../../state.c

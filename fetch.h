@@ -6,6 +6,10 @@
 #include "peer.h"
 #include "state.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct path_matcher;
 struct state;
 
@@ -33,6 +37,10 @@ int find_fetchers_for_state(struct state *s);
 
 int notify_fetching_peer(struct state *s, struct fetch *f,
 	const char *event_name);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
 

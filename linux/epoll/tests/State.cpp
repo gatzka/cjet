@@ -27,6 +27,25 @@ extern "C" {
 	{
 		return;
 	}
+
+	int notify_fetching_peer(struct state *s, struct fetch *f,
+		const char *event_name)
+	{
+		return 0;
+	}
+
+	int find_fetchers_for_state(struct state *s)
+	{
+		return 0;
+	}
+
+	void remove_all_methods_from_peer(struct peer *p)
+	{
+	}
+
+	void remove_all_fetchers_from_peer(struct peer *p)
+	{
+	}
 }
 
 static cJSON *parse_send_buffer(void)
