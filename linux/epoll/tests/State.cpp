@@ -171,6 +171,9 @@ BOOST_FIXTURE_TEST_CASE(add_state_notify_fail, F)
 
 	cJSON_Delete(value);
 	cJSON_Delete(error);
+
+	struct state *s = get_state(path);
+	BOOST_CHECK(s == NULL);
 }
 
 BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
