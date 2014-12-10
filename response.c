@@ -87,11 +87,9 @@ static cJSON *create_error_object(const char *message, int code,
 	}
 	if ((tag != NULL) && (reason != NULL)) {
 		cJSON *data = cJSON_CreateObject();
-		error = add_sub_to_object(error, cJSON_CreateObject(), "data");
-		if (likely(error != NULL)) {
+		if (likely(data != NULL)) {
 			cJSON_AddItemToObject(error, "data", data);
-			error = add_sub_to_object(error, cJSON_CreateString(reason), tag);
-			if (unlikely(error == NULL)) {
+			if (unlikely(add_sub_to_object(data, cJSON_CreateString(reason), tag) == NULL)) {
 				goto err;
 			}
 		}
