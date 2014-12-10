@@ -67,14 +67,17 @@ struct F {
 	{
 		create_state_hashtable();
 		p = alloc_peer(-1);
+		set_peer = alloc_peer(-1);
 	}
 	~F()
 	{
+		free_peer(set_peer);
 		free_peer(p);
 		delete_state_hashtable();
 	}
 
 	struct peer *p;
+	struct peer *set_peer;
 };
 
 static void check_invalid_params(cJSON *error)
@@ -194,8 +197,6 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	struct peer *set_peer = alloc_peer(-1);
-
 	cJSON *set_request = cJSON_CreateObject();
 	cJSON_AddStringToObject(set_request, "id", "request1");
 	cJSON_AddStringToObject(set_request, "method", "set");
@@ -219,8 +220,6 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
-
-	free_peer(set_peer);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
@@ -230,8 +229,6 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	cJSON *error = add_state_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
-
-	struct peer *set_peer = alloc_peer(-1);
 
 	cJSON *set_request = cJSON_CreateObject();
 	cJSON_AddStringToObject(set_request, "method", "set");
@@ -245,8 +242,6 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	error = set_state(set_peer, path, new_value, set_request);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
-
-	free_peer(set_peer);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
@@ -256,8 +251,6 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 	cJSON *error = add_state_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
-
-	struct peer *set_peer = alloc_peer(-1);
 
 	cJSON *set_request = cJSON_CreateObject();
 	cJSON_AddStringToObject(set_request, "method", "set");
@@ -281,6 +274,4 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
-
-	free_peer(set_peer);
 }
