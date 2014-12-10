@@ -67,6 +67,20 @@ BOOST_AUTO_TEST_CASE(internal_error_response)
 	cJSON_Delete(response);
 }
 
+BOOST_AUTO_TEST_CASE(internal_error_response_wrong_id_type)
+{
+	const char *tag = "reason";
+	const char *reason = "not enough memory";
+	cJSON *id = cJSON_CreateBool(0);
+	cJSON *error = create_internal_error(tag, reason);
+	cJSON *response = create_error_response(id, error);
+
+	BOOST_CHECK(response == NULL);
+
+	cJSON_Delete(id);
+	cJSON_Delete(error);
+}
+
 BOOST_AUTO_TEST_CASE(invalid_request_response)
 {
 	const char *tag = "reason";
