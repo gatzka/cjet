@@ -284,6 +284,31 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 }
 
+BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "method", "set");
+	cJSON_AddTrueToObject(set_request, "id");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/");
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+
+	error = set_state(set_peer, path, new_value, set_request);
+	cJSON_Delete(set_request);
+
+	BOOST_CHECK(error != NULL && error != (cJSON *)ROUTED_MESSAGE);
+	cJSON_Delete(error);
+}
+
 BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 {
 	const char path[] = "/foo/bar/";
