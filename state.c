@@ -125,6 +125,11 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
+	if (value_copy == NULL) {
+		cJSON *error =
+		    create_internal_error("reason", "not enough memory");
+		return error;
+	}
 	cJSON_Delete(s->value);
 	s->value = value_copy;
 	if (unlikely(notify_fetchers(s, "change") != 0)) {
