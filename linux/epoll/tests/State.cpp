@@ -49,6 +49,29 @@ static cJSON *create_response_from_message(cJSON *routed_message)
 	return response;
 }
 
+static cJSON *create_set_request(const char *request_id)
+{
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "method", "set");
+	if (request_id != NULL) {
+		cJSON_AddStringToObject(set_request, "id", request_id);
+	}
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/");
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+	return set_request;
+}
+
+static cJSON *get_value_from_request(cJSON *set_request)
+{
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	return value;
+}
+
 static cJSON *get_result_from_response(cJSON *response)
 {
 	cJSON *result = cJSON_GetObjectItem(response, "result");
@@ -197,16 +220,8 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	cJSON *set_request = cJSON_CreateObject();
-	cJSON_AddStringToObject(set_request, "id", "request1");
-	cJSON_AddStringToObject(set_request, "method", "set");
-
-	cJSON *params = cJSON_CreateObject();
-	cJSON_AddStringToObject(params, "path", "/foo/bar/");
-	cJSON *new_value = cJSON_CreateNumber(4321);
-	cJSON_AddItemToObject(params, "value", new_value);
-	cJSON_AddItemToObject(set_request, "params", params);
-
+	cJSON *set_request = create_set_request("request1");
+	cJSON *new_value = get_value_from_request(set_request);
 	error = set_state(set_peer, path, new_value, set_request);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
@@ -230,14 +245,8 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	cJSON *set_request = cJSON_CreateObject();
-	cJSON_AddStringToObject(set_request, "method", "set");
-
-	cJSON *params = cJSON_CreateObject();
-	cJSON_AddStringToObject(params, "path", "/foo/bar/");
-	cJSON *new_value = cJSON_CreateNumber(4321);
-	cJSON_AddItemToObject(params, "value", new_value);
-	cJSON_AddItemToObject(set_request, "params", params);
+	cJSON *set_request = create_set_request(NULL);
+	cJSON *new_value = get_value_from_request(set_request);
 
 	error = set_state(set_peer, path, new_value, set_request);
 	cJSON_Delete(set_request);
@@ -252,15 +261,8 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	cJSON *set_request = cJSON_CreateObject();
-	cJSON_AddStringToObject(set_request, "method", "set");
-
-	cJSON *params = cJSON_CreateObject();
-	cJSON_AddStringToObject(params, "path", "/foo/bar/");
-	cJSON *new_value = cJSON_CreateNumber(4321);
-	cJSON_AddItemToObject(params, "value", new_value);
-	cJSON_AddItemToObject(set_request, "params", params);
-
+	cJSON *set_request = create_set_request(NULL);
+	cJSON *new_value = get_value_from_request(set_request);
 	error = set_state(set_peer, path, new_value, set_request);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
