@@ -29,3 +29,13 @@ BOOST_AUTO_TEST_CASE(boolean_success_true)
 	cJSON_Delete(id);
 	cJSON_Delete(response);
 }
+
+BOOST_AUTO_TEST_CASE(boolean_success_true_wrong_id_type)
+{
+	cJSON *id = cJSON_CreateBool(0);
+	cJSON *response = create_boolean_success_response(id, 1);
+
+	BOOST_CHECK(response == NULL);
+
+	cJSON_Delete(id);
+}
