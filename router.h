@@ -4,6 +4,10 @@
 #include "json/cJSON.h"
 #include "peer.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define ROUTED_MESSAGE -1
 
 cJSON *create_routed_message(const char *path, const char *name,
@@ -19,5 +23,9 @@ void remove_peer_from_routing_table(const struct peer *p,
 
 int add_routing_table(struct peer *p);
 void delete_routing_table(struct peer *p);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
