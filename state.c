@@ -110,18 +110,6 @@ static void free_state(struct state *s)
 	free(s);
 }
 
-static int notify_fetchers(struct state *s, const char *event_name)
-{
-	for (unsigned int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; ++i) {
-		struct fetch *f = s->fetchers[i];
-		if ((f != NULL) &&
-				(unlikely(notify_fetching_peer(s, f, event_name) != 0))) {
-			return -1;
-		}
-	}
-	return 0;
-}
-
 cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 {
 	struct value_state_table val;

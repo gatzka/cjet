@@ -35,8 +35,7 @@ void remove_all_fetchers_from_peer(struct peer *p);
 int add_fetch_to_states(struct fetch *f);
 int find_fetchers_for_state(struct state *s);
 
-int notify_fetching_peer(struct state *s, struct fetch *f,
-	const char *event_name);
+int notify_fetchers(struct state *s, const char *event_name);
 
 #ifdef __cplusplus
 }
