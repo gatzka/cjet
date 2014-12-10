@@ -147,6 +147,8 @@ static void send_routing_response(struct peer *p,
 			fprintf(stderr, "Could not create %s response!\n", "result");
 			cJSON_Delete(response_copy);
 		}
+	} else {
+		fprintf(stderr, "Could not allocate memory for %s object!\n", "response_copy");
 	}
 }
 
