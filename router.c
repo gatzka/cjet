@@ -99,10 +99,15 @@ error:
 int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, cJSON *origin_request_id, int id)
 {
-	cJSON *id_copy = cJSON_Duplicate(origin_request_id, 1);
-	if (unlikely(id_copy == NULL)) {
-		fprintf(stderr, "Could not copy value object!\n");
-		return -1;
+	cJSON *id_copy;
+	if (origin_request_id != NULL) {
+		id_copy = cJSON_Duplicate(origin_request_id, 1);
+		if (unlikely(id_copy == NULL)) {
+			fprintf(stderr, "Could not copy value object!\n");
+			return -1;
+		}
+	} else {
+		id_copy = NULL;
 	}
 	struct value_route_table val;
 	val.vals[0] = origin_peer;
@@ -128,6 +133,9 @@ static void format_and_send_response(struct peer *p, cJSON *response)
 static void send_routing_response(struct peer *p,
 	cJSON *origin_request_id, cJSON *response)
 {
+	if (origin_request_id == NULL) {
+		return;
+	}
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
 	if (likely(response_copy != NULL)) {
 		cJSON *result_response =
@@ -168,6 +176,10 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 static void send_shutdown_response(struct peer *p,
 	cJSON *origin_request_id)
 {
+	if (origin_request_id == NULL) {
+		return;
+	}
+
 	cJSON *error = create_internal_error("reason", "peer shuts down");
 	if (likely(error != NULL)) {
 		cJSON *error_response =

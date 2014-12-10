@@ -207,6 +207,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON_AddItemToObject(set_request, "params", params);
 
 	error = set_state(set_peer, path, new_value, set_request);
+	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
 	cJSON *routed_message = parse_send_buffer();
@@ -219,7 +220,67 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
 
-	cJSON_Delete(set_request);
 	free_peer(set_peer);
+}
 
+BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	struct peer *set_peer = alloc_peer(-1);
+
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "method", "set");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/");
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+
+	error = set_state(set_peer, path, new_value, set_request);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	free_peer(set_peer);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	struct peer *set_peer = alloc_peer(-1);
+
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "method", "set");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/");
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+
+	error = set_state(set_peer, path, new_value, set_request);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	cJSON *routed_message = parse_send_buffer();
+	cJSON *response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+
+	int ret = handle_routing_response(response, result, p);
+	BOOST_CHECK(ret == 0);
+
+	cJSON_Delete(routed_message);
+	cJSON_Delete(response);
+
+	free_peer(set_peer);
 }
