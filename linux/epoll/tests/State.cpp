@@ -296,6 +296,23 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON_Delete(response);
 }
 
+BOOST_FIXTURE_TEST_CASE(set_from_owner, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *new_value = get_value_from_request(set_request);
+	error = set_state(p, path, new_value, set_request);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error != NULL && error != (cJSON *)ROUTED_MESSAGE);
+
+	cJSON_Delete(error);
+}
+
 BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
 {
 	cJSON *value = cJSON_CreateNumber(1234);
