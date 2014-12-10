@@ -197,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	BOOST_CHECK(s->value->valueint == 4321);
 }
 
-BOOST_FIXTURE_TEST_CASE(change_no_by_owner, F)
+BOOST_FIXTURE_TEST_CASE(change_not_by_owner, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
@@ -250,6 +250,22 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
+{
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_to_peer(p, "/foo/bar/bla/", value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *new_value = get_value_from_request(set_request);
+	error = set_state(set_peer, "/foo/bar/", new_value, set_request);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error != NULL && error != (cJSON *)ROUTED_MESSAGE);
+
+	cJSON_Delete(error);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
