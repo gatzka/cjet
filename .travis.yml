@@ -39,7 +39,7 @@ script:
           cmake ../linux/epoll/tests/  &&
           make &&
           ctest -V &&
-          coveralls --root .. --build-root . --exclude json/ --exclude linux/epoll/tests/ --gcov-options '\-lp'
+          coveralls -r .. -b . -e json/ -e linux/epoll/tests/ --gcov-options '\-lp'
           ;;
       esac ;
     fi
