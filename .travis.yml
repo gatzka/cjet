@@ -38,14 +38,10 @@ script:
         tests)
           cmake ../linux/epoll/tests/  &&
           make &&
-          ctest -V
+          ctest -V &&
+          coveralls --exclude lib --exclude tests --gcov-options '\-lp'
           ;;
       esac ;
-    fi
-
-after_success:
-  - if [ ${BUILD} == "test" ]; then
-      coveralls --exclude lib --exclude tests --gcov-options '\-lp';
     fi
 
 addons:
