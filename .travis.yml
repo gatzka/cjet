@@ -39,7 +39,7 @@ script:
           cmake ../linux/epoll/tests/  &&
           make &&
           ctest -V &&
-          coveralls --gcov-options '\-lp'
+          coveralls -r .. -b . --gcov-options '\-lp'
           ;;
       esac ;
     fi
