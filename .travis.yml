@@ -14,6 +14,9 @@ env:
     - BUILD=clang
     - BUILD=tests
 
+before_install:
+  - sudo pip install cpp-coveralls
+
 install:
   - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
 
@@ -38,6 +41,11 @@ script:
           ctest -V
           ;;
       esac ;
+    fi
+
+after_success:
+  - if [ ${BUILD} == "test" ]; then
+      coveralls --exclude lib --exclude tests --gcov-options '\-lp'
     fi
 
 addons:
