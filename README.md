@@ -5,12 +5,9 @@ Copyright (c) 2014 Stephan Gatzka. See the [LICENSE](LICENSE) file for license r
 limitations (MIT).
 
 ## Build Status
-Travis CI: <a href="https://travis-ci.org/gatzka/cjet">
-  <img alt="Travis CI Build Status"
-       src="https://travis-ci.org/gatzka/cjet.svg?branch=master"/>
-</a>
 
-Coverity: <a href="https://scan.coverity.com/projects/3315">
-  <img alt="Coverity Scan Build Status"
-       src="https://scan.coverity.com/projects/3315/badge.svg"/>
-</a>
+[![Travis CI](https://travis-ci.org/gatzka/cjet.svg?branch=master)](https://travis-ci.org/gatzka/cjet)
+
+[![Coverity](https://scan.coverity.com/projects/3315/badge.sv)](https://scan.coverity.com/projects/3315)
+
+[![Coverage Status](https://img.shields.io/coveralls/gatzka/cjet.svg)](https://coveralls.io/r/gatzka/cjet?branch=master)
