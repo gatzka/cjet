@@ -6,9 +6,17 @@
 
 #include "peer.h"
 
+enum fds {
+	TEST_FD = 0,
+	FAILED_ALLOC_PEER_FD
+};
+
 extern "C" {
 	int add_io(struct peer *p)
 	{
+		if (p->io.fd == FAILED_ALLOC_PEER_FD) {
+			return -1;
+		}
 		return 0;
 	}
 
@@ -50,8 +58,6 @@ extern "C" {
 
 BOOST_AUTO_TEST_CASE(number_of_peer)
 {
-	static const int TEST_FD = 1;
-
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
@@ -64,3 +70,8 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 	BOOST_CHECK(peers == 0);
 }
 
+BOOST_AUTO_TEST_CASE(failed_alloc_peer)
+{
+	struct peer *p = alloc_peer(FAILED_ALLOC_PEER_FD);
+	BOOST_CHECK(p == NULL);
+}
