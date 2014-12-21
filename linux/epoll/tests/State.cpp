@@ -19,6 +19,7 @@ extern "C" {
 		memcpy(send_buffer, rendered, len);
 		return 0;
 	}
+
 	int add_io(struct peer *p)
 	{
 		return 0;
