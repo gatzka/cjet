@@ -74,11 +74,11 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+	p->io.fd = fd;
 	if (unlikely(add_routing_table(p) != 0)) {
 		free(p);
 		return NULL;
 	}
-	p->io.fd = fd;
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
 	p->read_ptr = p->read_buffer;

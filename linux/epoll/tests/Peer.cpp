@@ -8,13 +8,14 @@
 
 enum fds {
 	TEST_FD = 0,
-	FAILED_ALLOC_PEER_FD
+	ADD_IO_FAILED,
+	ADD_ROUTINGTABLE_FAILED,
 };
 
 extern "C" {
 	int add_io(struct peer *p)
 	{
-		if (p->io.fd == FAILED_ALLOC_PEER_FD) {
+		if (p->io.fd == ADD_IO_FAILED) {
 			return -1;
 		}
 		return 0;
@@ -52,6 +53,9 @@ extern "C" {
 
 	int add_routing_table(struct peer *p)
 	{
+		if (p->io.fd == ADD_ROUTINGTABLE_FAILED) {
+			return -1;
+		}
 		return 0;
 	}
 }
@@ -70,9 +74,15 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_AUTO_TEST_CASE(failed_alloc_peer)
+BOOST_AUTO_TEST_CASE(add_io_failed)
 {
-	struct peer *p = alloc_peer(FAILED_ALLOC_PEER_FD);
+	struct peer *p = alloc_peer(ADD_IO_FAILED);
+	BOOST_CHECK(p == NULL);
+}
+
+BOOST_AUTO_TEST_CASE(add_routingtable_failed)
+{
+	struct peer *p = alloc_peer(ADD_ROUTINGTABLE_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
