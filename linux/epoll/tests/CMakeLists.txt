@@ -14,8 +14,10 @@ ENDIF(Boost_FOUND)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 
-SET(CMAKE_CXX_FLAGS "-Wall -Werror -ggdb --coverage" CACHE STRING "" FORCE)
-SET(CMAKE_C_FLAGS "-Wall -std=c99 -Werror -ggdb --coverage" CACHE STRING "" FORCE)
+SET(WARN_SWITCHES "-Wall -Werror")
+
+SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -Og -ggdb --coverage" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -Og -ggdb --coverage" CACHE STRING "" FORCE)
 
 ADD_DEFINITIONS(-DTESTING)
 ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
@@ -30,6 +32,17 @@ SET(RESPONSE_TEST
 ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
 	response_test.bin
+	${Boost_LIBRARIES}
+)
+
+SET(PEER_TEST
+	../../../json/cJSON.c
+	../../../peer.c
+	Peer.cpp
+)
+ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
+TARGET_LINK_LIBRARIES(
+	peer_test.bin
 	${Boost_LIBRARIES}
 )
 
@@ -89,7 +102,8 @@ SET(CTEST_MEMORYCHECK_COMMAND "valgrind")
 SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--tool=memcheck -v")
 
 ADD_TEST(parse_test parse_test.bin)
+ADD_TEST(peer_test peer_test.bin)
 ADD_TEST(readbuffer_test readbuffer_test.bin)
-ADD_TEST(state_test state_test.bin)
 ADD_TEST(response_test response_test.bin)
+ADD_TEST(state_test state_test.bin)
 
