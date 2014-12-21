@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 {
 	static const int PEERS_TO_ALLOCATE = 10;
 
-	unsigned int peers = get_number_of_peers();
+	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
 	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
