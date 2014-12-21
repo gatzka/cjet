@@ -6,6 +6,7 @@
 #include <boost/test/unit_test.hpp>
 #include <sys/uio.h>
 
+#include "json/cJSON.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"

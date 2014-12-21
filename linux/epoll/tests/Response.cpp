@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "json/cJSON.h"
 #include "response.h"
 
 BOOST_AUTO_TEST_CASE(boolean_success_false)
