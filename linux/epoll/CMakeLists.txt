@@ -4,9 +4,9 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
-SET(WARN_SWITCHES "-pipe -Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
-SET(CMAKE_C_FLAGS "${WARN_SWITCHES} -fvisibility=hidden -fno-common -std=c99" CACHE STRING "" FORCE)
+SET(CMAKE_C_FLAGS "-pipe ${WARN_SWITCHES} -fvisibility=hidden -fno-common -std=c99" CACHE STRING "" FORCE)
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
 	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto" CACHE STRING "" FORCE)
