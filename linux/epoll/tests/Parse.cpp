@@ -57,7 +57,10 @@ extern "C" {
 
 	int remove_method_from_peer(struct peer *p, const char *path)
 	{
-		return 0;
+		if (strcmp(path, "method") == 0) {
+			return 0;
+		}
+		return -1;
 	}
 
 	cJSON *add_method_to_peer(struct peer *p, const char *path)
@@ -100,7 +103,10 @@ extern "C" {
 
 	int remove_state_from_peer(struct peer *p, const char *path)
 	{
-		return 0;
+		if (strcmp(path, "state") == 0) {
+			return 0;
+		}
+		return -1;
 	}
 
 	cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
@@ -220,14 +226,14 @@ static cJSON *create_add_without_path()
 	return root;
 }
 
-static cJSON *create_correct_remove()
+static cJSON *create_correct_remove(const char *what)
 {
 	cJSON *root = cJSON_CreateObject();
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "remove");
 
 	cJSON *params = cJSON_CreateObject();
-	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddStringToObject(params, "path", what);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
 }
@@ -368,10 +374,21 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	BOOST_CHECK(ret == 0);
 }
 
-BOOST_AUTO_TEST_CASE(correct_remove_test)
+BOOST_AUTO_TEST_CASE(correct_remove_state_test)
 {
 	F f(REMOVE);
-	cJSON *json = create_correct_remove();
+	cJSON *json = create_correct_remove("state");
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_remove_method_test)
+{
+	F f(REMOVE);
+	cJSON *json = create_correct_remove("method");
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
