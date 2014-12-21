@@ -88,12 +88,12 @@ BOOST_AUTO_TEST_CASE(add_routingtable_failed)
 
 BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 {
-	static const unsigned int PEERS_TO_ALLOCATE = 10;
+	static const int PEERS_TO_ALLOCATE = 10;
 
-	int peers = get_number_of_peers();
+	unsigned int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
-	for (unsigned int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
+	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
 		alloc_peer(TEST_FD);
 	}
 	peers = get_number_of_peers();
