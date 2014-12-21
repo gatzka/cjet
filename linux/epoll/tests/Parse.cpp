@@ -38,22 +38,101 @@ extern "C" {
 		return 0;
 	}
 
-	int add_io(struct peer *p)
+	cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
+	{
+		return NULL;
+	}
+
+	cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
+		struct fetch **fetch_return)
+	{
+		return NULL;
+	}
+
+	int add_fetch_to_states(struct fetch *f)
 	{
 		return 0;
 	}
 
-	void remove_io(const struct peer *p)
+	int remove_method_from_peer(struct peer *p, const char *path)
 	{
-		return;
+		return 0;
+	}
+
+	cJSON *add_method_to_peer(struct peer *p, const char *path)
+	{
+		return NULL;
+	}
+
+	int handle_routing_response(cJSON *json_rpc, cJSON *response,
+		const struct peer *p)
+	{
+		return 0;
+	}
+
+	cJSON *call_method(struct peer *p, const char *path,
+		cJSON *args, cJSON *json_rpc)
+	{
+		return NULL;
+	}
+
+	cJSON *create_invalid_params_error(const char *tag, const char *reason)
+	{
+		return NULL;
+	}
+
+	cJSON *create_boolean_success_response(const cJSON *id, int true_false)
+	{
+		cJSON *boolean;
+		if (true_false == 0) {
+			boolean = cJSON_CreateFalse();
+		} else {
+			boolean = cJSON_CreateTrue();
+		}
+		return boolean;
+	}
+
+	cJSON *create_error_response(const cJSON *id, cJSON *error)
+	{
+		return NULL;
+	}
+
+	int remove_state_from_peer(struct peer *p, const char *path)
+	{
+		return 0;
+	}
+
+	cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
+	{
+		return NULL;
+	}
+
+	cJSON *set_state(struct peer *p, const char *path,
+		cJSON *value, cJSON *json_rpc)
+	{
+		return NULL;
+	}
+
+	cJSON *change_state(struct peer *p, const char *path, cJSON *value)
+	{
+		return NULL;
+	}
+
+	cJSON *create_method_not_found_error(const char *tag, const char *reason)
+	{
+		return NULL;
+	}
+
+	cJSON *create_invalid_request_error(const char *tag, const char *reason)
+	{
+		return NULL;
 	}
 }
 
 struct F {
 	F(int fd)
 	{
-		create_state_hashtable();
-		p = alloc_peer(fd);
+		p = NULL;
 
 		readback_buffer_ptr = readback_buffer;
 		std::memset(readback_buffer, 0x00, sizeof(readback_buffer));
@@ -61,53 +140,10 @@ struct F {
 
 	~F()
 	{
-		free_peer(p);
-		delete_state_hashtable();
 	}
 
 	struct peer *p;
 };
-
-static void check_invalid_message(const char *buffer, int code, const char *message_string)
-{
-	uint32_t len;
-	const char *readback_ptr = buffer;
-	memcpy(&len, readback_ptr, sizeof(len));
-	len = ntohl(len);
-	readback_ptr += sizeof(len);
-
-	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(readback_ptr, &end_parse, 0);
-	BOOST_CHECK(root != NULL);
-
-	uint32_t parsed_length = end_parse - readback_ptr;
-	BOOST_CHECK(parsed_length == len);
-
-	cJSON *error = cJSON_GetObjectItem(root, "error");
-	BOOST_REQUIRE(error != NULL);
-
-	cJSON *code_object = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code_object != NULL);
-	BOOST_CHECK(code_object->type == cJSON_Number);
-	BOOST_CHECK(code_object->valueint == code);
-
-	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, message_string) == 0);
-
-	cJSON_Delete(root);
-}
-
-static void check_invalid_params_message(const char *buffer)
-{
-	check_invalid_message(buffer, -32602, "Invalid params");
-}
-
-static void check_method_not_found_message(const char *buffer)
-{
-	check_invalid_message(buffer, -32601, "Method not found");
-}
 
 static cJSON *create_correct_add()
 {
@@ -248,11 +284,6 @@ static cJSON *create_fetch_without_id()
 	return root;
 }
 
-static void check_invalid_request_message(const char *buffer)
-{
-	check_invalid_message(buffer, -32600, "Invalid Request");
-}
-
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	F f(-1);
@@ -323,8 +354,6 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(remove_without_path_test)
@@ -336,8 +365,6 @@ BOOST_AUTO_TEST_CASE(remove_without_path_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(path_no_string_test)
@@ -349,8 +376,6 @@ BOOST_AUTO_TEST_CASE(path_no_string_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(no_params_test)
@@ -363,8 +388,6 @@ BOOST_AUTO_TEST_CASE(no_params_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(unsupported_method)
@@ -377,8 +400,6 @@ BOOST_AUTO_TEST_CASE(unsupported_method)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_method_not_found_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(no_method)
@@ -390,8 +411,6 @@ BOOST_AUTO_TEST_CASE(no_method)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_request_message(readback_buffer);
 }
 
 
@@ -404,8 +423,6 @@ BOOST_AUTO_TEST_CASE(no_string_method)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_request_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(parse_wrong_json)
@@ -431,8 +448,6 @@ BOOST_AUTO_TEST_CASE(fetch_without_id_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-
-	check_invalid_params_message(readback_buffer);
 }
 
 BOOST_AUTO_TEST_CASE(correct_fetch_test)
