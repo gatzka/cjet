@@ -23,6 +23,7 @@ static const int REMOVE_WITHOUT_PATH = 6;
 static const int FETCH_WITHOUT_ID = 7;
 static const int CORRECT_FETCH = 8;
 static const int CORRECT_CHANGE = 9;
+static const int REMOVE = 10;
 
 static char readback_buffer[10000];
 static char *readback_buffer_ptr = readback_buffer;
@@ -219,6 +220,18 @@ static cJSON *create_add_without_path()
 	return root;
 }
 
+static cJSON *create_correct_remove()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "remove");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static cJSON *create_remove_without_path()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -226,7 +239,6 @@ static cJSON *create_remove_without_path()
 	cJSON_AddStringToObject(root, "method", "remove");
 
 	cJSON *params = cJSON_CreateObject();
-	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
 }
@@ -349,6 +361,17 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	F f(ADD_WITHOUT_PATH);
 
 	cJSON *json = create_add_without_path();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_remove_test)
+{
+	F f(REMOVE);
+	cJSON *json = create_correct_remove();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
