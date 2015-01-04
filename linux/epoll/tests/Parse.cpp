@@ -168,6 +168,15 @@ static cJSON *create_result_json()
 	return root;
 }
 
+static cJSON *create_error_json()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON *error = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "error", error);
+	return root;
+}
+
 static cJSON *create_json_no_string_method()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -488,6 +497,17 @@ BOOST_AUTO_TEST_CASE(test_result_rpc)
 {
 	F f;
 	cJSON *json = create_result_json();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_error_rpc)
+{
+	F f;
+	cJSON *json = create_error_json();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
