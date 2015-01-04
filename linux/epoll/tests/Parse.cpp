@@ -159,6 +159,15 @@ static cJSON *create_json_no_method()
 	return root;
 }
 
+static cJSON *create_result_json()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON *result = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "result", result);
+	return root;
+}
+
 static cJSON *create_json_no_string_method()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -464,11 +473,21 @@ BOOST_AUTO_TEST_CASE(no_method)
 	BOOST_CHECK(ret == 0);
 }
 
-
 BOOST_AUTO_TEST_CASE(no_string_method)
 {
 	F f;
 	cJSON *json = create_json_no_string_method();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_result_rpc)
+{
+	F f;
+	cJSON *json = create_result_json();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
