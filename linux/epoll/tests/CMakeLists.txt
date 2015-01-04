@@ -77,6 +77,7 @@ TARGET_LINK_LIBRARIES(
 SET(JSON_PARSE_TEST
 	../../../json/cJSON.c
 	../../../parse.c
+	../../../response.c
 	Parse.cpp
 )
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})

@@ -69,26 +69,6 @@ extern "C" {
 		return NULL;
 	}
 
-	cJSON *create_invalid_params_error(const char *tag, const char *reason)
-	{
-		return NULL;
-	}
-
-	cJSON *create_boolean_success_response(const cJSON *id, int true_false)
-	{
-		cJSON *boolean;
-		if (true_false == 0) {
-			boolean = cJSON_CreateFalse();
-		} else {
-			boolean = cJSON_CreateTrue();
-		}
-		return boolean;
-	}
-
-	cJSON *create_error_response(const cJSON *id, cJSON *error)
-	{
-		return NULL;
-	}
 
 	int remove_state_from_peer(struct peer *p, const char *path)
 	{
@@ -110,16 +90,6 @@ extern "C" {
 	}
 
 	cJSON *change_state(struct peer *p, const char *path, cJSON *value)
-	{
-		return NULL;
-	}
-
-	cJSON *create_method_not_found_error(const char *tag, const char *reason)
-	{
-		return NULL;
-	}
-
-	cJSON *create_invalid_request_error(const char *tag, const char *reason)
 	{
 		return NULL;
 	}
@@ -303,6 +273,23 @@ static cJSON *create_fetch_without_id()
 	return root;
 }
 
+static void check_invalid_params_error(void)
+{
+	char *ptr = readback_buffer;
+	ptr += 4;
+	cJSON *root = cJSON_Parse(ptr);
+	BOOST_REQUIRE(root != NULL);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_REQUIRE(error != NULL);
+
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_REQUIRE(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32602);
+	cJSON_Delete(root);
+}
+
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	F f;
@@ -406,6 +393,18 @@ BOOST_AUTO_TEST_CASE(correct_remove_method_test)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(remove_non_existing_state_or_method)
+{
+	F f;
+	cJSON *json = create_correct_remove("non_exist");
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 BOOST_AUTO_TEST_CASE(remove_without_path_test)
