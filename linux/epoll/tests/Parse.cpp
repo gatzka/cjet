@@ -136,6 +136,17 @@ static cJSON *create_correct_add_method()
 	return root;
 }
 
+static cJSON *create_correct_config_method()
+{
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "config");
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static cJSON *create_two_method_json()
 {
 	cJSON *array = cJSON_CreateArray();
@@ -544,6 +555,18 @@ BOOST_AUTO_TEST_CASE(correct_fetch_test)
 {
 	F f;
 	cJSON *json = create_correct_fetch();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_config_test)
+{
+	F f;
+	cJSON *json = create_correct_config_method();
+
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
