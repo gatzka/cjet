@@ -207,9 +207,9 @@ static int process_unfetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_config(void)
+static int process_config(cJSON *json_rpc,struct peer *p)
 {
-	return 0;
+	return possibly_send_response(json_rpc, NULL, p);
 }
 
 static int handle_method(cJSON *json_rpc, const char *method_name,
@@ -237,7 +237,7 @@ static int handle_method(cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "unfetch") == 0) {
 		return process_unfetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return process_config();
+		return process_config(json_rpc, p);
 	} else {
 		cJSON *error = create_method_not_found_error("reason", method_name);
 		return possibly_send_response(json_rpc, error, p);
