@@ -117,6 +117,15 @@ static int startswith_match(const struct path_matcher *pm,
 	return !strncmp(pm->fetch_path, state_path, length);
 }
 
+static int endswith_match(const struct path_matcher *pm,
+	const char *state_path)
+{
+	size_t fetch_path_length = pm->cookie;
+	size_t state_path_length = strlen(state_path);
+	return (state_path_length >= fetch_path_length) && 
+		(strcmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
+}
+
 static int get_match_function(struct path_matcher *pm, const char *path,
 	const char *fetch_type)
 {
@@ -126,6 +135,11 @@ static int get_match_function(struct path_matcher *pm, const char *path,
 	}
 	if (strcmp(fetch_type, "startsWith") == 0) {
 		pm->match_function = startswith_match;
+		pm->cookie = strlen(path);
+		return 0;
+	}
+	if (strcmp(fetch_type, "endsWith") == 0) {
+		pm->match_function = endswith_match;
 		pm->cookie = strlen(path);
 		return 0;
 	}
