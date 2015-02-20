@@ -268,6 +268,41 @@ int send_buffer(struct peer *p)
 	return 0;
 }
 
+int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
+			 uint32_t msg_len_be, size_t already_written)
+{
+	size_t to_write;
+	uint32_t msg_len = ntohl(msg_len_be);
+	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - p->to_write;
+	size_t bytes_to_copy =  (sizeof(msg_len_be) + msg_len) - already_written;
+
+	if (unlikely(bytes_to_copy > free_space_in_buf)) {
+		goto write_buffer_too_small;
+	}
+
+	char *write_buffer_ptr = p->write_buffer + p->to_write;
+	if (already_written < sizeof(msg_len_be)) {
+		char *msg_len_ptr = (char *)(&msg_len_be);
+		msg_len_ptr += already_written;
+		to_write = sizeof(msg_len_be) - already_written;
+		memcpy(write_buffer_ptr, msg_len_ptr, to_write);
+		write_buffer_ptr += to_write;
+		already_written += to_write;
+		p->to_write += to_write;
+	}
+
+	size_t msg_offset = already_written - sizeof(msg_len_be);
+	const char *message_ptr = (const char *)rendered + msg_offset;
+	to_write = msg_len - msg_offset;
+	memcpy(write_buffer_ptr, message_ptr, to_write);
+	p->to_write += to_write;
+
+	return 0;
+
+write_buffer_too_small:
+	return -1;
+}
+
 int send_message(struct peer *p, const char *rendered, size_t len)
 {
 	int ret;

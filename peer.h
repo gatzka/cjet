@@ -41,8 +41,6 @@ struct list_head *get_peer_list(void);
 
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
-	uint32_t msg_len_be, size_t already_written);
 void destroy_all_peers(void);
 
 int get_number_of_peers(void);
