@@ -122,8 +122,14 @@ static int endswith_match(const struct path_matcher *pm,
 {
 	size_t fetch_path_length = pm->cookie;
 	size_t state_path_length = strlen(state_path);
-	return (state_path_length >= fetch_path_length) && 
+	return (state_path_length >= fetch_path_length) &&
 		(strcmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
+}
+
+static int contains_match(const struct path_matcher *pm,
+	const char *state_path)
+{
+	return strstr(state_path, pm->fetch_path) != NULL;
 }
 
 static int get_match_function(struct path_matcher *pm, const char *path,
@@ -141,6 +147,10 @@ static int get_match_function(struct path_matcher *pm, const char *path,
 	if (strcmp(fetch_type, "endsWith") == 0) {
 		pm->match_function = endswith_match;
 		pm->cookie = strlen(path);
+		return 0;
+	}
+	if (strcmp(fetch_type, "contains") == 0) {
+		pm->match_function = contains_match;
 		return 0;
 	}
 	return -1;
