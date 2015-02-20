@@ -110,6 +110,11 @@ static int equals_match(const struct path_matcher *pm, const char *state_path)
 	return !strcmp(pm->fetch_path, state_path);
 }
 
+static int equalsnot_match(const struct path_matcher *pm, const char *state_path)
+{
+	return strcmp(pm->fetch_path, state_path);
+}
+
 static int startswith_match(const struct path_matcher *pm,
 	const char *state_path)
 {
@@ -151,6 +156,10 @@ static int get_match_function(struct path_matcher *pm, const char *path,
 	}
 	if (strcmp(fetch_type, "contains") == 0) {
 		pm->match_function = contains_match;
+		return 0;
+	}
+	if (strcmp(fetch_type, "equalsNot") == 0) {
+		pm->match_function = equalsnot_match;
 		return 0;
 	}
 	return -1;
