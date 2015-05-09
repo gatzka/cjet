@@ -24,16 +24,15 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
-
 #include "compiler.h"
+#include "config/log.h"
 #include "json/cJSON.h"
 #include "response.h"
 
 static cJSON *add_sub_to_object(cJSON *root, cJSON *sub, const char *name)
 {
 	if (unlikely(sub == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", name);
+		log_err("Could not allocate memory for %s object!\n", name);
 		cJSON_Delete(root);
 		root = NULL;
 	} else {
@@ -62,7 +61,7 @@ static cJSON *create_common_response(const cJSON *id)
 		break;
 
 	default:
-		fprintf(stderr, "Unsupported method id type!\n");
+		log_err("Unsupported method id type!\n");
 		cJSON_Delete(root);
 		root = NULL;
 		break;
@@ -97,7 +96,7 @@ static cJSON *create_error_object(const char *message, int code,
 	return error;
 
 err:
-	fprintf(stderr, "Could not create error JSON object!\n");
+	log_err("Could not create error JSON object!\n");
 	return NULL;
 }
 

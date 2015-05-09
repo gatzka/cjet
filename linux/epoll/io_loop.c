@@ -24,12 +24,12 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <unistd.h>
 
 #include "compiler.h"
+#include "config/log.h"
 #include "io_loop.h"
 
 int add_epoll(int fd, int epoll_fd, void *cookie)
@@ -40,7 +40,7 @@ int add_epoll(int fd, int epoll_fd, void *cookie)
 	ev.data.ptr = cookie;
 	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0)) {
-		fprintf(stderr, "epoll_ctl failed!\n");
+		log_err("epoll_ctl failed!\n");
 		return -1;
 	}
 	return 0;

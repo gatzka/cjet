@@ -25,13 +25,13 @@
  */
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "fetch.h"
 #include "json/cJSON.h"
 #include "method.h"
@@ -85,8 +85,7 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 		}
 		rendered = cJSON_PrintUnformatted(root);
 		if (unlikely(rendered == NULL)) {
-			fprintf(stderr,
-				"Could not render JSON into a string!\n");
+			log_err("Could not render JSON into a string!\n");
 			ret = -1;
 			goto render_error;
 		}
@@ -287,7 +286,7 @@ static int parse_json_array(cJSON *root, struct peer *p)
 				return -1;
 			}
 		} else {
-			fprintf(stderr, "JSON is not an object!\n");
+			log_err("JSON is not an object!\n");
 			return -1;
 		}
 	}
@@ -301,14 +300,14 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 	const char *end_parse;
 	cJSON *root = cJSON_ParseWithOpts(msg, &end_parse, 0);
 	if (unlikely(root == NULL)) {
-		fprintf(stderr, "Could not parse JSON!\n");
+		log_err("Could not parse JSON!\n");
 		return -1;
 	}
 
 	if (CONFIG_CHECK_JSON_LENGTH) {
 		ptrdiff_t parsed_length = end_parse - msg;
 		if (unlikely(parsed_length != (ptrdiff_t)length)) {
-			fprintf(stderr, "length of parsed JSON (%td) does not "
+			log_err("length of parsed JSON (%td) does not "
 				"match message length (%u)!\n",
 				parsed_length, length);
 			ret = -1;
@@ -326,7 +325,7 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 		break;
 
 	default:
-		fprintf(stderr, "JSON is neither array or object!\n");
+		log_err("JSON is neither array or object!\n");
 		ret = -1;
 		break;
 	}

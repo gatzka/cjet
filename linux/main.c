@@ -25,10 +25,10 @@
  */
 
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "config/io.h"
+#include "config/log.h"
 #include "method.h"
 #include "state.h"
 
@@ -37,12 +37,12 @@ int main(void)
 	signal(SIGPIPE, SIG_IGN);
 
 	if ((create_state_hashtable()) == -1) {
-		fprintf(stderr, "Cannot allocate hashtable for states!\n");
+		log_err("Cannot allocate hashtable for states!\n");
 		return EXIT_FAILURE;
 	}
 
 	if ((create_method_hashtable()) == -1) {
-		fprintf(stderr, "Cannot allocate hashtable for states!\n");
+		log_err("Cannot allocate hashtable for states!\n");
 		goto create_method_table_failed;
 	}
 

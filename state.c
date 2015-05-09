@@ -24,13 +24,13 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -75,19 +75,17 @@ static struct state *alloc_state(const char *path, cJSON *value_object,
 {
 	struct state *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
-			"state");
+		log_err("Could not allocate memory for %s object!\n", "state");
 		return NULL;
 	}
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
-			"path");
+		log_err("Could not allocate memory for %s object!\n", "path");
 		goto alloc_path_failed;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
-		fprintf(stderr, "Could not copy value object!\n");
+		log_err("Could not copy value object!\n");
 		goto value_copy_failed;
 	}
 	s->value = value_copy;

@@ -24,11 +24,10 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
-
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -61,13 +60,13 @@ static struct method *alloc_method(const char *path, struct peer *p)
 {
 	struct method *m = calloc(1, sizeof(*m));
 	if (unlikely(m == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
+		log_err("Could not allocate memory for %s object!\n",
 			"method");
 		return NULL;
 	}
 	m->path = duplicate_string(path);
 	if (unlikely(m->path == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
+		log_err("Could not allocate memory for %s object!\n",
 			"path");
 		goto alloc_path_failed;
 	}

@@ -24,11 +24,11 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "compiler.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -59,16 +59,14 @@ static struct fetch *alloc_fetch(struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
-			"fetch");
+		log_err("Could not allocate memory for %s object!\n", "fetch");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
 	f->fetch_id = duplicate_string(id);
 	if (unlikely(f->fetch_id == NULL)) {
-		fprintf(stderr, "Could not allocate memory for %s object!\n",
-			"fetch ID");
+		log_err("Could not allocate memory for %s object!\n", "fetch ID");
 		free(f);
 		return NULL;
 	}
@@ -314,11 +312,11 @@ static int add_fetch_to_state_and_notify(struct state *s, struct fetch *f)
 {
 	if (state_matches(s, f)) {
 		if (unlikely(add_fetch_to_state(s, f) != 0)) {
-			fprintf(stderr, "Can't add fetch to state");
+			log_err("Can't add fetch to state");
 			return -1;
 		}
 		if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
-			fprintf(stderr, "Can't notify fetching peer");
+			log_err("Can't notify fetching peer");
 			return -1;
 		}
 	}

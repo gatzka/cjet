@@ -30,7 +30,6 @@
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <signal.h>
-#include <stdio.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -39,6 +38,7 @@
 
 #include "compiler.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "config/peer_io.h"
 #include "io_loop.h"
 #include "list.h"
@@ -56,12 +56,12 @@ static int set_fd_non_blocking(int fd)
 
 	fd_flags = fcntl(fd, F_GETFL, 0);
 	if (unlikely(fd_flags < 0)) {
-		fprintf(stderr, "Could not get fd flags!\n");
+		log_err("Could not get fd flags!\n");
 		return -1;
 	}
 	fd_flags |= O_NONBLOCK;
 	if (unlikely(fcntl(fd, F_SETFL, fd_flags) < 0)) {
-		fprintf(stderr, "Could not set %s!\n", "O_NONBLOCK");
+		log_err("Could not set %s!\n", "O_NONBLOCK");
 		return -1;
 	}
 	return 0;
@@ -76,13 +76,13 @@ static struct peer *setup_listen_socket(void)
 
 	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
-		fprintf(stderr, "Could not create listen socket!\n");
+		log_err("Could not create listen socket!\n");
 		return NULL;
 	}
 
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 			sizeof(reuse_on)) < 0) {
-		fprintf(stderr, "Could not set %s!\n", "SO_REUSEADDR");
+		log_err("Could not set %s!\n", "SO_REUSEADDR");
 		goto so_reuse_failed;
 	}
 
@@ -96,12 +96,12 @@ static struct peer *setup_listen_socket(void)
 	serveraddr.sin6_addr = in6addr_any;
 	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
 		sizeof(serveraddr)) < 0) {
-		fprintf(stderr, "bind failed!\n");
+		log_err("bind failed!\n");
 		goto bind_failed;
 	}
 
 	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
-		fprintf(stderr, "listen failed!\n");
+		log_err("listen failed!\n");
 		goto listen_failed;
 	}
 
@@ -135,25 +135,25 @@ static int configure_keepalive(int fd)
 {
 	int opt = 12;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPIDLE");
+		log_err("error setting socket option %s\n", "TCP_KEEPIDLE");
 		return -1;
 	}
 
 	opt = 3;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPINTVL");
+		log_err("error setting socket option %s\n", "TCP_KEEPINTVL");
 		return -1;
 	}
 
 	opt = 2;
 	if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option %s\n", "TCP_KEEPCNT");
+		log_err("error setting socket option %s\n", "TCP_KEEPCNT");
 		return -1;
 	}
 
 	opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-		fprintf(stderr, "error setting socket option %s\n", "SO_KEEPALIVE");
+		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
 		return -1;
 	}
 
@@ -183,7 +183,7 @@ static int handle_new_connection(int fd)
 
 	struct peer *peer = alloc_peer(fd);
 	if (unlikely(peer == NULL)) {
-		fprintf(stderr, "Could not allocate peer!\n");
+		log_err("Could not allocate peer!\n");
 		close(fd);
 		return -1;
 	}
@@ -213,7 +213,7 @@ static int accept_all(int listen_fd)
 char *get_read_ptr(struct peer *p, unsigned int count)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
-		fprintf(stderr, "peer asked for too much data: %u!\n", count);
+		log_err("peer asked for too much data: %u!\n", count);
 		return 0;
 	}
 	while (1) {
@@ -232,7 +232,7 @@ char *get_read_ptr(struct peer *p, unsigned int count)
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
-				fprintf(stderr, "unexpected %s error: %s!\n", "read",
+				log_err("unexpected %s error: %s!\n", "read",
 					strerror(errno));
 				return (char *)IO_ERROR;
 			}
@@ -345,7 +345,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 
 	if (unlikely((sent == -1) &&
 		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
-		fprintf(stderr, "unexpected %s error: %s!\n", "write",
+		log_err("unexpected %s error: %s!\n", "write",
 			strerror(errno));
 		return -1;
 	}
@@ -466,7 +466,7 @@ int handle_all_peer_operations(struct peer *p)
 			break;
 
 		default:
-			fprintf(stderr, "Unknown client operation!\n");
+			log_err("Unknown client operation!\n");
 			return -1;
 			break;
 		}
@@ -483,11 +483,11 @@ static void sighandler(int signum)
 static int register_signal_handler(void)
 {
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
-		fprintf(stderr, "signal failed!\n");
+		log_err("signal failed!\n");
 		return -1;
 	}
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
-		fprintf(stderr, "signal failed!\n");
+		log_err("signal failed!\n");
 		signal(SIGTERM, SIG_DFL);
 		return -1;
 	}
@@ -504,12 +504,10 @@ static int handle_error_events(struct peer *p,
 	const struct peer *listen_server)
 {
 	if (p == listen_server) {
-		fprintf(stderr,
-			"epoll error on listen fd!\n");
+		log_err("epoll error on listen fd!\n");
 		return -1;
 	} else {
-		fprintf(stderr,
-			"epoll error on peer fd!\n");
+		log_err("epoll error on peer fd!\n");
 		free_peer(p);
 		return 0;
 	}

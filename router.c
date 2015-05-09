@@ -24,10 +24,9 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
-
 #include "compiler.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
 #include "peer.h"
@@ -91,7 +90,7 @@ cJSON *create_routed_message(const char *path, const char *name,
 	return message;
 
 error:
-	fprintf(stderr, "Could not allocate memory for %s object!\n", "routed");
+	log_err("Could not allocate memory for %s object!\n", "routed");
 	cJSON_Delete(message);
 	return NULL;
 }
@@ -103,7 +102,7 @@ int setup_routing_information(const struct peer *routing_peer,
 	if (origin_request_id != NULL) {
 		id_copy = cJSON_Duplicate(origin_request_id, 1);
 		if (unlikely(id_copy == NULL)) {
-			fprintf(stderr, "Could not copy value object!\n");
+			log_err("Could not copy value object!\n");
 			return -1;
 		}
 	} else {
@@ -126,7 +125,7 @@ static void format_and_send_response(struct peer *p, cJSON *response)
 		send_message(p, rendered, strlen(rendered));
 		cJSON_free(rendered);
 	} else {
-		fprintf(stderr, "Could not render JSON into a string!\n");
+		log_err("Could not render JSON into a string!\n");
 	}
 }
 
@@ -144,11 +143,11 @@ static void send_routing_response(struct peer *p,
 			format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
 		} else {
-			fprintf(stderr, "Could not create %s response!\n", "result");
+			log_err("Could not create %s response!\n", "result");
 			cJSON_Delete(response_copy);
 		}
 	} else {
-		fprintf(stderr, "Could not allocate memory for %s object!\n", "response_copy");
+		log_err("Could not allocate memory for %s object!\n", "response_copy");
 	}
 }
 
@@ -157,11 +156,11 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
-		fprintf(stderr, "no id in response!\n");
+		log_err("no id in response!\n");
 		return -1;
 	}
 	if (unlikely(id->type != cJSON_Number)) {
-		fprintf(stderr, "id is not a number!\n");
+		log_err("id is not a number!\n");
 		return -1;
 	}
 	struct value_route_table val;
@@ -190,7 +189,7 @@ static void send_shutdown_response(struct peer *p,
 			format_and_send_response(p, error_response);
 			cJSON_Delete(error_response);
 		} else {
-			fprintf(stderr, "Could not create %s response!\n", "error");
+			log_err("Could not create %s response!\n", "error");
 			cJSON_Delete(error);
 		}
 	}
