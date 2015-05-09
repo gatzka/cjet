@@ -2,7 +2,7 @@
 SET(CMAKE_SYSTEM_NAME Linux)
 SET(CMAKE_SYSTEM_PROCESSOR powerpc)
 
-SET(CJET_TOOLCHAIN_PATH /opt/poky/1.6/sysroots/)
+SET(CJET_TOOLCHAIN_PATH /opt/poky/1.7.1/sysroots/)
 
 SET(triple powerpc-poky-linux)
 
