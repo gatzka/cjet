@@ -58,25 +58,3 @@ TARGET_LINK_LIBRARIES(
 	${DYNLIBS}
 )
 
-SET(ECHO_FILES
-	io.c
-	io_loop.c
-	../main.c
-	../../json/cJSON.c
-	../../echo.c
-	../../fetch.c
-	../../method.c
-	../../peer.c
-	../../response.c
-	../../router.c
-	../../state.c
-	../../uuid.c
-)
-ADD_EXECUTABLE(echo.bin
-	${ECHO_FILES}
-)
-TARGET_LINK_LIBRARIES(
-	echo.bin
-	${DYNLIBS}
-)
-
