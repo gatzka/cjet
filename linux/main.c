@@ -26,6 +26,7 @@
 
 #include <signal.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "config/io.h"
 #include "config/log.h"
@@ -34,6 +35,9 @@
 
 int main(void)
 {
+	if (daemon(0, 0) != 0) {
+		log_err("Can't daemonize cjet!\n");
+	}
 	signal(SIGPIPE, SIG_IGN);
 
 	if ((create_state_hashtable()) == -1) {
