@@ -28,7 +28,6 @@
 
 #include "compiler.h"
 #include "config/io.h"
-#include "config/log.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -59,14 +58,14 @@ static struct fetch *alloc_fetch(struct peer *p, const char *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
-		log_err("Could not allocate memory for %s object!\n", "fetch");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
 	f->fetch_id = duplicate_string(id);
 	if (unlikely(f->fetch_id == NULL)) {
-		log_err("Could not allocate memory for %s object!\n", "fetch ID");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
 		free(f);
 		return NULL;
 	}
@@ -308,15 +307,15 @@ static int notify_fetching_peer(struct state *s, struct fetch *f,
 	return 0;
 }
 
-static int add_fetch_to_state_and_notify(struct state *s, struct fetch *f)
+static int add_fetch_to_state_and_notify(const struct peer *p, struct state *s, struct fetch *f)
 {
 	if (state_matches(s, f)) {
 		if (unlikely(add_fetch_to_state(s, f) != 0)) {
-			log_err("Can't add fetch to state");
+			log_peer_err(p, "Can't add fetch to state");
 			return -1;
 		}
 		if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
-			log_err("Can't notify fetching peer");
+			log_peer_err(p, "Can't notify fetching peer");
 			return -1;
 		}
 	}
@@ -329,7 +328,7 @@ static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
 		struct state *s = list_entry(item, struct state, state_list);
-		if (unlikely(add_fetch_to_state_and_notify(s, f) != 0)) {
+		if (unlikely(add_fetch_to_state_and_notify(p, s, f) != 0)) {
 			return -1;
 		}
 	}
@@ -402,7 +401,7 @@ static int find_fetchers_for_state_in_peer(const struct peer *p,
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->fetch_list) {
 		struct fetch *f = list_entry(item, struct fetch, next_fetch);
-		if (unlikely(add_fetch_to_state_and_notify(s, f) != 0)) {
+		if (unlikely(add_fetch_to_state_and_notify(p, s, f) != 0)) {
 			return -1;
 		}
 	}

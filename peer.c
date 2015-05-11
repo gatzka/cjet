@@ -133,7 +133,7 @@ void remove_peer_from_routes(const struct peer *peer_to_remove)
 }
 
 #define LOG_BUFFER_SIZE 100
-void log_peer_err(struct peer *p, const char *fmt, ...)
+void log_peer_err(const struct peer *p, const char *fmt, ...)
 {
 	int written;
 	char buffer[LOG_BUFFER_SIZE];

@@ -30,7 +30,6 @@
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
-#include "config/log.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -75,17 +74,17 @@ static struct state *alloc_state(const char *path, cJSON *value_object,
 {
 	struct state *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
-		log_err("Could not allocate memory for %s object!\n", "state");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "state");
 		return NULL;
 	}
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
-		log_err("Could not allocate memory for %s object!\n", "path");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
 		goto alloc_path_failed;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 	if (unlikely(value_copy == NULL)) {
-		log_err("Could not copy value object!\n");
+		log_peer_err(p, "Could not copy value object!\n");
 		goto value_copy_failed;
 	}
 	s->value = value_copy;
@@ -165,7 +164,7 @@ cJSON *set_state(struct peer *p, const char *path,
 	}
 
 	int routed_request_id = get_routed_request_uuid();
-	cJSON *routed_message = create_routed_message(path, "value", value, routed_request_id);
+	cJSON *routed_message = create_routed_message(p, path, "value", value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 			"reason", "could not create routed JSON object");

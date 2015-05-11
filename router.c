@@ -26,7 +26,6 @@
 
 #include "compiler.h"
 #include "config/io.h"
-#include "config/log.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
 #include "peer.h"
@@ -50,7 +49,7 @@ void delete_routing_table(struct peer *p)
 	HASHTABLE_DELETE(route_table, p->routing_table);
 }
 
-cJSON *create_routed_message(const char *path, const char *name,
+cJSON *create_routed_message(const struct peer *p, const char *path, const char *name,
 	cJSON *value, int id)
 {
 	cJSON *message = cJSON_CreateObject();
@@ -90,7 +89,7 @@ cJSON *create_routed_message(const char *path, const char *name,
 	return message;
 
 error:
-	log_err("Could not allocate memory for %s object!\n", "routed");
+	log_peer_err(p, "Could not allocate memory for %s object!\n", "routed");
 	cJSON_Delete(message);
 	return NULL;
 }
@@ -102,7 +101,7 @@ int setup_routing_information(const struct peer *routing_peer,
 	if (origin_request_id != NULL) {
 		id_copy = cJSON_Duplicate(origin_request_id, 1);
 		if (unlikely(id_copy == NULL)) {
-			log_err("Could not copy value object!\n");
+			log_peer_err(origin_peer, "Could not copy value object!\n");
 			return -1;
 		}
 	} else {
@@ -125,7 +124,7 @@ static void format_and_send_response(struct peer *p, cJSON *response)
 		send_message(p, rendered, strlen(rendered));
 		cJSON_free(rendered);
 	} else {
-		log_err("Could not render JSON into a string!\n");
+		log_peer_err(p, "Could not render JSON into a string!\n");
 	}
 }
 
@@ -143,11 +142,11 @@ static void send_routing_response(struct peer *p,
 			format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
 		} else {
-			log_err("Could not create %s response!\n", "result");
+			log_peer_err(p, "Could not create %s response!\n", "result");
 			cJSON_Delete(response_copy);
 		}
 	} else {
-		log_err("Could not allocate memory for %s object!\n", "response_copy");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "response_copy");
 	}
 }
 
@@ -156,11 +155,11 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 {
 	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
-		log_err("no id in response!\n");
+		log_peer_err(p, "no id in response!\n");
 		return -1;
 	}
 	if (unlikely(id->type != cJSON_Number)) {
-		log_err("id is not a number!\n");
+		log_peer_err(p, "id is not a number!\n");
 		return -1;
 	}
 	struct value_route_table val;
@@ -189,7 +188,7 @@ static void send_shutdown_response(struct peer *p,
 			format_and_send_response(p, error_response);
 			cJSON_Delete(error_response);
 		} else {
-			log_err("Could not create %s response!\n", "error");
+			log_peer_err(p, "Could not create %s response!\n", "error");
 			cJSON_Delete(error);
 		}
 	}

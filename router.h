@@ -10,7 +10,7 @@ extern "C" {
 
 #define ROUTED_MESSAGE -1
 
-cJSON *create_routed_message(const char *path, const char *name,
+cJSON *create_routed_message(const struct peer *p, const char *path, const char *name,
 	cJSON *value, int id);
 int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, cJSON *origin_request_id, int id);

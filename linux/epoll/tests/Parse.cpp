@@ -93,6 +93,10 @@ extern "C" {
 	{
 		return NULL;
 	}
+
+	void log_peer_err(const struct peer *p, const char *fmt, ...)
+	{
+	}
 }
 
 struct F {

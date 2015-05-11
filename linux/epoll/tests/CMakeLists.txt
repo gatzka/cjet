@@ -76,6 +76,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(JSON_PARSE_TEST
 	../../../json/cJSON.c
+	../../../config.c
 	../../../parse.c
 	../../../response.c
 	Parse.cpp

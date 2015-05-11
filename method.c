@@ -27,7 +27,6 @@
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
-#include "config/log.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -60,13 +59,13 @@ static struct method *alloc_method(const char *path, struct peer *p)
 {
 	struct method *m = calloc(1, sizeof(*m));
 	if (unlikely(m == NULL)) {
-		log_err("Could not allocate memory for %s object!\n",
+		log_peer_err(p, "Could not allocate memory for %s object!\n",
 			"method");
 		return NULL;
 	}
 	m->path = duplicate_string(path);
 	if (unlikely(m->path == NULL)) {
-		log_err("Could not allocate memory for %s object!\n",
+		log_peer_err(p, "Could not allocate memory for %s object!\n",
 			"path");
 		goto alloc_path_failed;
 	}
@@ -173,7 +172,7 @@ cJSON *call_method(struct peer *p, const char *path,
 	}
 
 	int routed_request_id = get_routed_request_uuid();
-	cJSON *routed_message = create_routed_message(path, NULL, args, routed_request_id);
+	cJSON *routed_message = create_routed_message(p, path, NULL, args, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 			"reason", "could not create routed JSON object");
