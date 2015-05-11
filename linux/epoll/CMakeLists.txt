@@ -40,6 +40,7 @@ SET(CJET_FILES
 	io.c
 	io_loop.c
 	../main.c
+	../../config.c
 	../../json/cJSON.c
 	../../fetch.c
 	../../method.c

@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "compiler.h"
+#include "config.h"
 #include "config/config.h"
 #include "config/io.h"
 #include "config/log.h"
@@ -206,9 +207,10 @@ static int process_unfetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_config(cJSON *json_rpc,struct peer *p)
+static int process_config(cJSON *json_rpc, cJSON *params, struct peer *p)
 {
-	return possibly_send_response(json_rpc, NULL, p);
+	cJSON *error = config_peer(p, params);
+	return possibly_send_response(json_rpc, error, p);
 }
 
 static int handle_method(cJSON *json_rpc, const char *method_name,
@@ -236,7 +238,7 @@ static int handle_method(cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "unfetch") == 0) {
 		return process_unfetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return process_config(json_rpc, p);
+		return process_config(json_rpc, params, p);
 	} else {
 		cJSON *error = create_method_not_found_error("reason", method_name);
 		return possibly_send_response(json_rpc, error, p);

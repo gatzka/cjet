@@ -64,6 +64,9 @@ static void free_peer_resources(struct peer *p)
 	remove_all_methods_from_peer(p);
 	delete_routing_table(p);
 	list_del(&p->next_peer);
+	if (p->name != NULL) {
+		free(p->name);
+	}
 	free(p);
 	--number_of_peers;
 }

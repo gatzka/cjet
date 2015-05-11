@@ -35,6 +35,7 @@ struct peer {
 	void *routing_table;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
+	char *name;
 };
 
 struct list_head *get_peer_list(void);
