@@ -112,26 +112,26 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 	struct value_state_table val;
 	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
 	if (unlikely(ret != HASHTABLE_SUCCESS)) {
-		cJSON *error = create_invalid_params_error("not exists", path);
+		cJSON *error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 	struct state *s = val.vals[0];
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
-			create_invalid_params_error("not owner of state", path);
+			create_invalid_params_error(p, "not owner of state", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (value_copy == NULL) {
 		cJSON *error =
-		    create_internal_error("reason", "not enough memory");
+		    create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 	cJSON_Delete(s->value);
 	s->value = value_copy;
 	if (unlikely(notify_fetchers(s, "change") != 0)) {
 		cJSON *error =
-		    create_internal_error("reason", "Can't notify fetching peer");
+		    create_internal_error(p, "reason", "Can't notify fetching peer");
 		return error;
 	}
 	return NULL;
@@ -144,13 +144,13 @@ cJSON *set_state(struct peer *p, const char *path,
 	struct value_state_table val;
 	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
 	if (unlikely(ret != HASHTABLE_SUCCESS)) {
-		error = create_invalid_params_error("not exists", path);
+		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 	struct state *s = val.vals[0];
 	if (unlikely(s->peer == p)) {
 		error = create_invalid_params_error(
-			"owner of state shall use change instead of set", path);
+			p, "owner of state shall use change instead of set", path);
 		return error;
 	}
 
@@ -159,7 +159,7 @@ cJSON *set_state(struct peer *p, const char *path,
 		 ((origin_request_id->type != cJSON_String) &&
 		  (origin_request_id->type != cJSON_Number))) {
 		error = create_invalid_params_error(
-			"reason", "request id is neither string nor number");
+			p, "reason", "request id is neither string nor number");
 		return error;
 	}
 
@@ -167,26 +167,26 @@ cJSON *set_state(struct peer *p, const char *path,
 	cJSON *routed_message = create_routed_message(p, path, "value", value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
-			"reason", "could not create routed JSON object");
+			p, "reason", "could not create routed JSON object");
 		return error;
 	}
 	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
 			routed_request_id) != 0)) {
 		error = create_internal_error(
-			"reason", "could not setup routing information");
+			p, "reason", "could not setup routing information");
 		goto delete_json;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
 		error = create_internal_error(
-			"reason", "could not render message");
+			p, "reason", "could not render message");
 		goto delete_json;
 	}
 	if (unlikely(send_message(s->peer, rendered_message,
 			strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
-			"reason", "could not send routing information");
+			p, "reason", "could not send routing information");
 	}
 
 	free(rendered_message);
@@ -200,19 +200,19 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	struct value_state_table val;
 	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
 	if (unlikely(ret == HASHTABLE_SUCCESS)) {
-		cJSON *error = create_invalid_params_error("exists", path);
+		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
 	struct state *s = alloc_state(path, value, p);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
-		    create_internal_error("reason", "not enough memory");
+		    create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 
 	if (unlikely(find_fetchers_for_state(s) != 0)) {
 		cJSON *error =
-		    create_internal_error("reason", "Can't notify fetching peer");
+		    create_internal_error(p, "reason", "Can't notify fetching peer");
 		free_state(s);
 		return error;
 	}
@@ -221,7 +221,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
 	new_val.vals[0] = s;
 	if (unlikely(HASHTABLE_PUT(state_table, state_hashtable, s->path, new_val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
-		    create_internal_error("reason", "state table full");
+		    create_internal_error(p, "reason", "state table full");
 		free_state(s);
 		return error;
 	}

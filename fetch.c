@@ -37,16 +37,16 @@
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
-static const char *get_fetch_id(cJSON *params, cJSON **err)
+static const char *get_fetch_id(const struct peer *p, cJSON *params, cJSON **err)
 {
 	cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
 		*err =
-			 create_invalid_params_error("reason", "no fetch id given");
+			 create_invalid_params_error(p, "reason", "no fetch id given");
 		return NULL;
 	}
 	if (unlikely(id->type != cJSON_String)) {
-		*err = create_invalid_params_error("reason",
+		*err = create_invalid_params_error(p, "reason",
 			"fetch ID is not a string");
 		return NULL;
 	}
@@ -162,22 +162,22 @@ static int get_match_function(struct path_matcher *pm, const char *path,
 	return -1;
 }
 
-static cJSON *fill_matcher(struct path_matcher *matcher, const char *fetch_type,
-	const char *path)
+static cJSON *fill_matcher(const struct peer *p, struct path_matcher *matcher,
+	const char *fetch_type, const char *path)
 {
 	if (unlikely(get_match_function(matcher, path, fetch_type) < 0)) {
-		return create_internal_error("reason",
+		return create_internal_error(p, "reason",
 			"match function not implemented");
 	}
 	matcher->fetch_path = duplicate_string(path);
 	if (unlikely(matcher->fetch_path == NULL)) {
-		return create_internal_error("reason", "not enough memory");
+		return create_internal_error(p, "reason", "not enough memory");
 	}
 
 	return NULL;
 }
 
-static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
+static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, cJSON *params)
 {
 	cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
@@ -185,7 +185,7 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 	}
 	if (unlikely(path->type != cJSON_Object)) {
 		return create_invalid_params_error(
-			"reason", "fetch path is not an object");
+			p, "reason", "fetch path is not an object");
 	}
 
 	cJSON *matcher = path->child;
@@ -193,9 +193,9 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 	while (matcher) {
 		if (unlikely(matcher->type != cJSON_String)) {
 			return create_invalid_params_error(
-				"reason", "match path is not a string");
+				p, "reason", "match path is not a string");
 		}
-		cJSON *error = fill_matcher(path_matcher, matcher->string,
+		cJSON *error = fill_matcher(p, path_matcher, matcher->string,
 			matcher->valuestring);
 		if (unlikely(error != NULL)) {
 			return error;
@@ -206,9 +206,9 @@ static cJSON *add_path_matchers(struct fetch *f, cJSON *params)
 	return NULL;
 }
 
-static cJSON *add_matchers(struct fetch *f, cJSON *params)
+static cJSON *add_matchers(const struct peer *p, struct fetch *f, cJSON *params)
 {
-	cJSON *error = add_path_matchers(f, params);
+	cJSON *error = add_path_matchers(p, f, params);
 	if (unlikely(error != NULL)) {
 		return error;
 	}
@@ -428,23 +428,23 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 	struct fetch **fetch_return)
 {
 	cJSON *error;
-	const char *id = get_fetch_id(params, &error);
+	const char *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
 		return error;
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
-		error = create_invalid_params_error("reason",
+		error = create_invalid_params_error(p, "reason",
 			"fetch ID already in use");
 		return error;
 	}
 
 	f = alloc_fetch(p, id);
 	if (unlikely(f == NULL)) {
-		error = create_internal_error("reason", "not enough memory");
+		error = create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
-	error = add_matchers(f, params);
+	error = add_matchers(p, f, params);
 	if (unlikely(error != NULL)) {
 		free_fetch(f);
 		return error;
@@ -458,13 +458,13 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
 {
 	cJSON *error;
-	const char *id = get_fetch_id(params, &error);
+	const char *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
 		return error;
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f == NULL)) {
-		error = create_invalid_params_error("reason",
+		error = create_invalid_params_error(p, "reason",
 			"fetch ID not found for unfetch");
 		return error;
 	}

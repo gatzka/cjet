@@ -97,14 +97,14 @@ cJSON *add_method_to_peer(struct peer *p, const char *path)
 	struct value_method_table val;
 	int ret = HASHTABLE_GET(method_table, method_hashtable, path, &val);
 	if (unlikely(ret == HASHTABLE_SUCCESS)) {
-		cJSON *error = create_invalid_params_error("exists", path);
+		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
 
 	struct method *m = alloc_method(path, p);
 	if (unlikely(m == NULL)) {
 		cJSON *error =
-		    create_internal_error("reason", "not enough memory");
+		    create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 
@@ -112,7 +112,7 @@ cJSON *add_method_to_peer(struct peer *p, const char *path)
 	new_val.vals[0] = m;
 	if (unlikely(HASHTABLE_PUT(method_table, method_hashtable, m->path, new_val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
-		    create_internal_error("reason", "method table full");
+		    create_internal_error(p, "reason", "method table full");
 		return error;
 	}
 
@@ -151,14 +151,14 @@ cJSON *call_method(struct peer *p, const char *path,
 	struct value_method_table val;
 	int ret = HASHTABLE_GET(method_table, method_hashtable, path, &val);
 	if (unlikely(ret != HASHTABLE_SUCCESS)) {
-		error = create_invalid_params_error("not exists", path);
+		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 
 	struct method *m = val.vals[0];
 	if (unlikely(m->peer == p)) {
 		error = create_invalid_params_error(
-			"owner of method shall not call method via jet", path);
+			p, "owner of method shall not call method via jet", path);
 		return error;
 	}
 
@@ -167,7 +167,7 @@ cJSON *call_method(struct peer *p, const char *path,
 		 ((origin_request_id->type != cJSON_String) &&
 		  (origin_request_id->type != cJSON_Number))) {
 		error = create_invalid_params_error(
-			"reason", "request id is neither string nor number");
+			p, "reason", "request id is neither string nor number");
 		return error;
 	}
 
@@ -175,27 +175,27 @@ cJSON *call_method(struct peer *p, const char *path,
 	cJSON *routed_message = create_routed_message(p, path, NULL, args, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
-			"reason", "could not create routed JSON object");
+			p, "reason", "could not create routed JSON object");
 		return error;
 	}
 
 	if (unlikely(setup_routing_information(m->peer, p, origin_request_id,
 			routed_request_id) != 0)) {
 		error = create_internal_error(
-			"reason", "could not setup routing information");
+			p, "reason", "could not setup routing information");
 		goto delete_json;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
 		error = create_internal_error(
-			"reason", "could not render message");
+			p, "reason", "could not render message");
 		goto delete_json;
 	}
 	if (unlikely(send_message(m->peer, rendered_message,
 			strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
-			"reason", "could not send routing information");
+			p, "reason", "could not send routing information");
 	}
 
 	free(rendered_message);

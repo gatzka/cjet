@@ -27,12 +27,13 @@
 #include "compiler.h"
 #include "config/log.h"
 #include "json/cJSON.h"
+#include "peer.h"
 #include "response.h"
 
-static cJSON *add_sub_to_object(cJSON *root, cJSON *sub, const char *name)
+static cJSON *add_sub_to_object(const struct peer *p, cJSON *root, cJSON *sub, const char *name)
 {
 	if (unlikely(sub == NULL)) {
-		log_err("Could not allocate memory for %s object!\n", name);
+		log_peer_err(p, "Could not allocate memory for %s object!\n", name);
 		cJSON_Delete(root);
 		root = NULL;
 	} else {
@@ -41,7 +42,7 @@ static cJSON *add_sub_to_object(cJSON *root, cJSON *sub, const char *name)
 	return root;
 }
 
-static cJSON *create_common_response(const cJSON *id)
+static cJSON *create_common_response(const struct peer *p, const cJSON *id)
 {
 	cJSON *root = cJSON_CreateObject();
 	if (unlikely(root == NULL)) {
@@ -51,17 +52,17 @@ static cJSON *create_common_response(const cJSON *id)
 	switch (id->type) {
 
 	case cJSON_String:
-		root = add_sub_to_object(root,
+		root = add_sub_to_object(p, root,
 			cJSON_CreateString(id->valuestring), "id");
 		break;
 
 	case cJSON_Number:
-		root = add_sub_to_object(root,
+		root = add_sub_to_object(p, root,
 			cJSON_CreateNumber(id->valueint), "id");
 		break;
 
 	default:
-		log_err("Unsupported method id type!\n");
+		log_peer_err(p, "Unsupported method id type!\n");
 		cJSON_Delete(root);
 		root = NULL;
 		break;
@@ -69,18 +70,18 @@ static cJSON *create_common_response(const cJSON *id)
 	return root;
 }
 
-static cJSON *create_error_object(const char *message, int code,
+static cJSON *create_error_object(const struct peer *p, const char *message, int code,
 	const char *tag, const char *reason)
 {
 	cJSON *error = cJSON_CreateObject();
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
-	error = add_sub_to_object(error, cJSON_CreateString(message), "message");
+	error = add_sub_to_object(p, error, cJSON_CreateString(message), "message");
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
-	error = add_sub_to_object(error, cJSON_CreateNumber(code), "code");
+	error = add_sub_to_object(p, error, cJSON_CreateNumber(code), "code");
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
@@ -88,7 +89,7 @@ static cJSON *create_error_object(const char *message, int code,
 		cJSON *data = cJSON_CreateObject();
 		if (likely(data != NULL)) {
 			cJSON_AddItemToObject(error, "data", data);
-			if (unlikely(add_sub_to_object(data, cJSON_CreateString(reason), tag) == NULL)) {
+			if (unlikely(add_sub_to_object(p, data, cJSON_CreateString(reason), tag) == NULL)) {
 				goto err;
 			}
 		}
@@ -96,33 +97,33 @@ static cJSON *create_error_object(const char *message, int code,
 	return error;
 
 err:
-	log_err("Could not create error JSON object!\n");
+	log_peer_err(p, "Could not create error JSON object!\n");
 	return NULL;
 }
 
-cJSON *create_invalid_request_error(const char *tag, const char *reason)
+cJSON *create_invalid_request_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object("Invalid Request", -32600, tag, reason);
+	return create_error_object(p, "Invalid Request", -32600, tag, reason);
 }
 
-cJSON *create_method_not_found_error(const char *tag, const char *reason)
+cJSON *create_method_not_found_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object("Method not found", -32601, tag, reason);
+	return create_error_object(p, "Method not found", -32601, tag, reason);
 }
 
-cJSON *create_invalid_params_error(const char *tag, const char *reason)
+cJSON *create_invalid_params_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object("Invalid params", -32602, tag, reason);
+	return create_error_object(p, "Invalid params", -32602, tag, reason);
 }
 
-cJSON *create_internal_error(const char *tag, const char *reason)
+cJSON *create_internal_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object("Internal error", -32603, tag, reason);
+	return create_error_object(p, "Internal error", -32603, tag, reason);
 }
 
-cJSON *create_error_response(const cJSON *id, cJSON *error)
+cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error)
 {
-	cJSON *root = create_common_response(id);
+	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
@@ -130,9 +131,9 @@ cJSON *create_error_response(const cJSON *id, cJSON *error)
 	return root;
 }
 
-cJSON *create_boolean_success_response(const cJSON *id, int true_false)
+cJSON *create_boolean_success_response(const struct peer *p, const cJSON *id, int true_false)
 {
-	cJSON *root = create_common_response(id);
+	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
@@ -142,13 +143,13 @@ cJSON *create_boolean_success_response(const cJSON *id, int true_false)
 	} else {
 		boolean = cJSON_CreateTrue();
 	}
-	root = add_sub_to_object(root, boolean, "result");
+	root = add_sub_to_object(p, root, boolean, "result");
 	return root;
 }
 
-cJSON *create_result_response(const cJSON *id, cJSON *result)
+cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result)
 {
-	cJSON *root = create_common_response(id);
+	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}

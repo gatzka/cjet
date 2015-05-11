@@ -137,7 +137,7 @@ static void send_routing_response(struct peer *p,
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
 	if (likely(response_copy != NULL)) {
 		cJSON *result_response =
-			create_result_response(origin_request_id, response_copy);
+			create_result_response(p, origin_request_id, response_copy);
 		if (likely(result_response != NULL)) {
 			format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
@@ -180,10 +180,10 @@ static void send_shutdown_response(struct peer *p,
 		return;
 	}
 
-	cJSON *error = create_internal_error("reason", "peer shuts down");
+	cJSON *error = create_internal_error(p, "reason", "peer shuts down");
 	if (likely(error != NULL)) {
 		cJSON *error_response =
-			create_error_response(origin_request_id, error);
+			create_error_response(p, origin_request_id, error);
 		if (likely(error_response != NULL)) {
 			format_and_send_response(p, error_response);
 			cJSON_Delete(error_response);

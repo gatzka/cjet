@@ -40,7 +40,7 @@ cJSON *config_peer(struct peer *p, cJSON *params)
 	if (name != NULL) {
 		if (unlikely(name->type != cJSON_String)) {
 			cJSON *error = create_invalid_params_error(
-				"reason", "name is not a string");
+				p, "reason", "name is not a string");
 			return error;
 		}
 		p->name = duplicate_string(name->valuestring);
