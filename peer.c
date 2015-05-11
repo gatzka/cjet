@@ -26,6 +26,7 @@
 
 #include <arpa/inet.h>
 
+#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -33,6 +34,7 @@
 #include "compiler.h"
 #include "config/config.h"
 #include "config/io.h"
+#include "config/log.h"
 #include "fetch.h"
 #include "json/cJSON.h"
 #include "list.h"
@@ -82,6 +84,7 @@ struct peer *alloc_peer(int fd)
 		free(p);
 		return NULL;
 	}
+	p->name = NULL;
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
 	p->read_ptr = p->read_buffer;
@@ -127,4 +130,23 @@ void remove_peer_from_routes(const struct peer *peer_to_remove)
 		remove_peer_from_routing_table(p, peer_to_remove);
 	}
 	return;
+}
+
+#define LOG_BUFFER_SIZE 100
+void log_peer_err(struct peer *p, const char *fmt, ...)
+{
+	int written;
+	char buffer[LOG_BUFFER_SIZE];
+	buffer[0] = '\0';
+	if (p->name != NULL) {
+		written = sprintf(buffer, "%s: ", p->name);
+	} else {
+		written = snprintf(buffer, LOG_BUFFER_SIZE, "unknown: ");
+	}
+	char *ptr = &buffer[written];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ptr, LOG_BUFFER_SIZE - written, fmt, ap);
+	va_end(ap);
+	log_err("%s", buffer);
 }

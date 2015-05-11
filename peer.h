@@ -43,10 +43,9 @@ struct list_head *get_peer_list(void);
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
 void destroy_all_peers(void);
-
 int get_number_of_peers(void);
-
 void remove_peer_from_routes(const struct peer *p);
+void log_peer_err(struct peer *p, const char *fmt, ...);
 
 static inline ptrdiff_t unread_space(const struct peer *p)
 {
