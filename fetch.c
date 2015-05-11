@@ -230,12 +230,12 @@ static int state_matches(struct state *s, struct fetch *f)
 	for (unsigned int i = 0; i < match_array_size; ++i) {
 		if (f->matcher[i].match_function != NULL) {
 			int ret = f->matcher[i].match_function(&(f->matcher[i]), s->path);
-			if (ret != 0) {
-				return 1;
+			if (ret == 0) {
+				return 0;
 			}
 		}
 	}
-	return 0;
+	return 1;
 }
 
 static int add_fetch_to_state(struct state *s, struct fetch *f)
