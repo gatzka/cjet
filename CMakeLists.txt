@@ -29,27 +29,27 @@ IF(NOT CMAKE_BUILD_TYPE )
 	SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING "" FORCE)
 ENDIF()
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/epoll/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/src/linux/epoll/)
 
 SET(DYNLIBS
 	-lm
 )
 
 SET(CJET_FILES
-	linux/epoll/io.c
-	linux/epoll/io_loop.c
-	linux/main.c
-	config.c
-	json/cJSON.c
-	fetch.c
-	method.c
-	parse.c
-	peer.c
-	response.c
-	router.c
-	state.c
-	uuid.c
+	src/linux/epoll/io.c
+	src/linux/epoll/io_loop.c
+	src/linux/main.c
+	src/config.c
+	src/json/cJSON.c
+	src/fetch.c
+	src/method.c
+	src/parse.c
+	src/peer.c
+	src/response.c
+	src/router.c
+	src/state.c
+	src/uuid.c
 )
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}

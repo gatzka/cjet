@@ -32,14 +32,14 @@ script:
           make
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/cmake/clang.cmake ../  &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=../src/linux/cmake/clang.cmake ../  &&
           make
           ;;
         tests)
-          cmake ../linux/epoll/tests/  &&
+          cmake ../src/linux/epoll/tests/  &&
           make &&
           ctest -V &&
-          coveralls --root .. --build-root . --exclude json/ --exclude linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
+          coveralls --root .. --build-root . --exclude json/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
           ;;
       esac ;
     fi
@@ -51,7 +51,7 @@ addons:
       description: "Build submitted via Travis CI"
     build_script_url: https://raw.githubusercontent.com/gatzka/cjet/coverity_scan/scripts/travis/travisci_build_coverity_scan.sh
     notification_email: stephan.gatzka@gmail.com
-    build_command_prepend: "cmake ../linux/epoll/"
+    build_command_prepend: "cmake ../"
     build_command: "make"
     branch_pattern: coverity_scan
 
