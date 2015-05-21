@@ -28,11 +28,11 @@ script:
   - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
       case ${BUILD} in
         gcc)
-          cmake ../linux/epoll/  &&
+          cmake ../ &&
           make
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/cmake/clang.cmake ../linux/epoll/  &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=../linux/cmake/clang.cmake ../  &&
           make
           ;;
         tests)

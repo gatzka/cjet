@@ -30,26 +30,26 @@ IF(NOT CMAKE_BUILD_TYPE )
 ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/epoll/)
 
 SET(DYNLIBS
 	-lm
 )
 
 SET(CJET_FILES
-	io.c
-	io_loop.c
-	../main.c
-	../../config.c
-	../../json/cJSON.c
-	../../fetch.c
-	../../method.c
-	../../parse.c
-	../../peer.c
-	../../response.c
-	../../router.c
-	../../state.c
-	../../uuid.c
+	linux/epoll/io.c
+	linux/epoll/io_loop.c
+	linux/main.c
+	config.c
+	json/cJSON.c
+	fetch.c
+	method.c
+	parse.c
+	peer.c
+	response.c
+	router.c
+	state.c
+	uuid.c
 )
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
