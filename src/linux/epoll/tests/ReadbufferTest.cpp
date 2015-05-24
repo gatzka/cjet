@@ -337,20 +337,23 @@ BOOST_AUTO_TEST_CASE(fast_peer)
 BOOST_AUTO_TEST_CASE(slow_peer)
 {
 	parsed_length = 0;
-	parsed_msg = 0;
+	parsed_msg = NULL;
 
 	struct peer *p = alloc_peer(HANDLE_SLOW_PEER);
 	BOOST_REQUIRE(p != NULL);
 
 	int ret = handle_all_peer_operations(p);
+	BOOST_CHECK(parsed_msg == NULL);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(p->op == READ_MSG_LENGTH);
 
 	ret = handle_all_peer_operations(p);
+	BOOST_CHECK(parsed_msg == NULL);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(p->op == READ_MSG);
 
 	ret = handle_all_peer_operations(p);
+	BOOST_REQUIRE(parsed_msg != NULL);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(p->op == READ_MSG_LENGTH);
 	BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
