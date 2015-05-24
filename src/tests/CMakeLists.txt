@@ -10,7 +10,7 @@ IF(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../linux/epoll/)
 
 SET(WARN_SWITCHES "-Wall -Werror")
 
@@ -32,21 +32,54 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 file(COPY "make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
-SET(READBUFFER_TEST
-	../../../json/cJSON.c
-	../../../fetch.c
-	../../../method.c
-	../../../peer.c
-	../../../response.c
-	../../../router.c
-	../../../state.c
-	../../../uuid.c
-	../io.c
-	ReadbufferTest.cpp
+SET(RESPONSE_TEST
+	../json/cJSON.c
+	../response.c
+	Response.cpp
 )
-ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})
+ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
-	readbuffer_test.bin
+	response_test.bin
 	${Boost_LIBRARIES}
 )
+
+SET(PEER_TEST
+	../json/cJSON.c
+	../peer.c
+	Peer.cpp
+)
+ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
+TARGET_LINK_LIBRARIES(
+	peer_test.bin
+	${Boost_LIBRARIES}
+)
+
+SET(JSON_PARSE_TEST
+	../json/cJSON.c
+	../config.c
+	../parse.c
+	../response.c
+	Parse.cpp
+)
+ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
+TARGET_LINK_LIBRARIES(
+	parse_test.bin
+	${Boost_LIBRARIES}
+)
+
+SET(STATE_TEST
+	../json/cJSON.c
+	../response.c
+	../router.c
+	../state.c
+	../peer.c
+	../uuid.c
+	State.cpp
+)
+ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
+TARGET_LINK_LIBRARIES(
+	state_test.bin
+	${Boost_LIBRARIES}
+)
+ 
 

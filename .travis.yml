@@ -30,7 +30,7 @@ script:
           cmake ../ &&
           make &&
           make test &&
-          coveralls --root .. --build-root . --exclude json/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
+          coveralls --root .. --build-root . --exclude json/ --exclude src/tests/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
           ;;
         clang)
           cmake -DCMAKE_TOOLCHAIN_FILE=../src/linux/cmake/clang.cmake ../  &&
