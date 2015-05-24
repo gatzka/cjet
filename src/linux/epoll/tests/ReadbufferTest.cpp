@@ -357,7 +357,11 @@ BOOST_AUTO_TEST_CASE(slow_peer)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(p->op == READ_MSG_LENGTH);
 	BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
-	BOOST_CHECK(strncmp(parsed_msg, handle_slow_peer_msg, parsed_length) == 0);
+	if (parsed_msg != NULL) {
+		BOOST_CHECK(strncmp(parsed_msg, handle_slow_peer_msg, parsed_length) == 0);
+	} else {
+		BOOST_ERROR("no parsed message!");
+	}
 
 	free_peer(p);
 }
