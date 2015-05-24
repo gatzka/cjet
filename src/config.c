@@ -28,7 +28,6 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "jet_string.h"
 #include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
@@ -42,7 +41,7 @@ cJSON *config_peer(struct peer *p, cJSON *params)
 				p, "reason", "name is not a string");
 			return error;
 		}
-		set_peer_name(p, duplicate_string(name->valuestring));
+		set_peer_name(p, name->valuestring);
 	}
 	return NULL;
 }

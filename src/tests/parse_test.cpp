@@ -98,9 +98,8 @@ extern "C" {
 	{
 	}
 
-	void set_peer_name(struct peer *peer, char *name)
+	void set_peer_name(struct peer *peer, const char *name)
 	{
-		peer->name = name;
 	}
 }
 
