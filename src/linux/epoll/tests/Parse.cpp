@@ -118,10 +118,12 @@ struct F {
 static cJSON *create_correct_add_state()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "add");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
@@ -131,10 +133,12 @@ static cJSON *create_correct_add_state()
 static cJSON *create_correct_add_method()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "add");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
@@ -143,10 +147,12 @@ static cJSON *create_correct_add_method()
 static cJSON *create_correct_config_method()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "config");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
 }
@@ -154,6 +160,7 @@ static cJSON *create_correct_config_method()
 static cJSON *create_two_method_json()
 {
 	cJSON *array = cJSON_CreateArray();
+	BOOST_REQUIRE(array != NULL);
 	cJSON *method_1 = create_correct_add_state();
 	cJSON *method_2 = create_correct_add_state();
 	cJSON_AddItemToArray(array, method_1);
@@ -164,10 +171,12 @@ static cJSON *create_two_method_json()
 static cJSON *create_json_no_method()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "meth", "add");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
@@ -177,8 +186,10 @@ static cJSON *create_json_no_method()
 static cJSON *create_result_json()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON *result = cJSON_CreateObject();
+	BOOST_REQUIRE(result != NULL);
 	cJSON_AddItemToObject(root, "result", result);
 	return root;
 }
@@ -186,8 +197,10 @@ static cJSON *create_result_json()
 static cJSON *create_error_json()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON *error = cJSON_CreateObject();
+	BOOST_REQUIRE(error != NULL);
 	cJSON_AddItemToObject(root, "error", error);
 	return root;
 }
@@ -195,10 +208,12 @@ static cJSON *create_error_json()
 static cJSON *create_json_no_string_method()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddNumberToObject(root, "method", 123);
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
@@ -208,10 +223,12 @@ static cJSON *create_json_no_string_method()
 static cJSON *create_json_unsupported_method()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "horst");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
@@ -221,10 +238,12 @@ static cJSON *create_json_unsupported_method()
 static cJSON *create_add_without_path()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "add");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
@@ -233,10 +252,12 @@ static cJSON *create_add_without_path()
 static cJSON *create_correct_remove(const char *what)
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "remove");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", what);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
@@ -245,10 +266,12 @@ static cJSON *create_correct_remove(const char *what)
 static cJSON *create_remove_without_path()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "remove");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddItemToObject(root, "params", params);
 	return root;
 }
@@ -256,10 +279,12 @@ static cJSON *create_remove_without_path()
 static cJSON *create_path_no_string()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "add");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddNumberToObject(params, "path", 123);
 	cJSON_AddNumberToObject(params, "value", 123);
 	cJSON_AddItemToObject(root, "params", params);
@@ -269,6 +294,7 @@ static cJSON *create_path_no_string()
 static cJSON *create_json_no_params()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "add");
 	return root;
@@ -277,14 +303,17 @@ static cJSON *create_json_no_params()
 static cJSON *create_correct_fetch()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "fetch");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "id", "123456");
 	cJSON_AddItemToObject(root, "params", params);
 
 	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
 	cJSON_AddStringToObject(path, "equals", "person");
 	cJSON_AddStringToObject(path, "startsWith", "per");
 	cJSON_AddItemToObject(params, "path", path);
@@ -294,13 +323,16 @@ static cJSON *create_correct_fetch()
 static cJSON *create_fetch_without_id()
 {
 	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
 	cJSON_AddNumberToObject(root, "id", 7384);
 	cJSON_AddStringToObject(root, "method", "fetch");
 
 	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
 	cJSON_AddItemToObject(root, "params", params);
 
 	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
 	cJSON_AddStringToObject(path, "startsWith", "person");
 	cJSON_AddItemToObject(params, "path", path);
 	return root;
