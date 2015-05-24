@@ -42,7 +42,7 @@ SET(READBUFFER_TEST
 	../../../state.c
 	../../../uuid.c
 	../io.c
-	ReadbufferTest.cpp
+	readbuffer_test.cpp
 )
 ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})
 TARGET_LINK_LIBRARIES(

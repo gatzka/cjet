@@ -35,7 +35,7 @@ file(COPY "make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 SET(RESPONSE_TEST
 	../json/cJSON.c
 	../response.c
-	Response.cpp
+	response_test.cpp
 )
 ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
@@ -46,7 +46,7 @@ TARGET_LINK_LIBRARIES(
 SET(PEER_TEST
 	../json/cJSON.c
 	../peer.c
-	Peer.cpp
+	peer_test.cpp
 )
 ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
 TARGET_LINK_LIBRARIES(
@@ -59,7 +59,7 @@ SET(JSON_PARSE_TEST
 	../config.c
 	../parse.c
 	../response.c
-	Parse.cpp
+	parse_test.cpp
 )
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 TARGET_LINK_LIBRARIES(
@@ -74,7 +74,7 @@ SET(STATE_TEST
 	../state.c
 	../peer.c
 	../uuid.c
-	State.cpp
+	state_test.cpp
 )
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 TARGET_LINK_LIBRARIES(
