@@ -97,6 +97,11 @@ extern "C" {
 	void log_peer_err(const struct peer *p, const char *fmt, ...)
 	{
 	}
+
+	void set_peer_name(struct peer *peer, char *name)
+	{
+		peer->name = name;
+	}
 }
 
 struct F {

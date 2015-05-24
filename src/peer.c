@@ -132,6 +132,11 @@ void remove_peer_from_routes(const struct peer *peer_to_remove)
 	return;
 }
 
+void set_peer_name(struct peer *peer, char *name)
+{
+	peer->name = name;
+}
+
 #define LOG_BUFFER_SIZE 100
 void log_peer_err(const struct peer *p, const char *fmt, ...)
 {

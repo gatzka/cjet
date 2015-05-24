@@ -35,7 +35,6 @@
 
 cJSON *config_peer(struct peer *p, cJSON *params)
 {
-	(void)p;
 	cJSON *name = cJSON_GetObjectItem(params, "name");
 	if (name != NULL) {
 		if (unlikely(name->type != cJSON_String)) {
@@ -43,7 +42,7 @@ cJSON *config_peer(struct peer *p, cJSON *params)
 				p, "reason", "name is not a string");
 			return error;
 		}
-		p->name = duplicate_string(name->valuestring);
+		set_peer_name(p, duplicate_string(name->valuestring));
 	}
 	return NULL;
 }
