@@ -74,6 +74,16 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 	BOOST_CHECK(peers == 0);
 }
 
+BOOST_AUTO_TEST_CASE(set_name_of_peer)
+{
+	struct peer *p = alloc_peer(TEST_FD);
+	set_peer_name(p, "name of peer");
+
+	free_peer(p);
+	int peers = get_number_of_peers();
+	BOOST_CHECK(peers == 0);
+}
+
 BOOST_AUTO_TEST_CASE(add_io_failed)
 {
 	struct peer *p = alloc_peer(ADD_IO_FAILED);
