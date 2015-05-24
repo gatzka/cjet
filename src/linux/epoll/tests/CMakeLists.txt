@@ -102,13 +102,4 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
  
-ENABLE_TESTING()
-SET(CTEST_MEMORYCHECK_COMMAND "valgrind")
-SET(CTEST_MEMORYCHECK_COMMAND_OPTIONS "--tool=memcheck -v")
-
-ADD_TEST(parse_test parse_test.bin)
-ADD_TEST(peer_test peer_test.bin)
-ADD_TEST(readbuffer_test readbuffer_test.bin)
-ADD_TEST(response_test response_test.bin)
-ADD_TEST(state_test state_test.bin)
 

@@ -12,7 +12,6 @@ env:
   matrix:
     - BUILD=gcc
     - BUILD=clang
-    - BUILD=tests
 
 before_install:
   - sudo pip install cpp-coveralls
@@ -29,17 +28,14 @@ script:
       case ${BUILD} in
         gcc)
           cmake ../ &&
-          make
+          make &&
+		  make test &&
+          coveralls --root .. --build-root . --exclude json/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
           ;;
         clang)
           cmake -DCMAKE_TOOLCHAIN_FILE=../src/linux/cmake/clang.cmake ../  &&
-          make
-          ;;
-        tests)
-          cmake ../src/linux/epoll/tests/  &&
           make &&
-          ctest -V &&
-          coveralls --root .. --build-root . --exclude json/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
+		  make test
           ;;
       esac ;
     fi
