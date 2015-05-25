@@ -60,6 +60,20 @@ extern "C" {
 	}
 }
 
+static bool peer_in_list(struct list_head *peer_list, struct peer *p)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+
+	list_for_each_safe(item, tmp, peer_list) {
+		struct peer *p_in_list = (struct peer *)list_entry(item, struct peer, next_peer);
+		if (p == p_in_list) {
+			return true;
+		}
+	}
+	return false;
+}
+
 BOOST_AUTO_TEST_CASE(number_of_peer)
 {
 	int peers = get_number_of_peers();
@@ -112,4 +126,18 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 	destroy_all_peers();
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
+}
+
+BOOST_AUTO_TEST_CASE(check_peer_list)
+{
+	struct peer *p1 = alloc_peer(TEST_FD);
+	struct peer *p2 = alloc_peer(TEST_FD);
+
+	struct list_head *peer_list = get_peer_list();
+	BOOST_CHECK(peer_in_list(peer_list, p1) && peer_in_list(peer_list, p2));
+
+	destroy_all_peers();
+
+	peer_list = get_peer_list();
+	BOOST_CHECK(!peer_in_list(peer_list, p1) && !peer_in_list(peer_list, p2));
 }
