@@ -286,9 +286,12 @@ BOOST_AUTO_TEST_CASE(slow_read)
 	read_ptr = get_read_ptr(p, sizeof(value));
 	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
 	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
-	memcpy(&value, read_ptr, sizeof(value));
-	BOOST_CHECK(ntohl(value) == 0x01030507);
+	if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+		memcpy(&value, read_ptr, sizeof(value));
+		BOOST_CHECK(ntohl(value) == 0x01030507);
+	} else {
+		BOOST_FAIL("read_ptr either null or IO_WOULD_BLOCK!");
+	}
 	free_peer(p);
 }
 
@@ -298,23 +301,28 @@ BOOST_AUTO_TEST_CASE(fast_read)
 	char buffer[read_len + 1];
 
 	struct peer *p = alloc_peer(FAST_READ);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		char *read_ptr = get_read_ptr(p, read_len);
+		if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+			strncpy(buffer, read_ptr, read_len);
+			buffer[read_len] = '\0';
+			BOOST_CHECK(strcmp(buffer, "Hello") == 0);
+		} else {
+			BOOST_FAIL("read_ptr either null or IO_WOULD_BLOCK!");
+		}
 
-	char *read_ptr = get_read_ptr(p, read_len);
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
-
-	strncpy(buffer, read_ptr, read_len);
-	buffer[read_len] = '\0';
-	BOOST_CHECK(strcmp(buffer, "Hello") == 0);
-
-	read_ptr = get_read_ptr(p, read_len);
-	BOOST_CHECK((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK));
-
-	strncpy(buffer, read_ptr, read_len);
-	buffer[read_len] = '\0';
-	BOOST_CHECK(strcmp(buffer, "World") == 0);
-
-	free_peer(p);
+		read_ptr = get_read_ptr(p, read_len);
+		if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+			strncpy(buffer, read_ptr, read_len);
+			buffer[read_len] = '\0';
+			BOOST_CHECK(strcmp(buffer, "World") == 0);
+		} else {
+			BOOST_FAIL("read_ptr either null or IO_WOULD_BLOCK!");
+		}
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -340,30 +348,32 @@ BOOST_AUTO_TEST_CASE(slow_peer)
 	parsed_msg = NULL;
 
 	struct peer *p = alloc_peer(HANDLE_SLOW_PEER);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		int ret = handle_all_peer_operations(p);
+		BOOST_CHECK(parsed_msg == NULL);
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(p->op == READ_MSG_LENGTH);
 
-	int ret = handle_all_peer_operations(p);
-	BOOST_CHECK(parsed_msg == NULL);
-	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(p->op == READ_MSG_LENGTH);
+		ret = handle_all_peer_operations(p);
+		BOOST_CHECK(parsed_msg == NULL);
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(p->op == READ_MSG);
 
-	ret = handle_all_peer_operations(p);
-	BOOST_CHECK(parsed_msg == NULL);
-	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(p->op == READ_MSG);
+		ret = handle_all_peer_operations(p);
+		BOOST_REQUIRE(parsed_msg != NULL);
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(p->op == READ_MSG_LENGTH);
+		BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
+		if (parsed_msg != NULL) {
+			BOOST_CHECK(strncmp(parsed_msg, handle_slow_peer_msg, parsed_length) == 0);
+		} else {
+			BOOST_ERROR("no parsed message!");
+		}
 
-	ret = handle_all_peer_operations(p);
-	BOOST_REQUIRE(parsed_msg != NULL);
-	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(p->op == READ_MSG_LENGTH);
-	BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
-	if (parsed_msg != NULL) {
-		BOOST_CHECK(strncmp(parsed_msg, handle_slow_peer_msg, parsed_length) == 0);
+		free_peer(p);
 	} else {
-		BOOST_ERROR("no parsed message!");
+		BOOST_FAIL("Could not allocate a peer!");
 	}
-
-	free_peer(p);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -470,27 +480,31 @@ BOOST_AUTO_TEST_SUITE(send_buffer_test)
 BOOST_AUTO_TEST_CASE(wrong_fd)
 {
 	struct peer *p = alloc_peer(BADFD);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		p->to_write = 10;
+		int ret = send_buffer(p);
+		BOOST_CHECK(ret == -1);
 
-	p->to_write = 10;
-	int ret = send_buffer(p);
-	BOOST_CHECK(ret == -1);
-
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(write_blocks)
 {
 	char buffer[10];
 	struct peer *p = alloc_peer(AGAIN);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		p->to_write = sizeof(buffer);
+		int ret = send_buffer(p);
+		BOOST_CHECK(ret == IO_WOULD_BLOCK);
+		BOOST_CHECK(p->op == WRITE_MSG);
 
-	p->to_write = sizeof(buffer);
-	int ret = send_buffer(p);
-	BOOST_CHECK(ret == IO_WOULD_BLOCK);
-	BOOST_CHECK(p->op == WRITE_MSG);
-
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(incomplete_write)
@@ -500,27 +514,29 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 	incomplete_write_written_before_blocking = 0;
 
 	struct peer *p = alloc_peer(INCOMPLETE_WRITE);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		static char sw_message[] = "HelloWorld!";
+		uint32_t len_be = htonl(::strlen(sw_message));
+		int ret = copy_msg_to_write_buffer(p, sw_message, len_be, 0);
+		BOOST_REQUIRE(ret == 0);
 
-	static char sw_message[] = "HelloWorld!";
-	uint32_t len_be = htonl(::strlen(sw_message));
-	int ret = copy_msg_to_write_buffer(p, sw_message, len_be, 0);
-	BOOST_REQUIRE(ret == 0);
+		ret = send_buffer(p);
+		BOOST_CHECK(ret == IO_WOULD_BLOCK);
+		BOOST_CHECK(p->op == WRITE_MSG);
 
-	ret = send_buffer(p);
-	BOOST_CHECK(ret == IO_WOULD_BLOCK);
-	BOOST_CHECK(p->op == WRITE_MSG);
+		static char check_buffer[sizeof(sw_message) + sizeof(len_be)];
+		char *buf_ptr = check_buffer;
+		memcpy(buf_ptr, &len_be, sizeof(len_be));
+		buf_ptr += sizeof(len_be);
+		memcpy(buf_ptr, sw_message, strlen(sw_message));
 
-	static char check_buffer[sizeof(sw_message) + sizeof(len_be)];
-	char *buf_ptr = check_buffer;
-	memcpy(buf_ptr, &len_be, sizeof(len_be));
-	buf_ptr += sizeof(len_be);
-	memcpy(buf_ptr, sw_message, strlen(sw_message));
+		ret = memcmp(p->write_buffer, check_buffer + incomplete_write_written_before_blocking, p->to_write);
+		BOOST_CHECK(ret == 0);
 
-	ret = memcmp(p->write_buffer, check_buffer + incomplete_write_written_before_blocking, p->to_write);
-	BOOST_CHECK(ret == 0);
-
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(slow_write)
@@ -557,31 +573,37 @@ BOOST_AUTO_TEST_CASE(complete)
 BOOST_AUTO_TEST_CASE(max_message_length)
 {
 	struct peer *p = alloc_peer(BADFD);
-	BOOST_REQUIRE(p != NULL);
-	p->op = WRITE_MSG;
+	if (p != NULL) {
+		p->op = WRITE_MSG;
 
-	static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
-	memset(message, 0x42, sizeof(message));
-	message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
-	int ret = send_message(p, message, ::strlen(message));
-	BOOST_CHECK(ret == 0);
+		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
+		memset(message, 0x42, sizeof(message));
+		message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
+		int ret = send_message(p, message, ::strlen(message));
+		BOOST_CHECK(ret == 0);
 
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(message_too_large)
 {
 	struct peer *p = alloc_peer(BADFD);
-	BOOST_REQUIRE(p != NULL);
-	p->op = WRITE_MSG;
+	if (p != NULL) {
+		p->op = WRITE_MSG;
 
-	static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
-	memset(message, 0x42, sizeof(message));
-	message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
-	int ret = send_message(p, message, ::strlen(message));
-	BOOST_CHECK(ret == -1);
+		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
+		memset(message, 0x42, sizeof(message));
+		message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
+		int ret = send_message(p, message, ::strlen(message));
+		BOOST_CHECK(ret == -1);
 
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
@@ -617,25 +639,27 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 	incomplete_write_written_before_blocking = 0;
 
 	struct peer *p = alloc_peer(INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG);
-	BOOST_REQUIRE(p != NULL);
+	if (p != NULL) {
+		static char message[] = "HelloWorld!";
+		int ret = send_message(p, message, ::strlen(message));
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(p->op == WRITE_MSG);
 
-	static char message[] = "HelloWorld!";
-	int ret = send_message(p, message, ::strlen(message));
-	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(p->op == WRITE_MSG);
+		static char check_buffer[CONFIG_MAX_MESSAGE_SIZE];
+		uint32_t len_be = htonl(::strlen(message));
+		char *buf_ptr = check_buffer;
 
-	static char check_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	uint32_t len_be = htonl(::strlen(message));
-	char *buf_ptr = check_buffer;
+		memcpy(buf_ptr, &len_be, sizeof(len_be));
+		buf_ptr += sizeof(len_be);
+		memcpy(buf_ptr, message, strlen(message));
 
-	memcpy(buf_ptr, &len_be, sizeof(len_be));
-	buf_ptr += sizeof(len_be);
-	memcpy(buf_ptr, message, strlen(message));
+		ret = memcmp(incomplete_write_check_buffer, check_buffer, incomplete_write_written_before_blocking);
+		BOOST_CHECK(ret == 0);
 
-	ret = memcmp(incomplete_write_check_buffer, check_buffer, incomplete_write_written_before_blocking);
-	BOOST_CHECK(ret == 0);
-
-	free_peer(p);
+		free_peer(p);
+	} else {
+		BOOST_FAIL("Could not allocate a peer!");
+	}
 }
 
 BOOST_AUTO_TEST_SUITE_END()
