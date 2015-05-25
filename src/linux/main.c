@@ -29,7 +29,7 @@
 #include <unistd.h>
 
 #include "config/io.h"
-#include "config/log.h"
+#include "log.h"
 #include "method.h"
 #include "state.h"
 

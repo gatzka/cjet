@@ -38,10 +38,10 @@
 
 #include "compiler.h"
 #include "config/io.h"
-#include "config/log.h"
 #include "config/peer_io.h"
 #include "io_loop.h"
 #include "list.h"
+#include "log.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_testing.h"

@@ -25,8 +25,8 @@
  */
 
 #include "compiler.h"
-#include "config/log.h"
 #include "json/cJSON.h"
+#include "log.h"
 #include "peer.h"
 #include "response.h"
 

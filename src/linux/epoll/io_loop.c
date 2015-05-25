@@ -29,8 +29,8 @@
 #include <unistd.h>
 
 #include "compiler.h"
-#include "config/log.h"
 #include "io_loop.h"
+#include "log.h"
 
 int add_epoll(int fd, int epoll_fd, void *cookie)
 {
