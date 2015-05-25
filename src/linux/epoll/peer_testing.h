@@ -3,6 +3,8 @@
 
 #ifdef TESTING
 
+#include <sys/uio.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
