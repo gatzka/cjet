@@ -137,13 +137,20 @@ struct F {
 static void check_invalid_params(cJSON *error)
 {
 	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_CHECK(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
+	if (code != NULL) {
+		BOOST_CHECK(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == -32602);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
+
 	cJSON *message = cJSON_GetObjectItem(error, "message");
-	BOOST_REQUIRE(message != NULL);
-	BOOST_CHECK(message->type == cJSON_String);
-	BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
+	if (message != NULL) {
+		BOOST_CHECK(message->type == cJSON_String);
+		BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
+	} else {
+		BOOST_FAIL("No message object!");
+	}
 }
 
 BOOST_FIXTURE_TEST_CASE(add_state, F)

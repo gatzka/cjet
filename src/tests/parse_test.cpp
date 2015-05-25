@@ -353,9 +353,12 @@ static void check_invalid_params_error(void)
 	BOOST_REQUIRE(error != NULL);
 
 	cJSON *code = cJSON_GetObjectItem(error, "code");
-	BOOST_REQUIRE(code != NULL);
-	BOOST_REQUIRE(code->type == cJSON_Number);
-	BOOST_CHECK(code->valueint == -32602);
+	if (code != NULL) {
+		BOOST_REQUIRE(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == -32602);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
 	cJSON_Delete(root);
 }
 
