@@ -4,6 +4,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "log.h"
 #include "peer.h"
 
 enum fds {
@@ -74,6 +75,13 @@ static bool peer_in_list(struct list_head *peer_list, struct peer *p)
 	return false;
 }
 
+static bool starts_with(const char *str, const char *prefix)
+{
+	size_t lenprefix = ::strlen(prefix);
+	size_t lenstr = ::strlen(str);
+	return lenstr < lenprefix ? false : ::strncmp(prefix, str, lenprefix) == 0;
+}
+
 BOOST_AUTO_TEST_CASE(number_of_peer)
 {
 	int peers = get_number_of_peers();
@@ -140,4 +148,27 @@ BOOST_AUTO_TEST_CASE(check_peer_list)
 
 	peer_list = get_peer_list();
 	BOOST_CHECK(!peer_in_list(peer_list, p1) && !peer_in_list(peer_list, p2));
+}
+
+BOOST_AUTO_TEST_CASE(log_unknown_peer)
+{
+	struct peer *p = alloc_peer(TEST_FD);
+	log_peer_err(p, "%s", "Hello!");
+
+	char *log_buffer = get_log_buffer();
+
+	BOOST_CHECK(starts_with(log_buffer, "unknown: "));
+	free_peer(p);
+}
+
+BOOST_AUTO_TEST_CASE(log_known_peer)
+{
+	struct peer *p = alloc_peer(TEST_FD);
+	set_peer_name(p, "test peer");
+	log_peer_err(p, "%s", "Hello!");
+
+	char *log_buffer = get_log_buffer();
+
+	BOOST_CHECK(starts_with(log_buffer, "test peer: "));
+	free_peer(p);
 }

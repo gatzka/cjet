@@ -42,6 +42,7 @@ SET(READBUFFER_TEST
 	../../../state.c
 	../../../uuid.c
 	../io.c
+	log.cpp
 	readbuffer_test.cpp
 )
 ADD_EXECUTABLE(readbuffer_test.bin ${READBUFFER_TEST})

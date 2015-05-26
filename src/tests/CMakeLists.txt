@@ -46,6 +46,7 @@ TARGET_LINK_LIBRARIES(
 SET(PEER_TEST
 	../json/cJSON.c
 	../peer.c
+	log.cpp
 	peer_test.cpp
 )
 ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
@@ -74,6 +75,7 @@ SET(STATE_TEST
 	../state.c
 	../peer.c
 	../uuid.c
+	log.cpp
 	state_test.cpp
 )
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
