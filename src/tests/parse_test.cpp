@@ -338,6 +338,33 @@ static cJSON *create_correct_unfetch()
 	return root;
 }
 
+static cJSON *create_correct_call_method()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "call");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
+static cJSON *create_call_without_path()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "call");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static void check_invalid_params_error(void)
 {
 	char *ptr = readback_buffer;
@@ -606,6 +633,30 @@ BOOST_AUTO_TEST_CASE(correct_config_test)
 	F f;
 	cJSON *json = create_correct_config_method();
 
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_call_method_test)
+{
+	F f;
+	cJSON *correct_json = create_correct_call_method();
+
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(call_without_path_test)
+{
+	F f;
+
+	cJSON *json = create_call_without_path();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
