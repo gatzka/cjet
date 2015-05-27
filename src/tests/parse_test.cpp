@@ -324,24 +324,6 @@ static cJSON *create_correct_fetch()
 	return root;
 }
 
-static cJSON *create_fetch_without_id()
-{
-	cJSON *root = cJSON_CreateObject();
-	BOOST_REQUIRE(root != NULL);
-	cJSON_AddNumberToObject(root, "id", 7384);
-	cJSON_AddStringToObject(root, "method", "fetch");
-
-	cJSON *params = cJSON_CreateObject();
-	BOOST_REQUIRE(params != NULL);
-	cJSON_AddItemToObject(root, "params", params);
-
-	cJSON *path = cJSON_CreateObject();
-	BOOST_REQUIRE(path != NULL);
-	cJSON_AddStringToObject(path, "startsWith", "person");
-	cJSON_AddItemToObject(params, "path", path);
-	return root;
-}
-
 static cJSON *create_correct_unfetch()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -595,17 +577,6 @@ BOOST_AUTO_TEST_CASE(parse_json_no_object_or_array)
 	static const char json[] = "\"foo\"";
 	int ret = parse_message(json, strlen(json), NULL);
 	BOOST_CHECK(ret == -1);
-}
-
-BOOST_AUTO_TEST_CASE(fetch_without_id_test)
-{
-	F f;
-	cJSON *json = create_fetch_without_id();
-	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
-	cJSON_free(unformatted_json);
-	cJSON_Delete(json);
-	BOOST_CHECK(ret == 0);
 }
 
 BOOST_AUTO_TEST_CASE(correct_fetch_test)
