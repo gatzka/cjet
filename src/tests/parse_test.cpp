@@ -342,6 +342,20 @@ static cJSON *create_fetch_without_id()
 	return root;
 }
 
+static cJSON *create_correct_unfetch()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "unfetch");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "id", "123456");
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static void check_invalid_params_error(void)
 {
 	char *ptr = readback_buffer;
@@ -598,6 +612,17 @@ BOOST_AUTO_TEST_CASE(correct_fetch_test)
 {
 	F f;
 	cJSON *json = create_correct_fetch();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_unfetch_test)
+{
+	F f;
+	cJSON *json = create_correct_unfetch();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
