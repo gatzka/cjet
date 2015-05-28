@@ -2,7 +2,12 @@ PROJECT("cjet binary" C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../)
+INCLUDE(defaults)
+
 ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
+
+CONFIGURE_FILE(linux/epoll/config/config.h.in ${PROJECT_BINARY_DIR}/config/config.h)
 
 SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
@@ -31,10 +36,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/epoll/)
-
-SET(DYNLIBS
-	-lm
-)
+INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
 SET(CJET_FILES
 	linux/epoll/io.c
@@ -56,6 +58,6 @@ ADD_EXECUTABLE(cjet.bin
 )
 TARGET_LINK_LIBRARIES(
 	cjet.bin
-	${DYNLIBS}
+	m
 )
 

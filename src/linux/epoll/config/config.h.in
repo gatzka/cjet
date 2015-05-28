@@ -1,0 +1,36 @@
+#ifndef CJET_LINUX_CONFIG_H
+#define CJET_LINUX_CONFIG_H
+
+enum {CONFIG_SERVER_PORT = ${CONFIG_SERVER_PORT}};
+enum {CONFIG_LISTEN_BACKLOG = ${CONFIG_LISTEN_BACKLOG}};
+
+enum {CONFIG_CHECK_JSON_LENGTH = 0};
+
+/*
+ * It is somehow beneficial if this size is 32 bit aligned.
+ */
+enum {CONFIG_MAX_MESSAGE_SIZE = ${CONFIG_MAX_MESSAGE_SIZE}};
+enum {CONFIG_MAX_WRITE_BUFFER_SIZE = ${CONFIG_MAX_WRITE_BUFFER_SIZE}};
+
+/*
+ * This parameter configures the maximum amount of states that can be
+ * handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
+ */
+enum {CONFIG_STATE_TABLE_ORDER = ${CONFIG_STATE_TABLE_ORDER}};
+enum {CONFIG_METHOD_TABLE_ORDER = ${CONFIG_METHOD_TABLE_ORDER}};
+
+/*
+ * This parameter configures the maximum ongoing routed messages per
+ * peer.
+ */
+enum {CONFIG_ROUTING_TABLE_ORDER = ${CONFIG_ROUTING_TABLE_ORDER}};
+
+enum {CONFIG_MAX_NUMBER_OF_PEERS = ${CONFIG_MAX_NUMBER_OF_PEERS}};
+
+enum {CONFIG_MAX_FETCHES_PER_STATE = ${CONFIG_MAX_FETCHES_PER_STATE}};
+
+/* Linux specific configs */
+
+enum {CONFIG_MAX_EPOLL_EVENTS = CONFIG_MAX_NUMBER_OF_PEERS + 1};
+
+#endif
