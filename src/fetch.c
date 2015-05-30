@@ -239,12 +239,13 @@ static int state_matches(struct state *s, struct fetch *f)
 
 static int add_fetch_to_state(struct state *s, struct fetch *f)
 {
-	unsigned int num_fetchers = s->num_fetchers;
-	if (num_fetchers >= CONFIG_MAX_FETCHES_PER_STATE) {
-		return -1;
+	for (int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; i++) {
+		if (s->fetchers[i] == NULL) {
+			s->fetchers[i] = f;
+			return 0;
+		}
 	}
-	s->fetchers[num_fetchers] = f;
-	return 0;
+	return -1;
 }
 
 static int notify_fetching_peer(struct state *s, struct fetch *f,
