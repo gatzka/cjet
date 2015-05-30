@@ -240,7 +240,7 @@ static int state_matches(struct state *s, struct fetch *f)
 
 static int add_fetch_to_state(struct state *s, struct fetch *f)
 {
-	for (int i = 0; i < s->fetch_table_size; i++) {
+	for (unsigned int i = 0; i < s->fetch_table_size; i++) {
 		if (s->fetcher_table[i] == NULL) {
 			s->fetcher_table[i] = f;
 			return 0;
