@@ -4,7 +4,6 @@
 
 #include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
-#include <sys/uio.h>
 
 #include <cstring>
 
