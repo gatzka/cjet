@@ -89,5 +89,20 @@ TARGET_LINK_LIBRARIES(
 	state_test.bin
 	${Boost_LIBRARIES}
 )
- 
 
+SET(COMBINED_TEST
+	../fetch.c
+	../json/cJSON.c
+	../response.c
+	../router.c
+	../state.c
+	../peer.c
+	../uuid.c
+	log.cpp
+	combined_test.cpp
+)
+ADD_EXECUTABLE(combined_test.bin ${COMBINED_TEST})
+TARGET_LINK_LIBRARIES(
+	combined_test.bin
+	${Boost_LIBRARIES}
+)
