@@ -15,7 +15,8 @@ struct state {
 	char *path;
 	struct peer *peer; // The peer the state belongs to
 	cJSON *value;
-	struct fetch *fetchers[CONFIG_MAX_FETCHES_PER_STATE];
+	struct fetch **fetcher_table;
+	unsigned int fetch_table_size;
 };
 
 cJSON *change_state(struct peer *p, const char *path, cJSON *value);

@@ -77,6 +77,13 @@ static struct state *alloc_state(const char *path, cJSON *value_object,
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "state");
 		return NULL;
 	}
+	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
+	s->fetcher_table = calloc(s->fetch_table_size, sizeof(struct fetch*));
+	if (s->fetcher_table == NULL) {
+		log_peer_err(p, "Could not allocate memory for fetch table!\n");
+		goto alloc_fetch_table_failed;
+	}
+
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
@@ -96,6 +103,8 @@ static struct state *alloc_state(const char *path, cJSON *value_object,
 value_copy_failed:
 	free(s->path);
 alloc_path_failed:
+	free(s->fetcher_table);
+alloc_fetch_table_failed:
 	free(s);
 	return NULL;
 }
@@ -104,6 +113,7 @@ static void free_state(struct state *s)
 {
 	cJSON_Delete(s->value);
 	free(s->path);
+	free(s->fetcher_table);
 	free(s);
 }
 

@@ -36,6 +36,7 @@
 #include "state.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 static const char *get_fetch_id(const struct peer *p, cJSON *params, cJSON **err)
 {
@@ -239,13 +240,22 @@ static int state_matches(struct state *s, struct fetch *f)
 
 static int add_fetch_to_state(struct state *s, struct fetch *f)
 {
-	for (int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; i++) {
-		if (s->fetchers[i] == NULL) {
-			s->fetchers[i] = f;
+	for (int i = 0; i < s->fetch_table_size; i++) {
+		if (s->fetcher_table[i] == NULL) {
+			s->fetcher_table[i] = f;
 			return 0;
 		}
 	}
-	return -1;
+	unsigned int new_size = MAX(CONFIG_INITIAL_FETCH_TABLE_SIZE, s->fetch_table_size * 2);
+	void *new_fetch_table = calloc(new_size, sizeof(struct fetch*));
+	if (new_fetch_table == NULL) {
+		return -1;
+	}
+	memcpy(new_fetch_table, s->fetcher_table, s->fetch_table_size * sizeof(struct fetch*));
+	s->fetch_table_size = new_size;
+	free(s->fetcher_table);
+	s->fetcher_table = new_fetch_table;
+	return add_fetch_to_state(s, f);
 }
 
 static int notify_fetching_peer(struct state *s, struct fetch *f,
@@ -338,8 +348,8 @@ static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
 
 int notify_fetchers(struct state *s, const char *event_name)
 {
-	for (unsigned int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; ++i) {
-		struct fetch *f = s->fetchers[i];
+	for (unsigned int i = 0; i < s->fetch_table_size; i++) {
+		struct fetch *f = s->fetcher_table[i];
 		if ((f != NULL) &&
 				(unlikely(notify_fetching_peer(s, f, event_name) != 0))) {
 			return -1;
@@ -366,9 +376,9 @@ int add_fetch_to_states(struct fetch *f)
 
 static void remove_fetch_from_state(struct state *s, struct fetch *f)
 {
-	for (unsigned int i = 0; i < CONFIG_MAX_FETCHES_PER_STATE; ++i) {
-		if (s->fetchers[i] == f) {
-			s->fetchers[i] = NULL;
+	for (unsigned int i = 0; i < s->fetch_table_size; ++i) {
+		if (s->fetcher_table[i] == f) {
+			s->fetcher_table[i] = NULL;
 		}
 	}
 }
