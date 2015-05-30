@@ -2,9 +2,7 @@
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE state
 
-#include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
-#include <sys/uio.h>
 
 #include "json/cJSON.h"
 #include "peer.h"
