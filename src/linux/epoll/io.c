@@ -165,6 +165,7 @@ static int handle_new_connection(int fd)
 	static const int tcp_nodelay_on = 1;
 
 	if (get_number_of_peers() >= CONFIG_MAX_NUMBER_OF_PEERS) {
+		log_err("Maximum number of peers exceeded!\n");
 		close(fd);
 		return 0;
 	}
@@ -172,11 +173,13 @@ static int handle_new_connection(int fd)
 	if ((set_fd_non_blocking(fd) < 0) ||
 		(setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
 			sizeof(tcp_nodelay_on)) < 0)) {
+		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
 		return -1;
 	}
 
 	if (configure_keepalive(fd) < 0) {
+		log_err("Could not configure keepalive!\n");
 		close(fd);
 		return -1;
 	}
