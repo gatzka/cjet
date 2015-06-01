@@ -38,24 +38,24 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-static const char *get_fetch_id(const struct peer *p, cJSON *params, cJSON **err)
+static const cJSON *get_fetch_id(const struct peer *p, cJSON *params, cJSON **err)
 {
-	cJSON *id = cJSON_GetObjectItem(params, "id");
+	const cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
 		*err =
 			 create_invalid_params_error(p, "reason", "no fetch id given");
 		return NULL;
 	}
-	if (unlikely(id->type != cJSON_String)) {
+	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number))) {
 		*err = create_invalid_params_error(p, "reason",
-			"fetch ID is not a string");
+			"fetch ID is neither a string nor a number");
 		return NULL;
 	}
 	*err = NULL;
-	return id->valuestring;
+	return id;
 }
 
-static struct fetch *alloc_fetch(struct peer *p, const char *id)
+static struct fetch *alloc_fetch(struct peer *p, const cJSON *id)
 {
 	struct fetch *f = calloc(1, sizeof(*f));
 	if (unlikely(f == NULL)) {
@@ -64,7 +64,7 @@ static struct fetch *alloc_fetch(struct peer *p, const char *id)
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
-	f->fetch_id = duplicate_string(id);
+	f->fetch_id = cJSON_Duplicate(id, 1);
 	if (unlikely(f->fetch_id == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
 		free(f);
@@ -86,17 +86,31 @@ static void remove_matchers(struct fetch *f)
 static void free_fetch(struct fetch *f)
 {
 	remove_matchers(f);
-	free(f->fetch_id);
+	cJSON_Delete(f->fetch_id);
 	free(f);
 }
 
-static struct fetch *find_fetch(const struct peer *p, const char *id)
+static int ids_equal(const cJSON *id1, const cJSON *id2)
+{
+	if (id1->type != id2->type) {
+		return 0;
+	}
+	if ((id1->type == cJSON_Number) && (id1->valueint == id2->valueint)) {
+		return 1;
+	}
+	if ((id1->type == cJSON_String) && (strcmp(id1->valuestring, id2->valuestring) == 0)) {
+		return 1;
+	}
+	return 0;
+}
+
+static struct fetch *find_fetch(const struct peer *p, const cJSON *id)
 {
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->fetch_list) {
 		struct fetch *f = list_entry(item, struct fetch, next_fetch);
-		if (strcmp(f->fetch_id, id) == 0) {
+		if (ids_equal(f->fetch_id, id)) {
 			return f;
 		}
 	}
@@ -265,7 +279,7 @@ static int notify_fetching_peer(struct state *s, struct fetch *f,
 	if (unlikely(root == NULL)) {
 		return -1;
 	}
-	cJSON *fetch_id = cJSON_CreateString(f->fetch_id);
+	cJSON *fetch_id = cJSON_Duplicate(f->fetch_id, 1);
 	if (unlikely(fetch_id == NULL)) {
 		cJSON_Delete(root);
 		return -1;
@@ -438,7 +452,7 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 	struct fetch **fetch_return)
 {
 	cJSON *error;
-	const char *id = get_fetch_id(p, params, &error);
+	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
 		return error;
 	}
@@ -468,7 +482,7 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
 {
 	cJSON *error;
-	const char *id = get_fetch_id(p, params, &error);
+	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
 		return error;
 	}
