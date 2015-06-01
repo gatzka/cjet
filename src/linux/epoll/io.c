@@ -164,12 +164,6 @@ static int handle_new_connection(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
-	if (get_number_of_peers() >= CONFIG_MAX_NUMBER_OF_PEERS) {
-		log_err("Maximum number of peers exceeded!\n");
-		close(fd);
-		return 0;
-	}
-
 	if ((set_fd_non_blocking(fd) < 0) ||
 		(setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
 			sizeof(tcp_nodelay_on)) < 0)) {
