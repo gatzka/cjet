@@ -14,7 +14,7 @@ env:
     - BUILD=clang
 
 before_install:
-  - sudo pip install cpp-coveralls
+  - sudo pip install cpp-coveralls requests[security]
 
 install:
   - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
@@ -24,7 +24,7 @@ before_script:
   - cd build
 
 script:
-  - if [ ${COVERITY_SCAN_BRANCH} != 1 ]; then
+  - if [ "$COVERITY_SCAN_BRANCH" != 1 ]; then
       case ${BUILD} in
         gcc)
           cmake ../ &&
