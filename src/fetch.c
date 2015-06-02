@@ -25,7 +25,6 @@
  */
 
 
-#define _GNU_SOURCE /// support strcasestr
 #include <stdlib.h>
 #include <string.h>
 
@@ -181,7 +180,7 @@ static int contains_match(const struct path_matcher *pm,
 static int contains_match_ignore_case(const struct path_matcher *pm,
 	const char *state_path)
 {
-	return strcasestr(state_path, pm->fetch_path) != NULL;
+	return jet_strcasestr(state_path, pm->fetch_path) != NULL;
 }
 
 static int get_match_function(struct path_matcher *pm, const char *path,
