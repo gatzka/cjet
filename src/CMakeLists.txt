@@ -16,11 +16,6 @@ IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
 	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
 		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto" CACHE STRING "" FORCE)
 	ENDIF()
-ELSEIF(CMAKE_C_COMPILER_ID STREQUAL Clang)
-	SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format-nonliteral -Wno-unused-function" CACHE STRING "" FORCE)
-#	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 3.5.0)
-#		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto" CACHE STRING "" FORCE)
-#	ENDIF()
 ENDIF()
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables -fomit-frame-pointer" CACHE STRING "" FORCE)
@@ -43,6 +38,7 @@ SET(CJET_FILES
 	linux/epoll/io_loop.c
 	linux/main.c
 	config.c
+	jet_string.c
 	json/cJSON.c
 	fetch.c
 	method.c

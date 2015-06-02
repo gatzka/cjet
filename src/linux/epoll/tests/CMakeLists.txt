@@ -40,6 +40,7 @@ file(COPY "../../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR}
 
 SET(READBUFFER_TEST
 	../../../json/cJSON.c
+	../../../jet_string.c
 	../../../fetch.c
 	../../../method.c
 	../../../peer.c

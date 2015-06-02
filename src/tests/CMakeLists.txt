@@ -39,6 +39,7 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 file(COPY "../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(RESPONSE_TEST
+	../jet_string.c
 	../json/cJSON.c
 	../response.c
 	response_test.cpp
@@ -50,6 +51,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(PEER_TEST
+	../jet_string.c
 	../json/cJSON.c
 	../peer.c
 	log.cpp
@@ -62,8 +64,9 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(JSON_PARSE_TEST
-	../json/cJSON.c
 	../config.c
+	../jet_string.c
+	../json/cJSON.c
 	../parse.c
 	../response.c
 	parse_test.cpp
@@ -75,6 +78,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
+	../jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
@@ -92,6 +96,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(COMBINED_TEST
 	../fetch.c
+	../jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
@@ -109,6 +114,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(FETCH_TEST
 	../fetch.c
+	../jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
