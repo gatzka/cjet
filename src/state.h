@@ -19,10 +19,10 @@ struct state {
 	unsigned int fetch_table_size;
 };
 
-cJSON *change_state(struct peer *p, const char *path, cJSON *value);
-cJSON *set_state(struct peer *p, const char *path, cJSON *value,
-	cJSON *json_rpc);
-cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value);
+cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
+cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
+	const cJSON *json_rpc);
+cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value);
 int remove_state_from_peer(struct peer *p, const char *path);
 void remove_all_states_from_peer(struct peer *p);
 

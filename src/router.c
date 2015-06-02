@@ -50,7 +50,7 @@ void delete_routing_table(struct peer *p)
 }
 
 cJSON *create_routed_message(const struct peer *p, const char *path, const char *name,
-	cJSON *value, int id)
+	const cJSON *value, int id)
 {
 	cJSON *message = cJSON_CreateObject();
 	if (unlikely(message == NULL)) {
@@ -95,7 +95,7 @@ error:
 }
 
 int setup_routing_information(const struct peer *routing_peer,
-	struct peer *origin_peer, cJSON *origin_request_id, int id)
+	struct peer *origin_peer, const cJSON *origin_request_id, int id)
 {
 	cJSON *id_copy;
 	if (origin_request_id != NULL) {
@@ -117,7 +117,7 @@ int setup_routing_information(const struct peer *routing_peer,
 	return 0;
 }
 
-static void format_and_send_response(struct peer *p, cJSON *response)
+static void format_and_send_response(struct peer *p, const cJSON *response)
 {
 	char *rendered = cJSON_PrintUnformatted(response);
 	if (likely(rendered != NULL)) {
@@ -129,7 +129,7 @@ static void format_and_send_response(struct peer *p, cJSON *response)
 }
 
 static void send_routing_response(struct peer *p,
-	cJSON *origin_request_id, cJSON *response)
+	const cJSON *origin_request_id, const cJSON *response)
 {
 	if (origin_request_id == NULL) {
 		return;
@@ -150,10 +150,10 @@ static void send_routing_response(struct peer *p,
 	}
 }
 
-int handle_routing_response(cJSON *json_rpc, cJSON *response,
+int handle_routing_response(const cJSON *json_rpc, const cJSON *response,
 	const struct peer *p)
 {
-	cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
+	const cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
 		log_peer_err(p, "no id in response!\n");
 		return -1;
@@ -174,7 +174,7 @@ int handle_routing_response(cJSON *json_rpc, cJSON *response,
 }
 
 static void send_shutdown_response(struct peer *p,
-	cJSON *origin_request_id)
+	const cJSON *origin_request_id)
 {
 	if (origin_request_id == NULL) {
 		return;

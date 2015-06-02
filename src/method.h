@@ -21,7 +21,7 @@ cJSON *add_method_to_peer(struct peer *p, const char *path);
 int remove_method_from_peer(struct peer *p, const char *path);
 void remove_all_methods_from_peer(struct peer *p);
 cJSON *call_method(struct peer *p, const char *path,
-	cJSON *args, cJSON *json_rpc);
+	const cJSON *args, const cJSON *json_rpc);
 #ifdef __cplusplus
 }
 #endif

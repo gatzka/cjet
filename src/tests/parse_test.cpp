@@ -53,12 +53,12 @@ extern "C" {
 		return 0;
 	}
 
-	cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
+	cJSON *remove_fetch_from_peer(struct peer *p, const cJSON *params)
 	{
 		return NULL;
 	}
 
-	cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
+	cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 		struct fetch **fetch_return)
 	{
 		return NULL;
@@ -89,7 +89,7 @@ extern "C" {
 	}
 
 	cJSON *call_method(struct peer *p, const char *path,
-		cJSON *args, cJSON *json_rpc)
+		const cJSON *args, const cJSON *json_rpc)
 	{
 		return NULL;
 	}
@@ -103,18 +103,18 @@ extern "C" {
 		return -1;
 	}
 
-	cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
+	cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 	{
 		return NULL;
 	}
 
 	cJSON *set_state(struct peer *p, const char *path,
-		cJSON *value, cJSON *json_rpc)
+		const cJSON *value, const cJSON *json_rpc)
 	{
 		return NULL;
 	}
 
-	cJSON *change_state(struct peer *p, const char *path, cJSON *value)
+	cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 	{
 		return NULL;
 	}

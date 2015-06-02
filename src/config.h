@@ -4,6 +4,6 @@
 #include "json/cJSON.h"
 #include "peer.h"
 
-cJSON *config_peer(struct peer *p, cJSON *params);
+cJSON *config_peer(struct peer *p, const cJSON *params);
 
 #endif

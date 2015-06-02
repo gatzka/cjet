@@ -41,7 +41,7 @@
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
-static const cJSON *get_fetch_id(const struct peer *p, cJSON *params, cJSON **err)
+static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSON **err)
 {
 	const cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
@@ -249,7 +249,7 @@ static cJSON *fill_matcher(const struct peer *p, struct path_matcher *matcher,
 
 static int is_case_insensitive(const cJSON *params)
 {
-	cJSON *match_ignore_case = cJSON_GetObjectItem(params, "caseInsensitive");
+	const cJSON *match_ignore_case = cJSON_GetObjectItem(params, "caseInsensitive");
 	if ((match_ignore_case != NULL) && (match_ignore_case->type == cJSON_True)) {
 		return 1;
 	} else {
@@ -257,9 +257,9 @@ static int is_case_insensitive(const cJSON *params)
 	}
 }
 
-static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, cJSON *params)
+static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, const cJSON *params)
 {
-	cJSON *path = cJSON_GetObjectItem(params, "path");
+	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
 		return NULL;
 	}
@@ -270,7 +270,7 @@ static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, cJSON *pa
 
 	int ignore_case = is_case_insensitive(params);
 
-	cJSON *matcher = path->child;
+	const cJSON *matcher = path->child;
 	struct path_matcher *path_matcher = f->matcher;
 	while (matcher) {
 		if (unlikely(matcher->type != cJSON_String)) {
@@ -288,7 +288,7 @@ static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, cJSON *pa
 	return NULL;
 }
 
-static cJSON *add_matchers(const struct peer *p, struct fetch *f, cJSON *params)
+static cJSON *add_matchers(const struct peer *p, struct fetch *f, const cJSON *params)
 {
 	cJSON *error = add_path_matchers(p, f, params);
 	if (unlikely(error != NULL)) {
@@ -515,7 +515,7 @@ int find_fetchers_for_state(struct state *s)
 	return ret;
 }
 
-cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
+cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 	struct fetch **fetch_return)
 {
 	cJSON *error;
@@ -536,21 +536,18 @@ cJSON *add_fetch_to_peer(struct peer *p, cJSON *params,
 		return error;
 	}
 
-
 	error = add_matchers(p, f, params);
 	if (unlikely(error != NULL)) {
 		free_fetch(f);
 		return error;
 	}
 
-
-
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	*fetch_return = f;
 	return NULL;
 }
 
-cJSON *remove_fetch_from_peer(struct peer *p, cJSON *params)
+cJSON *remove_fetch_from_peer(struct peer *p, const cJSON *params)
 {
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);

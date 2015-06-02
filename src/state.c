@@ -69,7 +69,7 @@ struct state *get_state(const char *path)
 	}
 }
 
-static struct state *alloc_state(const char *path, cJSON *value_object,
+static struct state *alloc_state(const char *path, const cJSON *value_object,
 				struct peer *p)
 {
 	struct state *s = calloc(1, sizeof(*s));
@@ -117,7 +117,7 @@ static void free_state(struct state *s)
 	free(s);
 }
 
-cJSON *change_state(struct peer *p, const char *path, cJSON *value)
+cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 {
 	struct value_state_table val;
 	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
@@ -148,7 +148,7 @@ cJSON *change_state(struct peer *p, const char *path, cJSON *value)
 }
 
 cJSON *set_state(struct peer *p, const char *path,
-	cJSON *value, cJSON *json_rpc)
+	const cJSON *value, const cJSON *json_rpc)
 {
 	cJSON *error;
 	struct value_state_table val;
@@ -164,7 +164,7 @@ cJSON *set_state(struct peer *p, const char *path,
 		return error;
 	}
 
-	cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
+	const cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
 	if ((origin_request_id != NULL) &&
 		 ((origin_request_id->type != cJSON_String) &&
 		  (origin_request_id->type != cJSON_Number))) {
@@ -205,7 +205,7 @@ delete_json:
 	return error;
 }
 
-cJSON *add_state_to_peer(struct peer *p, const char *path, cJSON *value)
+cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 {
 	struct value_state_table val;
 	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);

@@ -32,7 +32,7 @@
 #include "peer.h"
 #include "response.h"
 
-cJSON *config_peer(struct peer *p, cJSON *params)
+cJSON *config_peer(struct peer *p, const cJSON *params)
 {
 	cJSON *name = cJSON_GetObjectItem(params, "name");
 	if (name != NULL) {

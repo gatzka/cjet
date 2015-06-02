@@ -41,9 +41,9 @@
 #include "router.h"
 #include "state.h"
 
-static const char *get_path_from_params(const struct peer *p, cJSON *params, cJSON **err)
+static const char *get_path_from_params(const struct peer *p, const cJSON *params, cJSON **err)
 {
-	cJSON *path = cJSON_GetObjectItem(params, "path");
+	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
 		cJSON *error =
 			create_invalid_params_error(p, "reason", "no path given");
@@ -60,7 +60,7 @@ static const char *get_path_from_params(const struct peer *p, cJSON *params, cJS
 	return path->valuestring;
 }
 
-static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
+static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct peer *p)
 {
 	int ret = 0;
 	if (error == (cJSON *)ROUTED_MESSAGE) {
@@ -97,7 +97,7 @@ static int possibly_send_response(cJSON *json_rpc, cJSON *error, struct peer *p)
 	return ret;
 }
 
-static int process_change(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_change(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -106,7 +106,7 @@ static int process_change(cJSON *json_rpc, cJSON *params, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	cJSON *value = cJSON_GetObjectItem(params, "value");
+	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
 		error = create_invalid_params_error(p, "reason", "no value given");
 		return possibly_send_response(json_rpc, error, p);
@@ -115,7 +115,7 @@ static int process_change(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_set(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -124,7 +124,7 @@ static int process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	cJSON *value = cJSON_GetObjectItem(params, "value");
+	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
 		error = create_invalid_params_error(p, "reason", "no value given");
 		return possibly_send_response(json_rpc, error, p);
@@ -133,7 +133,7 @@ static int process_set(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_call(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_call(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -141,12 +141,12 @@ static int process_call(cJSON *json_rpc, cJSON *params, struct peer *p)
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
 	}
-	cJSON *args = cJSON_GetObjectItem(params, "args");
+	const cJSON *args = cJSON_GetObjectItem(params, "args");
 	error = call_method(p, path, args, json_rpc);
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_add(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -155,7 +155,7 @@ static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	cJSON *value = cJSON_GetObjectItem(params, "value");
+	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
 		error = add_method_to_peer(p, path);
 	} else {
@@ -165,7 +165,7 @@ static int process_add(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_remove(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_remove(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error;
 
@@ -185,7 +185,7 @@ static int process_remove(cJSON *json_rpc, cJSON *params, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_fetch(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	struct fetch *f = NULL;
 	cJSON *error = add_fetch_to_peer(p, params, &f);
@@ -200,22 +200,22 @@ static int process_fetch(cJSON *json_rpc, cJSON *params, struct peer *p)
 	}
 }
 
-static int process_unfetch(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_unfetch(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error = remove_fetch_from_peer(p, params);
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_config(cJSON *json_rpc, cJSON *params, struct peer *p)
+static int process_config(const cJSON *json_rpc, const cJSON *params, struct peer *p)
 {
 	cJSON *error = config_peer(p, params);
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int handle_method(cJSON *json_rpc, const char *method_name,
+static int handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
-	cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error =
 			create_invalid_params_error(p, "reason", "no params found");
@@ -244,10 +244,10 @@ static int handle_method(cJSON *json_rpc, const char *method_name,
 	}
 }
 
-static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
+static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 {
 	int ret;
-	cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
+	const cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 	if (method != NULL) {
 		if (unlikely(method->type != cJSON_String)) {
 			cJSON *error = create_invalid_request_error(
@@ -259,7 +259,7 @@ static int parse_json_rpc(cJSON *json_rpc, struct peer *p)
 		return ret;
 	}
 
-	cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
+	const cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
 	if (result != NULL) {
 		ret = handle_routing_response(json_rpc, result, p);
 		return ret;
