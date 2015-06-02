@@ -25,6 +25,7 @@
  */
 
 #include <signal.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 
@@ -33,10 +34,25 @@
 #include "method.h"
 #include "state.h"
 
-int main(void)
+int main(int argc, char **argv)
 {
-	if (daemon(0, 0) != 0) {
-		log_err("Can't daemonize cjet!\n");
+	int run_foreground = 0;
+	int c;
+	while ((c = getopt (argc, argv, "f")) != -1) {
+		switch (c) {
+			case 'f':
+				run_foreground = 1;
+				break;
+			case '?':
+				fprintf(stderr, "Usage: %s [-f]\n", argv[0]);
+				return EXIT_FAILURE;
+				break;
+		}
+	}
+	if (!run_foreground) {
+		if (daemon(0, 0) != 0) {
+			log_err("Can't daemonize cjet!\n");
+		}
 	}
 	signal(SIGPIPE, SIG_IGN);
 
