@@ -383,5 +383,6 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		remove_state_from_peer(p, path);
 
 		BOOST_CHECK(fetch_peer_1_event == REMOVE_EVENT);
+		cJSON_Delete(params);
 	}
 }
