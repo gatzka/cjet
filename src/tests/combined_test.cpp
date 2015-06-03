@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
+#include "method.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -45,6 +46,7 @@ static char send_buffer[100000];
 
 static struct peer *fetch_peer_1;
 static struct peer *fetch_peer_2;
+static struct peer *call_peer;
 static bool message_for_wrong_peer;
 
 static enum event fetch_peer_1_event;
@@ -97,17 +99,15 @@ extern "C" {
 	{
 		return;
 	}
-
-	void remove_all_methods_from_peer(struct peer *p)
-	{
-	}
 }
 
 struct F {
 	F()
 	{
 		create_state_hashtable();
+		create_method_hashtable();
 		p = alloc_peer(-1);
+		call_peer = alloc_peer(-1);
 		fetch_peer_1 = alloc_peer(-1);
 		fetch_peer_2 = alloc_peer(-1);
 		message_for_wrong_peer = false;
@@ -116,8 +116,10 @@ struct F {
 	{
 		free_peer(fetch_peer_1);
 		free_peer(fetch_peer_2);
+		free_peer(call_peer);
 		free_peer(p);
 		delete_state_hashtable();
+		delete_method_hashtable();
 	}
 
 	struct peer *p;
@@ -132,6 +134,20 @@ static cJSON *create_fetch_params(const char *path_string)
 	BOOST_REQUIRE(path != NULL);
 	cJSON_AddItemToObject(root, "path", path);
 	cJSON_AddStringToObject(path, "equals", path_string);
+
+	return root;
+}
+
+static cJSON *create_call_json_rpc(const char *path_string)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "method", "call");
+	cJSON_AddStringToObject(root, "id", "id_1");
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(params, "path", path_string);
 
 	return root;
 }
@@ -178,3 +194,16 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	cJSON_Delete(params);
 }
 
+#include <stdio.h>
+BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
+{
+	const char *path = "/foo/method/";
+
+	cJSON *error = add_method_to_peer(call_peer, path);
+	BOOST_CHECK(error == NULL);
+
+	cJSON *call_json_rpc = create_call_json_rpc(path);
+	error = call_method(p, path, NULL, call_json_rpc);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+	cJSON_Delete(call_json_rpc);
+}

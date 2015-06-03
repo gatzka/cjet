@@ -98,6 +98,7 @@ SET(COMBINED_TEST
 	../fetch.c
 	../jet_string.c
 	../json/cJSON.c
+	../method.c
 	../response.c
 	../router.c
 	../state.c
