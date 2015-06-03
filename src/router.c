@@ -69,9 +69,12 @@ cJSON *create_routed_message(const struct peer *p, const char *path, const char 
 	}
 	cJSON_AddItemToObject(message, "method", method);
 
-	cJSON *value_copy = cJSON_Duplicate(value, 1);
-	if (unlikely(value_copy == NULL)) {
-		goto error;
+	cJSON *value_copy = NULL;
+	if (value != NULL) {
+		value_copy = cJSON_Duplicate(value, 1);
+		if (unlikely(value_copy == NULL)) {
+			goto error;
+		}
 	}
 
 	if (name == NULL) {
