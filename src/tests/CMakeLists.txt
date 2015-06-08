@@ -50,6 +50,24 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(CONFIG_TEST
+	../jet_string.c
+	../json/cJSON.c
+	../config.c
+	../peer.c
+	../response.c
+	../router.c
+	../state.c
+	../uuid.c
+	config_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(config_test.bin ${CONFIG_TEST})
+TARGET_LINK_LIBRARIES(
+	config_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(PEER_TEST
 	../jet_string.c
 	../json/cJSON.c
