@@ -102,6 +102,14 @@ static cJSON *create_config_request_with_no_name(void)
 	return params;
 }
 
+static cJSON *create_config_request_with_name_of_wrong_type(void)
+{
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddFalseToObject(params, "debug");
+	cJSON_AddFalseToObject(params, "name");
+	return params;
+}
+
 BOOST_FIXTURE_TEST_CASE(config_name, F)
 {
 	const char *peer_name = "test_peer";
@@ -119,6 +127,17 @@ BOOST_FIXTURE_TEST_CASE(config_no_name, F)
 	cJSON *error = config_peer(p, params);
 	BOOST_CHECK(error == NULL);
 	BOOST_CHECK(peer_name == NULL);
+	cJSON_Delete(params);
+}
+
+BOOST_FIXTURE_TEST_CASE(config_wrong_type_of_name, F)
+{
+	const char *peer_name = NULL;
+	cJSON *params = create_config_request_with_name_of_wrong_type();
+	cJSON *error = config_peer(p, params);
+	BOOST_CHECK(error != NULL);
+	BOOST_CHECK(peer_name == NULL);
+	cJSON_Delete(error);
 	cJSON_Delete(params);
 }
 
