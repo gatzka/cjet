@@ -93,6 +93,10 @@ static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct pe
 		cJSON_free(rendered);
 	render_error:
 		cJSON_Delete(root);
+	} else {
+		if (error != NULL) {
+			cJSON_Delete(error);
+		}
 	}
 	return ret;
 }
