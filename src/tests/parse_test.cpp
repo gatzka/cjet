@@ -462,6 +462,19 @@ static cJSON *create_set_without_path()
 	return root;
 }
 
+static cJSON *create_set_without_path_and_no_id()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "method", "set");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddNumberToObject(params, "value", 123);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static cJSON *create_set_without_value()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -827,6 +840,22 @@ BOOST_AUTO_TEST_CASE(set_without_path)
 {
 	F f;
 	cJSON *json = create_set_without_path();
+
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+/*
+ * This test is main mainly to check freeing all resources with valgrind
+ *
+ */
+BOOST_AUTO_TEST_CASE(set_without_path_and_no_id)
+{
+	F f;
+	cJSON *json = create_set_without_path_and_no_id();
 
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);

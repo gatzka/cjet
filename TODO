@@ -1,4 +1,3 @@
 - fetcher/setter search with radix/prefix/patricia trie
 - probably HAT-trie
 - set state and call method tests with error results
-- add test which manipulates a non-existing state but doesn't want to have an answer (no ID in JSON-RPC), check with valgrind
