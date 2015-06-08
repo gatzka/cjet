@@ -37,9 +37,35 @@
 #include "state.h"
 
 extern "C" {
-	int send_message(struct peer *p, const char *rendered, size_t len)
+
+	int create_state_hashtable(void)
 	{
 		return 0;
+	}
+
+	void delete_state_hashtable(void)
+	{
+	}
+
+	void remove_routing_info_from_peer(const struct peer *p)
+	{
+	}
+
+	void remove_all_states_from_peer(struct peer *p)
+	{
+	}
+
+	void delete_routing_table(struct peer *p)
+	{
+	}
+
+	int add_routing_table(struct peer *p)
+	{
+		return 0;
+	}
+
+	void remove_peer_from_routing_table(const struct peer *p, const struct peer *peer_to_remove)
+	{
 	}
 
 	int add_io(struct peer *p)
@@ -50,16 +76,6 @@ extern "C" {
 	void remove_io(const struct peer *p)
 	{
 		return;
-	}
-
-	int notify_fetchers(struct state *s, const char *event_name)
-	{
-		return 0;
-	}
-
-	int find_fetchers_for_state(struct state *s)
-	{
-		return 0;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)

@@ -56,9 +56,6 @@ SET(CONFIG_TEST
 	../config.c
 	../peer.c
 	../response.c
-	../router.c
-	../state.c
-	../uuid.c
 	config_test.cpp
 	log.cpp
 )
