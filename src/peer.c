@@ -135,6 +135,9 @@ void remove_peer_from_routes(const struct peer *peer_to_remove)
 
 void set_peer_name(struct peer *peer, const char *name)
 {
+	if (peer->name != NULL) {
+		free(peer->name);
+	}
 	peer->name = duplicate_string(name);
 }
 
