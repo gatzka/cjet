@@ -343,7 +343,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON *response = create_response_from_message(routed_message);
 	cJSON *result = get_result_from_response(response);
 
-	int ret = handle_routing_response(response, result, p);
+	int ret = handle_routing_response(response, result, "result", p);
 	BOOST_CHECK(ret == 0);
 
 	cJSON_Delete(routed_message);
@@ -442,7 +442,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 	cJSON *response = create_response_from_message(routed_message);
 	cJSON *result = get_result_from_response(response);
 
-	int ret = handle_routing_response(response, result, p);
+	int ret = handle_routing_response(response, result, "result", p);
 	BOOST_CHECK(ret == 0);
 
 	cJSON_Delete(routed_message);

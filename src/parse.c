@@ -261,13 +261,13 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 
 	const cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
 	if (result != NULL) {
-		ret = handle_routing_response(json_rpc, result, p);
+		ret = handle_routing_response(json_rpc, result, "result", p);
 		return ret;
 	}
 
 	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
 	if (error != NULL) {
-		ret = handle_routing_response(json_rpc, error, p);
+		ret = handle_routing_response(json_rpc, error, "error", p);
 		return ret;
 	}
 

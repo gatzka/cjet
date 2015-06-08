@@ -132,7 +132,7 @@ static void format_and_send_response(struct peer *p, const cJSON *response)
 }
 
 static void send_routing_response(struct peer *p,
-	const cJSON *origin_request_id, const cJSON *response)
+	const cJSON *origin_request_id, const cJSON *response, const char *result_type)
 {
 	if (origin_request_id == NULL) {
 		return;
@@ -140,12 +140,12 @@ static void send_routing_response(struct peer *p,
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
 	if (likely(response_copy != NULL)) {
 		cJSON *result_response =
-			create_result_response(p, origin_request_id, response_copy);
+			create_result_response(p, origin_request_id, response_copy, result_type);
 		if (likely(result_response != NULL)) {
 			format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
 		} else {
-			log_peer_err(p, "Could not create %s response!\n", "result");
+			log_peer_err(p, "Could not create %s response!\n", result_type);
 			cJSON_Delete(response_copy);
 		}
 	} else {
@@ -153,7 +153,7 @@ static void send_routing_response(struct peer *p,
 	}
 }
 
-int handle_routing_response(const cJSON *json_rpc, const cJSON *response,
+int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p)
 {
 	const cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
@@ -170,7 +170,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response,
 	if (likely(ret == HASHTABLE_SUCCESS)) {
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
-		send_routing_response(origin_peer, origin_request_id, response);
+		send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
 	}
 	return ret;

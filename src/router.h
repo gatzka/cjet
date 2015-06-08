@@ -14,7 +14,7 @@ cJSON *create_routed_message(const struct peer *p, const char *path, const char 
 	const cJSON *value, int id);
 int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, const cJSON *origin_request_id, int id);
-int handle_routing_response(const cJSON *json_rpc, const cJSON *response,
+int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p);
 
 void remove_routing_info_from_peer(const struct peer *p);

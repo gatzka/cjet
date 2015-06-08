@@ -147,12 +147,12 @@ cJSON *create_boolean_success_response(const struct peer *p, const cJSON *id, in
 	return root;
 }
 
-cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result)
+cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type)
 {
 	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
-	cJSON_AddItemToObject(root, "result", result);
+	cJSON_AddItemToObject(root, result_type, result);
 	return root;
 }
