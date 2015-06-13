@@ -194,7 +194,6 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	cJSON_Delete(params);
 }
 
-#include <stdio.h>
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
 	const char *path = "/foo/method/";
