@@ -163,9 +163,13 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 		if (error != NULL) {
 			cJSON *code = cJSON_GetObjectItem(error, "code");
 			BOOST_REQUIRE(code != NULL);
-			BOOST_REQUIRE(code->type == cJSON_Number);
-			setter_caller_error_code = code->valueint;
-			setter_caller_result = ERROR;
+			if (code != NULL) {
+				BOOST_REQUIRE(code->type == cJSON_Number);
+				setter_caller_error_code = code->valueint;
+				setter_caller_result = ERROR;
+			} else {
+				BOOST_FAIL("No code object in error!");
+			}
 		} else {
 			BOOST_FAIL("Unknown message for setter!");
 		}
