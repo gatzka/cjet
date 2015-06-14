@@ -95,7 +95,14 @@ static cJSON *create_call_json_rpc(const char *path_string)
 
 	return root;
 }
-#include <stdio.h>
+
+BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
+{
+	const char path[] = "/foo/bar/";
+	int ret = remove_method_from_peer(owner_peer, path);
+	BOOST_CHECK(ret == -1);
+}
+
 BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
 {
 
