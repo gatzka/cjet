@@ -96,6 +96,39 @@ static cJSON *create_call_json_rpc(const char *path_string)
 	return root;
 }
 
+static cJSON *create_call_json_rpc_wrong_id_type(const char *path_string)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "method", "call");
+	cJSON_AddTrueToObject(root, "id");
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(params, "path", path_string);
+
+	return root;
+}
+
+static void check_invalid_params(const cJSON *error)
+{
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	if (code != NULL) {
+		BOOST_CHECK(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == INVALID_PARAMS_ERROR);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	if (message != NULL) {
+		BOOST_CHECK(message->type == cJSON_String);
+		BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
+	} else {
+		BOOST_FAIL("No message object!");
+	}
+}
+
 BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 {
 	const char path[] = "/foo/bar/";
@@ -103,9 +136,53 @@ BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 	BOOST_CHECK(ret == -1);
 }
 
-BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
+BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 {
 
+	cJSON *error = add_method_to_peer(owner_peer, "/foo/bar");
+	BOOST_CHECK(error == NULL);
+
+	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
+	error = call_method(owner_peer, "/bar/foo", NULL, call_json_rpc);
+	cJSON_Delete(call_json_rpc);
+
+	if (error != NULL) {
+		check_invalid_params(error);
+		cJSON_Delete(error);
+	} else {
+		BOOST_FAIL("expected to get an error!");
+	}
+}
+
+BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
+{
+	const char path[] = "/foo/bar";
+
+	cJSON *error = add_method_to_peer(owner_peer, path);
+	BOOST_CHECK(error == NULL);
+
+	error = add_method_to_peer(owner_peer, path);
+	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(double_free_method, F)
+{
+	const char path[] = "/foo/bar";
+	cJSON *error = add_method_to_peer(owner_peer, path);
+	BOOST_CHECK(error == NULL);
+
+	int ret = remove_method_from_peer(owner_peer, path);
+	BOOST_CHECK(ret == 0);
+
+	ret = remove_method_from_peer(owner_peer, path);
+	BOOST_CHECK(ret == -1);
+}
+
+
+BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
+{
 	cJSON *error = add_method_to_peer(owner_peer, method_no_args_path);
 	BOOST_CHECK(error == NULL);
 
@@ -113,16 +190,26 @@ BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
 	error = call_method(owner_peer, method_no_args_path, NULL, call_json_rpc);
 	cJSON_Delete(call_json_rpc);
 	if (error != NULL) {
-		const cJSON *code = cJSON_GetObjectItem(error, "code");
-		if (code != NULL) {
-			BOOST_REQUIRE(code->type == cJSON_Number);
-			BOOST_CHECK(code->valueint == INVALID_PARAMS_ERROR);
-		} else {
-			BOOST_FAIL("no code in error object!");
-		}
+		check_invalid_params(error);
 		cJSON_Delete(error);
 	} else {
 		BOOST_FAIL("expected to get an error!");
 	}
 }
 
+BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
+{
+	cJSON *error = add_method_to_peer(owner_peer, method_no_args_path);
+	BOOST_CHECK(error == NULL);
+
+	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(method_no_args_path);
+	error = call_method(call_peer, method_no_args_path, NULL, call_json_rpc);
+	cJSON_Delete(call_json_rpc);
+
+	if ((error != NULL) && (error != (cJSON *)ROUTED_MESSAGE)) {
+		check_invalid_params(error);
+		cJSON_Delete(error);
+	} else  {
+		BOOST_FAIL("expected to get an error!");
+	}
+}
