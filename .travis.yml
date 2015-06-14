@@ -29,8 +29,7 @@ script:
         gcc)
           cmake ../ &&
           make &&
-          make test &&
-          coveralls --verbose --root .. --build-root . --exclude src/json/ --exclude src/tests/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
+          make test
           ;;
         clang)
           cmake -DCMAKE_TOOLCHAIN_FILE=../src/linux/cmake/clang.cmake ../  &&
@@ -39,6 +38,9 @@ script:
           ;;
       esac ;
     fi
+
+after_success:
+  - coveralls --verbose --root .. --build-root . --exclude src/json/ --exclude src/tests/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
 
 addons:
   coverity_scan:
