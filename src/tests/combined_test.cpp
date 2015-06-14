@@ -46,11 +46,14 @@ static char send_buffer[100000];
 
 static struct peer *fetch_peer_1;
 static struct peer *fetch_peer_2;
+static struct peer *set_peer;
 static struct peer *call_peer;
 static bool message_for_wrong_peer;
 
 static enum event fetch_peer_1_event;
 static enum event fetch_peer_2_event;
+
+static cJSON *message_for_setter;
 
 static cJSON *parse_send_buffer(void)
 {
@@ -84,6 +87,8 @@ extern "C" {
 			cJSON *fetch_event = parse_send_buffer();
 			fetch_peer_2_event = get_event_from_json(fetch_event);
 			cJSON_Delete(fetch_event);
+		} else if (p == set_peer) {
+			message_for_setter = parse_send_buffer();
 		} else {
 			message_for_wrong_peer = true;
 		}
@@ -110,14 +115,18 @@ struct F {
 		call_peer = alloc_peer(-1);
 		fetch_peer_1 = alloc_peer(-1);
 		fetch_peer_2 = alloc_peer(-1);
+		set_peer = alloc_peer(-1);
 		message_for_wrong_peer = false;
+		message_for_setter = NULL;
 	}
 	~F()
 	{
-		free_peer(fetch_peer_1);
-		free_peer(fetch_peer_2);
-		free_peer(call_peer);
-		free_peer(p);
+		if (set_peer) free_peer(set_peer);
+		if (fetch_peer_2) free_peer(fetch_peer_2);
+		if (fetch_peer_1) free_peer(fetch_peer_1);
+		if (call_peer) free_peer(call_peer);
+		if (p) free_peer(p);
+		if (message_for_setter) cJSON_Delete(message_for_setter);
 		delete_state_hashtable();
 		delete_method_hashtable();
 	}
@@ -150,6 +159,29 @@ static cJSON *create_call_json_rpc(const char *path_string)
 	cJSON_AddStringToObject(params, "path", path_string);
 
 	return root;
+}
+
+static cJSON *create_set_request(const char *path, const char *request_id)
+{
+	cJSON *set_request = cJSON_CreateObject();
+	cJSON_AddStringToObject(set_request, "method", "set");
+	if (request_id != NULL) {
+		cJSON_AddStringToObject(set_request, "id", request_id);
+	}
+
+	cJSON *params = cJSON_CreateObject();
+	cJSON_AddStringToObject(params, "path", path);
+	cJSON *new_value = cJSON_CreateNumber(4321);
+	cJSON_AddItemToObject(params, "value", new_value);
+	cJSON_AddItemToObject(set_request, "params", params);
+	return set_request;
+}
+
+static cJSON *get_value_from_request(const cJSON *set_request)
+{
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	return value;
 }
 
 BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
@@ -192,6 +224,32 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	remove_all_fetchers_from_peer(fetch_peer_1);
 	remove_all_fetchers_from_peer(fetch_peer_2);
 	cJSON_Delete(params);
+}
+
+BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
+{
+	const char *path = "/foo/bar/";
+	int state_value = 12345;
+	cJSON *value = cJSON_CreateNumber(state_value);
+	cJSON *error = add_state_to_peer(p, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request(path, "request1");
+	cJSON *new_value = get_value_from_request(set_request);
+	error = set_state(set_peer, path, new_value, set_request);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	free_peer(p);
+	p = NULL;
+
+	error = cJSON_GetObjectItem(message_for_setter, "error");
+	BOOST_REQUIRE(error != NULL);
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	BOOST_REQUIRE(code != NULL);
+	BOOST_REQUIRE(code->type == cJSON_Number);
+	BOOST_CHECK(code->valueint == -32603);
 }
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
