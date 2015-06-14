@@ -57,7 +57,7 @@ static cJSON *message_for_setter;
 
 static cJSON *parse_send_buffer(void)
 {
-	char *read_ptr = send_buffer;
+	const char *read_ptr = send_buffer;
 	const char *end_parse;
 	cJSON *root = cJSON_ParseWithOpts(read_ptr, &end_parse, 0);
 	return root;
@@ -65,9 +65,9 @@ static cJSON *parse_send_buffer(void)
 
 static enum event get_event_from_json(cJSON *json)
 {
-	cJSON *params = cJSON_GetObjectItem(json, "params");
+	const cJSON *params = cJSON_GetObjectItem(json, "params");
 	if (params == NULL) return UNKNOWN_EVENT;
-	cJSON *event = cJSON_GetObjectItem(params, "event");
+	const cJSON *event = cJSON_GetObjectItem(params, "event");
 	if (event == NULL) return UNKNOWN_EVENT;
 	if (event->type != cJSON_String) return UNKNOWN_EVENT;
 	if (strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
@@ -195,7 +195,7 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 
 	cJSON_Delete(value);
 
-	struct state *s = get_state(path);
+	const struct state *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 
 	struct fetch *f = NULL;
