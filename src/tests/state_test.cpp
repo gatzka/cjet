@@ -91,9 +91,9 @@ static cJSON *parse_send_buffer(void)
 	return root;
 }
 
-static cJSON *create_response_from_message(cJSON *routed_message)
+static cJSON *create_response_from_message(const cJSON *routed_message)
 {
-	cJSON *id = cJSON_GetObjectItem(routed_message, "id");
+	const cJSON *id = cJSON_GetObjectItem(routed_message, "id");
 	cJSON *duplicated_id = cJSON_Duplicate(id, 1);
 
 	cJSON *response = cJSON_CreateObject();
@@ -119,20 +119,20 @@ static cJSON *create_set_request(const char *request_id)
 	return set_request;
 }
 
-static cJSON *get_value_from_request(cJSON *set_request)
+static cJSON *get_value_from_request(const cJSON *set_request)
 {
 	cJSON *params = cJSON_GetObjectItem(set_request, "params");
 	cJSON *value = cJSON_GetObjectItem(params, "value");
 	return value;
 }
 
-static cJSON *get_result_from_response(cJSON *response)
+static cJSON *get_result_from_response(const cJSON *response)
 {
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	if (result != NULL) {
 		return result;
 	}
-	cJSON *error = cJSON_GetObjectItem(response, "error");
+	const cJSON *error = cJSON_GetObjectItem(response, "error");
 	if (error != NULL) {
 		return result;
 	}
@@ -158,7 +158,7 @@ struct F {
 	struct peer *set_peer;
 };
 
-static void check_invalid_params(cJSON *error)
+static void check_invalid_params(const cJSON *error)
 {
 	cJSON *code = cJSON_GetObjectItem(error, "code");
 	if (code != NULL) {
