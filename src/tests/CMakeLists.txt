@@ -109,6 +109,23 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(METHOD_TEST
+	../jet_string.c
+	../json/cJSON.c
+	../response.c
+	../router.c
+	../method.c
+	../peer.c
+	../uuid.c
+	log.cpp
+	method_test.cpp
+)
+ADD_EXECUTABLE(method_test.bin ${METHOD_TEST})
+TARGET_LINK_LIBRARIES(
+	method_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(COMBINED_TEST
 	../fetch.c
 	../jet_string.c

@@ -1,3 +1,2 @@
 - fetcher/setter search with radix/prefix/patricia trie
 - probably HAT-trie
-- call method not from peer owner
