@@ -50,6 +50,21 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(ROUTER_TEST
+	../jet_string.c
+	../json/cJSON.c
+	../peer.c
+	../response.c
+	../router.c
+	log.cpp
+	router_test.cpp
+)
+ADD_EXECUTABLE(router_test.bin ${ROUTER_TEST})
+TARGET_LINK_LIBRARIES(
+	router_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(STRING_TEST
 	../jet_string.c
 	string_test.cpp
