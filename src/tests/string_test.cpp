@@ -1,7 +1,7 @@
 /*
- *The MIT License (MIT)
+ * The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2015> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,18 +24,19 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_STRING_H
-#define CJET_STRING_H
+#define BOOST_TEST_DYN_LINK
+#define BOOST_TEST_MAIN
+#define BOOST_TEST_MODULE string
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <boost/test/unit_test.hpp>
 
-char *duplicate_string(const char *s);
-const char *jet_strcasestr(const char *haystack, const char *needle);
+#include "jet_string.h"
 
-#ifdef __cplusplus
+BOOST_AUTO_TEST_CASE(strcase)
+{
+	const char haystack[] = "abcdefgh";
+	BOOST_CHECK(jet_strcasestr(haystack, "ijkl") == NULL);
+	BOOST_CHECK(jet_strcasestr(haystack, "bcd") == haystack + 1);
+	BOOST_CHECK(jet_strcasestr(haystack, "DEF") == haystack + 3);
 }
-#endif
 
-#endif

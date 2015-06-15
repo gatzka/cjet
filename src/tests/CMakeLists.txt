@@ -50,6 +50,16 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(STRING_TEST
+	../jet_string.c
+	string_test.cpp
+)
+ADD_EXECUTABLE(string_test.bin ${STRING_TEST})
+TARGET_LINK_LIBRARIES(
+	string_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(CONFIG_TEST
 	../jet_string.c
 	../json/cJSON.c
