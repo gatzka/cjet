@@ -109,10 +109,12 @@ BOOST_FIXTURE_TEST_CASE(handle_response, F)
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	int ret = handle_routing_response(response, result, "result", p);
 	BOOST_CHECK(ret == -1);
+	cJSON_Delete(response);
 
 	response = create_response_wrong_id();
 	result = cJSON_GetObjectItem(response, "result");
 	ret = handle_routing_response(response, result, "result", p);
 	BOOST_CHECK(ret == -1);
+	cJSON_Delete(response);
 }
 
