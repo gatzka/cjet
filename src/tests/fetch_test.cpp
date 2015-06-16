@@ -179,8 +179,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		cJSON *params = create_fetch_params(path_upper, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == UNKNOWN_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -192,8 +192,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		cJSON *params = create_fetch_params(path, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -205,8 +205,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		cJSON *params = create_fetch_params("", path_startsWith, "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -218,8 +218,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		cJSON *params = create_fetch_params("", "", path_endsWith, "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -231,8 +231,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		cJSON *params = create_fetch_params("", "", "", path_contains, 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -267,8 +267,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		cJSON *params = create_fetch_params(path_upper, "", "", "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -280,8 +280,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		cJSON *params = create_fetch_params("", path_startsWith, "", "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -293,8 +293,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		cJSON *params = create_fetch_params("", "", path_endsWith, "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -306,8 +306,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		cJSON *params = create_fetch_params("", "", "", path_contains, 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -327,8 +327,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON *params = create_fetch_params(path, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == UNKNOWN_EVENT);
 		remove_all_fetchers_from_peer(fetch_peer_1);
@@ -353,8 +353,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON *params = create_fetch_params(path, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 
@@ -377,8 +377,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON *params = create_fetch_params(path, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
-		int ret = add_fetch_to_states(f);
-		BOOST_REQUIRE(ret == 0);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
 
 		remove_state_from_peer(p, path);
 

@@ -438,20 +438,20 @@ int notify_fetchers(struct state *s, const char *event_name)
 	return 0;
 }
 
-int add_fetch_to_states(struct fetch *f)
+cJSON *add_fetch_to_states(struct fetch *f)
 {
-	int ret = 0;
 	struct list_head *item;
 	struct list_head *tmp;
 	struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		ret = add_fetch_to_states_in_peer(p, f);
+		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
-			return ret;
+			//TODO: create error
+			return NULL;
 		}
 	}
-	return ret;
+	return NULL;
 }
 
 static void remove_fetch_from_state(struct state *s, struct fetch *f)
