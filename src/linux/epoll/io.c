@@ -504,7 +504,7 @@ static int handle_error_events(struct peer *p,
 		log_err("epoll error on listen fd!\n");
 		return -1;
 	} else {
-		log_err("epoll error on peer fd!\n");
+		log_warn("epoll error on peer fd!\n");
 		free_peer(p);
 		return 0;
 	}
