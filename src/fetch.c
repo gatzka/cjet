@@ -447,8 +447,7 @@ cJSON *add_fetch_to_states(struct fetch *f)
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
-			//TODO: create error
-			return NULL;
+			return create_internal_error(p, "reason", "could not add fetch to state");
 		}
 	}
 	return NULL;
