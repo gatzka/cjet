@@ -402,11 +402,11 @@ static int add_fetch_to_state_and_notify(const struct peer *p, struct state *s, 
 {
 	if (state_matches(s, f)) {
 		if (unlikely(add_fetch_to_state(s, f) != 0)) {
-			log_peer_err(p, "Can't add fetch to state");
+			log_peer_err(p, "Can't add fetch to state %s owned by %s", s->path, get_peer_name(s->peer));
 			return -1;
 		}
 		if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
-			log_peer_err(p, "Can't notify fetching peer: %s", f->peer->name);
+			log_peer_err(p, "Can't notify fetching peer for state %s owned by %s", s->path, get_peer_name(s->peer));
 			return -1;
 		}
 	}

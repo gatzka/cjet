@@ -141,17 +141,22 @@ void set_peer_name(struct peer *peer, const char *name)
 	peer->name = duplicate_string(name);
 }
 
+const char *get_peer_name(const struct peer *p)
+{
+	if (p->name != NULL) {
+		return p->name;
+	} else {
+		return "unknown peer";
+	}
+}
+
 #define LOG_BUFFER_SIZE 100
 void log_peer_err(const struct peer *p, const char *fmt, ...)
 {
 	int written;
 	char buffer[LOG_BUFFER_SIZE];
 	buffer[0] = '\0';
-	if (p->name != NULL) {
-		written = sprintf(buffer, "%s: ", p->name);
-	} else {
-		written = snprintf(buffer, LOG_BUFFER_SIZE, "unknown: ");
-	}
+	written = snprintf(buffer, LOG_BUFFER_SIZE, "%s: ", get_peer_name(p));
 	char *ptr = &buffer[written];
 	va_list ap;
 	va_start(ap, fmt);

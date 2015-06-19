@@ -183,7 +183,7 @@ BOOST_AUTO_TEST_CASE(log_unknown_peer)
 
 	char *log_buffer = get_log_buffer();
 
-	BOOST_CHECK(starts_with(log_buffer, "unknown: "));
+	BOOST_CHECK(starts_with(log_buffer, "unknown peer"));
 	free_peer(p);
 }
 

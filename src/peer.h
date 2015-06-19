@@ -39,6 +39,7 @@ struct peer {
 };
 
 struct list_head *get_peer_list(void);
+const char *get_peer_name(const struct peer *p);
 
 struct peer *alloc_peer(int fd);
 void free_peer(struct peer *p);
