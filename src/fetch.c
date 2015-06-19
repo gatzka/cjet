@@ -406,7 +406,7 @@ static int add_fetch_to_state_and_notify(const struct peer *p, struct state *s, 
 			return -1;
 		}
 		if (unlikely(notify_fetching_peer(s, f, "add") != 0)) {
-			log_peer_err(p, "Can't notify fetching peer");
+			log_peer_err(p, "Can't notify fetching peer: %s", f->peer->name);
 			return -1;
 		}
 	}
