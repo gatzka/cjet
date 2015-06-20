@@ -25,10 +25,10 @@
  */
 
 #define _GNU_SOURCE 1
-#define __need_clockid_t 1
 #if 0
-#define __USE_POSIX199309 1
+#define __need_clockid_t 1
 #endif
+#define __USE_POSIX199309 1
 #include <sys/timerfd.h>
 
 struct itimerspec convert_timeout_to_itimerspec(double timeout);
