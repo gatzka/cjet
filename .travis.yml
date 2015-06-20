@@ -28,7 +28,7 @@ script:
       case ${BUILD} in
         gcc)
           cmake ../ &&
-          make &&
+          make VERBOSE=1 &&
           make test
           ;;
         clang)
