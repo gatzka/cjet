@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include <sys/types.h>
 #include <sys/timerfd.h>
 
 struct itimerspec convert_timeout_to_itimerspec(double timeout);
