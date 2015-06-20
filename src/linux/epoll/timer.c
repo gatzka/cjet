@@ -25,6 +25,7 @@
  */
 
 #include <math.h>
+#include <sys/types.h>
 #include <sys/timerfd.h>
 
 #include "linux/epoll/timer.h"
