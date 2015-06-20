@@ -23,7 +23,7 @@ env:
 
 before_install:
   - ls -l /usr/bin/
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-5.1" CC="gcc-5.1"; fi
+  - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 before_script:
   - mkdir build
   - cd build
