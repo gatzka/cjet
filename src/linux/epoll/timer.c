@@ -25,6 +25,7 @@
  */
 
 #include <math.h>
+#define _GNU_SOURCE 1
 #include <sys/timerfd.h>
 
 #include "linux/epoll/timer.h"
