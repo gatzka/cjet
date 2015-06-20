@@ -70,13 +70,14 @@ struct state *get_state(const char *path)
 }
 
 static struct state *alloc_state(const char *path, const cJSON *value_object,
-				struct peer *p)
+				struct peer *p, double timeout)
 {
 	struct state *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "state");
 		return NULL;
 	}
+	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
 	s->fetcher_table = calloc(s->fetch_table_size, sizeof(struct fetch*));
 	if (s->fetcher_table == NULL) {
@@ -213,7 +214,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	struct state *s = alloc_state(path, value, p);
+	struct state *s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "not enough memory");
