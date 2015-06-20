@@ -36,6 +36,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 SET(CJET_FILES
 	linux/epoll/io.c
 	linux/epoll/io_loop.c
+	linux/epoll/timer.c
 	linux/main.c
 	config.c
 	jet_string.c
