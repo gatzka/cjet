@@ -16,6 +16,7 @@ struct state {
 	struct peer *peer; // The peer the state belongs to
 	cJSON *value;
 	struct fetch **fetcher_table;
+	double timeout;
 	unsigned int fetch_table_size;
 };
 
