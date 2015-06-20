@@ -57,6 +57,7 @@ SET(CJET_FILES
 	state.c
 	uuid.c
 )
+SET_SOURCE_FILES_PROPERTIES(linux/epoll/timer.c PROPERTIES COMPILE_FLAGS -std=c90)
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
 )
