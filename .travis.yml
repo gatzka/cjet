@@ -22,7 +22,8 @@ env:
 #  - sudo pip install cpp-coveralls
 
 before_install:
-  - ls -l /usr/bin/
+  - ls -l /usr/lib/
+  - ls -l /lib/
   - if [ "$CXX" = "g++" ]; then export CXX="g++-5" CC="gcc-5"; fi
 before_script:
   - mkdir build
@@ -34,7 +35,7 @@ script:
       case ${BUILD} in
         gcc)
           cmake ../ &&
-          make &&
+          make VERBOSE=1 &&
           make test
           ;;
         clang)
