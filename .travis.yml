@@ -17,8 +17,6 @@ before_install:
   - sudo pip install cpp-coveralls
 
 install:
-  - sudo apt-get install -qq gcc-5
-  - sudo apt-get install --allow-unauthenticated -qq clang-3.6
   - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
 
 before_script:
