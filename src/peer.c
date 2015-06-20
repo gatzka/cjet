@@ -151,6 +151,7 @@ const char *get_peer_name(const struct peer *p)
 }
 
 #define LOG_BUFFER_SIZE 100
+__attribute__((format(printf, 2, 3)))
 void log_peer_err(const struct peer *p, const char *fmt, ...)
 {
 	int written;
