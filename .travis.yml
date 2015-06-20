@@ -18,6 +18,7 @@ before_install:
 
 install:
   - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
+  - if [ "$CC" = "gcc" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 
 before_script:
   - mkdir build
