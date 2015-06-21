@@ -1,4 +1,4 @@
-PROJECT("cjet" C)
+PROJECT("cjet binary and tests" C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 

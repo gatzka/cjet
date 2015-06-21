@@ -31,6 +31,7 @@
 #include "log.h"
 #include "peer.h"
 #include "response.h"
+#include "version.h"
 
 static cJSON *create_info(void)
 {
@@ -39,13 +40,13 @@ static cJSON *create_info(void)
 		return NULL;
 	}
 
-	cJSON *name = cJSON_CreateString("cjet");
+	cJSON *name = cJSON_CreateString(CJET_NAME);
 	if (name == NULL) {
 		goto error;
 	}
 	cJSON_AddItemToObject(root, "name", name);
 
-	cJSON *version = cJSON_CreateString("0.1.2.3");
+	cJSON *version = cJSON_CreateString(CJET_VERSION);
 	if (version == NULL) {
 		goto error;
 	}
