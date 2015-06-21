@@ -126,11 +126,6 @@ extern "C" {
 	void set_peer_name(struct peer *peer, const char *name)
 	{
 	}
-
-	int handle_info(const cJSON *json_rpc, struct peer *p)
-	{
-		return 0;
-	}
 }
 
 struct F {
@@ -514,6 +509,43 @@ static void check_invalid_params_error(void)
 	cJSON_Delete(root);
 }
 
+static void check_no_error(void)
+{
+	char *ptr = readback_buffer;
+	ptr += 4;
+	cJSON *root = cJSON_Parse(ptr);
+	BOOST_REQUIRE(root != NULL);
+
+	cJSON *error = cJSON_GetObjectItem(root, "error");
+	BOOST_CHECK(error == NULL);
+
+	cJSON_Delete(root);
+}
+
+static cJSON *create_correct_info_method()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "info");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
+static cJSON *create_correct_info_method_without_params()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "info");
+
+	return root;
+}
+
+
 BOOST_AUTO_TEST_CASE(parse_correct_json)
 {
 	F f;
@@ -879,4 +911,29 @@ BOOST_AUTO_TEST_CASE(set_without_value)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_info)
+{
+	F f;
+	cJSON *json = create_correct_info_method();
+
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(correct_info_without_params)
+{
+	F f;
+	cJSON *json = create_correct_info_method_without_params();
+
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+	check_no_error();
 }

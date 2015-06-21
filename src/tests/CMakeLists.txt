@@ -1,11 +1,14 @@
-PROJECT("cjet tests" C CXX)
-
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+SET(PROJECTNAME cjet_tests)
+PROJECT(${PROJECTNAME} C CXX)
+
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../cmake/)
+INCLUDE(version)
 INCLUDE(defaults)
 
 CONFIGURE_FILE(../linux/epoll/config/config.h.in ${PROJECT_BINARY_DIR}/config/config.h)
+CONFIGURE_FILE(../version.h.in ${PROJECT_BINARY_DIR}/version.h)
 
 FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework)
 IF(Boost_FOUND)
@@ -105,6 +108,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(JSON_PARSE_TEST
 	../config.c
+	../info.c
 	../jet_string.c
 	../json/cJSON.c
 	../parse.c

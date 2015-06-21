@@ -102,10 +102,16 @@ static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct pe
 	return ret;
 }
 
-static int process_change(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_change(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error;
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
 
+	cJSON *error;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
@@ -120,10 +126,16 @@ static int process_change(const cJSON *json_rpc, const cJSON *params, struct pee
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_set(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_set(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error;
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
 
+	cJSON *error;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
@@ -138,10 +150,16 @@ static int process_set(const cJSON *json_rpc, const cJSON *params, struct peer *
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_call(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_call(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error;
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
 
+	cJSON *error;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
@@ -151,10 +169,16 @@ static int process_call(const cJSON *json_rpc, const cJSON *params, struct peer 
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_add(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_add(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error;
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
 
+	cJSON *error;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
@@ -170,10 +194,16 @@ static int process_add(const cJSON *json_rpc, const cJSON *params, struct peer *
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_remove(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_remove(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error;
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
 
+	cJSON *error;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
@@ -190,8 +220,15 @@ static int process_remove(const cJSON *json_rpc, const cJSON *params, struct pee
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_fetch(const cJSON *json_rpc, const cJSON *params, struct peer *p)
+static int process_fetch(const cJSON *json_rpc, struct peer *p)
 {
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
 	struct fetch *f = NULL;
 	cJSON *error = add_fetch_to_peer(p, params, &f);
 	int ret = possibly_send_response(json_rpc, error, p);
@@ -205,20 +242,7 @@ static int process_fetch(const cJSON *json_rpc, const cJSON *params, struct peer
 	}
 }
 
-static int process_unfetch(const cJSON *json_rpc, const cJSON *params, struct peer *p)
-{
-	cJSON *error = remove_fetch_from_peer(p, params);
-	return possibly_send_response(json_rpc, error, p);
-}
-
-static int process_config(const cJSON *json_rpc, const cJSON *params, struct peer *p)
-{
-	cJSON *error = config_peer(p, params);
-	return possibly_send_response(json_rpc, error, p);
-}
-
-static int handle_method(const cJSON *json_rpc, const char *method_name,
-	struct peer *p)
+static int process_unfetch(const cJSON *json_rpc, struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
@@ -227,22 +251,42 @@ static int handle_method(const cJSON *json_rpc, const char *method_name,
 		return possibly_send_response(json_rpc, error, p);
 	}
 
+	cJSON *error = remove_fetch_from_peer(p, params);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int process_config(const cJSON *json_rpc, struct peer *p)
+{
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	cJSON *error = config_peer(p, params);
+	return possibly_send_response(json_rpc, error, p);
+}
+
+static int handle_method(const cJSON *json_rpc, const char *method_name,
+	struct peer *p)
+{
 	if (strcmp(method_name, "change") == 0) {
-		return process_change(json_rpc, params, p);
+		return process_change(json_rpc, p);
 	} else if (strcmp(method_name, "set") == 0) {
-		return process_set(json_rpc, params,  p);
+		return process_set(json_rpc, p);
 	} else if (strcmp(method_name, "add") == 0) {
-		return process_add(json_rpc, params, p);
+		return process_add(json_rpc, p);
 	} else if (strcmp(method_name, "remove") == 0) {
-		return process_remove(json_rpc, params, p);
+		return process_remove(json_rpc, p);
 	} else if (strcmp(method_name, "call") == 0) {
-		return process_call(json_rpc, params, p);
+		return process_call(json_rpc, p);
 	} else if (strcmp(method_name, "fetch") == 0) {
-		return process_fetch(json_rpc, params, p);
+		return process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
-		return process_unfetch(json_rpc, params, p);
+		return process_unfetch(json_rpc, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return process_config(json_rpc, params, p);
+		return process_config(json_rpc, p);
 	} else if (strcmp(method_name, "info") == 0) {
 		return handle_info(json_rpc, p);
 	} else {
