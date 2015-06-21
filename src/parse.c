@@ -33,6 +33,7 @@
 #include "config/config.h"
 #include "config/io.h"
 #include "fetch.h"
+#include "info.h"
 #include "json/cJSON.h"
 #include "method.h"
 #include "parse.h"
@@ -242,6 +243,8 @@ static int handle_method(const cJSON *json_rpc, const char *method_name,
 		return process_unfetch(json_rpc, params, p);
 	} else if (strcmp(method_name, "config") == 0) {
 		return process_config(json_rpc, params, p);
+	} else if (strcmp(method_name, "info") == 0) {
+		return handle_info(json_rpc, p);
 	} else {
 		cJSON *error = create_method_not_found_error(p, "reason", method_name);
 		return possibly_send_response(json_rpc, error, p);
@@ -274,6 +277,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 		ret = handle_routing_response(json_rpc, error, "error", p);
 		return ret;
 	}
+
 
 	error = create_invalid_request_error(p, "reason", "neither request nor response");
 	ret = possibly_send_response(json_rpc, error, p);

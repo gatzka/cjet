@@ -49,6 +49,7 @@ SET(CJET_FILES
 	jet_string.c
 	json/cJSON.c
 	fetch.c
+	info.c
 	method.c
 	parse.c
 	peer.c

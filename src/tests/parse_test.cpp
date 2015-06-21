@@ -126,6 +126,11 @@ extern "C" {
 	void set_peer_name(struct peer *peer, const char *name)
 	{
 	}
+
+	int handle_info(const cJSON *json_rpc, struct peer *p)
+	{
+		return 0;
+	}
 }
 
 struct F {
