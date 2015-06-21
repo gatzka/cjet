@@ -41,6 +41,19 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 file(COPY "../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
+SET(INFO_TEST
+	../info.c
+	../json/cJSON.c
+	../response.c
+	info_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(info_test.bin ${INFO_TEST})
+TARGET_LINK_LIBRARIES(
+	info_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(RESPONSE_TEST
 	../jet_string.c
 	../json/cJSON.c
