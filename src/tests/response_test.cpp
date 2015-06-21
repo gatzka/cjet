@@ -26,7 +26,7 @@
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE state
+#define BOOST_TEST_MODULE response
 
 #include <boost/test/unit_test.hpp>
 

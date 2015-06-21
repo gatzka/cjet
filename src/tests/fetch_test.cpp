@@ -26,7 +26,7 @@
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE combined
+#define BOOST_TEST_MODULE fetch
 
 #include <boost/test/unit_test.hpp>
 
