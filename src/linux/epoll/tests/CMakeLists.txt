@@ -2,7 +2,7 @@ PROJECT("cjet tests" C CXX)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../../)
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../../cmake/)
 INCLUDE(defaults)
 
 CONFIGURE_FILE(../config/config.h.in ${PROJECT_BINARY_DIR}/config/config.h)

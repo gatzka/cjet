@@ -20,7 +20,7 @@ Create a build directory somewhere on you build machine and execute:
 - Optionally run `make test` to execute the unit tests.
 
 There are some options available to configure cjet at compile time. You
-will find all these options in the file [defaults.cmake](defaults.cmake).
+will find all these options in the file [cmake/defaults.cmake](defaults.cmake).
 If you want to override these default values, you need to pass these
 options to cmake, e.g. `cmake -DCONFIG_MAX_WRITE_BUFFER_SIZE=51200 -D...
 <path/to/cjet-sources>`.
