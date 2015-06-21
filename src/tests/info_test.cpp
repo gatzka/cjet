@@ -75,38 +75,65 @@ BOOST_AUTO_TEST_CASE(create_info)
 	char *ptr = readback_buffer;
 	ptr += 4;
 	cJSON *root = cJSON_Parse(ptr);
-	BOOST_REQUIRE(root != NULL);
+	if (root == NULL) {
+		BOOST_FAIL("No root object");
+		return;
+	}
 
 	cJSON *result = cJSON_GetObjectItem(root, "result");
-	BOOST_REQUIRE(result != NULL);
+	if (result == NULL) {
+		BOOST_FAIL("No result object");
+		return;
+	}
 	BOOST_CHECK(result->type == cJSON_Object);
 
 	cJSON *name = cJSON_GetObjectItem(result, "name");
-	BOOST_REQUIRE(name != NULL);
+	if (name == NULL) {
+		BOOST_FAIL("No name object");
+		return;
+	}
 	BOOST_CHECK(name->type == cJSON_String);
 
 	cJSON *version = cJSON_GetObjectItem(result, "version");
-	BOOST_REQUIRE(version != NULL);
+	if (name == NULL) {
+		BOOST_FAIL("No version object");
+		return;
+	}
 	BOOST_CHECK(version->type == cJSON_String);
 
 	cJSON *protocol_version = cJSON_GetObjectItem(result, "protocolVersion");
-	BOOST_REQUIRE(protocol_version != NULL);
+	if (protocol_version == NULL) {
+		BOOST_FAIL("No protocolVersion object");
+		return;
+	}
 	BOOST_CHECK(protocol_version->type == cJSON_String);
 
 	cJSON *features = cJSON_GetObjectItem(result, "features");
-	BOOST_REQUIRE(features != NULL);
+	if (features == NULL) {
+		BOOST_FAIL("No features object");
+		return;
+	}
 	BOOST_REQUIRE(features->type == cJSON_Object);
 
 	cJSON *batches = cJSON_GetObjectItem(features, "batches");
-	BOOST_REQUIRE(batches != NULL);
+	if (batches == NULL) {
+		BOOST_FAIL("No batches object");
+		return;
+	}
 	BOOST_CHECK((batches->type == cJSON_False) || (batches->type == cJSON_True));
 
 	cJSON *authentication = cJSON_GetObjectItem(features, "authentication");
-	BOOST_REQUIRE(authentication != NULL);
+	if (authentication == NULL) {
+		BOOST_FAIL("No authentication object");
+		return;
+	}
 	BOOST_CHECK((authentication->type == cJSON_False) || (authentication->type == cJSON_True));
 
 	cJSON *fetch = cJSON_GetObjectItem(features, "fetch");
-	BOOST_REQUIRE(fetch != NULL);
+	if (fetch == NULL) {
+		BOOST_FAIL("No fetch object");
+		return;
+	}
 	BOOST_CHECK(fetch->type == cJSON_String);
 	BOOST_CHECK((::strcmp(fetch->valuestring, "full") == 0) || (::strcmp(fetch->valuestring, "simple")));
 
