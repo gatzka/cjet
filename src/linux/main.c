@@ -34,6 +34,7 @@
 #include "log.h"
 #include "method.h"
 #include "state.h"
+#include "version.h"
 
 int main(int argc, char **argv)
 {
@@ -67,9 +68,11 @@ int main(int argc, char **argv)
 		goto create_method_table_failed;
 	}
 
+	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
 	if (run_io() < 0) {
 		goto run_io_failed;
 	}
+	log_info("%s stopped", CJET_NAME);
 
 	delete_method_hashtable();
 	delete_state_hashtable();
