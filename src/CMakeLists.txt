@@ -4,13 +4,17 @@ SET(PROJECTNAME cjet)
 PROJECT(${PROJECTNAME} C)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
-INCLUDE(version)
 INCLUDE(defaults)
 
 ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 CONFIGURE_FILE(linux/epoll/config/config.h.in ${PROJECT_BINARY_DIR}/config/config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/version.h)
+
+ADD_CUSTOM_TARGET(REVISION_GEN
+	${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/../cmake/version.cmake
+	WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+)
 
 SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
@@ -65,6 +69,7 @@ SET_SOURCE_FILES_PROPERTIES(linux/epoll/timer.c PROPERTIES COMPILE_FLAGS -std=c8
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
 )
+ADD_DEPENDENCIES(cjet.bin REVISION_GEN)
 TARGET_LINK_LIBRARIES(
 	cjet.bin
 	m
