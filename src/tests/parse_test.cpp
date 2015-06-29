@@ -64,9 +64,9 @@ extern "C" {
 		return NULL;
 	}
 
-	int add_fetch_to_states(struct fetch *f)
+	cJSON *add_fetch_to_states(struct fetch *f)
 	{
-		return 0;
+		return NULL;
 	}
 
 	int remove_method_from_peer(struct peer *p, const char *path)

@@ -231,15 +231,10 @@ static int process_fetch(const cJSON *json_rpc, struct peer *p)
 
 	struct fetch *f = NULL;
 	cJSON *error = add_fetch_to_peer(p, params, &f);
-	int ret = possibly_send_response(json_rpc, error, p);
-	if (ret != 0) {
-		return -1;
+	if (likely(error == NULL)) {
+		error = add_fetch_to_states(f);
 	}
-	if (error == NULL) {
-		return add_fetch_to_states(f);
-	} else {
-		return 0;
-	}
+	return possibly_send_response(json_rpc, error, p);
 }
 
 static int process_unfetch(const cJSON *json_rpc, struct peer *p)

@@ -303,12 +303,12 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	cJSON *params = create_fetch_params(path);
 	error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error == NULL);
-	int ret = add_fetch_to_states(f);
-	BOOST_REQUIRE(ret == 0);
+	error = add_fetch_to_states(f);
+	BOOST_REQUIRE(error == NULL);
 	error = add_fetch_to_peer(fetch_peer_2, params, &f);
 	BOOST_REQUIRE(error == NULL);
-	ret = add_fetch_to_states(f);
-	BOOST_REQUIRE(ret == 0);
+	error = add_fetch_to_states(f);
+	BOOST_REQUIRE(error == NULL);
 
 	BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 	BOOST_CHECK(fetch_peer_2_event == ADD_EVENT);
