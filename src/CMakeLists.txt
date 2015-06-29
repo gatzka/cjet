@@ -19,19 +19,19 @@ ADD_CUSTOM_TARGET(REVISION_GEN
 SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common -std=c99 ${WARN_SWITCHES}")
+
+SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables -fomit-frame-pointer")
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
 	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
-		SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -flto")
+		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -flto")
 	ENDIF()
 ENDIF()
 
-SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables -fomit-frame-pointer")
-
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
 	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
-		SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -Og -ggdb")
+		SET(CMAKE_C_FLAGS_DEBUG "-Og -ggdb")
 	ELSEIF(CMAKE_C_COMPILER_ID STREQUAL GNU)
-		SET(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS} -O0 -ggdb")
+		SET(CMAKE_C_FLAGS_DEBUG "-O0 -ggdb")
 	ENDIF()
 ENDIF()
 
@@ -39,9 +39,11 @@ SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu -Wl,--as-needed")
 SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O2 -Wl,--gc-sections")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-Wl,-O0")
 
-IF(NOT CMAKE_BUILD_TYPE )
-	SET(CMAKE_BUILD_TYPE RELEASE)
+IF(NOT CMAKE_BUILD_TYPE)
+	SET(CMAKE_BUILD_TYPE "Release")
 ENDIF()
+
+MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/epoll/)
