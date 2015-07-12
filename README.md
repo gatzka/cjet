@@ -25,6 +25,11 @@ If you want to override these default values, you need to pass these
 options to cmake, e.g. `cmake -DCONFIG_MAX_WRITE_BUFFER_SIZE=51200 -D...
 <path/to/cjet-sources>`.
 
+Per default, cjet is always built with hardening compile switches like
+`-fpie`, `-fstack-protector` or `-D_FORTIFY_SOURCE=2`. This imposes a
+little runtime overhead. You can disable all hardening by calling cmake
+with `-DCONFIG_NO_HARDENING=1`.
+
 ## Howto run
 
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to

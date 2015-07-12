@@ -37,7 +37,9 @@ ENDIF()
 ADD_DEFINITIONS(-DTESTING)
 ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
-file(COPY "../../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
+INCLUDE(hardening)
+
+FILE(COPY "../../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(READBUFFER_TEST
 	../../../json/cJSON.c
