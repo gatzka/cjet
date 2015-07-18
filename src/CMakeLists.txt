@@ -74,6 +74,12 @@ SET(CJET_FILES
 	state.c
 	uuid.c
 )
+
+FOREACH(_file ${CJET_FILES})
+	FILE(SHA512 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+    SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES COMPILE_FLAGS -frandom-seed=${checksum})
+ENDFOREACH()
+
 SET_SOURCE_FILES_PROPERTIES(linux/epoll/timer.c PROPERTIES COMPILE_FLAGS -std=c89)
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
