@@ -48,6 +48,7 @@ static struct peer *fetch_peer_1;
 static bool message_for_wrong_peer;
 
 static enum event fetch_peer_1_event;
+static unsigned int fetch_peer_1_match_count;
 
 static cJSON *parse_send_buffer(void)
 {
@@ -77,6 +78,11 @@ extern "C" {
 		if (p == fetch_peer_1) {
 			cJSON *fetch_event = parse_send_buffer();
 			fetch_peer_1_event = get_event_from_json(fetch_event);
+			if (fetch_peer_1_event==ADD_EVENT) {
+				++fetch_peer_1_match_count;
+			} else if (fetch_peer_1_event==REMOVE_EVENT) {
+				--fetch_peer_1_match_count;
+			}
 			cJSON_Delete(fetch_event);
 		} else {
 			message_for_wrong_peer = true;
@@ -107,6 +113,7 @@ struct F {
 		fetch_peer_1 = alloc_peer(-1);
 		message_for_wrong_peer = false;
 		fetch_peer_1_event = UNKNOWN_EVENT;
+		fetch_peer_1_match_count = 0;
 	}
 	~F()
 	{
@@ -384,5 +391,54 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 
 		BOOST_CHECK(fetch_peer_1_event == REMOVE_EVENT);
 		cJSON_Delete(params);
+	}
+}
+
+BOOST_FIXTURE_TEST_CASE(fetch_many_states, F)
+{
+	static const unsigned int state_count = 1000;
+	static const std::string path_base = "foo/bar";
+
+	static const std::string state_value = "hello world";
+
+	for(unsigned int count=0; count<state_count; ++count)
+	{
+		std::string path(path_base+"/"+std::to_string(count));
+		cJSON *value = cJSON_CreateString(state_value.c_str());
+
+		cJSON *error = add_state_to_peer(p, path.c_str(), value);
+		BOOST_CHECK(error == NULL);
+
+		cJSON_Delete(value);
+
+		struct state *s = get_state(path.c_str());
+		BOOST_CHECK_EQUAL(state_value, s->value->valuestring);
+	}
+
+
+
+
+	{
+		struct fetch *f = NULL;
+		cJSON *params = create_fetch_params("", path_base.c_str(), "", "", 0);
+		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+		BOOST_REQUIRE(error == NULL);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
+		
+		BOOST_CHECK_EQUAL(fetch_peer_1_match_count, state_count);
+
+		BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
+
+		remove_all_fetchers_from_peer(fetch_peer_1);
+		cJSON_Delete(params);
+	}
+
+
+	for(unsigned int count=0; count<state_count; ++count)
+	{
+		std::string path(path_base+"/"+std::to_string(count));
+
+		remove_state_from_peer(p, path.c_str());
 	}
 }
