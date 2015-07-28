@@ -250,6 +250,7 @@ int send_buffer(struct peer *p)
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
+				log_err("unexpected write error: %s!", strerror(errno));
 				return -1;
 			}
 			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
@@ -274,7 +275,8 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
 	size_t bytes_to_copy =  (sizeof(msg_len_be) + msg_len) - already_written;
 
 	if (unlikely(bytes_to_copy > free_space_in_buf)) {
-		goto write_buffer_too_small;
+		log_err("not enough space left in write buffer! %zu bytes of %i left", free_space_in_buf, CONFIG_MAX_WRITE_BUFFER_SIZE);
+		return -1;
 	}
 
 	char *write_buffer_ptr = p->write_buffer + p->to_write;
@@ -295,9 +297,6 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
 	p->to_write += to_write;
 
 	return 0;
-
-write_buffer_too_small:
-	return -1;
 }
 
 int send_message(struct peer *p, const char *rendered, size_t len)
@@ -315,6 +314,19 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 		 * just append the new message to p->write_buffer.
 		 */
 		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
+		if (unlikely(ret == -1)) {
+			return ret;
+		}
+		
+		ret = send_buffer(p);
+		/*
+				 * write in send_buffer blocked. This is not an error, so
+				 * change ret to 0 (no error). Writing the missing stuff is
+				 * handled via epoll / handle_all_peer_operations.
+				 */
+		if (ret == IO_WOULD_BLOCK) {
+			ret = 0;
+		}
 		return ret;
 	}
 
@@ -424,8 +436,7 @@ static int write_msg(struct peer *p)
 	if (likely(ret == 0)) {
 		p->op = p->next_read_op;
 		return 0;
-	}
-	if (unlikely(ret == -1)) {
+	} else if (unlikely(ret == -1)) {
 		return -1;
 	}
 	/*
