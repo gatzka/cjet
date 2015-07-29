@@ -318,12 +318,16 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 			return ret;
 		}
 
+		/* Try to send. This is important because send_message might
+		 * be called several times from withihn one eventloop callback function.
+		 * In this case the buffer might be filled until overflow.
+		 */
 		ret = send_buffer(p);
 		/*
-				 * write in send_buffer blocked. This is not an error, so
-				 * change ret to 0 (no error). Writing the missing stuff is
-				 * handled via epoll / handle_all_peer_operations.
-				 */
+		 * write in send_buffer blocked. This is not an error, so
+		 * change ret to 0 (no error). Writing the missing stuff is
+		 * handled via epoll / handle_all_peer_operations.
+		 */
 		if (ret == IO_WOULD_BLOCK) {
 			ret = 0;
 		}
