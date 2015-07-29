@@ -25,6 +25,7 @@ static const int SLOW_WRITE = 9;
 static const int INCOMPLETE_WRITE = 10;
 static const int INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG = 11;
 static const int INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG = 12;
+static const int DO_NOT_SEND = 13;
 
 extern "C" {
 
@@ -100,7 +101,6 @@ int fake_send(int fd, void *buf, size_t count, int flags)
 	if (fd == SLOW_WRITE) {
 		return 1;
 	}
-
 	if (fd == INCOMPLETE_WRITE) {
 		if (incomplete_write_counter == 0) {
 			incomplete_write_counter++;
@@ -111,7 +111,6 @@ int fake_send(int fd, void *buf, size_t count, int flags)
 			return -1;
 		}
 	}
-
 	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
 		memcpy(incomplete_write_buffer_ptr, buf, count);
 		incomplete_write_buffer_ptr = incomplete_write_check_buffer;
@@ -131,6 +130,10 @@ int fake_send(int fd, void *buf, size_t count, int flags)
 			errno = EAGAIN;
 			return -1;
 		}
+	}
+	if (fd == DO_NOT_SEND) {
+		errno = EAGAIN;
+		return -1;
 	}
 	return 0;
 }
@@ -572,7 +575,7 @@ BOOST_AUTO_TEST_CASE(complete)
 
 BOOST_AUTO_TEST_CASE(max_message_length)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_peer(DO_NOT_SEND);
 	if (p != NULL) {
 		p->op = WRITE_MSG;
 
