@@ -317,7 +317,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 		if (unlikely(ret == -1)) {
 			return ret;
 		}
-		
+
 		ret = send_buffer(p);
 		/*
 				 * write in send_buffer blocked. This is not an error, so
