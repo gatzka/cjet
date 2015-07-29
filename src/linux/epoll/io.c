@@ -319,7 +319,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 		}
 
 		/* Try to send. This is important because send_message might
-		 * be called several times from withihn one eventloop callback function.
+		 * be called several times from within one event loop callback function.
 		 * In this case the buffer might be filled until overflow.
 		 */
 		ret = send_buffer(p);
