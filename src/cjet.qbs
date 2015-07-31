@@ -13,6 +13,7 @@ Project {
     Depends { name: "generateVersion" }
 
     cpp.warningLevel: "all"
+    cpp.treatWarningsAsErrors: true
     cpp.positionIndependentCode: false
     cpp.includePaths: ["linux/epoll/", ".", buildDirectory]
 
@@ -24,27 +25,11 @@ Project {
     }
 
     Group {
-      name: "linux specific"
-      prefix: "linux/"
-      files: [
-        "*.c",
-        "epoll/*.c",
-      ]
-    }
-
-    Group {
       name: "cJSON"
       files: [
         "json/*.c",
       ]
-    }
-
-    Group {
-      name: "config file"
-      files: [
-        "linux/epoll/config/config.h.in"
-      ]
-      fileTags: ["config_tag"]
+      cpp.cLanguageVersion: "c99"
     }
 
     Group {
@@ -55,9 +40,28 @@ Project {
       fileTags: ["version_tag"]
     }
 
-    Properties {
+    Group {
       condition: qbs.targetOS.contains("linux")
-      cpp.defines: {return ["gcc"]}
+      name: "config file"
+      files: [
+        "linux/epoll/config/config.h.in"
+      ]
+      fileTags: ["config_tag"]
+    }
+
+    Group {
+      condition: qbs.targetOS.contains("linux")
+      name: "linux specific"
+      prefix: "linux/"
+      files: [
+        "*.c",
+        "epoll/*.c",
+      ]
+    }
+
+    Properties {
+      condition: qbs.toolchain.contains("gcc")
+     // cpp.defines: outer.concat("gcc")
     }
   }
 }
