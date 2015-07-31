@@ -53,26 +53,5 @@ Project {
       ]
       fileTags: ["version_tag"]
     }
-
-/*
-    Group {
-      name: "non ansi conformant"
-      files: [
-        "pocket-websocket/log.c", // required for vsnprintf, which is not ANSI
-        "pocket-websocket/os_net.c" // required for vsnprintf, which is not ANSI
-      ]
-    }
-*/
-/*
-    Properties {
-      condition: qbs.buildVariant === "debug"
-      cpp.defines: commonDefines.concat(["NIOS_A","OS_LIBMODE_DP","EMBOS"])
-      cpp.cFlags: ["-O0"]
-    }
-    Properties {
-      condition: qbs.buildVariant === "release"
-      cpp.defines: {return commonDefines.concat(["NIOS_A"]).concat(["OS_LIBMODE_R","EMBOS"])}
-    }
-*/
   }
 }
