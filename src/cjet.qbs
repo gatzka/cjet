@@ -8,12 +8,12 @@ Project {
 
   CppApplication {
     name: "cjet"
-    //profiles: targetProcessor
 
     Depends { name: "generateConfig" }
     Depends { name: "generateVersion" }
 
     cpp.warningLevel: "all"
+    cpp.positionIndependentCode: false
     cpp.includePaths: ["linux/epoll/", ".", buildDirectory]
 
     Group {
