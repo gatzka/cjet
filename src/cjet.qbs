@@ -25,9 +25,10 @@ Project {
 
     Group {
       name: "linux specific"
+      prefix: "linux/"
       files: [
-        "linux/*.c",
-        "linux/epoll/*.c",
+        "*.c",
+        "epoll/*.c",
       ]
     }
 
@@ -52,6 +53,11 @@ Project {
         "version.h.in"
       ]
       fileTags: ["version_tag"]
+    }
+
+    Properties {
+      condition: qbs.targetOS.contains("linux")
+      cpp.defines: {return ["gcc"]}
     }
   }
 }
