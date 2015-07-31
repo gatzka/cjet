@@ -6,8 +6,6 @@ PROJECT(${PROJECTNAME} C)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
 INCLUDE(defaults)
 
-ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
-
 CONFIGURE_FILE(linux/epoll/config/config.h.in ${PROJECT_BINARY_DIR}/config/config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/version.h)
 
@@ -18,7 +16,7 @@ ADD_CUSTOM_TARGET(REVISION_GEN
 
 SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
-SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common -std=c99 ${WARN_SWITCHES}")
+SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables -fomit-frame-pointer")
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
@@ -57,15 +55,10 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 INCLUDE(hardening)
 
 SET(CJET_FILES
-	linux/epoll/io.c
-	linux/epoll/io_loop.c
-	linux/epoll/timer.c
-	linux/main.c
 	config.c
-	jet_string.c
-	json/cJSON.c
 	fetch.c
 	info.c
+	json/cJSON.c
 	method.c
 	parse.c
 	peer.c
@@ -75,14 +68,28 @@ SET(CJET_FILES
 	uuid.c
 )
 
+SET(CJET_LINUX_FILES
+	linux/epoll/io.c
+	linux/epoll/io_loop.c
+	linux/epoll/timer.c
+	linux/jet_string.c
+	linux/main.c
+)
+
 FOREACH(_file ${CJET_FILES})
 	FILE(SHA512 ${PROJECT_SOURCE_DIR}/${_file} checksum)
-    SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES COMPILE_FLAGS -frandom-seed=${checksum})
+    SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES COMPILE_FLAGS " -frandom-seed=${checksum} -std=c99")
 ENDFOREACH()
 
-SET_PROPERTY(SOURCE linux/epoll/timer.c APPEND_STRING PROPERTY COMPILE_FLAGS " -std=c89")
+FOREACH(_file ${CJET_LINUX_FILES})
+	FILE(SHA512 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+    SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES COMPILE_FLAGS -frandom-seed=${checksum})
+	SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS " -D_GNU_SOURCE")
+ENDFOREACH()
+
 ADD_EXECUTABLE(cjet.bin
 	${CJET_FILES}
+	${CJET_LINUX_FILES}
 )
 ADD_DEPENDENCIES(cjet.bin REVISION_GEN)
 TARGET_LINK_LIBRARIES(

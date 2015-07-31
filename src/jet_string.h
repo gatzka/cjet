@@ -33,6 +33,8 @@ extern "C" {
 
 char *duplicate_string(const char *s);
 const char *jet_strcasestr(const char *haystack, const char *needle);
+int jet_strcasecmp(const char *s1, const char *s2);
+int jet_strncasecmp(const char *s1, const char *s2, size_t n);
 
 #ifdef __cplusplus
 }

@@ -126,7 +126,7 @@ static int equals_match(const struct path_matcher *pm, const char *state_path)
 
 static int equals_match_ignore_case(const struct path_matcher *pm, const char *state_path)
 {
-	return !strcasecmp(pm->fetch_path, state_path);
+	return !jet_strcasecmp(pm->fetch_path, state_path);
 }
 
 static int equalsnot_match(const struct path_matcher *pm, const char *state_path)
@@ -136,7 +136,7 @@ static int equalsnot_match(const struct path_matcher *pm, const char *state_path
 
 static int equalsnot_match_ignore_case(const struct path_matcher *pm, const char *state_path)
 {
-	return strcasecmp(pm->fetch_path, state_path);
+	return jet_strcasecmp(pm->fetch_path, state_path);
 }
 
 static int startswith_match(const struct path_matcher *pm,
@@ -150,7 +150,7 @@ static int startswith_match_ignore_case(const struct path_matcher *pm,
 	const char *state_path)
 {
 	size_t length = pm->cookie;
-	return !strncasecmp(pm->fetch_path, state_path, length);
+	return !jet_strncasecmp(pm->fetch_path, state_path, length);
 }
 
 static int endswith_match(const struct path_matcher *pm,
@@ -168,7 +168,7 @@ static int endswith_match_ignore_case(const struct path_matcher *pm,
 	size_t fetch_path_length = pm->cookie;
 	size_t state_path_length = strlen(state_path);
 	return (state_path_length >= fetch_path_length) &&
-		(strcasecmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
+		(jet_strcasecmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
 }
 
 static int contains_match(const struct path_matcher *pm,

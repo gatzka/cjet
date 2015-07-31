@@ -22,6 +22,7 @@ Project {
       files: [
         "*.c",
       ]
+      cpp.cLanguageVersion: "c99"
     }
 
     Group {
@@ -57,6 +58,7 @@ Project {
         "*.c",
         "epoll/*.c",
       ]
+      cpp.defines: "_GNU_SOURCE"
     }
 
     Properties {

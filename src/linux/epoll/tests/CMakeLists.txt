@@ -19,6 +19,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
+ADD_DEFINITIONS(-D_GNU_SOURCE)
+
 SET(WARN_SWITCHES "-Wall -Werror")
 
 SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage")
@@ -45,7 +47,7 @@ FILE(COPY "../../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR}
 
 SET(READBUFFER_TEST
 	../../../json/cJSON.c
-	../../../jet_string.c
+	../../../linux/jet_string.c
 	../../../fetch.c
 	../../../method.c
 	../../../peer.c

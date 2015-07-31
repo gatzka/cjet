@@ -21,6 +21,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../linux/epoll/)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
+ADD_DEFINITIONS(-D_GNU_SOURCE)
+
 SET(WARN_SWITCHES "-Wall -Werror")
 
 SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage")
@@ -74,7 +76,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(RESPONSE_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../response.c
 	response_test.cpp
@@ -86,7 +88,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ROUTER_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../peer.c
 	../response.c
@@ -101,7 +103,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STRING_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	string_test.cpp
 )
 ADD_EXECUTABLE(string_test.bin ${STRING_TEST})
@@ -111,7 +113,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(CONFIG_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../config.c
 	../peer.c
@@ -126,7 +128,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(PEER_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../peer.c
 	log.cpp
@@ -141,7 +143,7 @@ TARGET_LINK_LIBRARIES(
 SET(JSON_PARSE_TEST
 	../config.c
 	../info.c
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../parse.c
 	../response.c
@@ -154,7 +156,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
@@ -171,7 +173,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(METHOD_TEST
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
@@ -189,7 +191,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(COMBINED_TEST
 	../fetch.c
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../method.c
 	../response.c
@@ -208,7 +210,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(FETCH_TEST
 	../fetch.c
-	../jet_string.c
+	../linux/jet_string.c
 	../json/cJSON.c
 	../response.c
 	../router.c
