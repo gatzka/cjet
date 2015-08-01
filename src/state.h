@@ -13,7 +13,7 @@ extern "C" {
 struct state {
 	struct list_head state_list;
 	char *path;
-	struct peer *peer; // The peer the state belongs to
+	struct peer *peer; /*The peer the state belongs to */
 	cJSON *value;
 	struct fetch **fetcher_table;
 	double timeout;
