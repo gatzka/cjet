@@ -17,6 +17,7 @@ Project {
     cpp.positionIndependentCode: false
     cpp.includePaths: ["linux/epoll/", ".", buildDirectory]
     cpp.visibility: "hidden"
+    cpp.useRPaths: false
 
     Group {
       name: "platform independent"
