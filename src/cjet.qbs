@@ -59,6 +59,7 @@ Project {
         "epoll/*.c",
       ]
       cpp.defines: "_GNU_SOURCE"
+      cpp.cFlags: "-std=gnu99"
     }
 
     Properties {
