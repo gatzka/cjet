@@ -27,10 +27,14 @@ enum {CONFIG_ROUTING_TABLE_ORDER = ${CONFIG_ROUTING_TABLE_ORDER}};
 
 enum {CONFIG_INITIAL_FETCH_TABLE_SIZE = ${CONFIG_INITIAL_FETCH_TABLE_SIZE}};
 
+/*
+ * This parameter configures the default timeout of routed messages if
+ * not specified otherwise.
+ */
+static const double CONFIG_ROUTED_MESSAGES_TIMEOUT = ${CONFIG_ROUTED_MESSAGES_TIMEOUT};
+
 /* Linux specific configs */
 
 enum {CONFIG_MAX_EPOLL_EVENTS = ${CONFIG_MAX_EPOLL_EVENTS}};
-
-static const double CONFIG_ROUTED_MESSAGES_TIMEOUT = ${CONFIG_ROUTED_MESSAGES_TIMEOUT};
 
 #endif
