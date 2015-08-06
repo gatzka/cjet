@@ -16,9 +16,6 @@ char *get_read_ptr(struct peer *p, unsigned int count);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
 int handle_all_peer_operations(struct peer *p);
 int send_buffer(struct peer *p);
-int send_message(struct peer *p, const char *rendered, size_t len);
-int add_io(struct peer *p);
-void remove_io(const struct peer *p);
 
 #ifdef __cplusplus
 }

@@ -37,11 +37,12 @@
 #include <unistd.h>
 
 #include "compiler.h"
+#include "config/os_config.h"
 #include "config/io.h"
-#include "config/peer_io.h"
 #include "io_loop.h"
 #include "list.h"
 #include "log.h"
+#include "message.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_testing.h"

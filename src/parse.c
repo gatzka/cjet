@@ -30,11 +30,11 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "config/config.h"
-#include "config/io.h"
+#include "config/cjet_config.h"
 #include "fetch.h"
 #include "info.h"
 #include "json/cJSON.h"
+#include "message.h"
 #include "method.h"
 #include "parse.h"
 #include "peer.h"

@@ -32,13 +32,12 @@
 #include <stdlib.h>
 
 #include "compiler.h"
-#include "config/config.h"
-#include "config/io.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "log.h"
+#include "message.h"
 #include "method.h"
 #include "peer.h"
 #include "router.h"

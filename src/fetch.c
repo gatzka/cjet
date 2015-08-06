@@ -29,10 +29,10 @@
 #include <string.h>
 
 #include "compiler.h"
-#include "config/io.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
+#include "message.h"
 #include "peer.h"
 #include "response.h"
 #include "state.h"

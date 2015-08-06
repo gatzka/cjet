@@ -25,10 +25,10 @@
  */
 
 #include "compiler.h"
-#include "config/io.h"
 #include "info.h"
 #include "json/cJSON.h"
 #include "log.h"
+#include "message.h"
 #include "peer.h"
 #include "response.h"
 #include "version.h"

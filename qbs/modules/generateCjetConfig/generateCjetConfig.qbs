@@ -4,10 +4,10 @@ import qbs.TextFile
 Module {
   Rule {
     id: config_generator
-    inputs:  ["config_tag"]
+    inputs:  ["cjet_config_tag"]
 
     Artifact {
-      filePath: "config/config.h"
+      filePath: "config/cjet_config.h"
       fileTags: ["hpp"]
     }
 
@@ -27,7 +27,6 @@ Module {
         content = content.replace(/\${CONFIG_STATE_TABLE_ORDER}/g, "13");
         content = content.replace(/\${CONFIG_METHOD_TABLE_ORDER}/g, "10");
         content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, "6");
-        content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, "10");
         content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, "4");
         content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, "5.0");
         file = new TextFile(output.filePath,  TextFile.WriteOnly);

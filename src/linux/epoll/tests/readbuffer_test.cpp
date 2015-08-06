@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "config/config.h"
 #include "config/io.h"
+#include "message.h"
 #include "peer.h"
 
 static const int BADFD = -1;

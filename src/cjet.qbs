@@ -9,13 +9,14 @@ Project {
   CppApplication {
     name: "cjet"
 
-    Depends { name: "generateConfig" }
+    Depends { name: "generateCjetConfig" }
+    Depends { name: "generateOsConfig" }
     Depends { name: "generateVersion" }
 
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
     cpp.positionIndependentCode: false
-    cpp.includePaths: ["linux/epoll/", ".", buildDirectory]
+    cpp.includePaths: [".", buildDirectory]
     cpp.visibility: "hidden"
     cpp.useRPaths: false
 
@@ -44,12 +45,21 @@ Project {
     }
 
     Group {
-      condition: qbs.targetOS.contains("linux")
-      name: "config file"
+      name: "cjet config file"
       files: [
-        "linux/epoll/config/config.h.in"
+        "cjet_config.h.in"
       ]
-      fileTags: ["config_tag"]
+      fileTags: ["cjet_config_tag"]
+    }
+
+
+    Group {
+      condition: qbs.targetOS.contains("linux")
+      name: "linux config file"
+      files: [
+        "linux/epoll/config/os_config.h.in"
+      ]
+      fileTags: ["os_config_tag"]
     }
 
     Group {
@@ -62,6 +72,7 @@ Project {
       ]
       cpp.defines: "_GNU_SOURCE"
       cpp.cFlags: "-std=gnu99"
+      cpp.includePaths: outer.concat("linux/epoll")
     }
 
     Properties {

@@ -5,8 +5,8 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "config/config.h"
-#include "config/peer_io.h"
+#include "config/cjet_config.h"
+#include "config/os_config.h"
 #include "json/cJSON.h"
 #include "list.h"
 

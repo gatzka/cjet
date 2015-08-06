@@ -25,9 +25,9 @@
  */
 
 #include "compiler.h"
-#include "config/io.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
+#include "message.h"
 #include "peer.h"
 #include "response.h"
 #include "router.h"
