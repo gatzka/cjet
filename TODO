@@ -2,3 +2,4 @@
 - probably HAT-trie
 - write unit test to ensure that when performing a fetch the add events come before the fetch response.
 - implement jet.FetchOnly (read-only states, set not allowed)
+- uuid.c is too simple. It generates number wich can easily clash with numbers coming from peers. A concatenation of peer id and a uuid would be o.k.
