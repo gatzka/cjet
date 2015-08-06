@@ -8,8 +8,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "cjet_io.h"
 #include "linux/io.h"
-#include "message.h"
 #include "peer.h"
 
 static const int BADFD = -1;

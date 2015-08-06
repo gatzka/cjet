@@ -31,13 +31,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "cjet_io.h"
 #include "compiler.h"
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "log.h"
-#include "message.h"
 #include "method.h"
 #include "peer.h"
 #include "router.h"

@@ -36,13 +36,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "cjet_io.h"
 #include "compiler.h"
 #include "config/os_config.h"
-#include "linux/io.h"
 #include "io_loop.h"
+#include "linux/io.h"
 #include "list.h"
 #include "log.h"
-#include "message.h"
 #include "parse.h"
 #include "peer.h"
 #include "peer_testing.h"

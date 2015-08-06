@@ -28,13 +28,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cjet_io.h"
 #include "compiler.h"
 #include "config.h"
 #include "config/cjet_config.h"
 #include "fetch.h"
 #include "info.h"
 #include "json/cJSON.h"
-#include "message.h"
 #include "method.h"
 #include "parse.h"
 #include "peer.h"

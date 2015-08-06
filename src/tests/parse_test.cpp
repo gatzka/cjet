@@ -33,8 +33,8 @@
 
 #include <cstring>
 
+#include "cjet_io.h"
 #include "json/cJSON.h"
-#include "message.h"
 #include "parse.h"
 #include "peer.h"
 #include "state.h"
