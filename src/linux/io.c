@@ -38,7 +38,7 @@
 
 #include "compiler.h"
 #include "config/os_config.h"
-#include "config/io.h"
+#include "linux/io.h"
 #include "io_loop.h"
 #include "list.h"
 #include "log.h"

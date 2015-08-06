@@ -30,7 +30,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "config/io.h"
+#include "linux/io.h"
 #include "log.h"
 #include "method.h"
 #include "state.h"

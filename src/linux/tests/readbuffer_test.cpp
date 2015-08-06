@@ -8,7 +8,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "config/io.h"
+#include "linux/io.h"
 #include "message.h"
 #include "peer.h"
 

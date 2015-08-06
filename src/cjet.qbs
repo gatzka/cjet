@@ -71,7 +71,6 @@ Project {
       ]
       cpp.defines: "_GNU_SOURCE"
       cpp.cFlags: "-std=gnu99"
-      cpp.includePaths: outer.concat("linux")
     }
 
     Properties {
