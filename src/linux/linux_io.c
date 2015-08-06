@@ -39,13 +39,13 @@
 #include "cjet_io.h"
 #include "compiler.h"
 #include "config/os_config.h"
-#include "io_loop.h"
-#include "linux/io.h"
+#include "linux/io_loop.h"
+#include "linux/linux_io.h"
+#include "linux/peer_testing.h"
 #include "list.h"
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
-#include "peer_testing.h"
 #include "state.h"
 
 static int go_ahead = 1;

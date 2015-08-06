@@ -46,16 +46,16 @@ INCLUDE(hardening)
 FILE(COPY "../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(READBUFFER_TEST
+	../../fetch.c
 	../../json/cJSON.c
 	../../linux/jet_string.c
-	../../fetch.c
 	../../method.c
 	../../peer.c
 	../../response.c
 	../../router.c
 	../../state.c
 	../../uuid.c
-	../io.c
+	../linux_io.c
 	log.cpp
 	readbuffer_test.cpp
 )

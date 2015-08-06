@@ -69,11 +69,11 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-	linux/io.c
 	linux/io_loop.c
-	linux/timer.c
 	linux/jet_string.c
+	linux/linux_io.c
 	linux/main.c
+	linux/timer.c
 )
 
 FOREACH(_file ${CJET_FILES})
