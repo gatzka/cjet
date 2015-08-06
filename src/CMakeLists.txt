@@ -6,7 +6,7 @@ PROJECT(${PROJECTNAME} C)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
 INCLUDE(defaults)
 
-CONFIGURE_FILE(linux/epoll/config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
+CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/config/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/version.h)
 
@@ -50,7 +50,7 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/epoll/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linux/)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
 INCLUDE(hardening)
@@ -70,9 +70,9 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-	linux/epoll/io.c
-	linux/epoll/io_loop.c
-	linux/epoll/timer.c
+	linux/io.c
+	linux/io_loop.c
+	linux/timer.c
 	linux/jet_string.c
 	linux/main.c
 )

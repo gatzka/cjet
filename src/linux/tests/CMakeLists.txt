@@ -3,11 +3,11 @@ PROJECT(${PROJECTNAME} C CXX)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
-SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../../cmake/)
+SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../../cmake/)
 INCLUDE(defaults)
 
 CONFIGURE_FILE(../config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
-CONFIGURE_FILE(../../../cjet_config.h.in ${PROJECT_BINARY_DIR}/config/cjet_config.h)
+CONFIGURE_FILE(../../cjet_config.h.in ${PROJECT_BINARY_DIR}/config/cjet_config.h)
 
 FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework)
 IF(Boost_FOUND)
@@ -17,7 +17,7 @@ IF(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
 ADD_DEFINITIONS(-D_GNU_SOURCE)
@@ -44,18 +44,18 @@ ADD_DEFINITIONS(-D_BSD_SOURCE=1 -D_DEFAULT_SOURCE=1)
 
 INCLUDE(hardening)
 
-FILE(COPY "../../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
+FILE(COPY "../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(READBUFFER_TEST
-	../../../json/cJSON.c
-	../../../linux/jet_string.c
-	../../../fetch.c
-	../../../method.c
-	../../../peer.c
-	../../../response.c
-	../../../router.c
-	../../../state.c
-	../../../uuid.c
+	../../json/cJSON.c
+	../../linux/jet_string.c
+	../../fetch.c
+	../../method.c
+	../../peer.c
+	../../response.c
+	../../router.c
+	../../state.c
+	../../uuid.c
 	../io.c
 	log.cpp
 	readbuffer_test.cpp

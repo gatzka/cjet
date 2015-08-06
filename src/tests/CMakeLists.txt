@@ -7,7 +7,7 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../cmake/)
 INCLUDE(version)
 INCLUDE(defaults)
 
-CONFIGURE_FILE(../linux/epoll/config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
+CONFIGURE_FILE(../linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
 CONFIGURE_FILE(../cjet_config.h.in ${PROJECT_BINARY_DIR}/config/cjet_config.h)
 CONFIGURE_FILE(../version.h.in ${PROJECT_BINARY_DIR}/version.h)
 
@@ -19,7 +19,7 @@ IF(Boost_FOUND)
 ENDIF(Boost_FOUND)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../linux/epoll/)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../linux/)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
 ADD_DEFINITIONS(-D_GNU_SOURCE)

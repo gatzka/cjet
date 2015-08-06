@@ -29,7 +29,7 @@
 #define __USE_POSIX199309 1
 #include <sys/timerfd.h>
 
-#include "linux/epoll/timer.h"
+#include "linux/timer.h"
 
 struct itimerspec convert_timeout_to_itimerspec(double timeout)
 {
