@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_INFO_H
-#define CJET_INFO_H
+#ifndef CJET_HANDLE_INFO_H
+#define CJET_HANDLE_INFO_H
 
 #include "json/cJSON.h"
 #include "peer.h"

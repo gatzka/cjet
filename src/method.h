@@ -1,5 +1,5 @@
-#ifndef CJET_METHOD_H
-#define CJET_METHOD_H
+#ifndef CJET_HANDLE_METHOD_H
+#define CJET_HANDLE_METHOD_H
 
 #include "json/cJSON.h"
 #include "list.h"

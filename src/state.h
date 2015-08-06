@@ -1,5 +1,5 @@
-#ifndef CJET_STATE_H
-#define CJET_STATE_H
+#ifndef CJET_HANDLE_STATE_H
+#define CJET_HANDLE_STATE_H
 
 #include "fetch.h"
 #include "json/cJSON.h"
