@@ -26,12 +26,12 @@
 
 #include "cjet_io.h"
 #include "compiler.h"
+#include "generated/version.h"
 #include "info.h"
 #include "json/cJSON.h"
 #include "log.h"
 #include "peer.h"
 #include "response.h"
-#include "version.h"
 
 static cJSON *create_info(void)
 {

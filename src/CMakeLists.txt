@@ -6,9 +6,9 @@ PROJECT(${PROJECTNAME} C)
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
 INCLUDE(defaults)
 
-CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/config/os_config.h)
-CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/config/cjet_config.h)
-CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/version.h)
+CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_config.h)
+CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
+CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
 ADD_CUSTOM_TARGET(REVISION_GEN
 	${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/../cmake/version.cmake

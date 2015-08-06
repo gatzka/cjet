@@ -9,7 +9,7 @@ Module {
 
     Artifact {
       alwaysUpdated: false
-      filePath: "version.h"
+      filePath: "generated/version.h"
       fileTags: ["hpp"]
     }
 

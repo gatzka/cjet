@@ -7,7 +7,7 @@ Module {
     inputs:  ["cjet_config_tag"]
 
     Artifact {
-      filePath: "config/cjet_config.h"
+      filePath: "generated/cjet_config.h"
       fileTags: ["hpp"]
     }
 

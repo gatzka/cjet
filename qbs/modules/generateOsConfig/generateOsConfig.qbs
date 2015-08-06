@@ -7,7 +7,7 @@ Module {
     inputs:  ["os_config_tag"]
 
     Artifact {
-      filePath: "config/os_config.h"
+      filePath: "generated/os_config.h"
       fileTags: ["hpp"]
     }
 

@@ -30,11 +30,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "generated/version.h"
 #include "linux/linux_io.h"
 #include "log.h"
 #include "method.h"
 #include "state.h"
-#include "version.h"
 
 int main(int argc, char **argv)
 {

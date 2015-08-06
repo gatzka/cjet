@@ -38,7 +38,7 @@
 
 #include "cjet_io.h"
 #include "compiler.h"
-#include "config/os_config.h"
+#include "generated/os_config.h"
 #include "linux/io_loop.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
