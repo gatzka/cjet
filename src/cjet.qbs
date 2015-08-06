@@ -57,7 +57,7 @@ Project {
       condition: qbs.targetOS.contains("linux")
       name: "linux config file"
       files: [
-        "linux/epoll/config/os_config.h.in"
+        "linux/config/os_config.h.in"
       ]
       fileTags: ["os_config_tag"]
     }
@@ -68,11 +68,10 @@ Project {
       prefix: "linux/"
       files: [
         "*.c",
-        "epoll/*.c",
       ]
       cpp.defines: "_GNU_SOURCE"
       cpp.cFlags: "-std=gnu99"
-      cpp.includePaths: outer.concat("linux/epoll")
+      cpp.includePaths: outer.concat("linux")
     }
 
     Properties {
