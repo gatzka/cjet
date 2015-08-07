@@ -48,40 +48,41 @@ Project {
 
     Properties {
       condition: qbs.toolchain.contains("gcc") || qbs.toolchain.contains("clang")
-      property var CFLAGS: [
-        "-Wshadow",
-        "-Winit-self",
-        "-Wstrict-overflow=5",
-        "-Wunused-result",
-        "-Wcast-qual",
-        "-Wcast-align",
-        "-Wpointer-arith",
-        "-Wformat=2",
-        "-Wwrite-strings",
-        "-Wmissing-prototypes",
-        "-pedantic",
-        "-fno-common"
-      ]
 
       cpp.cFlags: {
-        if (qbs.buildVariant.contains("release")) {
-          return CFLAGS
-        } else {
-          return CFLAGS.concat([
-            "-fsanitize=address",
-            "-fsanitize=undefined"
-            ])
+        var flags = [
+          "-Wshadow",
+          "-Winit-self",
+          "-Wstrict-overflow=5",
+          "-Wunused-result",
+          "-Wcast-qual",
+          "-Wcast-align",
+          "-Wpointer-arith",
+          "-Wformat=2",
+          "-Wwrite-strings",
+          "-Wmissing-prototypes",
+          "-pedantic",
+          "-fno-common"
+        ];
+
+        if (qbs.buildVariant.contains("debug")) {
+          flags.push("-fsanitize=address")
+          flags.push("-fsanitize=undefined")
         }
+        return flags
       }
-      property var GCC_LINKER_SWITCHES: [
-        "-Wl,--hash-style=gnu,--as-needed"
-      ]
       cpp.linkerFlags: {
+        var flags = [
+          "-Wl,--hash-style=gnu,--as-needed"
+        ]
+
         if (qbs.buildVariant.contains("release")) {
-          return GCC_LINKER_SWITCHES.concat(["-Wl,-O2,--gc-sections,-s"])
+          flags.push("-Wl,-O2,--gc-sections,-s")
         } else {
-          return GCC_LINKER_SWITCHES.concat(["-fsanitize=address","-fsanitize=undefined"])
+          flags.push("-fsanitize=address")
+          flags.push("-fsanitize=undefined")
         }
+        return flags
       }
     }
 
