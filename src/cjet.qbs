@@ -39,9 +39,17 @@ Project {
     }
   }
 
+  SubProject {
+    filePath: "../qbs/gccClang.qbs"
+    Properties {
+      name: "GCC/Clang switches"
+    }
+  }
+
   CppApplication {
     name: "cjet"
 
+    Depends { name: "gccClang" }
     Depends { name: "hardening" }
     Depends { name: "generateCjetConfig" }
     Depends { name: "generateOsConfig" }
@@ -53,46 +61,6 @@ Project {
     cpp.includePaths: [".", buildDirectory]
     cpp.visibility: "hidden"
     cpp.useRPaths: false
-
-    Properties {
-      condition: qbs.toolchain.contains("gcc") || qbs.toolchain.contains("clang")
-
-      cpp.cFlags: {
-        var flags = [
-          "-Wshadow",
-          "-Winit-self",
-          "-Wstrict-overflow=5",
-          "-Wunused-result",
-          "-Wcast-qual",
-          "-Wcast-align",
-          "-Wpointer-arith",
-          "-Wformat=2",
-          "-Wwrite-strings",
-          "-Wmissing-prototypes",
-          "-pedantic",
-          "-fno-common"
-        ]
-
-        if (qbs.buildVariant.contains("debug")) {
-          flags.push("-fsanitize=address")
-          flags.push("-fsanitize=undefined")
-        }
-        return flags
-      }
-      cpp.linkerFlags: {
-        var flags = [
-          "-Wl,--hash-style=gnu,--as-needed"
-        ]
-
-        if (qbs.buildVariant.contains("release")) {
-          flags.push("-Wl,-O2,--gc-sections,-s")
-        } else {
-          flags.push("-fsanitize=address")
-          flags.push("-fsanitize=undefined")
-        }
-        return flags
-      }
-    }
 
     Group {
       name: "platform independent"
