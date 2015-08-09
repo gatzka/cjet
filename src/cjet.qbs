@@ -32,9 +32,17 @@ Project {
 
   qbsSearchPaths: "../qbs/"
 
+  SubProject {
+    filePath: "../qbs/hardening.qbs"
+    Properties {
+      name: "hardening switches gcc/clang"
+    }
+  }
+
   CppApplication {
     name: "cjet"
 
+    Depends { name: "hardening" }
     Depends { name: "generateCjetConfig" }
     Depends { name: "generateOsConfig" }
     Depends { name: "generateVersion" }
@@ -63,7 +71,7 @@ Project {
           "-Wmissing-prototypes",
           "-pedantic",
           "-fno-common"
-        ];
+        ]
 
         if (qbs.buildVariant.contains("debug")) {
           flags.push("-fsanitize=address")
