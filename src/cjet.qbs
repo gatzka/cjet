@@ -35,7 +35,7 @@ Project {
   SubProject {
     filePath: "../qbs/hardening.qbs"
     Properties {
-      name: "hardening switches gcc/clang"
+      name: "hardening settings"
     }
   }
 
