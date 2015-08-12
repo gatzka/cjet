@@ -38,7 +38,7 @@ qbs has the ability to make parallel builds for multiple profiles. So
 if qou want to build with clang, gcc, arm-gcc, ppc-gcc (these are the names
 of your qbs profiles), just run:
 ```
-qbs -f ~/workspace/git/cjet/src/cjet.qbs release profile:gcc release profile:clang release profile:arm-gcc release profile:ppc-gcc debug profile:gcc debug profile:clang debug profile:arm-gcc debug profile:ppc-gcc
+qbs -f <path/to/cjet-sources>/src/cjet.qbs release profile:gcc release profile:clang release profile:arm-gcc release profile:ppc-gcc debug profile:gcc debug profile:clang debug profile:arm-gcc debug profile:ppc-gcc
 ```
 
 ## Howto run
