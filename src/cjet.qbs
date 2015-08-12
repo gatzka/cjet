@@ -61,6 +61,7 @@ Project {
     cpp.includePaths: [".", buildDirectory]
     cpp.visibility: "hidden"
     cpp.useRPaths: false
+    cpp.cLanguageVersion: "c99"
 
     Group {
       name: "platform independent"
@@ -114,6 +115,5 @@ Project {
       cpp.defines: "_GNU_SOURCE"
       cpp.cFlags: outer.concat("-std=gnu99")
     }
-
   }
 }
