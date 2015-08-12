@@ -48,11 +48,6 @@ Product {
         flags.push("-Wmissing-prototypes")
         flags.push("-pedantic")
         flags.push("-fno-common")
-
-        if (qbs.buildVariant.contains("debug")) {
-          flags.push("-fsanitize=address")
-          flags.push("-fsanitize=undefined")
-        }
       }
       return flags
     }
@@ -64,9 +59,6 @@ Product {
         flags.push("-Wl,--hash-style=gnu,--as-needed")
         if (qbs.buildVariant.contains("release")) {
           flags.push("-Wl,-O2,--gc-sections,-s")
-        } else {
-          flags.push("-fsanitize=address")
-          flags.push("-fsanitize=undefined")
         }
       }
       return flags
