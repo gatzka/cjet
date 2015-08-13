@@ -28,6 +28,16 @@ import qbs 1.0
 import qbs.TextFile
 
 Module {
+  property string serverPort
+  property string maxListenBacklog
+  property string maxMessageSize
+  property string maxWriteBufferSize
+  property string stateTableOrder
+  property string methodTableOrder
+  property string routingTableOrder
+  property string initialFetchTableSize
+  property string routedMessagesTimeout
+
   Rule {
     id: config_generator
     inputs:  ["cjet_config_tag"]
@@ -46,15 +56,15 @@ Module {
         var file = new TextFile(input.filePath);
         var content = file.readAll();
         file.close()
-        content = content.replace(/\${CONFIG_SERVER_PORT}/g, "11122");
-        content = content.replace(/\${CONFIG_LISTEN_BACKLOG}/g, "40");
-        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, "512");
-        content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, "5120");
-        content = content.replace(/\${CONFIG_STATE_TABLE_ORDER}/g, "13");
-        content = content.replace(/\${CONFIG_METHOD_TABLE_ORDER}/g, "10");
-        content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, "6");
-        content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, "4");
-        content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, "5.0");
+        content = content.replace(/\${CONFIG_SERVER_PORT}/g, product.moduleProperty("generateCjetConfig", "serverPort") || "11122");
+        content = content.replace(/\${CONFIG_LISTEN_BACKLOG}/g, product.moduleProperty("generateCjetConfig", "maxListenBacklog") || "40");
+        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "512");
+        content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxWriteBufferSize") || "5120");
+        content = content.replace(/\${CONFIG_STATE_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "stateTableOrder") || "13");
+        content = content.replace(/\${CONFIG_METHOD_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "methodTableOrder") || "10");
+        content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "routingTableOrder") || "6");
+        content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, product.moduleProperty("generateCjetConfig", "initialFetchTableSize") || "4");
+        content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, product.moduleProperty("generateCjetConfig", "routedMessagesTimeout") || "5.0");
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
