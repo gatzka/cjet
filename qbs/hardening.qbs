@@ -29,39 +29,47 @@ import qbs 1.0
 Product {
   name: "hardening"
 
+  property bool enableHardening: true
+
   Export {
     Depends { name: 'cpp' }
     cpp.defines: {
-      var toolchain = qbs.toolchain[0]
-      var defines = []
-      if ((toolchain === "gcc" || toolchain === "clang") && (qbs.buildVariant === "release")) {
-        defines.push("_FORTIFY_SOURCE=2")
+      var defines = [];
+      if (enableHardening) {
+        var toolchain = qbs.toolchain[0];
+        if ((toolchain === "gcc" || toolchain === "clang") && (qbs.buildVariant === "release")) {
+          defines.push("_FORTIFY_SOURCE=2");
+        }
       }
-      return defines
+      return defines;
     }
     
     cpp.cFlags: {
-      var toolchain = qbs.toolchain[0]
-      var flags = []
-      if (toolchain === "gcc" || toolchain === "clang") {
-        flags.push("-fstack-protector-strong", "-fpie")
+      var flags = [];
+      if (enableHardening) {
+        var toolchain = qbs.toolchain[0];
+        if (toolchain === "gcc" || toolchain === "clang") {
+          flags.push("-fstack-protector-strong", "-fpie");
+        }
+        if (toolchain === "gcc") {
+          flags.push("-pie");
+        }
       }
-      if (toolchain === "gcc") {
-        flags.push("-pie")
-      }
-      return flags
+      return flags;
     }
     
     cpp.linkerFlags: {
-      var toolchain = qbs.toolchain[0]
-      var flags = []
-      if (toolchain === "gcc" || toolchain === "clang") {
-        flags.push("-Wl,-z,relro,-z,now", "-fpie","-pie");
-        if (qbs.buildVariant.contains("release")) {
-          flags.push("-D_FORTIFY_SOURCE=2")
+      var flags = [];
+      if (enableHardening) {
+        var toolchain = qbs.toolchain[0];
+        if (toolchain === "gcc" || toolchain === "clang") {
+          flags.push("-Wl,-z,relro,-z,now", "-fpie","-pie");
+          if (qbs.buildVariant.contains("release")) {
+            flags.push("-D_FORTIFY_SOURCE=2");
+          }
         }
       }
-      return flags
+      return flags;
     }
   }
 }

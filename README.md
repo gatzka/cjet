@@ -54,6 +54,12 @@ You can override these defaults easily when calling qbs, for instance:
 ```
 qbs -f <path/to/cjet-sources>/src/cjet.qbs profile:gcc generateCjetConfig.serverPort:4321 generateOsConfig.maxEpollEvents:11
 ```
+Per default, cjet is always built with hardening compile switches like
+`-fpie`, `-fstack-protector` or `-D_FORTIFY_SOURCE=2`. This imposes a
+little runtime overhead. You can disable all hardening by calling qbs like:
+```
+qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:false
+```
 
 ## Howto run
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to
