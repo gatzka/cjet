@@ -9,7 +9,7 @@ limitations (MIT).
 
 [![Coverity](https://scan.coverity.com/projects/3315/badge.svg)](https://scan.coverity.com/projects/3315)
 
-[![Coverage Status](https://img.shields.io/coveralls/gatzka/cjet.svg)](https://coveralls.io/r/gatzka/cjet?branch=master)
+[![Coverage Status](https://coveralls.io/repos/gatzka/cjet/badge.svg?branch=master&service=github)](https://coveralls.io/github/gatzka/cjet?branch=master)
 
 ## Howto Build
 
