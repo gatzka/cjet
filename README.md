@@ -12,6 +12,8 @@ limitations (MIT).
 [![Coverage Status](https://img.shields.io/coveralls/gatzka/cjet.svg)](https://coveralls.io/r/gatzka/cjet?branch=master)
 
 ## Howto Build
+
+### CMake
 Create a build directory somewhere on you build machine and execute:
 
 - `cmake <path/to/cjet-sources>`
@@ -29,6 +31,7 @@ Per default, cjet is always built with hardening compile switches like
 little runtime overhead. You can disable all hardening by calling cmake
 with `-DCONFIG_NO_HARDENING=1`.
 
+### QBS
 There is a second build method available, [qbs](http://doc.qt.io/qbs/).
 Just create a build directory, change to it and run:
 ```
