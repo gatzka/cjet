@@ -113,7 +113,6 @@ Project {
         "*.c",
       ]
       cpp.defines: "_GNU_SOURCE"
-      cpp.cFlags: outer.concat("-std=gnu99")
     }
   }
 }
