@@ -52,7 +52,7 @@ and the Linux specific configurations in
 
 You can override these defaults easily when calling qbs, for instance:
 ```
-qbs -f <path/to/cjet-sources>/src/cjet.qbs profile:gcc generateCjetConfig.serverPort:4321 generateOsConfig.maxEpollEvents
+qbs -f <path/to/cjet-sources>/src/cjet.qbs profile:gcc generateCjetConfig.serverPort:4321 generateOsConfig.maxEpollEvents:11
 ```
 
 ## Howto run
