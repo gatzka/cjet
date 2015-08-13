@@ -44,6 +44,17 @@ of your qbs profiles), just run:
 qbs -f <path/to/cjet-sources>/src/cjet.qbs release profile:gcc release profile:clang release profile:arm-gcc release profile:ppc-gcc debug profile:gcc debug profile:clang debug profile:arm-gcc debug profile:ppc-gcc
 ```
 
+You can also configure cjet at compile time via qbs. You will find the
+cjet spedific in
+[generateCjetConfig.qbs](qbs/modules/generateCjetConfig/generateCjetConfig.qbs)
+and the Linux specific configurations in
+[generateOsConfig](qbs/modules/generateOsConfig/generateOsConfig.qbs).
+
+You can override these defaults easily when calling qbs, for instance:
+```
+qbs -f <path/to/cjet-sources>/src/cjet.qbs profile:gcc generateCjetConfig.serverPort:4321 generateOsConfig.maxEpollEvents
+```
+
 ## Howto run
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to
 run cjet in foreground.
