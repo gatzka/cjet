@@ -28,6 +28,8 @@ import qbs 1.0
 import qbs.TextFile
 
 Module {
+  property string maxEpollEvents
+
   Rule {
     id: config_generator
     inputs:  ["os_config_tag"]
@@ -46,7 +48,7 @@ Module {
         var file = new TextFile(input.filePath);
         var content = file.readAll();
         file.close()
-        content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, "10");
+        content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, product.moduleProperty("generateOsConfig", "maxEpollEvents") || "10");
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
