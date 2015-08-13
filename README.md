@@ -48,7 +48,7 @@ You can also configure cjet at compile time via qbs. You will find the
 cjet spedific in
 [generateCjetConfig.qbs](qbs/modules/generateCjetConfig/generateCjetConfig.qbs)
 and the Linux specific configurations in
-[generateOsConfig](qbs/modules/generateOsConfig/generateOsConfig.qbs).
+[generateOsConfig.qbs](qbs/modules/generateOsConfig/generateOsConfig.qbs).
 
 You can override these defaults easily when calling qbs, for instance:
 ```
