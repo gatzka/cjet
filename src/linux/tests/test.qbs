@@ -42,6 +42,8 @@ Project {
     name: "readbuffer_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
+
     cpp.defines: ["_GNU_SOURCE"]
 
     Depends {

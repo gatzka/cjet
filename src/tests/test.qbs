@@ -42,6 +42,7 @@ Project {
     name: "info_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends {
       name: "unitTestSettings"
@@ -57,6 +58,7 @@ Project {
     name: "response_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -69,6 +71,7 @@ Project {
     name: "router_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -82,6 +85,7 @@ Project {
     name: "string_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -94,6 +98,7 @@ Project {
     name: "config_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -107,6 +112,7 @@ Project {
     name: "peer_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -120,6 +126,7 @@ Project {
     name: "parse_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -132,6 +139,7 @@ Project {
     name: "state_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -145,6 +153,7 @@ Project {
     name: "method_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -158,6 +167,7 @@ Project {
     name: "combined_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 
@@ -171,6 +181,7 @@ Project {
     name: "fetch_test"
     type: ["application", "autotest"]
     condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
 
     Depends { name: "unitTestSettings" }
 

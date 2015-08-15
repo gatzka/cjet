@@ -55,6 +55,8 @@ Project {
     Depends { name: "generateOsConfig" }
     Depends { name: "generateVersion" }
 
+    consoleApplication: true
+
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
     cpp.positionIndependentCode: false
