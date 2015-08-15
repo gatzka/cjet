@@ -86,16 +86,19 @@ extern "C" {
 
 	int add_io(struct peer *p)
 	{
+		(void)p;
 		return 0;
 	}
 
 	void remove_io(const struct peer *p)
 	{
+		(void)p;
 		return;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 }
 

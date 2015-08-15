@@ -180,6 +180,7 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)len;
 		if (p == fetch_peer_1) {
 			cJSON *fetch_event = parse_send_buffer(rendered);
 			fetch_peer_1_event = get_event_from_json(fetch_event);
@@ -200,11 +201,13 @@ extern "C" {
 
 	int add_io(struct peer *p)
 	{
+		(void)p;
 		return 0;
 	}
 
 	void remove_io(const struct peer *p)
 	{
+		(void)p;
 		return;
 	}
 }

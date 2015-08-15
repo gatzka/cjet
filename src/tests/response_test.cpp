@@ -37,6 +37,8 @@
 extern "C" {
 	void log_peer_err(const struct peer *p, const char *fmt, ...)
 	{
+		(void)p;
+		(void)fmt;
 	}
 }
 

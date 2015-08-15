@@ -50,32 +50,40 @@ extern "C" {
 
 	void remove_io(const struct peer *p)
 	{
+		(void)p;
 		return;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 
 	void remove_all_fetchers_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 
 	void remove_peer_from_routing_table(const struct peer *p,
 		const struct peer *peer_to_remove)
 	{
+		(void)p;
+		(void)peer_to_remove;
 	}
 
 	void remove_routing_info_from_peer(const struct peer *p)
 	{
+		(void)p;
 	}
 
 	void remove_all_states_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 
 	void delete_routing_table(struct peer *p)
 	{
+		(void)p;
 	}
 
 	int add_routing_table(struct peer *p)

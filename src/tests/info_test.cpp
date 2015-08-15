@@ -39,10 +39,13 @@ static char readback_buffer[10000];
 extern "C" {
 	void log_peer_err(const struct peer *p, const char *fmt, ...)
 	{
+		(void)p;
+		(void)fmt;
 	}
 
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)p;
 		char *ptr = readback_buffer;
 		uint32_t message_length = htonl(len);
 		memcpy(ptr, &message_length, sizeof(message_length));

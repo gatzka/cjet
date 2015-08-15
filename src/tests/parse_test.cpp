@@ -45,6 +45,7 @@ static char *readback_buffer_ptr = readback_buffer;
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)p;
 		char *ptr = readback_buffer;
 		uint32_t message_length = htonl(len);
 		memcpy(ptr, &message_length, sizeof(message_length));
@@ -55,22 +56,29 @@ extern "C" {
 
 	cJSON *remove_fetch_from_peer(struct peer *p, const cJSON *params)
 	{
+		(void)p;
+		(void)params;
 		return NULL;
 	}
 
 	cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 		struct fetch **fetch_return)
 	{
+		(void)p;
+		(void)params;
+		(void)fetch_return;
 		return NULL;
 	}
 
 	cJSON *add_fetch_to_states(struct fetch *f)
 	{
+		(void)f;
 		return NULL;
 	}
 
 	int remove_method_from_peer(struct peer *p, const char *path)
 	{
+		(void)p;
 		if (strcmp(path, "method") == 0) {
 			return 0;
 		}
@@ -79,24 +87,34 @@ extern "C" {
 
 	cJSON *add_method_to_peer(struct peer *p, const char *path)
 	{
+		(void)p;
+		(void)path;
 		return NULL;
 	}
 
 	int handle_routing_response(cJSON *json_rpc, cJSON *response,
 		const struct peer *p)
 	{
+		(void)p;
+		(void)response;
+		(void)json_rpc;
 		return 0;
 	}
 
 	cJSON *call_method(struct peer *p, const char *path,
 		const cJSON *args, const cJSON *json_rpc)
 	{
+		(void)p;
+		(void)path;
+		(void)args;
+		(void)json_rpc;
 		return NULL;
 	}
 
 
 	int remove_state_from_peer(struct peer *p, const char *path)
 	{
+		(void)p;
 		if (strcmp(path, "state") == 0) {
 			return 0;
 		}
@@ -105,26 +123,40 @@ extern "C" {
 
 	cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 	{
+		(void)p;
+		(void)path;
+		(void)value;
 		return NULL;
 	}
 
 	cJSON *set_state(struct peer *p, const char *path,
 		const cJSON *value, const cJSON *json_rpc)
 	{
+		(void)p;
+		(void)path;
+		(void)value;
+		(void)json_rpc;
 		return NULL;
 	}
 
 	cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 	{
+		(void)p;
+		(void)path;
+		(void)value;
 		return NULL;
 	}
 
 	void log_peer_err(const struct peer *p, const char *fmt, ...)
 	{
+		(void)p;
+		(void)fmt;
 	}
 
 	void set_peer_name(struct peer *peer, const char *name)
 	{
+		(void)peer;
+		(void)name;
 	}
 }
 

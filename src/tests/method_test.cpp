@@ -42,25 +42,32 @@ static const int INVALID_PARAMS_ERROR = -32602;
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)p;
+		(void)rendered;
+		(void)len;
 		return 0;
 	}
 
 	int add_io(struct peer *p)
 	{
+		(void)p;
 		return 0;
 	}
 
 	void remove_io(const struct peer *p)
 	{
+		(void)p;
 		return;
 	}
 
 	void remove_all_states_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 
 	void remove_all_fetchers_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 }
 

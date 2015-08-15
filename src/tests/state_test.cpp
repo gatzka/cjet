@@ -40,17 +40,20 @@ static char send_buffer[100000];
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)p;
 		memcpy(send_buffer, rendered, len);
 		return 0;
 	}
 
 	int add_io(struct peer *p)
 	{
+		(void)p;
 		return 0;
 	}
 
 	void remove_io(const struct peer *p)
 	{
+		(void)p;
 		return;
 	}
 
@@ -58,6 +61,8 @@ extern "C" {
 
 	int notify_fetchers(struct state *s, const char *event_name)
 	{
+		(void)s;
+		(void)event_name;
 		if (notify_shall_fail) {
 			return -1;
 		} else {
@@ -67,6 +72,7 @@ extern "C" {
 
 	int find_fetchers_for_state(struct state *s)
 	{
+		(void)s;
 		if (notify_shall_fail) {
 			return -1;
 		} else {
@@ -76,10 +82,12 @@ extern "C" {
 
 	void remove_all_methods_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 
 	void remove_all_fetchers_from_peer(struct peer *p)
 	{
+		(void)p;
 	}
 }
 
