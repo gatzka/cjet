@@ -46,6 +46,7 @@ StaticLibrary {
     cpp.includePaths: ["../src/", buildDirectory]
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework"]
+    cpp.cLanguageVersion: "c99"
   }
 
   Group {
@@ -79,6 +80,7 @@ StaticLibrary {
   Group {
     name: "json"
     prefix: "../src/"
+    cpp.cLanguageVersion: "c99"
     files: [
       "json/*.c",
     ]
@@ -87,6 +89,7 @@ StaticLibrary {
   Group {
     name: "cjet files"
     prefix: "../src/"
+    cpp.cLanguageVersion: "c99"
     files: [
         "config.c",
         "fetch.c",
