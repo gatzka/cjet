@@ -25,6 +25,7 @@
  */
 
 import qbs 1.0
+import '../../qbs/cjet_helper.js' as CjetHelper
 
 Project {
   name: "cjet_unit_tests"
@@ -33,13 +34,18 @@ Project {
   qbsSearchPaths: "../../qbs/"
   references: "../../qbs/unitTestSettings.qbs"
 
-  AutotestRunner { }
+  AutotestRunner { 
+    builtByDefault: true
+  }
 
   CppApplication {
     name: "info_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
-    Depends { name: "unitTestSettings" }
+    Depends {
+      name: "unitTestSettings"
+    }
 
     files: [
       "info_test.cpp",
@@ -50,6 +56,7 @@ Project {
   CppApplication {
     name: "response_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -61,6 +68,7 @@ Project {
   CppApplication {
     name: "router_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -73,6 +81,7 @@ Project {
   CppApplication {
     name: "string_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -84,6 +93,7 @@ Project {
   CppApplication {
     name: "config_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -96,6 +106,7 @@ Project {
   CppApplication {
     name: "peer_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -108,6 +119,7 @@ Project {
   CppApplication {
     name: "parse_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -119,6 +131,7 @@ Project {
   CppApplication {
     name: "state_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -131,6 +144,7 @@ Project {
   CppApplication {
     name: "method_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -143,6 +157,7 @@ Project {
   CppApplication {
     name: "combined_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -155,6 +170,7 @@ Project {
   CppApplication {
     name: "fetch_test"
     type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
 
     Depends { name: "unitTestSettings" }
 
@@ -162,5 +178,5 @@ Project {
       "log.cpp",
       "fetch_test.cpp",
     ] 
-  } 
+  }
 }
