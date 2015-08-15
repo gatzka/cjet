@@ -41,7 +41,7 @@ qbs has the ability to make parallel builds for multiple profiles. So
 if qou want to build with clang, gcc, arm-gcc, ppc-gcc (these are the names
 of your qbs profiles), just run:
 ```
-qbs -f <path/to/cjet-sources>/src/cjet.qbs release profile:gcc release profile:clang release profile:arm-gcc release profile:ppc-gcc debug profile:gcc debug profile:clang debug profile:arm-gcc debug profile:ppc-gcc
+qbs -f <path/to/cjet-sources>/src/cjet.qbs debug profile:gcc release profile:gcc debug profile:clang release profile:clang debug profile:arm-gcc release profile:arm-gcc debug profile:ppc-gcc release profile:ppc-gcc
 ```
 
 You can also configure cjet at compile time via qbs. You will find the
@@ -60,6 +60,12 @@ little runtime overhead. You can disable all hardening by calling qbs like:
 ```
 qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:false
 ```
+
+In addition, there is also a qbs project for building und running cjet and all unit tests:
+```
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc ...
+```
+You can specify as many additional parallel build by adding more profiles.
 
 ## Howto run
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to
