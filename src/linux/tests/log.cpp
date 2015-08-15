@@ -28,5 +28,5 @@
 
 void test_log(const char *format, ...)
 {
-
+	(void)format;
 }

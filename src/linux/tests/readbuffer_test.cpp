@@ -67,11 +67,16 @@ int parse_message(char *msg, uint32_t length)
 
 int add_epoll(int fd, int epoll_fd, void *cookie)
 {
+	(void)fd;
+	(void)epoll_fd;
+	(void)cookie;
 	return 0;
 }
 
 void remove_epoll(int fd, int epoll_fd)
 {
+	(void)fd;
+	(void)epoll_fd;
 	return;
 }
 
@@ -116,6 +121,7 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt)
 
 int fake_send(int fd, void *buf, size_t count, int flags)
 {
+	(void)flags;
 	if (fd == BADFD) {
 		errno = EBADF;
 		return -1;
@@ -166,6 +172,7 @@ int fake_send(int fd, void *buf, size_t count, int flags)
 
 int fake_read(int fd, void *buf, size_t count)
 {
+	(void)count;
 	if (fd == BADFD) {
 		errno = EBADF;
 		return -1;
