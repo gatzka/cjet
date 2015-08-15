@@ -45,15 +45,6 @@ Project {
       "info_test.cpp",
       "log.cpp"
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "info.c",
-        "response.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -65,15 +56,6 @@ Project {
     files: [
       "response_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "response.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -86,17 +68,6 @@ Project {
       "log.cpp",
       "router_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "peer.c",
-        "response.c",
-        "router.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -108,14 +79,6 @@ Project {
     files: [
       "string_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -128,17 +91,6 @@ Project {
       "log.cpp",
       "config_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "config.c",
-        "peer.c",
-        "response.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -151,15 +103,6 @@ Project {
       "peer_test.cpp",
       "log.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "peer.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -171,18 +114,6 @@ Project {
     files: [
       "parse_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "config.c",
-        "info.c",
-        "linux/jet_string.c",
-        "parse.c",
-        "response.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -195,19 +126,6 @@ Project {
       "log.cpp",
       "state_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "response.c",
-        "router.c",
-        "state.c",
-        "peer.c",
-        "uuid.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -220,19 +138,6 @@ Project {
       "log.cpp",
       "method_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "linux/jet_string.c",
-        "response.c",
-        "router.c",
-        "method.c",
-        "peer.c",
-        "uuid.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -245,21 +150,6 @@ Project {
       "log.cpp",
       "combined_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "fetch.c",
-        "linux/jet_string.c",
-        "method.c",
-        "response.c",
-        "router.c",
-        "state.c",
-        "peer.c",
-        "uuid.c",
-      ]
-    }
   }
 
   CppApplication {
@@ -272,19 +162,5 @@ Project {
       "log.cpp",
       "fetch_test.cpp",
     ] 
-
-    Group {
-      name: "files to test"
-      prefix: "../"
-      files: [
-        "fetch.c",
-        "linux/jet_string.c",
-        "response.c",
-        "router.c",
-        "state.c",
-        "peer.c",
-        "uuid.c",
-      ]
-    }
-  }
+  } 
 }

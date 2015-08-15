@@ -34,13 +34,17 @@ StaticLibrary {
   Depends { name: "generateCjetConfig" }
   Depends { name: "generateOsConfig" }
 
+  cpp.includePaths: ["../src/", buildDirectory]
+  cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
+  cpp.treatWarningsAsErrors: true
+
   Export {
     Depends { name: 'cpp' }
 
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
     cpp.includePaths: ["../src/", buildDirectory]
-    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
+    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework"]
   }
 
@@ -77,6 +81,24 @@ StaticLibrary {
     prefix: "../src/"
     files: [
       "json/*.c",
+    ]
+  }
+
+  Group {
+    name: "cjet files"
+    prefix: "../src/"
+    files: [
+        "config.c",
+        "fetch.c",
+        "info.c",
+        "linux/jet_string.c",
+        "method.c",
+        "parse.c",
+        "peer.c",
+        "response.c",
+        "router.c",
+        "state.c",
+        "uuid.c",
     ]
   }
 }
