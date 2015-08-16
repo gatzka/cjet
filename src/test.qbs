@@ -25,14 +25,14 @@
  */
 
 import qbs 1.0
-import '../../qbs/cjet_helper.js' as CjetHelper
+import '../qbs/cjet_helper.js' as CjetHelper
 
 Project {
   name: "cjet_unit_tests"
   minimumQbsVersion: "1.4.0"
 
-  qbsSearchPaths: "../../qbs/"
-  references: "../../qbs/unitTestSettings.qbs"
+  qbsSearchPaths: "../qbs/"
+  references: "../qbs/unitTestSettings.qbs"
 
   AutotestRunner { 
     builtByDefault: true
@@ -49,8 +49,8 @@ Project {
     }
 
     files: [
-      "info_test.cpp",
-      "log.cpp"
+      "tests/info_test.cpp",
+      "tests/log.cpp"
     ] 
   }
 
@@ -63,7 +63,7 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "response_test.cpp",
+      "tests/response_test.cpp",
     ] 
   }
 
@@ -76,8 +76,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "router_test.cpp",
+      "tests/log.cpp",
+      "tests/router_test.cpp",
     ] 
   }
 
@@ -90,7 +90,7 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "string_test.cpp",
+      "tests/string_test.cpp",
     ] 
   }
 
@@ -103,8 +103,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "config_test.cpp",
+      "tests/log.cpp",
+      "tests/config_test.cpp",
     ] 
   }
 
@@ -117,8 +117,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "peer_test.cpp",
-      "log.cpp",
+      "tests/peer_test.cpp",
+      "tests/log.cpp",
     ] 
   }
 
@@ -131,7 +131,7 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "parse_test.cpp",
+      "tests/parse_test.cpp",
     ] 
   }
 
@@ -144,8 +144,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "state_test.cpp",
+      "tests/log.cpp",
+      "tests/state_test.cpp",
     ] 
   }
 
@@ -158,8 +158,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "method_test.cpp",
+      "tests/log.cpp",
+      "tests/method_test.cpp",
     ] 
   }
 
@@ -172,8 +172,8 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "combined_test.cpp",
+      "tests/log.cpp",
+      "tests/combined_test.cpp",
     ] 
   }
 
@@ -186,8 +186,27 @@ Project {
     Depends { name: "unitTestSettings" }
 
     files: [
-      "log.cpp",
-      "fetch_test.cpp",
+      "tests/log.cpp",
+      "tests/fetch_test.cpp",
+    ] 
+  }
+
+  CppApplication {
+    name: "readbuffer_test"
+    type: ["application", "autotest"]
+    condition: { return CjetHelper.buildTests(qbs.architecture); }
+    consoleApplication: true
+
+    cpp.defines: ["_GNU_SOURCE"]
+
+    Depends {
+      name: "unitTestSettings"
+    }
+
+    files: [
+      "linux/linux_io.c",
+      "linux/tests/readbuffer_test.cpp",
+      "linux/tests/log.cpp"
     ] 
   }
 }

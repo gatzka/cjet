@@ -35,11 +35,7 @@ Project {
   }
 
   SubProject {
-    filePath: "src/tests/test.qbs"
+    filePath: "src/test.qbs"
   }
-
-//  SubProject {
-//    filePath: "src/linux/tests/test.qbs"
-//  }
 }
 
