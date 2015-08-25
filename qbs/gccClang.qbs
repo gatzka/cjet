@@ -33,35 +33,38 @@ Product {
     Depends { name: 'cpp' }
 
     cpp.cFlags: {
-      var toolchain = qbs.toolchain[0]
-      var flags = []
+      var toolchain = qbs.toolchain[0];
+      var flags = [];
       if (toolchain === "gcc" || toolchain === "clang") {
-        flags.push("-Wshadow")
-        flags.push("-Winit-self")
-        flags.push("-Wstrict-overflow=5")
-        flags.push("-Wunused-result")
-        flags.push("-Wcast-qual")
-        flags.push("-Wcast-align")
-        flags.push("-Wpointer-arith")
-        flags.push("-Wformat=2")
-        flags.push("-Wwrite-strings")
-        flags.push("-Wmissing-prototypes")
-        flags.push("-pedantic")
-        flags.push("-fno-common")
+        flags.push("-Wshadow");
+        flags.push("-Winit-self");
+        flags.push("-Wstrict-overflow=5");
+        flags.push("-Wunused-result");
+        flags.push("-Wcast-qual");
+        flags.push("-Wcast-align");
+        flags.push("-Wpointer-arith");
+        flags.push("-Wformat=2");
+        flags.push("-Wwrite-strings");
+        flags.push("-Wmissing-prototypes");
+        flags.push("-pedantic");
+        flags.push("-fno-common");
+        if (qbs.buildVariant === "release") {
+          flags.push("-fno-asynchronous-unwind-tables");
+        }
       }
-      return flags
+      return flags;
     }
 
     cpp.linkerFlags: {
-      var toolchain = qbs.toolchain[0]
-      var flags = []
+      var toolchain = qbs.toolchain[0];
+      var flags = [];
       if (toolchain === "gcc" || toolchain === "clang") {
-        flags.push("-Wl,--hash-style=gnu,--as-needed")
-        if (qbs.buildVariant.contains("release")) {
-          flags.push("-Wl,-O2,--gc-sections,-s")
+        flags.push("-Wl,--hash-style=gnu,--as-needed");
+        if (qbs.buildVariant === "release") {
+          flags.push("-Wl,-O2,--gc-sections,-s");
         }
       }
-      return flags
+      return flags;
     }
   }
 }

@@ -47,7 +47,7 @@ Module {
 
         var file = new TextFile(input.filePath);
         var content = file.readAll();
-        file.close()
+        file.close();
         content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, product.moduleProperty("generateOsConfig", "maxEpollEvents") || "10");
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
