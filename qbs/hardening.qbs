@@ -35,7 +35,7 @@ Product {
     Depends { name: 'cpp' }
     cpp.defines: {
       var defines = [];
-      if (enableHardening) {
+      if (product.enableHardening) {
         var toolchain = qbs.toolchain[0];
         if ((toolchain === "gcc" || toolchain === "clang") && (qbs.buildVariant === "release")) {
           defines.push("_FORTIFY_SOURCE=2");
@@ -46,7 +46,7 @@ Product {
     
     cpp.cFlags: {
       var flags = [];
-      if (enableHardening) {
+      if (product.enableHardening) {
         var toolchain = qbs.toolchain[0];
         if (toolchain === "gcc" || toolchain === "clang") {
           flags.push("-fstack-protector-strong", "-fpie");
@@ -60,7 +60,7 @@ Product {
     
     cpp.linkerFlags: {
       var flags = [];
-      if (enableHardening) {
+      if (product.enableHardening) {
         var toolchain = qbs.toolchain[0];
         if (toolchain === "gcc" || toolchain === "clang") {
           flags.push("-Wl,-z,relro,-z,now", "-fpie","-pie");

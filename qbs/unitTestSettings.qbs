@@ -34,7 +34,7 @@ StaticLibrary {
   Depends { name: "generateCjetConfig" }
   Depends { name: "generateOsConfig" }
 
-  cpp.includePaths: ["../src/", buildDirectory]
+  cpp.includePaths: ["../src/", product.buildDirectory]
   cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
   cpp.treatWarningsAsErrors: true
 
@@ -43,7 +43,7 @@ StaticLibrary {
 
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
-    cpp.includePaths: ["../src/", buildDirectory]
+    cpp.includePaths: ["../src/", product.buildDirectory]
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework"]
     cpp.cLanguageVersion: "c99"
