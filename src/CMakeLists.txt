@@ -77,13 +77,16 @@ SET(CJET_LINUX_FILES
 )
 
 FOREACH(_file ${CJET_FILES})
-	FILE(SHA512 ${PROJECT_SOURCE_DIR}/${_file} checksum)
-    SET_SOURCE_FILES_PROPERTIES(${_file} PROPERTIES COMPILE_FLAGS " -frandom-seed=${checksum} -std=c99")
+	FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+	FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+	STRING(SUBSTRING ${checksum} 0 8 checksum)
+	SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -std=gnu99")
 ENDFOREACH()
 
 FOREACH(_file ${CJET_LINUX_FILES})
-	FILE(SHA512 ${PROJECT_SOURCE_DIR}/${_file} checksum)
-	SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=${checksum} -D_GNU_SOURCE -std=gnu99")
+	FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+	STRING(SUBSTRING ${checksum} 0 8 checksum)
+	SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_GNU_SOURCE -std=gnu99")
 ENDFOREACH()
 
 ADD_EXECUTABLE(cjet.bin
