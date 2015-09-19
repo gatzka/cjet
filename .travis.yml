@@ -1,5 +1,7 @@
 language: cpp
 
+sudo: false
+
 branches:
   except:
     - /^feature.*$/
@@ -15,9 +17,6 @@ env:
 
 before_install:
   - pip install --user travis cpp-coveralls
-
-install:
-  - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
 
 before_script:
   - mkdir build
@@ -43,6 +42,18 @@ after_success:
   - coveralls --verbose --root .. --build-root . --exclude src/json/ --exclude src/tests/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
 
 addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - gcc-4.9
+    - g++-4.9
+    - clang
+    - cmake
+    - valgrind
+    - libboost-dev
+    - libboost-test-dev
+
   coverity_scan:
     project:
       name: "gatzka/cjet"
