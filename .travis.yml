@@ -14,6 +14,7 @@ env:
     - BUILD=clang
 
 before_install:
+  - id
   - pip install cpp-coveralls
 
 install:
