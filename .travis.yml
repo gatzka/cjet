@@ -14,8 +14,7 @@ env:
     - BUILD=clang
 
 before_install:
-  - id
-  - pip install cpp-coveralls
+  - pip install --user travis cpp-coveralls
 
 install:
   - sudo apt-get install -qq cmake libboost-dev libboost-test-dev || /bin/true
