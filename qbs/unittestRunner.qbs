@@ -53,6 +53,10 @@ Product {
     }
 
     prepare: {
+      if ((product.lcovRemovePatterns.length > 0) && (product.lcovExtractPatterns.length > 0)) {
+        throw "Only either covRemovePatterns or lcovExtractPatterns can be set! "
+      }
+
       var cmds = [];
       var args = [
         "--base-directory", ".",
