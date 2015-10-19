@@ -37,7 +37,11 @@ StaticLibrary {
   cpp.includePaths: ["../src/", product.buildDirectory]
   cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
   cpp.treatWarningsAsErrors: true
-  cpp.cFlags: ["--coverage"]
+  cpp.cFlags: [
+    "--coverage",
+    "-fprofile-arcs",
+    "-ftest-coverage"
+  ]
 
   Export {
     Depends { name: 'cpp' }
@@ -48,7 +52,11 @@ StaticLibrary {
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
     cpp.cLanguageVersion: "c99"
-    cpp.cFlags: ["--coverage"]
+  	cpp.cFlags: [
+  	  "--coverage",
+  	  "-fprofile-arcs",
+  	  "-ftest-coverage"
+  	]
     cpp.linkerFlags: ["--coverage"]
   }
 
