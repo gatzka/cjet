@@ -36,6 +36,9 @@ Project {
 
   SubProject {
     filePath: "src/test.qbs"
+    Properties {
+      profile: "gcc"
+    }
   }
 }
 

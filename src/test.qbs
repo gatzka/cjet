@@ -25,7 +25,6 @@
  */
 
 import qbs 1.0
-import "../qbs/cjet_helper.js" as CjetHelper
 import "../qbs/unittestRunner.qbs" as UnittestRunner
 
 Project {
@@ -44,7 +43,6 @@ Project {
   CppApplication {
     name: "info_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends {
@@ -60,7 +58,6 @@ Project {
   CppApplication {
     name: "response_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -73,7 +70,6 @@ Project {
   CppApplication {
     name: "router_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -87,7 +83,6 @@ Project {
   CppApplication {
     name: "string_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -100,7 +95,6 @@ Project {
   CppApplication {
     name: "config_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -114,7 +108,6 @@ Project {
   CppApplication {
     name: "peer_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -128,7 +121,6 @@ Project {
   CppApplication {
     name: "parse_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -141,7 +133,6 @@ Project {
   CppApplication {
     name: "state_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -155,7 +146,6 @@ Project {
   CppApplication {
     name: "method_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -169,7 +159,6 @@ Project {
   CppApplication {
     name: "combined_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -183,7 +172,6 @@ Project {
   CppApplication {
     name: "fetch_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     Depends { name: "unittestSettings" }
@@ -197,7 +185,6 @@ Project {
   CppApplication {
     name: "readbuffer_test"
     type: ["application", "unittest"]
-    condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
     cpp.defines: ["_GNU_SOURCE"]
