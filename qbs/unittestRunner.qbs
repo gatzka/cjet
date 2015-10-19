@@ -111,7 +111,6 @@ Product {
         }
         args.push("--output-file");
         args.push(filteredCoverageFile);
-        args.push("--quiet");
         args.push("--rc");
         args.push("lcov_branch_coverage=1");
         var cmd = new Command("lcov", args);
