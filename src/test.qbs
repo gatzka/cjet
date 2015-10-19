@@ -33,7 +33,7 @@ Project {
   minimumQbsVersion: "1.4.0"
 
   qbsSearchPaths: "../qbs/"
-  references: "../qbs/unitTestSettings.qbs"
+  references: "../qbs/unittestSettings.qbs"
 
   UnittestRunner {
     lcovRemovePatterns: [
@@ -48,7 +48,7 @@ Project {
     consoleApplication: true
 
     Depends {
-      name: "unitTestSettings"
+      name: "unittestSettings"
     }
 
     files: [
@@ -63,7 +63,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/response_test.cpp",
@@ -76,7 +76,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -90,7 +90,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/string_test.cpp",
@@ -103,7 +103,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -117,7 +117,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/peer_test.cpp",
@@ -131,7 +131,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/parse_test.cpp",
@@ -144,7 +144,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -158,7 +158,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -172,7 +172,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -186,7 +186,7 @@ Project {
     condition: { return CjetHelper.buildTests(qbs.architecture); }
     consoleApplication: true
 
-    Depends { name: "unitTestSettings" }
+    Depends { name: "unittestSettings" }
 
     files: [
       "tests/log.cpp",
@@ -203,7 +203,7 @@ Project {
     cpp.defines: ["_GNU_SOURCE"]
 
     Depends {
-      name: "unitTestSettings"
+      name: "unittestSettings"
     }
 
     files: [

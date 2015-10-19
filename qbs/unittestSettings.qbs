@@ -27,7 +27,7 @@
 import qbs 1.0
 
 StaticLibrary {
-  name: "unitTestSettings"
+  name: "unittestSettings"
 
   Depends { name: 'cpp' }
   Depends { name: "generateVersion" } 
