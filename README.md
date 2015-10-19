@@ -63,9 +63,11 @@ qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:fal
 
 In addition, there is also a qbs project for building und running cjet and all unit tests:
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc ...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [unittest-runner.showCoverageData:true]...
 ```
-You can specify as many additional parallel build by adding more profiles.
+You can specify as many additional parallel build by adding more
+profiles. If `unittest-runner.showCoverageData:true` is given, the
+coverage data is directly displayed in a web browser.
 
 ## Howto run
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to
