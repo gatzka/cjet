@@ -38,6 +38,14 @@ Project {
     lcovRemovePatterns: [
       "*/cjet/src/json/*",
     ]
+    wrapper: [
+      "valgrind",
+      "--errors-for-leak-kinds=all",
+      "--show-leak-kinds=all",
+      "--leak-check=full",
+      "--error-exitcode=1",
+      "--suppressions=" + sourceDirectory + "/../valgrind/valgrind.supp"
+    ]
   }
 
   CppApplication {
