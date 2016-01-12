@@ -46,7 +46,7 @@ Module {
       cmd.sourceCode = function() {
         var major = "0";
         var minor = "1";
-        var patch = "3";
+        var patch = "4";
         var gitDescribe = new Process();
         gitDescribe.setWorkingDirectory(product.sourceDirectory);
         var ret = gitDescribe.exec("git", ["describe","--exact-match","HEAD"], false);
