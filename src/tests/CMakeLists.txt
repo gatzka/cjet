@@ -7,6 +7,8 @@ SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../../cmake/)
 INCLUDE(version)
 INCLUDE(defaults)
 
+GENERATE_VERSION(../version.h.in)
+
 CONFIGURE_FILE(../linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_config.h)
 CONFIGURE_FILE(../cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(../version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)

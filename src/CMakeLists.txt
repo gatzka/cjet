@@ -4,16 +4,14 @@ SET(PROJECTNAME cjet)
 PROJECT(${PROJECTNAME} C)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
+INCLUDE(version)
 INCLUDE(defaults)
+
+GENERATE_VERSION(version.h.in)
 
 CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_config.h)
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
-
-ADD_CUSTOM_TARGET(REVISION_GEN
-        ${CMAKE_COMMAND} -P ${PROJECT_SOURCE_DIR}/../cmake/version.cmake
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-)
 
 SET(WARN_SWITCHES "-Wall -Werror -Wshadow -Wextra -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
@@ -93,7 +91,7 @@ ADD_EXECUTABLE(cjet
         ${CJET_FILES}
         ${CJET_LINUX_FILES}
 )
-ADD_DEPENDENCIES(cjet REVISION_GEN)
+
 TARGET_LINK_LIBRARIES(
         cjet
         m
