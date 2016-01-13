@@ -55,9 +55,9 @@ Module {
         ret = gitDirty.exec("git", ["diff-index","--quiet","HEAD"], false);
         var dirty;
         if (ret === 0) {
-          dirty = "clean";
+          dirty = "";
         } else {
-          dirty = "dirty";
+          dirty = "-dirty";
         }
         gitDirty.close();
 
@@ -77,7 +77,7 @@ Module {
           gitCount.close();
         }
 
-        content = content.replace(/\${CJET_LAST}/g, last+"-"+dirty);
+        content = content.replace(/\${CJET_LAST}/g, last+dirty);
         content = content.replace(/\${PROJECT_NAME}/g, product.name);
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
