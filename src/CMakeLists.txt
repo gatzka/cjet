@@ -96,3 +96,5 @@ TARGET_LINK_LIBRARIES(
         cjet
         m
 )
+
+INSTALL(TARGETS cjet RUNTIME DESTINATION bin)
