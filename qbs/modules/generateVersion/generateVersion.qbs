@@ -67,7 +67,7 @@ Module {
         var pat = content.match(/\s*#define\s+CJET_PATCH\s+"(\d+)"/);
 
         var last;
-        if (pat[1] %2 === 0) {
+        if (pat[1] % 2 === 0) {
           last = "0";
         } else {
           var gitCount = new Process();
