@@ -6,11 +6,14 @@ limitations (MIT).
 
 ## Build Status
 [![Travis CI](https://travis-ci.org/gatzka/cjet.svg?branch=master)](https://travis-ci.org/gatzka/cjet)
-
 [![Coverity](https://scan.coverity.com/projects/3315/badge.svg)](https://scan.coverity.com/projects/3315)
-
 [![Coverage Status](https://coveralls.io/repos/gatzka/cjet/badge.svg?branch=master&service=github)](https://coveralls.io/github/gatzka/cjet?branch=master)
 
+[![Stories in Backlog](https://badge.waffle.io/gatzka/cjet.png?label=backlog&title=Backlog)](https://waffle.io/gatzka/cjet)
+[![Stories in Ready](https://badge.waffle.io/gatzka/cjet.png?label=ready&title=Ready)](https://waffle.io/gatzka/cjet)
+[![Stories in progress](https://badge.waffle.io/gatzka/cjet.png?label=in%20progress&title=In%20Progress)](https://waffle.io/gatzka/cjet)
+
+[![Open Hub](https://img.shields.io/badge/Open-Hub-0185CA.svg)](https://www.openhub.net/p/java-scan)
 ## Howto Build
 
 ### CMake
