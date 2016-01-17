@@ -13,7 +13,7 @@ limitations (MIT).
 [![Stories in Ready](https://badge.waffle.io/gatzka/cjet.png?label=ready&title=Ready)](https://waffle.io/gatzka/cjet)
 [![Stories in progress](https://badge.waffle.io/gatzka/cjet.png?label=in%20progress&title=In%20Progress)](https://waffle.io/gatzka/cjet)
 
-[![Open Hub](https://img.shields.io/badge/Open-Hub-0185CA.svg)](https://www.openhub.net/p/java-scan)
+[![Open Hub](https://img.shields.io/badge/Open-Hub-0185CA.svg)](https://www.openhub.net/p/cjet)
 ## Howto Build
 
 ### CMake
