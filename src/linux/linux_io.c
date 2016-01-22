@@ -208,38 +208,43 @@ static int accept_all(int listen_fd)
 	}
 }
 
-char *get_read_ptr(struct peer *p, unsigned int count)
+ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
 		log_err("peer asked for too much data: %u!\n", count);
-		return 0;
+		*read_ptr = NULL;
+		return IO_TOOMUCHDATA;
 	}
 	while (1) {
 		ssize_t read_length;
-		if ((p->write_ptr - p->read_ptr) >= (ptrdiff_t)count) {
-			char *read_ptr = p->read_ptr;
+		ptrdiff_t diff = p->write_ptr - p->read_ptr;
+		if (diff >= (ptrdiff_t)count) {
+			*read_ptr = p->read_ptr;
 			p->read_ptr += count;
-			return read_ptr;
+			return diff;
 		}
-
-		read_length =
-			READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
+		
+		read_length = READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
-			return (char *)IO_CLOSE;
+			*read_ptr = NULL;
+			return IO_CLOSE;
 		}
 		if (read_length == -1) {
 			if (unlikely((errno != EAGAIN) &&
-				(errno != EWOULDBLOCK))) {
-				log_err("unexpected %s error: %s!\n", "read",
-					strerror(errno));
-				return (char *)IO_ERROR;
+									 (errno != EWOULDBLOCK))) {
+				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+				*read_ptr = NULL;
+				return IO_ERROR;
 			}
-			return (char *)IO_WOULD_BLOCK;
+			*read_ptr = NULL;
+			return IO_WOULD_BLOCK;
 		}
 		p->write_ptr += read_length;
 	}
-	return (char *)IO_ERROR;
+	*read_ptr = NULL;
+	return IO_ERROR;
 }
+
 
 int send_buffer(struct peer *p)
 {
@@ -394,9 +399,8 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 static int read_msg_length(struct peer *p)
 {
 	uint32_t message_length;
-	char *message_length_ptr =
-		get_read_ptr(p, sizeof(message_length));
-	intptr_t ret = (intptr_t)message_length_ptr;
+	const char *message_length_ptr;
+	ssize_t ret = get_read_ptr(p, sizeof(message_length), &message_length_ptr);
 	if (unlikely(ret <= 0)) {
 		if (ret == IO_WOULD_BLOCK) {
 			return 0;
@@ -404,8 +408,7 @@ static int read_msg_length(struct peer *p)
 			return ret;
 		}
 	} else {
-		memcpy(&message_length, message_length_ptr,
-			sizeof(message_length));
+		memcpy(&message_length, message_length_ptr, sizeof(message_length));
 		message_length = ntohl(message_length);
 		p->op = READ_MSG;
 		p->msg_length = message_length;
@@ -416,8 +419,8 @@ static int read_msg_length(struct peer *p)
 static int read_msg(struct peer *p)
 {
 	uint32_t message_length = p->msg_length;
-	char *message_ptr = get_read_ptr(p, message_length);
-	intptr_t ret = (intptr_t)message_ptr;
+	const char *message_ptr;
+	ssize_t ret = get_read_ptr(p, message_length, &message_ptr);
 	if (unlikely(ret <= 0)) {
 		if (ret == IO_WOULD_BLOCK) {
 			return 0;
