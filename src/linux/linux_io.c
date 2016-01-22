@@ -230,8 +230,7 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 			return IO_CLOSE;
 		}
 		if (read_length == -1) {
-			if (unlikely((errno != EAGAIN) &&
-									 (errno != EWOULDBLOCK))) {
+			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
 				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
 				*read_ptr = NULL;
 				return IO_ERROR;
