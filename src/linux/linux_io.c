@@ -223,7 +223,7 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 			p->read_ptr += count;
 			return diff;
 		}
-		
+
 		read_length = READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			*read_ptr = NULL;
@@ -243,7 +243,6 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 	*read_ptr = NULL;
 	return IO_ERROR;
 }
-
 
 int send_buffer(struct peer *p)
 {
