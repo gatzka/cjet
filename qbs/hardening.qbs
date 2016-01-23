@@ -49,7 +49,7 @@ Product {
       var flags = [];
       if (product.enableHardening) {
         var toolchain = qbs.toolchain[0];
-			  var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+        var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
         if (((toolchain === "gcc") && (Versions.versionCompare(compilerVersion, "4.9") >= 0)) ||
             ((toolchain === "clang") && (Versions.versionCompare(compilerVersion, "3.5") >= 0))) {
           flags.push("-fstack-protector-strong", "-fpie");
@@ -65,7 +65,9 @@ Product {
       var flags = [];
       if (product.enableHardening) {
         var toolchain = qbs.toolchain[0];
-        if (toolchain === "gcc" || toolchain === "clang") {
+        var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+        if (((toolchain === "gcc") && (Versions.versionCompare(compilerVersion, "4.9") >= 0)) ||
+            ((toolchain === "clang") && (Versions.versionCompare(compilerVersion, "3.5") >= 0))) {
           flags.push("-Wl,-z,relro,-z,now", "-fpie","-pie");
           if (qbs.buildVariant.contains("release")) {
             flags.push("-D_FORTIFY_SOURCE=2");
