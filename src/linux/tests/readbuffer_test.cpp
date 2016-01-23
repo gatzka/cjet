@@ -265,8 +265,8 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 	struct peer *p = alloc_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, 100);
-	intptr_t ret = (intptr_t)read_ptr;
+	const char *read_ptr;
+	int ret = get_read_ptr(p, 100, &read_ptr);
 	BOOST_CHECK(ret == IO_ERROR);
 
 	free_peer(p);
@@ -277,8 +277,9 @@ BOOST_AUTO_TEST_CASE(too_much_data_requested)
 	struct peer *p = alloc_peer(TOO_MUCH_DATA);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE + 1);
-	BOOST_CHECK(read_ptr == NULL);
+	const char *read_ptr;
+	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE + 1, &read_ptr);
+	BOOST_CHECK(ret == IO_TOOMUCHDATA);
 
 	free_peer(p);
 }
@@ -288,8 +289,8 @@ BOOST_AUTO_TEST_CASE(client_closed_connection)
 	struct peer *p = alloc_peer(CLIENT_CLOSE);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE);
-	intptr_t ret = (intptr_t)read_ptr;
+	const char *read_ptr;
+	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE, &read_ptr);
 	BOOST_CHECK(ret == IO_CLOSE);
 
 	free_peer(p);
@@ -300,8 +301,9 @@ BOOST_AUTO_TEST_CASE(eagain)
 	struct peer *p = alloc_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
-	char *read_ptr = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE);
-	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
+	const char *read_ptr;
+	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE, &read_ptr);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 
 	free_peer(p);
 }
@@ -315,14 +317,15 @@ BOOST_AUTO_TEST_CASE(slow_read)
 
 	slow_read_counter = 0;
 
-	char *read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
-	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
-	read_ptr = get_read_ptr(p, sizeof(value));
-	BOOST_CHECK(read_ptr == (char *)IO_WOULD_BLOCK);
-	read_ptr = get_read_ptr(p, sizeof(value));
-	if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+	const char *read_ptr;
+	int ret = get_read_ptr(p, sizeof(value), &read_ptr);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
+	ret = get_read_ptr(p, sizeof(value), &read_ptr);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
+	ret = get_read_ptr(p, sizeof(value), &read_ptr);
+	BOOST_CHECK(ret == IO_WOULD_BLOCK);
+	ret = get_read_ptr(p, sizeof(value), &read_ptr);
+	if ((read_ptr != NULL) && (ret != IO_WOULD_BLOCK)) {
 		memcpy(&value, read_ptr, sizeof(value));
 		BOOST_CHECK(ntohl(value) == 0x01030507);
 	} else {
@@ -338,8 +341,9 @@ BOOST_AUTO_TEST_CASE(fast_read)
 
 	struct peer *p = alloc_peer(FAST_READ);
 	if (p != NULL) {
-		char *read_ptr = get_read_ptr(p, read_len);
-		if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+		const char *read_ptr;
+		int ret = get_read_ptr(p, read_len, &read_ptr);
+		if ((read_ptr != NULL) && (ret != IO_WOULD_BLOCK)) {
 			strncpy(buffer, read_ptr, read_len);
 			buffer[read_len] = '\0';
 			BOOST_CHECK(strcmp(buffer, "Hello") == 0);
@@ -347,8 +351,8 @@ BOOST_AUTO_TEST_CASE(fast_read)
 			BOOST_FAIL("read_ptr either null or IO_WOULD_BLOCK!");
 		}
 
-		read_ptr = get_read_ptr(p, read_len);
-		if ((read_ptr != NULL) && (read_ptr != (char *)IO_WOULD_BLOCK)) {
+		ret = get_read_ptr(p, read_len, &read_ptr);
+		if ((read_ptr != NULL) && (ret != IO_WOULD_BLOCK)) {
 			strncpy(buffer, read_ptr, read_len);
 			buffer[read_len] = '\0';
 			BOOST_CHECK(strcmp(buffer, "World") == 0);
@@ -372,7 +376,7 @@ BOOST_AUTO_TEST_CASE(fast_peer)
 
 	int ret = handle_all_peer_operations(p);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(parsed_length == strlen(handle_fast_peer_msg));
+	BOOST_CHECK_EQUAL(parsed_length, strlen(handle_fast_peer_msg));
 	BOOST_CHECK(strncmp(parsed_msg, handle_fast_peer_msg, parsed_length) == 0);
 
 	free_peer(p);
