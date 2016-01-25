@@ -57,8 +57,6 @@ Project {
 
     consoleApplication: true
     
-
-    
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
     cpp.positionIndependentCode: false
@@ -70,7 +68,7 @@ Project {
     Group {
       name: "installation files"
       qbs.install: true
-      qbs.installDir: "/usr/local/bin"
+      qbs.installDir: "bin"
       fileTagsFilter: "application"
     }
 
@@ -105,7 +103,6 @@ Project {
       ]
       fileTags: ["cjet_config_tag"]
     }
-
 
     Group {
       condition: qbs.targetOS.contains("linux")
