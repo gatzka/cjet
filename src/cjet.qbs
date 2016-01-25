@@ -56,7 +56,9 @@ Project {
     Depends { name: "generateVersion" }
 
     consoleApplication: true
+    
 
+    
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: true
     cpp.positionIndependentCode: false
@@ -64,6 +66,13 @@ Project {
     cpp.visibility: "hidden"
     cpp.useRPaths: false
     cpp.cLanguageVersion: "c99"
+
+    Group {
+      name: "installation files"
+      qbs.install: true
+      qbs.installDir: "/usr/local/bin"
+      fileTagsFilter: "application"
+    }
 
     Group {
       name: "platform independent"
