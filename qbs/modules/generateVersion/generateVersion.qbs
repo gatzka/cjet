@@ -53,30 +53,39 @@ Module {
         var gitDirty = new Process();
         gitDirty.setWorkingDirectory(product.sourceDirectory);
         ret = gitDirty.exec("git", ["diff-index","--quiet","HEAD"], false);
+        var isDirty = (ret !== 0);
         var dirty;
-        if (ret === 0) {
-          dirty = "";
+        if (isDirty) {
+          dirty = "+dirty";
         } else {
-          dirty = "-dirty";
+          dirty = "";
         }
         gitDirty.close();
+
+        var gitDescribe = new Process();
+        gitDescribe.setWorkingDirectory(product.sourceDirectory);
+        var ret = gitDescribe.exec("git", ["describe","--exact-match","--tags", "HEAD"], false);
+        gitDescribe.close();
+        var isTag = (ret === 0);
+        var last;
+        if (isTag) {
+          last = "";
+        } else {
+          last = "-";
+          var gitCount = new Process();
+          gitCount.setWorkingDirectory(product.sourceDirectory);
+          gitCount.exec("git", ["rev-list","HEAD","--count"], true)
+          last = last + gitCount.readLine();
+          gitCount.close();
+        }
+
+        if (isTag && isDirty) {
+          throw "Never build a release from dirty tag!"
+        }
 
         var file = new TextFile(input.filePath);
         var content = file.readAll();
         file.close()
-        var pat = content.match(/\s*#define\s+CJET_PATCH\s+"(\d+)"/);
-
-        var last;
-        if (pat[1] % 2 === 0) {
-          last = "0";
-        } else {
-          var gitCount = new Process();
-          gitCount.setWorkingDirectory(product.sourceDirectory);
-          gitCount.exec("git", ["rev-list","HEAD","--count"], true)
-          last = gitCount.readLine();
-          gitCount.close();
-        }
-
         content = content.replace(/\${CJET_LAST}/g, last+dirty);
         content = content.replace(/\${PROJECT_NAME}/g, product.name);
         file = new TextFile(output.filePath,  TextFile.WriteOnly);

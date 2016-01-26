@@ -5,7 +5,7 @@
 #define CJET_MINOR "1"
 #define CJET_PATCH "7"
 
-#define CJET_VERSION CJET_MAJOR "." CJET_MINOR "." CJET_PATCH "." "${CJET_LAST}"
+#define CJET_VERSION CJET_MAJOR "." CJET_MINOR "." CJET_PATCH "${CJET_LAST}"
 
 static const char CJET_NAME[] = "${PROJECT_NAME}";
 
