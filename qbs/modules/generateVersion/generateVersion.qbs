@@ -52,7 +52,7 @@ Module {
 
         var gitDirty = new Process();
         gitDirty.setWorkingDirectory(product.sourceDirectory);
-        ret = gitDirty.exec("git", ["diff-index","--quiet","HEAD"], false);
+        ret = gitDirty.exec("git", ["diff","--shortstat"], false);
         var isDirty = (ret !== 0);
         var dirty;
         if (isDirty) {
