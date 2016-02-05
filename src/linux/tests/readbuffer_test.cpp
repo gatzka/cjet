@@ -103,14 +103,14 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt)
 	}
 	if (fd == INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG) {
 		static const int incomplete = 1;
-		memcpy(incomplete_write_buffer_ptr, iov[0].iov_base, incomplete);
+		memcpy(incomplete_write_buffer_ptr, iov[1].iov_base, incomplete);
 		incomplete_write_buffer_ptr += incomplete;
 		return incomplete;
 	}
 	if (fd == INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG) {
 		incomplete_write_counter++;
 		static const int incomplete = 1;
-		memcpy(incomplete_write_buffer_ptr, iov[0].iov_base, incomplete);
+		memcpy(incomplete_write_buffer_ptr, iov[1].iov_base, incomplete);
 		incomplete_write_buffer_ptr += incomplete;
 		incomplete_write_written_before_blocking += incomplete;
 		return incomplete;

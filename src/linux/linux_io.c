@@ -306,50 +306,26 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
 int send_message(struct peer *p, const char *rendered, size_t len)
 {
 	int ret;
-	struct iovec iov[2];
+	struct iovec iov[3];
 	ssize_t sent;
 	size_t written = 0;
 	uint32_t message_length = htonl(len);
 
-	if (unlikely(p->op == WRITE_MSG)) {
-		/*
-		 * There is already something in p->write_buffer, that hasn't
-		 * been written yet because the socket had blocked. In this case
-		 * just append the new message to p->write_buffer.
-		 */
-		ret = copy_msg_to_write_buffer(p, rendered, message_length, 0);
-		if (unlikely(ret == -1)) {
-			return ret;
-		}
+	iov[0].iov_base = p->write_buffer;
+	iov[0].iov_len = p->to_write;
 
-		/* Try to send. This is important because send_message might
-		 * be called several times from within one event loop callback function.
-		 * In this case the buffer might be filled until overflow.
-		 */
-		ret = send_buffer(p);
-		/*
-		 * write in send_buffer blocked. This is not an error, so
-		 * change ret to 0 (no error). Writing the missing stuff is
-		 * handled via epoll / handle_all_peer_operations.
-		 */
-		if (ret == IO_WOULD_BLOCK) {
-			ret = 0;
-		}
-		return ret;
-	}
-
-	iov[0].iov_base = &message_length;
-	iov[0].iov_len = sizeof(message_length);
+	iov[1].iov_base = &message_length;
+	iov[1].iov_len = sizeof(message_length);
 /*
  * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the rendered paramter const. Therefore I
+ * Nevertheless, I want to have the rendered parameter const. Therefore I
  * selectively disabled the cast-qual warning.
  */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	iov[1].iov_base = (void *)rendered;
+	iov[2].iov_base = (void *)rendered;
 #pragma GCC diagnostic pop
-	iov[1].iov_len = len;
+	iov[2].iov_len = len;
 
 	sent = WRITEV(p->io.fd, iov, sizeof(iov) / sizeof(struct iovec));
 	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
@@ -357,7 +333,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	}
 
 	if (sent > 0) {
-		written += (size_t)sent;
+		written = (size_t)sent;
 	}
 
 	if (unlikely((sent == -1) &&
@@ -366,8 +342,18 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 			strerror(errno));
 		return -1;
 	}
+
+	size_t already_written;
+	if (written <= p->to_write) {
+		p->to_write -= written;
+		memmove(p->write_buffer, p->write_buffer + written, p->to_write);
+		already_written = 0;
+	} else {
+		already_written = written;
+		p->to_write = 0;
+	}
 	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length,
-		written) == -1)) {
+		already_written) == -1)) {
 		return -1;
 	}
 
