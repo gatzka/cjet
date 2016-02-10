@@ -373,7 +373,7 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 		break;
 
 	default:
-		log_peer_err(p, "JSON is neither array or object!\n");
+		log_peer_err(p, "JSON is neither array nor object!\n");
 		ret = -1;
 		break;
 	}
