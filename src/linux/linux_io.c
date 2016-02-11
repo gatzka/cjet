@@ -393,9 +393,8 @@ static int read_msg_length(struct peer *p)
 		}
 	} else {
 		memcpy(&message_length, message_length_ptr, sizeof(message_length));
-		message_length = ntohl(message_length);
 		p->op = READ_MSG;
-		p->msg_length = message_length;
+		p->msg_length = ntohl(message_length);
 		return 1;
 	}
 }
