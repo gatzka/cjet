@@ -25,20 +25,30 @@
  */
 
 import qbs 1.0
+import "../qbs/unittestRunner.qbs" as UnittestRunner
 
 Project {
-  name: "cjet with tests"
+  name: "cjet_unit_tests_run"
   minimumQbsVersion: "1.4.0"
 
-  SubProject {
-    filePath: "src/cjet.qbs"
+  qbsSearchPaths: "../qbs/"
+
+  UnittestRunner {
+    lcovRemovePatterns: [
+      "*/cjet/src/json/*",
+    ]
+    wrapper: [
+      "valgrind",
+      "--errors-for-leak-kinds=all",
+      "--show-leak-kinds=all",
+      "--leak-check=full",
+      "--error-exitcode=1",
+      "--suppressions=" + sourceDirectory + "/../valgrind/valgrind.supp"
+    ]
   }
 
   SubProject {
-    filePath: "src/test_run.qbs"
-    Properties {
-      profile: "gcc"
-    }
+    filePath: "test.qbs"
   }
 }
 
