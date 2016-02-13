@@ -67,7 +67,6 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		create_method_hashtable();
 		owner_peer = alloc_peer(-1);
 		call_peer = alloc_peer(-1);
 	}
@@ -76,7 +75,6 @@ struct F {
 		free_peer(call_peer);
 		free_peer(owner_peer);
 		state_hashtable_delete();
-		delete_method_hashtable();
 	}
 
 	struct peer *owner_peer;
@@ -168,7 +166,6 @@ BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
 	cJSON_Delete(error);
 }
 
-/*
 BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 {
 	const char path[] = "/foo/bar";
@@ -184,7 +181,6 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 	check_invalid_params(error);
 	cJSON_Delete(error);
 }
-*/
 
 BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 {

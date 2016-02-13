@@ -63,24 +63,16 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	if ((create_method_hashtable()) == -1) {
-		log_err("Cannot allocate hashtable for states!\n");
-		goto create_method_table_failed;
-	}
-
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
 	if (run_io() < 0) {
 		goto run_io_failed;
 	}
 	log_info("%s stopped", CJET_NAME);
 
-	delete_method_hashtable();
 	state_hashtable_delete();
 	return EXIT_SUCCESS;
 
 run_io_failed:
-	delete_method_hashtable();
-create_method_table_failed:
 	state_hashtable_delete();
 	return EXIT_FAILURE;
 }

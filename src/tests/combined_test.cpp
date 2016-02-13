@@ -217,7 +217,6 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		create_method_hashtable();
 		owner_peer = alloc_peer(-1);
 		call_peer = alloc_peer(-1);
 		fetch_peer_1 = alloc_peer(-1);
@@ -235,7 +234,6 @@ struct F {
 		if (call_peer) free_peer(call_peer);
 		if (owner_peer) free_peer(owner_peer);
 		state_hashtable_delete();
-		delete_method_hashtable();
 	}
 };
 
