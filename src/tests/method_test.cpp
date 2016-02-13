@@ -31,7 +31,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
-#include "method.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -131,14 +130,14 @@ static void check_invalid_params(const cJSON *error)
 BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 {
 	const char path[] = "/foo/bar/";
-	int ret = remove_method_from_peer(owner_peer, path);
+	int ret = remove_state_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 
 BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 {
 
-	cJSON *error = add_method_to_peer(owner_peer, "/foo/bar");
+	cJSON *error = add_state_to_peer(owner_peer, "/foo/bar", NULL);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -157,10 +156,10 @@ BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
 {
 	const char path[] = "/foo/bar";
 
-	cJSON *error = add_method_to_peer(owner_peer, path);
+	cJSON *error = add_state_to_peer(owner_peer, path, NULL);
 	BOOST_CHECK(error == NULL);
 
-	error = add_method_to_peer(owner_peer, path);
+	error = add_state_to_peer(owner_peer, path, NULL);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -176,7 +175,7 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	error = add_method_to_peer(owner_peer, path);
+	error = add_state_to_peer(owner_peer, path, NULL);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -185,20 +184,20 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 {
 	const char path[] = "/foo/bar";
-	cJSON *error = add_method_to_peer(owner_peer, path);
+	cJSON *error = add_state_to_peer(owner_peer, path, NULL);
 	BOOST_CHECK(error == NULL);
 
-	int ret = remove_method_from_peer(owner_peer, path);
+	int ret = remove_state_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == 0);
 
-	ret = remove_method_from_peer(owner_peer, path);
+	ret = remove_state_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 
 
 BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
 {
-	cJSON *error = add_method_to_peer(owner_peer, method_no_args_path);
+	cJSON *error = add_state_to_peer(owner_peer, method_no_args_path, NULL);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -214,7 +213,7 @@ BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
 
 BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
-	cJSON *error = add_method_to_peer(owner_peer, method_no_args_path);
+	cJSON *error = add_state_to_peer(owner_peer, method_no_args_path, NULL);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(method_no_args_path);

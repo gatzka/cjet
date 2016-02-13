@@ -31,7 +31,6 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
-#include "method.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -353,7 +352,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *error = add_method_to_peer(owner_peer, method_no_args_path);
+	cJSON *error = add_state_to_peer(owner_peer, method_no_args_path, NULL);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);

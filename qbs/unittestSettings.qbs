@@ -106,7 +106,6 @@ StaticLibrary {
         "fetch.c",
         "info.c",
         "linux/jet_string.c",
-        "method.c",
         "parse.c",
         "peer.c",
         "response.c",

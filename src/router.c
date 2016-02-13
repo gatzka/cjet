@@ -79,7 +79,6 @@ cJSON *create_routed_message(const struct peer *p, const char *path, const char 
 		goto error;
 	}
 
-
 	if (name == NULL) {
 		cJSON_AddItemToObject(message, "params", value_copy);
 	} else {

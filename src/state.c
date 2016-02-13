@@ -68,12 +68,14 @@ static struct state *alloc_state(const char *path, const cJSON *value_object,
 			     "path");
 		goto alloc_path_failed;
 	}
-	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
-	if (unlikely(value_copy == NULL)) {
-		log_peer_err(p, "Could not copy value object!\n");
-		goto value_copy_failed;
+	if (value_object != NULL) {
+		cJSON *value_copy = cJSON_Duplicate(value_object, 1);
+		if (unlikely(value_copy == NULL)) {
+			log_peer_err(p, "Could not copy value object!\n");
+			goto value_copy_failed;
+		}
+		s->value = value_copy;
 	}
-	s->value = value_copy;
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
@@ -90,7 +92,9 @@ alloc_fetch_table_failed:
 
 static void free_state(struct state *s)
 {
-	cJSON_Delete(s->value);
+	if (s->value != NULL) {
+		cJSON_Delete(s->value);
+	}
 	free(s->path);
 	free(s->fetcher_table);
 	free(s);
@@ -107,6 +111,11 @@ cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not owner of state", path);
+		return error;
+	}
+	if (unlikely(s->value == NULL)) {
+		cJSON *error =
+		    create_invalid_params_error(p, "change on method not possible", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
@@ -132,6 +141,12 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	struct state *s = state_table_get(path);
 	if (unlikely(s == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
+		return error;
+	}
+
+	if (unlikely(s->value == NULL)) {
+		error =
+		    create_invalid_params_error(p, "set on method not possible", path);
 		return error;
 	}
 
@@ -172,6 +187,71 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	free(rendered_message);
+delete_json:
+	cJSON_Delete(routed_message);
+	return error;
+}
+
+cJSON *call_method(struct peer *p, const char *path,
+	const cJSON *args, const cJSON *json_rpc)
+{
+	cJSON *error;
+	struct state *s = state_table_get(path);
+	if (unlikely(s == NULL)) {
+		error = create_invalid_params_error(p, "not exists", path);
+		return error;
+	}
+
+	if (unlikely(s->peer == p)) {
+		error = create_invalid_params_error(
+			p, "owner of method shall not call method via jet", path);
+		return error;
+	}
+
+	if (unlikely(s->value != NULL)) {
+		error =
+		    create_invalid_params_error(p, "call on state not possible", path);
+		return error;
+	}
+
+	cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
+	if ((origin_request_id != NULL) &&
+		 ((origin_request_id->type != cJSON_String) &&
+		  (origin_request_id->type != cJSON_Number))) {
+		error = create_invalid_params_error(
+			p, "reason", "request id is neither string nor number");
+		return error;
+	}
+
+	int routed_request_id = get_routed_request_uuid();
+	cJSON *routed_message = create_routed_message(p, path, NULL, args, routed_request_id);
+	if (unlikely(routed_message == NULL)) {
+		error = create_internal_error(
+			p, "reason", "could not create routed JSON object");
+		return error;
+	}
+
+	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
+			routed_request_id) != 0)) {
+		error = create_internal_error(
+			p, "reason", "could not setup routing information");
+		goto delete_json;
+	}
+	error = (cJSON *)ROUTED_MESSAGE;
+	char *rendered_message = cJSON_PrintUnformatted(routed_message);
+	if (unlikely(rendered_message == NULL)) {
+		error = create_internal_error(
+			p, "reason", "could not render message");
+		goto delete_json;
+	}
+	if (unlikely(send_message(s->peer, rendered_message,
+			strlen(rendered_message)) != 0)) {
+		error = create_internal_error(
+			p, "reason", "could not send routing information");
+	}
+
+	free(rendered_message);
+
 delete_json:
 	cJSON_Delete(routed_message);
 	return error;

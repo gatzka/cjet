@@ -40,7 +40,7 @@ struct state {
 	struct list_head state_list;
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */
-	cJSON *value;
+	cJSON *value; /* NULL if method */
 	struct fetch **fetcher_table;
 	double timeout;
 	unsigned int fetch_table_size;
@@ -49,6 +49,8 @@ struct state {
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
 cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	const cJSON *json_rpc);
+cJSON *call_method(struct peer *p, const char *path,
+	const cJSON *args, const cJSON *json_rpc);
 cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value);
 int remove_state_from_peer(struct peer *p, const char *path);
 void remove_all_states_from_peer(struct peer *p);

@@ -33,7 +33,6 @@
 #include "generated/version.h"
 #include "linux/linux_io.h"
 #include "log.h"
-#include "method.h"
 #include "table.h"
 
 int main(int argc, char **argv)
