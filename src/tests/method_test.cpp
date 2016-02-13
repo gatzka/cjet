@@ -31,9 +31,10 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
+#include "method.h"
 #include "peer.h"
 #include "router.h"
-#include "method.h"
+#include "state.h"
 
 static const char *method_no_args_path = "/method_no_args/";
 
@@ -59,21 +60,12 @@ extern "C" {
 		(void)p;
 		return;
 	}
-
-	void remove_all_states_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
-	void remove_all_fetchers_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
 }
 
 struct F {
 	F()
 	{
+		create_state_hashtable();
 		create_method_hashtable();
 		owner_peer = alloc_peer(-1);
 		call_peer = alloc_peer(-1);
@@ -167,6 +159,22 @@ BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
 
 	cJSON *error = add_method_to_peer(owner_peer, path);
 	BOOST_CHECK(error == NULL);
+
+	error = add_method_to_peer(owner_peer, path);
+	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
+{
+	const char path[] = "/foo/bar";
+	int state_value = 12345;
+
+	cJSON *value = cJSON_CreateNumber(state_value);
+	cJSON *error = add_state_to_peer(owner_peer, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
 
 	error = add_method_to_peer(owner_peer, path);
 	BOOST_REQUIRE(error != NULL);
