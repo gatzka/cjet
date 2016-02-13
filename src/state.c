@@ -29,7 +29,6 @@
 
 #include "cjet_io.h"
 #include "compiler.h"
-#include "generated/cjet_config.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -38,35 +37,12 @@
 #include "response.h"
 #include "router.h"
 #include "state.h"
+#include "table.h"
 #include "uuid.h"
-
-DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
-
-static struct hashtable_string *state_hashtable = NULL;
-
-int create_state_hashtable(void)
-{
-	state_hashtable = HASHTABLE_CREATE(state_table);
-	if (unlikely(state_hashtable == NULL)) {
-		return -1;
-	}
-	return 0;
-}
-
-void delete_state_hashtable(void)
-{
-	HASHTABLE_DELETE(state_table, state_hashtable);
-}
 
 struct state *get_state(const char *path)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (ret == HASHTABLE_SUCCESS) {
-		return val.vals[0];
-	} else {
-		return NULL;
-	}
+	return state_table_get(path);
 }
 
 static struct state *alloc_state(const char *path, const cJSON *value_object,
@@ -122,14 +98,12 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
-	struct state *s = val.vals[0];
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not owner of state", path);
@@ -155,13 +129,11 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 		 const cJSON *json_rpc)
 {
 	cJSON *error;
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
-	struct state *s = val.vals[0];
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
 	if ((origin_request_id != NULL) &&
@@ -207,14 +179,12 @@ delete_json:
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret == HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	struct state *s =
-	    alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "not enough memory");
@@ -228,10 +198,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 		return error;
 	}
 
-	struct value_state_table new_val;
-	new_val.vals[0] = s;
-	if (unlikely(HASHTABLE_PUT(state_table, state_hashtable, s->path,
-				   new_val, NULL) != HASHTABLE_SUCCESS)) {
+	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "state table full");
 		free_state(s);
@@ -247,7 +214,7 @@ static void remove_state(struct state *s)
 {
 	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
-	HASHTABLE_REMOVE(state_table, state_hashtable, s->path, NULL);
+	state_table_remove(s->path);
 	free_state(s);
 }
 

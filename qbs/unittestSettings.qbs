@@ -112,6 +112,7 @@ StaticLibrary {
         "response.c",
         "router.c",
         "state.c",
+        "table.c",
         "uuid.c",
     ]
   }

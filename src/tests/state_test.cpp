@@ -34,6 +34,7 @@
 #include "peer.h"
 #include "router.h"
 #include "state.h"
+#include "table.h"
 
 static char send_buffer[100000];
 
@@ -151,7 +152,7 @@ struct F {
 	F()
 	{
 		notify_shall_fail = false;
-		create_state_hashtable();
+		state_hashtable_create();
 		p = alloc_peer(-1);
 		set_peer = alloc_peer(-1);
 	}
@@ -159,7 +160,7 @@ struct F {
 	{
 		free_peer(set_peer);
 		free_peer(p);
-		delete_state_hashtable();
+		state_hashtable_delete();
 	}
 
 	struct peer *p;

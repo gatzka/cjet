@@ -34,7 +34,7 @@
 #include "linux/linux_io.h"
 #include "log.h"
 #include "method.h"
-#include "state.h"
+#include "table.h"
 
 int main(int argc, char **argv)
 {
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
 	}
 	signal(SIGPIPE, SIG_IGN);
 
-	if ((create_state_hashtable()) == -1) {
+	if ((state_hashtable_create()) == -1) {
 		log_err("Cannot allocate hashtable for states!\n");
 		return EXIT_FAILURE;
 	}
@@ -75,12 +75,12 @@ int main(int argc, char **argv)
 	log_info("%s stopped", CJET_NAME);
 
 	delete_method_hashtable();
-	delete_state_hashtable();
+	state_hashtable_delete();
 	return EXIT_SUCCESS;
 
 run_io_failed:
 	delete_method_hashtable();
 create_method_table_failed:
-	delete_state_hashtable();
+	state_hashtable_delete();
 	return EXIT_FAILURE;
 }
