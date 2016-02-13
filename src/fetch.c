@@ -359,13 +359,14 @@ static int notify_fetching_peer(struct state *s, struct fetch *f,
 	}
 	cJSON_AddItemToObject(root, "params", param);
 
-	cJSON *value = cJSON_Duplicate(s->value, 1);
-	if (unlikely(value == NULL)) {
-		cJSON_Delete(root);
-		return -1;
+	if (s->value != NULL) {
+		cJSON *value = cJSON_Duplicate(s->value, 1);
+		if (unlikely(value == NULL)) {
+			cJSON_Delete(root);
+			return -1;
+		}
+		cJSON_AddItemToObject(param, "value", value);
 	}
-	cJSON_AddItemToObject(param, "value", value);
-
 	cJSON *path = cJSON_CreateString(s->path);
 	if (unlikely(path == NULL)) {
 		cJSON_Delete(root);
