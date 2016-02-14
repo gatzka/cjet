@@ -49,12 +49,12 @@ SET(READBUFFER_TEST
 	../../fetch.c
 	../../json/cJSON.c
 	../../linux/jet_string.c
+	../../linux/uuid.c
 	../../peer.c
 	../../response.c
 	../../router.c
 	../../state.c
 	../../table.c
-	../../uuid.c
 	../linux_io.c
 	log.cpp
 	readbuffer_test.cpp
