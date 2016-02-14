@@ -184,7 +184,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	error = add_state_to_peer(p, path, value);
+	error = add_state_or_method_to_peer(p, path, value);
 
 	return possibly_send_response(json_rpc, error, p);
 }

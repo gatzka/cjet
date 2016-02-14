@@ -52,7 +52,7 @@ static const int METHOD =  0;
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
 cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	const cJSON *json_rpc, int is_state);
-cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value);
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value);
 int remove_state_from_peer(struct peer *p, const char *path);
 void remove_all_states_from_peer(struct peer *p);
 

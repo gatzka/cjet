@@ -195,7 +195,7 @@ delete_json:
 	return error;
 }
 
-cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value)
 {
 	struct state *s = state_table_get(path);
 	if (unlikely(s != NULL)) {

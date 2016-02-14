@@ -172,7 +172,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -261,7 +261,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 	}
@@ -345,7 +345,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);

@@ -197,7 +197,7 @@ BOOST_FIXTURE_TEST_CASE(add_state, F)
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
 
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
@@ -213,7 +213,7 @@ BOOST_FIXTURE_TEST_CASE(add_state_notify_fail, F)
 	cJSON *value = cJSON_CreateNumber(state_value);
 
 	notify_shall_fail = true;
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error != NULL);
 
 	cJSON_Delete(value);
@@ -227,10 +227,10 @@ BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
 {
 	cJSON *value = cJSON_CreateNumber(1234);
 
-	cJSON *error = add_state_to_peer(p, "/foo/bar/", value);
+	cJSON *error = add_state_or_method_to_peer(p, "/foo/bar/", value);
 	BOOST_CHECK(error == NULL);
 
-	error = add_state_to_peer(p, "/foo/bar/", value);
+	error = add_state_or_method_to_peer(p, "/foo/bar/", value);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -241,7 +241,7 @@ BOOST_FIXTURE_TEST_CASE(delete_single_state, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
@@ -261,7 +261,7 @@ BOOST_FIXTURE_TEST_CASE(double_free_state, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
@@ -277,7 +277,7 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -294,7 +294,7 @@ BOOST_FIXTURE_TEST_CASE(change_notify_fail, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -313,7 +313,7 @@ BOOST_FIXTURE_TEST_CASE(change_not_by_owner, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -327,7 +327,7 @@ BOOST_FIXTURE_TEST_CASE(change_not_by_owner, F)
 BOOST_FIXTURE_TEST_CASE(change_wrong_path, F)
 {
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, "/foo/bar/", value);
+	cJSON *error = add_state_or_method_to_peer(p, "/foo/bar/", value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -343,7 +343,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -367,7 +367,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
 {
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, "/foo/bar/bla/", value);
+	cJSON *error = add_state_or_method_to_peer(p, "/foo/bar/bla/", value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -384,7 +384,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -400,7 +400,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -425,7 +425,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *value = cJSON_CreateNumber(1234);
-	cJSON *error = add_state_to_peer(p, path, value);
+	cJSON *error = add_state_or_method_to_peer(p, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
