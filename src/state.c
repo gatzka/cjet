@@ -161,12 +161,17 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	int routed_request_id = get_routed_request_uuid();
+	char *routed_request_id = get_routed_request_uuid(p, origin_request_id);
+	if (routed_request_id == NULL) {
+		error = create_internal_error(
+		    p, "reason", "could not create request id");
+		return error;
+	}
 	cJSON *routed_message = create_routed_message(p, path, what, value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 		    p, "reason", "could not create routed JSON object");
-		return error;
+		goto delete_routed_request_id;
 	}
 
 	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
@@ -189,9 +194,13 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	free(rendered_message);
+	cJSON_Delete(routed_message);
+	return error;
 
 delete_json:
 	cJSON_Delete(routed_message);
+delete_routed_request_id:
+	free(routed_request_id);
 	return error;
 }
 

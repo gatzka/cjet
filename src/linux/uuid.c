@@ -24,11 +24,34 @@
  * SOFTWARE.
  */
 
+#include <stdio.h>
+#include <stdlib.h>
+
+#include "inttypes.h"
+#include "json/cJSON.h"
+#include "peer.h"
 #include "uuid.h"
 
-static int uuid = 0;
+static unsigned int uuid = 0;
 
-int get_routed_request_uuid(void)
+char *get_routed_request_uuid(struct peer *p, const cJSON *origin_request_id)
 {
-	return uuid++;
+	uintptr_t peer = (uintptr_t)p;
+	char *buf;
+	int ret;
+	if (origin_request_id != NULL) {
+		if (origin_request_id->type == cJSON_String) {
+			ret = asprintf(&buf, "uuid: %s_%x_%016"PRIxPTR"\n", origin_request_id->valuestring, uuid, peer);
+		} else {
+			ret = asprintf(&buf, "uuid: %x_%x_%016"PRIxPTR"\n", origin_request_id->valueint, uuid, peer);
+		}
+	} else {
+		ret = asprintf(&buf, "uuid: %x_%016"PRIxPTR"\n", uuid, peer);
+	}
+	if (ret == -1) {
+		return NULL;
+	} else {
+		return buf;
+	}
+	uuid++;
 }

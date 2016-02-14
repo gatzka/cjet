@@ -32,7 +32,7 @@
 #include "response.h"
 #include "router.h"
 
-DECLARE_HASHTABLE_UINT32(route_table, CONFIG_ROUTING_TABLE_ORDER, 2)
+DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 3)
 
 int add_routing_table(struct peer *p)
 {
@@ -50,14 +50,14 @@ void delete_routing_table(struct peer *p)
 }
 
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
-	const cJSON *value, int id)
+	const cJSON *value, const char *id)
 {
 	cJSON *message = cJSON_CreateObject();
 	if (unlikely(message == NULL)) {
 		return NULL;
 	}
 
-	cJSON *json_id = cJSON_CreateNumber(id);
+	cJSON *json_id = cJSON_CreateString(id);
 	if (unlikely(json_id == NULL)) {
 		goto error;
 	}
@@ -99,7 +99,7 @@ error:
 }
 
 int setup_routing_information(const struct peer *routing_peer,
-	struct peer *origin_peer, const cJSON *origin_request_id, int id)
+	struct peer *origin_peer, const cJSON *origin_request_id, char *id)
 {
 	cJSON *id_copy;
 	if (origin_request_id != NULL) {
@@ -114,6 +114,7 @@ int setup_routing_information(const struct peer *routing_peer,
 	struct value_route_table val;
 	val.vals[0] = origin_peer;
 	val.vals[1] = id_copy;
+	val.vals[2] = id;
 	if (unlikely(HASHTABLE_PUT(route_table, routing_peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON_Delete(id_copy);
@@ -162,17 +163,19 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		log_peer_err(p, "no id in response!\n");
 		return -1;
 	}
-	if (unlikely(id->type != cJSON_Number)) {
-		log_peer_err(p, "id is not a number!\n");
+	if (unlikely(id->type != cJSON_String)) {
+		log_peer_err(p, "id is not a string!\n");
 		return -1;
 	}
 	struct value_route_table val;
-	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valueint, &val);
+	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
+		char *routed_id = val.vals[2];
 		send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
+		free(routed_id);
 	}
 	return ret;
 }
@@ -201,10 +204,10 @@ static void send_shutdown_response(struct peer *p,
 void remove_peer_from_routing_table(const struct peer *p,
 	const struct peer *peer_to_remove)
 {
-	struct hashtable_uint32_t *table = p->routing_table;
+	struct hashtable_string *table = p->routing_table;
 	for (unsigned int i = 0; i < table_size_route_table; ++i) {
-		struct hashtable_uint32_t *entry = &(table[i]);
-		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
+		struct hashtable_string *entry = &(table[i]);
+		if (entry->key != (char *)HASHTABLE_INVALIDENTRY) {
 			struct value_route_table val;
 			int ret = HASHTABLE_GET(route_table,
 					p->routing_table, entry->key, &val);
@@ -212,9 +215,11 @@ void remove_peer_from_routing_table(const struct peer *p,
 				struct peer *origin_peer = val.vals[0];
 				if (origin_peer == peer_to_remove) {
 					cJSON *origin_request_id = val.vals[1];
+					char *id = val.vals[2];
 					send_shutdown_response(origin_peer, origin_request_id);
 					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, &val);
 					cJSON_Delete(origin_request_id);
+					free(id);
 				}
 			}
 		}
@@ -223,18 +228,20 @@ void remove_peer_from_routing_table(const struct peer *p,
 
 void remove_routing_info_from_peer(const struct peer *p)
 {
-	struct hashtable_uint32_t *table = p->routing_table;
+	struct hashtable_string *table = p->routing_table;
 	for (unsigned int i = 0; i < table_size_route_table; ++i) {
-		struct hashtable_uint32_t *entry = &(table[i]);
-		if (entry->key != (uint32_t)HASHTABLE_INVALIDENTRY) {
+		struct hashtable_string *entry = &(table[i]);
+		if (entry->key != (char *)HASHTABLE_INVALIDENTRY) {
 			struct value_route_table val;
 			int ret = HASHTABLE_REMOVE(route_table,
 					p->routing_table, entry->key, &val);
 			if (ret == HASHTABLE_SUCCESS) {
 				struct peer *origin_peer = val.vals[0];
 				cJSON *origin_request_id = val.vals[1];
+				char *id = val.vals[2];
 				send_shutdown_response(origin_peer, origin_request_id);
 				cJSON_Delete(origin_request_id);
+				free(id);
 			}
 		}
 	}

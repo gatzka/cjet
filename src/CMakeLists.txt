@@ -63,7 +63,6 @@ SET(CJET_FILES
         router.c
         state.c
         table.c
-        uuid.c
 )
 
 SET(CJET_LINUX_FILES
@@ -72,6 +71,7 @@ SET(CJET_LINUX_FILES
         linux/linux_io.c
         linux/main.c
         linux/timer.c
+        linux/uuid.c
 )
 
 FOREACH(_file ${CJET_FILES})

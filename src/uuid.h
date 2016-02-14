@@ -27,6 +27,9 @@
 #ifndef CJET_UUID_H
 #define CJET_UUID_H
 
-int get_routed_request_uuid(void);
+#include "json/cJSON.h"
+#include "peer.h"
+
+char *get_routed_request_uuid(struct peer *p, const cJSON *origin_request_id);
 
 #endif
