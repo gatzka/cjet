@@ -251,7 +251,7 @@ int remove_state_from_peer(struct peer *p, const char *path)
 	return -1;
 }
 
-void remove_all_states_from_peer(struct peer *p)
+void remove_all_states_and_methods_from_peer(struct peer *p)
 {
 	struct list_head *item;
 	struct list_head *tmp;

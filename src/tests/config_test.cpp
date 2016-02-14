@@ -52,7 +52,7 @@ extern "C" {
 		(void)p;
 	}
 
-	void remove_all_states_from_peer(struct peer *p)
+	void remove_all_states_and_methods_from_peer(struct peer *p)
 	{
 		(void)p;
 	}
