@@ -112,7 +112,7 @@ StaticLibrary {
         "router.c",
         "state.c",
         "table.c",
-        "uuid.c",
+        "linux/uuid.c",
     ]
   }
 }
