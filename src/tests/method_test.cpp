@@ -181,6 +181,28 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 	cJSON_Delete(error);
 }
 
+BOOST_FIXTURE_TEST_CASE(call_on_state, F)
+{
+	const char path[] = "/foo/bar";
+	int state_value = 12345;
+
+	cJSON *value = cJSON_CreateNumber(state_value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
+	error = set_or_call(call_peer, path, NULL, call_json_rpc, METHOD);
+	cJSON_Delete(call_json_rpc);
+
+	if (error != NULL) {
+		check_invalid_params(error);
+		cJSON_Delete(error);
+	} else {
+		BOOST_FAIL("expected to get an error!");
+	}
+}
+
 BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 {
 	const char path[] = "/foo/bar";
