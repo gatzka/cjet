@@ -122,7 +122,10 @@ struct F {
 	struct peer *p;
 };
 
-
+static struct state_or_method *get_state(const char *path)
+{
+	return (struct state_or_method *)state_table_get(path);
+}
 
 static cJSON *create_fetch_params(const char *path_equals_string, const char *path_startsWith_string, const char *path_endsWith_string, const char *path_contains, int ignore_case)
 {
@@ -169,13 +172,13 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
 	}
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 	{
 		/// is to fail because fetch is case sensitive
@@ -258,12 +261,12 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 	}
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 
 	{
@@ -342,13 +345,13 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_to_peer(p, path, value);
+		cJSON *error = add_state_or_method_to_peer(p, path, value);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
 	}
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 
 
@@ -384,7 +387,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		remove_state_from_peer(p, path);
+		remove_state_or_method_from_peer(p, path);
 
 		BOOST_CHECK(fetch_peer_1_event == REMOVE_EVENT);
 		cJSON_Delete(params);

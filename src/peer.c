@@ -61,7 +61,7 @@ static void free_peer_resources(struct peer *p)
 	remove_routing_info_from_peer(p);
 	remove_peer_from_routes(p);
 	remove_all_fetchers_from_peer(p);
-	remove_all_states_from_peer(p);
+	remove_all_states_and_methods_from_peer(p);
 	delete_routing_table(p);
 	list_del(&p->next_peer);
 	if (p->name != NULL) {

@@ -112,7 +112,7 @@ extern "C" {
 	}
 
 
-	int remove_state_from_peer(struct peer *p, const char *path)
+	int remove_state_or_method_from_peer(struct peer *p, const char *path)
 	{
 		(void)p;
 		if (strcmp(path, "state") == 0) {
@@ -121,7 +121,7 @@ extern "C" {
 		return -1;
 	}
 
-	cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
+	cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value)
 	{
 		(void)p;
 		(void)path;
@@ -129,14 +129,14 @@ extern "C" {
 		return NULL;
 	}
 
-	cJSON *set_state(struct peer *p, const char *path,
-		const cJSON *value, const cJSON *json_rpc, int is_state)
+	cJSON *set_or_call(struct peer *p, const char *path,
+		const cJSON *value, const cJSON *json_rpc, enum type what)
 	{
 		(void)p;
 		(void)path;
 		(void)value;
 		(void)json_rpc;
-		(void)is_state;
+		(void)what;
 		return NULL;
 	}
 

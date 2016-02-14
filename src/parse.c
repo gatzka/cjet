@@ -145,7 +145,7 @@ static int process_set(const cJSON *json_rpc, struct peer *p)
 		error = create_invalid_params_error(p, "reason", "no value given");
 		return possibly_send_response(json_rpc, error, p);
 	}
-	error = set_state(p, path, value, json_rpc, STATE);
+	error = set_or_call(p, path, value, json_rpc, STATE);
 	return possibly_send_response(json_rpc, error, p);
 }
 
@@ -164,7 +164,7 @@ static int process_call(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 	const cJSON *args = cJSON_GetObjectItem(params, "args");
-	error = set_state(p, path, args, json_rpc, METHOD);
+	error = set_or_call(p, path, args, json_rpc, METHOD);
 	return possibly_send_response(json_rpc, error, p);
 }
 
@@ -184,7 +184,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	error = add_state_to_peer(p, path, value);
+	error = add_state_or_method_to_peer(p, path, value);
 
 	return possibly_send_response(json_rpc, error, p);
 }
@@ -204,7 +204,7 @@ static int process_remove(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	int ret = remove_state_from_peer(p, path);
+	int ret = remove_state_or_method_from_peer(p, path);
 	if (ret == 0) {
 		return possibly_send_response(json_rpc, NULL, p);
 	}

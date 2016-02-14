@@ -29,6 +29,7 @@
 
 #include "json/cJSON.h"
 #include "peer.h"
+#include "state.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +37,7 @@ extern "C" {
 
 #define ROUTED_MESSAGE -1
 
-cJSON *create_routed_message(const struct peer *p, const char *path, int is_state,
+cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
 	const cJSON *value, int id);
 int setup_routing_information(const struct peer *routing_peer,
 	struct peer *origin_peer, const cJSON *origin_request_id, int id);

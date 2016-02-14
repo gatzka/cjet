@@ -38,21 +38,12 @@
 
 extern "C" {
 
-	int create_state_hashtable(void)
-	{
-		return 0;
-	}
-
-	void delete_state_hashtable(void)
-	{
-	}
-
 	void remove_routing_info_from_peer(const struct peer *p)
 	{
 		(void)p;
 	}
 
-	void remove_all_states_from_peer(struct peer *p)
+	void remove_all_states_and_methods_from_peer(struct peer *p)
 	{
 		(void)p;
 	}
@@ -101,13 +92,11 @@ extern "C" {
 struct F {
 	F()
 	{
-		create_state_hashtable();
 		p = alloc_peer(-1);
 	}
 	~F()
 	{
 		free_peer(p);
-		delete_state_hashtable();
 	}
 
 	struct peer *p;

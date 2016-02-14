@@ -177,6 +177,11 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 	cJSON_Delete(message);
 }
 
+static struct state_or_method *get_state(const char *path)
+{
+	return (struct state_or_method *)state_table_get(path);
+}
+
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
@@ -292,12 +297,12 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
 
-	cJSON *error = add_state_to_peer(owner_peer, path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
 
-	const struct state *s = get_state(path);
+	const struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 
 	struct fetch *f = NULL;
@@ -333,13 +338,13 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	const char *path = "/foo/bar/";
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_to_peer(owner_peer, path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
 	cJSON *set_request = create_set_request(path, "request1");
 	cJSON *new_value = get_value_from_request(set_request);
-	error = set_state(set_peer, path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
@@ -352,11 +357,11 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *error = add_state_to_peer(owner_peer, method_no_args_path, NULL);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_state(call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 	cJSON_Delete(call_json_rpc);
 
@@ -367,13 +372,13 @@ BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 {
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_to_peer(owner_peer, read_only_state_path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, read_only_state_path, value);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
 	cJSON *set_request = create_set_request(read_only_state_path, "request1");
 	cJSON *new_value = get_value_from_request(set_request);
-	error = set_state(set_peer, read_only_state_path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, read_only_state_path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
