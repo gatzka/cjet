@@ -204,7 +204,7 @@ static int process_remove(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	int ret = remove_state_from_peer(p, path);
+	int ret = remove_state_or_method_from_peer(p, path);
 	if (ret == 0) {
 		return possibly_send_response(json_rpc, NULL, p);
 	}

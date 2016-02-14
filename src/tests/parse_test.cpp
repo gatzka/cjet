@@ -112,7 +112,7 @@ extern "C" {
 	}
 
 
-	int remove_state_from_peer(struct peer *p, const char *path)
+	int remove_state_or_method_from_peer(struct peer *p, const char *path)
 	{
 		(void)p;
 		if (strcmp(path, "state") == 0) {

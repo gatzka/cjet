@@ -130,7 +130,7 @@ static void check_invalid_params(const cJSON *error)
 BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 {
 	const char path[] = "/foo/bar/";
-	int ret = remove_state_from_peer(owner_peer, path);
+	int ret = remove_state_or_method_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 
@@ -187,10 +187,10 @@ BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL);
 	BOOST_CHECK(error == NULL);
 
-	int ret = remove_state_from_peer(owner_peer, path);
+	int ret = remove_state_or_method_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == 0);
 
-	ret = remove_state_from_peer(owner_peer, path);
+	ret = remove_state_or_method_from_peer(owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 

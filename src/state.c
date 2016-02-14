@@ -236,7 +236,7 @@ static void remove_state_or_method(struct state *s)
 	free_state(s);
 }
 
-int remove_state_from_peer(struct peer *p, const char *path)
+int remove_state_or_method_from_peer(struct peer *p, const char *path)
 {
 	struct list_head *item;
 	struct list_head *tmp;

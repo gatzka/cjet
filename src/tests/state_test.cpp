@@ -246,14 +246,14 @@ BOOST_FIXTURE_TEST_CASE(delete_single_state, F)
 
 	cJSON_Delete(value);
 
-	int ret = remove_state_from_peer(p, path);
+	int ret = remove_state_or_method_from_peer(p, path);
 	BOOST_CHECK(ret == 0);
 }
 
 BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 {
 	const char path[] = "/foo/bar/";
-	int ret = remove_state_from_peer(p, path);
+	int ret = remove_state_or_method_from_peer(p, path);
 	BOOST_CHECK(ret == -1);
 }
 
@@ -266,10 +266,10 @@ BOOST_FIXTURE_TEST_CASE(double_free_state, F)
 
 	cJSON_Delete(value);
 
-	int ret = remove_state_from_peer(p, path);
+	int ret = remove_state_or_method_from_peer(p, path);
 	BOOST_CHECK(ret == 0);
 
-	ret = remove_state_from_peer(p, path);
+	ret = remove_state_or_method_from_peer(p, path);
 	BOOST_CHECK(ret == -1);
 }
 
