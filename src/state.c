@@ -85,7 +85,7 @@ alloc_fetch_table_failed:
 	return NULL;
 }
 
-static void free_state(struct state_or_method *s)
+static void free_state_or_method(struct state_or_method *s)
 {
 	if (s->value != NULL) {
 		cJSON_Delete(s->value);
@@ -212,14 +212,14 @@ cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON
 	if (unlikely(find_fetchers_for_state(s) != 0)) {
 		cJSON *error = create_internal_error(
 		    p, "reason", "Can't notify fetching peer");
-		free_state(s);
+		free_state_or_method(s);
 		return error;
 	}
 
 	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "state table full");
-		free_state(s);
+		free_state_or_method(s);
 		return error;
 	}
 
@@ -233,7 +233,7 @@ static void remove_state_or_method(struct state_or_method *s)
 	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
 	state_table_remove(s->path);
-	free_state(s);
+	free_state_or_method(s);
 }
 
 int remove_state_or_method_from_peer(struct peer *p, const char *path)
