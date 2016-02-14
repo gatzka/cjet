@@ -358,6 +358,20 @@ BOOST_FIXTURE_TEST_CASE(change_wrong_path, F)
 	cJSON_Delete(error);
 }
 
+BOOST_FIXTURE_TEST_CASE(change_on_method, F)
+{
+	const char path[] = "/foo/bar";
+	cJSON *error = add_state_or_method_to_peer(p, path, NULL);
+	BOOST_CHECK(error == NULL);
+
+	cJSON *value = cJSON_CreateNumber(1234);
+	error = change_state(p, path, value);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(value);
+	check_invalid_params(error);
+	cJSON_Delete(error);
+}
+
 BOOST_FIXTURE_TEST_CASE(set, F)
 {
 	const char path[] = "/foo/bar/";
