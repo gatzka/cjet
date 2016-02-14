@@ -71,6 +71,25 @@ static enum event get_event_from_json(cJSON *json)
 	return UNKNOWN_EVENT;
 }
 
+static void check_invalid_params(const cJSON *error)
+{
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	if (code != NULL) {
+		BOOST_CHECK(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == -32602);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	if (message != NULL) {
+		BOOST_CHECK(message->type == cJSON_String);
+		BOOST_CHECK(strcmp(message->valuestring, "Invalid params") == 0);
+	} else {
+		BOOST_FAIL("No message object!");
+	}
+}
+
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
@@ -414,4 +433,18 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 	error = remove_fetch_from_peer(fetch_peer_1, params);
 	BOOST_REQUIRE(error == NULL);
 	cJSON_Delete(params);
+}
+
+BOOST_FIXTURE_TEST_CASE(double_fetch, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_params("", "", "", "", 0);
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error == NULL);
+
+	error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
 }
