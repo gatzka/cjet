@@ -55,9 +55,6 @@ cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON
 int remove_state_or_method_from_peer(struct peer *p, const char *path);
 void remove_all_states_and_methods_from_peer(struct peer *p);
 
-int create_state_hashtable(void);
-void delete_state_hashtable(void);
-
 #ifdef __cplusplus
 }
 #endif
