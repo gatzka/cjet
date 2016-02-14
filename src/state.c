@@ -145,8 +145,8 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	if ((is_state && (unlikely(s->value == NULL))) ||
-	    (!is_state && unlikely(s->value != NULL))) {
+	if (unlikely((is_state && (s->value == NULL)) ||
+	    (!is_state && s->value != NULL))) {
 			error =
 			    create_invalid_params_error(p, "set on method / call on state not possible", path);
 			return error;
