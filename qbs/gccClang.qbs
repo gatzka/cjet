@@ -25,6 +25,7 @@
  */
 
 import qbs 1.0
+import 'versions.js' as Versions
 
 Product {
   name: "gccClang"
@@ -50,6 +51,11 @@ Product {
         flags.push("-fno-common");
         if (qbs.buildVariant === "release") {
           flags.push("-fno-asynchronous-unwind-tables");
+          var toolchain = qbs.toolchain[0];
+          var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+          if ((toolchain === "gcc") && (Versions.versionCompare(compilerVersion, "4.8") >= 0)) {
+            flags.push("-flto");
+          }
         }
       }
       return flags;
@@ -62,6 +68,12 @@ Product {
         flags.push("-Wl,--hash-style=gnu,--as-needed");
         if (qbs.buildVariant === "release") {
           flags.push("-Wl,-O2,--gc-sections,-s");
+
+          var toolchain = qbs.toolchain[0];
+          var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+          if ((toolchain === "gcc") && (Versions.versionCompare(compilerVersion, "4.8") >= 0)) {
+            flags.push("-flto");
+          }
         }
       }
       return flags;
