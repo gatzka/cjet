@@ -146,7 +146,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	if (unlikely(((what == STATE) && (s->value == NULL)) ||
-	    ((what == METHOD) && s->value != NULL))) {
+	    ((what == METHOD) && (s->value != NULL)))) {
 			error =
 			    create_invalid_params_error(p, "set on method / call on state not possible", path);
 			return error;
