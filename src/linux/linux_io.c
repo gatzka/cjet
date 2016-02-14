@@ -274,7 +274,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
 			 uint32_t msg_len_be, size_t already_written)
 {
 	size_t to_write;
-	uint32_t msg_len = ntohl(msg_len_be);
+	uint32_t msg_len = be32toh(msg_len_be);
 	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - p->to_write;
 	size_t bytes_to_copy =  (sizeof(msg_len_be) + msg_len) - already_written;
 
