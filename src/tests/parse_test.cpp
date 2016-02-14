@@ -129,7 +129,7 @@ extern "C" {
 		return NULL;
 	}
 
-	cJSON *set_state(struct peer *p, const char *path,
+	cJSON *set_or_call(struct peer *p, const char *path,
 		const cJSON *value, const cJSON *json_rpc, int is_state)
 	{
 		(void)p;

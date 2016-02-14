@@ -349,7 +349,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	cJSON *set_request = create_set_request("request1");
 	cJSON *new_value = get_value_from_request(set_request);
-	error = set_state(set_peer, path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
@@ -373,7 +373,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
 
 	cJSON *set_request = create_set_request("request1");
 	cJSON *new_value = get_value_from_request(set_request);
-	error = set_state(set_peer, "/foo/bar/", new_value, set_request, STATE);
+	error = set_or_call(set_peer, "/foo/bar/", new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error != NULL && error != (cJSON *)ROUTED_MESSAGE);
 
@@ -391,7 +391,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	cJSON *set_request = create_set_request(NULL);
 	cJSON *new_value = get_value_from_request(set_request);
 
-	error = set_state(set_peer, path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 }
@@ -414,7 +414,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 	cJSON_AddItemToObject(params, "value", new_value);
 	cJSON_AddItemToObject(set_request, "params", params);
 
-	error = set_state(set_peer, path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 
 	BOOST_CHECK(error != NULL && error != (cJSON *)ROUTED_MESSAGE);
@@ -431,7 +431,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 
 	cJSON *set_request = create_set_request(NULL);
 	cJSON *new_value = get_value_from_request(set_request);
-	error = set_state(set_peer, path, new_value, set_request, STATE);
+	error = set_or_call(set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
