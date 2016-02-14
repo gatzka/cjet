@@ -228,7 +228,7 @@ cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON
 	return NULL;
 }
 
-static void remove_state(struct state *s)
+static void remove_state_or_method(struct state *s)
 {
 	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
@@ -244,7 +244,7 @@ int remove_state_from_peer(struct peer *p, const char *path)
 	{
 		struct state *s = list_entry(item, struct state, state_list);
 		if (strcmp(s->path, path) == 0) {
-			remove_state(s);
+			remove_state_or_method(s);
 			return 0;
 		}
 	}
@@ -258,6 +258,6 @@ void remove_all_states_from_peer(struct peer *p)
 	list_for_each_safe(item, tmp, &p->state_list)
 	{
 		struct state *s = list_entry(item, struct state, state_list);
-		remove_state(s);
+		remove_state_or_method(s);
 	}
 }
