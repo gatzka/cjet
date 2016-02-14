@@ -118,41 +118,50 @@ int setup_routing_information(const struct peer *routing_peer,
 	if (unlikely(HASHTABLE_PUT(route_table, routing_peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON_Delete(id_copy);
+		log_peer_err(origin_peer, "Routing table full!\n");
+		return -1;
 	}
 	return 0;
 }
 
-static void format_and_send_response(struct peer *p, const cJSON *response)
+static int format_and_send_response(struct peer *p, const cJSON *response)
 {
 	char *rendered = cJSON_PrintUnformatted(response);
 	if (likely(rendered != NULL)) {
-		send_message(p, rendered, strlen(rendered));
+		int ret = send_message(p, rendered, strlen(rendered));
 		cJSON_free(rendered);
+		return ret;
 	} else {
 		log_peer_err(p, "Could not render JSON into a string!\n");
+		return -1;
 	}
 }
 
-static void send_routing_response(struct peer *p,
+static int send_routing_response(struct peer *p,
 	const cJSON *origin_request_id, const cJSON *response, const char *result_type)
 {
-	if (origin_request_id == NULL) {
-		return;
+	if (unlikely(origin_request_id == NULL)) {
+		return 0;
 	}
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
 	if (likely(response_copy != NULL)) {
 		cJSON *result_response =
 			create_result_response(p, origin_request_id, response_copy, result_type);
 		if (likely(result_response != NULL)) {
-			format_and_send_response(p, result_response);
+			int ret = format_and_send_response(p, result_response);
 			cJSON_Delete(result_response);
+			return ret;
 		} else {
 			log_peer_err(p, "Could not create %s response!\n", result_type);
 			cJSON_Delete(response_copy);
+			return -1;
 		}
 	} else {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "response_copy");
+		return -1;
 	}
+
+	return 0;
 }
 
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
@@ -173,7 +182,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
 		char *routed_id = val.vals[2];
-		send_routing_response(origin_peer, origin_request_id, response, result_type);
+		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
 		free(routed_id);
 	}
