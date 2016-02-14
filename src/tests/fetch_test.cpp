@@ -151,10 +151,18 @@ static cJSON *create_fetch_params(const char *path_equals_string, const char *pa
 		cJSON_AddStringToObject(path, "contains", path_contains);
 	}
 
-
 	if (ignore_case) {
 		cJSON_AddBoolToObject(root, "caseInsensitive", 1);
 	}
+
+	return root;
+}
+
+static cJSON *create_unfetch_params()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "id", "fetch_id_1");
 
 	return root;
 }
@@ -392,4 +400,18 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		BOOST_CHECK(fetch_peer_1_event == REMOVE_EVENT);
 		cJSON_Delete(params);
 	}
+}
+
+BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_params("", "", "", "", 0);
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error == NULL);
+	cJSON_Delete(params);
+
+	params = create_unfetch_params();
+	error = remove_fetch_from_peer(fetch_peer_1, params);
+	BOOST_REQUIRE(error == NULL);
+	cJSON_Delete(params);
 }
