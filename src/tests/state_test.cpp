@@ -60,7 +60,7 @@ extern "C" {
 
 	static bool notify_shall_fail = false;
 
-	int notify_fetchers(struct state *s, const char *event_name)
+	int notify_fetchers(struct state_or_method *s, const char *event_name)
 	{
 		(void)s;
 		(void)event_name;
@@ -71,7 +71,7 @@ extern "C" {
 		}
 	}
 
-	int find_fetchers_for_state(struct state *s)
+	int find_fetchers_for_state(struct state_or_method *s)
 	{
 		(void)s;
 		if (notify_shall_fail) {
@@ -92,9 +92,9 @@ extern "C" {
 	}
 }
 
-static struct state *get_state(const char *path)
+static struct state_or_method *get_state(const char *path)
 {
-	return (struct state *)state_table_get(path);
+	return (struct state_or_method *)state_table_get(path);
 }
 
 static cJSON *parse_send_buffer(void)
@@ -202,7 +202,7 @@ BOOST_FIXTURE_TEST_CASE(add_state, F)
 
 	cJSON_Delete(value);
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 }
 
@@ -219,7 +219,7 @@ BOOST_FIXTURE_TEST_CASE(add_state_notify_fail, F)
 	cJSON_Delete(value);
 	cJSON_Delete(error);
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s == NULL);
 }
 
@@ -286,7 +286,7 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(new_value);
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == 4321);
 }
 
@@ -305,7 +305,7 @@ BOOST_FIXTURE_TEST_CASE(change_notify_fail, F)
 	cJSON_Delete(new_value);
 	cJSON_Delete(error);
 
-	struct state *s = get_state(path);
+	struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == 4321);
 }
 

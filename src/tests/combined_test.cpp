@@ -177,9 +177,9 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 	cJSON_Delete(message);
 }
 
-static struct state *get_state(const char *path)
+static struct state_or_method *get_state(const char *path)
 {
-	return (struct state *)state_table_get(path);
+	return (struct state_or_method *)state_table_get(path);
 }
 
 extern "C" {
@@ -302,7 +302,7 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 
 	cJSON_Delete(value);
 
-	const struct state *s = get_state(path);
+	const struct state_or_method *s = get_state(path);
 	BOOST_CHECK(s->value->valueint == state_value);
 
 	struct fetch *f = NULL;

@@ -296,7 +296,7 @@ static cJSON *add_matchers(const struct peer *p, struct fetch *f, const cJSON *p
 	return NULL;
 }
 
-static int state_matches(struct state *s, struct fetch *f)
+static int state_matches(struct state_or_method *s, struct fetch *f)
 {
 	if (f->matcher[0].match_function == NULL) {
 		/*
@@ -318,7 +318,7 @@ static int state_matches(struct state *s, struct fetch *f)
 	return 1;
 }
 
-static int add_fetch_to_state(struct state *s, struct fetch *f)
+static int add_fetch_to_state(struct state_or_method *s, struct fetch *f)
 {
 	for (unsigned int i = 0; i < s->fetch_table_size; i++) {
 		if (s->fetcher_table[i] == NULL) {
@@ -338,7 +338,7 @@ static int add_fetch_to_state(struct state *s, struct fetch *f)
 	return add_fetch_to_state(s, f);
 }
 
-static int notify_fetching_peer(struct state *s, struct fetch *f,
+static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 	const char *event_name)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -399,7 +399,7 @@ static int notify_fetching_peer(struct state *s, struct fetch *f,
 	return 0;
 }
 
-static int add_fetch_to_state_and_notify(const struct peer *p, struct state *s, struct fetch *f)
+static int add_fetch_to_state_and_notify(const struct peer *p, struct state_or_method *s, struct fetch *f)
 {
 	if (state_matches(s, f)) {
 		if (unlikely(add_fetch_to_state(s, f) != 0)) {
@@ -419,7 +419,7 @@ static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, state_list);
+		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
 		if (unlikely(add_fetch_to_state_and_notify(p, s, f) != 0)) {
 			return -1;
 		}
@@ -427,7 +427,7 @@ static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
 	return 0;
 }
 
-int notify_fetchers(struct state *s, const char *event_name)
+int notify_fetchers(struct state_or_method *s, const char *event_name)
 {
 	for (unsigned int i = 0; i < s->fetch_table_size; i++) {
 		struct fetch *f = s->fetcher_table[i];
@@ -454,7 +454,7 @@ cJSON *add_fetch_to_states(struct fetch *f)
 	return NULL;
 }
 
-static void remove_fetch_from_state(struct state *s, struct fetch *f)
+static void remove_fetch_from_state(struct state_or_method *s, struct fetch *f)
 {
 	for (unsigned int i = 0; i < s->fetch_table_size; ++i) {
 		if (s->fetcher_table[i] == f) {
@@ -468,7 +468,7 @@ static void rem_fetch_from_states_in_peer(struct peer *p, struct fetch *f)
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list) {
-		struct state *s = list_entry(item, struct state, state_list);
+		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
 		remove_fetch_from_state(s, f);
 	}
 }
@@ -485,7 +485,7 @@ static void remove_fetch_from_states(struct fetch *f)
 }
 
 static int find_fetchers_for_state_in_peer(const struct peer *p,
-	struct state *s) {
+	struct state_or_method *s) {
 
 	struct list_head *item;
 	struct list_head *tmp;
@@ -498,7 +498,7 @@ static int find_fetchers_for_state_in_peer(const struct peer *p,
 	return 0;
 }
 
-int find_fetchers_for_state(struct state *s)
+int find_fetchers_for_state(struct state_or_method *s)
 {
 	int ret = 0;
 	struct list_head *item;

@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-struct state {
+struct state_or_method {
 	struct list_head state_list;
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */

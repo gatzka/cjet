@@ -40,10 +40,10 @@
 #include "table.h"
 #include "uuid.h"
 
-static struct state *alloc_state(const char *path, const cJSON *value_object,
+static struct state_or_method *alloc_state(const char *path, const cJSON *value_object,
 				 struct peer *p, double timeout)
 {
-	struct state *s = calloc(1, sizeof(*s));
+	struct state_or_method *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
 			     "state");
@@ -85,7 +85,7 @@ alloc_fetch_table_failed:
 	return NULL;
 }
 
-static void free_state(struct state *s)
+static void free_state(struct state_or_method *s)
 {
 	if (s->value != NULL) {
 		cJSON_Delete(s->value);
@@ -97,7 +97,7 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 {
-	struct state *s = state_table_get(path);
+	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not exists", path);
@@ -133,7 +133,7 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 		 const cJSON *json_rpc, int is_state)
 {
 	cJSON *error;
-	struct state *s = state_table_get(path);
+	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
 		return error;
@@ -197,7 +197,7 @@ delete_json:
 
 cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value)
 {
-	struct state *s = state_table_get(path);
+	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
@@ -228,7 +228,7 @@ cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON
 	return NULL;
 }
 
-static void remove_state_or_method(struct state *s)
+static void remove_state_or_method(struct state_or_method *s)
 {
 	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
@@ -242,7 +242,7 @@ int remove_state_or_method_from_peer(struct peer *p, const char *path)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list)
 	{
-		struct state *s = list_entry(item, struct state, state_list);
+		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
 		if (strcmp(s->path, path) == 0) {
 			remove_state_or_method(s);
 			return 0;
@@ -257,7 +257,7 @@ void remove_all_states_and_methods_from_peer(struct peer *p)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list)
 	{
-		struct state *s = list_entry(item, struct state, state_list);
+		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
 		remove_state_or_method(s);
 	}
 }
