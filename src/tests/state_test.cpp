@@ -159,16 +159,19 @@ struct F {
 		notify_shall_fail = false;
 		state_hashtable_create();
 		p = alloc_peer(-1);
+		owner_peer = alloc_peer(-1);
 		set_peer = alloc_peer(-1);
 	}
 	~F()
 	{
 		free_peer(set_peer);
+		free_peer(owner_peer);
 		free_peer(p);
 		state_hashtable_delete();
 	}
 
 	struct peer *p;
+	struct peer *owner_peer;
 	struct peer *set_peer;
 };
 
@@ -189,6 +192,22 @@ static void check_invalid_params(const cJSON *error)
 	} else {
 		BOOST_FAIL("No message object!");
 	}
+}
+
+BOOST_FIXTURE_TEST_CASE(add_state_existing_method, F)
+{
+	const char path[] = "/foo/bar";
+	int state_value = 12345;
+
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL);
+	BOOST_CHECK(error == NULL);
+
+	cJSON *value = cJSON_CreateNumber(state_value);
+	error = add_state_or_method_to_peer(owner_peer, path, value);
+	cJSON_Delete(value);
+	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
+	cJSON_Delete(error);
 }
 
 BOOST_FIXTURE_TEST_CASE(add_state, F)
