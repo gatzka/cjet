@@ -57,12 +57,12 @@ SET(CJET_FILES
         fetch.c
         info.c
         json/cJSON.c
-        method.c
         parse.c
         peer.c
         response.c
         router.c
         state.c
+        table.c
         uuid.c
 )
 

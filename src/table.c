@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,38 +24,49 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_CONFIG_H
-#define CJET_CONFIG_H
+#include "compiler.h"
+#include "generated/cjet_config.h"
+#include "hashtable.h"
+#include "table.h"
 
-enum {CONFIG_SERVER_PORT = ${CONFIG_SERVER_PORT}};
-enum {CONFIG_LISTEN_BACKLOG = ${CONFIG_LISTEN_BACKLOG}};
+DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
 
-enum {CONFIG_CHECK_JSON_LENGTH = 0};
+static struct hashtable_string *state_hashtable = NULL;
 
-/*
- * It is somehow beneficial if this size is 32 bit aligned.
- */
-enum {CONFIG_MAX_MESSAGE_SIZE = ${CONFIG_MAX_MESSAGE_SIZE}};
-enum {CONFIG_MAX_WRITE_BUFFER_SIZE = ${CONFIG_MAX_WRITE_BUFFER_SIZE}};
+int state_hashtable_create(void)
+{
+	state_hashtable = HASHTABLE_CREATE(state_table);
+	if (unlikely(state_hashtable == NULL)) {
+		return -1;
+	}
+	return 0;
+}
 
-/*
- * This parameter configures the maximum amount of states that can be
- * handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
- */
-enum {CONFIG_STATE_TABLE_ORDER = ${CONFIG_STATE_TABLE_ORDER}};
+void state_hashtable_delete(void)
+{
+	HASHTABLE_DELETE(state_table, state_hashtable);
+}
 
-/*
- * This parameter configures the maximum ongoing routed messages per
- * peer.
- */
-enum {CONFIG_ROUTING_TABLE_ORDER = ${CONFIG_ROUTING_TABLE_ORDER}};
+int state_table_put(const char *path, void *value)
+{
+	struct value_state_table new_val;
+	new_val.vals[0] = value;
+	return HASHTABLE_PUT(state_table, state_hashtable, path, new_val, NULL);
+}
 
-enum {CONFIG_INITIAL_FETCH_TABLE_SIZE = ${CONFIG_INITIAL_FETCH_TABLE_SIZE}};
+void *state_table_get(const char *path)
+{
+	struct value_state_table val;
+	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
+	if (ret == HASHTABLE_SUCCESS) {
+		return val.vals[0];
+	} else {
+		return NULL;
+	}
+}
 
-/*
- * This parameter configures the default timeout of routed messages if
- * not specified otherwise.
- */
-static const double CONFIG_ROUTED_MESSAGES_TIMEOUT = ${CONFIG_ROUTED_MESSAGES_TIMEOUT};
-
-#endif
+void state_table_remove(const char *path)
+{
+	int ret = HASHTABLE_REMOVE(state_table, state_hashtable, path, NULL);
+	if (ret == 0) {}
+}

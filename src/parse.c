@@ -35,7 +35,6 @@
 #include "generated/cjet_config.h"
 #include "info.h"
 #include "json/cJSON.h"
-#include "method.h"
 #include "parse.h"
 #include "peer.h"
 #include "response.h"
@@ -146,7 +145,7 @@ static int process_set(const cJSON *json_rpc, struct peer *p)
 		error = create_invalid_params_error(p, "reason", "no value given");
 		return possibly_send_response(json_rpc, error, p);
 	}
-	error = set_state(p, path, value, json_rpc);
+	error = set_state(p, path, value, json_rpc, STATE);
 	return possibly_send_response(json_rpc, error, p);
 }
 
@@ -165,7 +164,7 @@ static int process_call(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 	const cJSON *args = cJSON_GetObjectItem(params, "args");
-	error = call_method(p, path, args, json_rpc);
+	error = set_state(p, path, args, json_rpc, METHOD);
 	return possibly_send_response(json_rpc, error, p);
 }
 
@@ -185,11 +184,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		error = add_method_to_peer(p, path);
-	} else {
-		error = add_state_to_peer(p, path, value);
-	}
+	error = add_state_to_peer(p, path, value);
 
 	return possibly_send_response(json_rpc, error, p);
 }
@@ -213,7 +208,6 @@ static int process_remove(const cJSON *json_rpc, struct peer *p)
 	if (ret == 0) {
 		return possibly_send_response(json_rpc, NULL, p);
 	}
-	ret = remove_method_from_peer(p, path);
 	if (ret != 0) {
 		error = create_invalid_params_error(p, "not exists", path);
 	}

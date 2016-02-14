@@ -29,7 +29,6 @@
 
 #include "cjet_io.h"
 #include "compiler.h"
-#include "generated/cjet_config.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
@@ -38,35 +37,12 @@
 #include "response.h"
 #include "router.h"
 #include "state.h"
+#include "table.h"
 #include "uuid.h"
-
-DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
-
-static struct hashtable_string *state_hashtable = NULL;
-
-int create_state_hashtable(void)
-{
-	state_hashtable = HASHTABLE_CREATE(state_table);
-	if (unlikely(state_hashtable == NULL)) {
-		return -1;
-	}
-	return 0;
-}
-
-void delete_state_hashtable(void)
-{
-	HASHTABLE_DELETE(state_table, state_hashtable);
-}
 
 struct state *get_state(const char *path)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (ret == HASHTABLE_SUCCESS) {
-		return val.vals[0];
-	} else {
-		return NULL;
-	}
+	return state_table_get(path);
 }
 
 static struct state *alloc_state(const char *path, const cJSON *value_object,
@@ -92,12 +68,14 @@ static struct state *alloc_state(const char *path, const cJSON *value_object,
 			     "path");
 		goto alloc_path_failed;
 	}
-	cJSON *value_copy = cJSON_Duplicate(value_object, 1);
-	if (unlikely(value_copy == NULL)) {
-		log_peer_err(p, "Could not copy value object!\n");
-		goto value_copy_failed;
+	if (value_object != NULL) {
+		cJSON *value_copy = cJSON_Duplicate(value_object, 1);
+		if (unlikely(value_copy == NULL)) {
+			log_peer_err(p, "Could not copy value object!\n");
+			goto value_copy_failed;
+		}
+		s->value = value_copy;
 	}
-	s->value = value_copy;
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
@@ -114,7 +92,9 @@ alloc_fetch_table_failed:
 
 static void free_state(struct state *s)
 {
-	cJSON_Delete(s->value);
+	if (s->value != NULL) {
+		cJSON_Delete(s->value);
+	}
 	free(s->path);
 	free(s->fetcher_table);
 	free(s);
@@ -122,17 +102,20 @@ static void free_state(struct state *s)
 
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
-	struct state *s = val.vals[0];
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
 		    create_invalid_params_error(p, "not owner of state", path);
+		return error;
+	}
+	if (unlikely(s->value == NULL)) {
+		cJSON *error =
+		    create_invalid_params_error(p, "change on method not possible", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
@@ -152,16 +135,27 @@ cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 }
 
 cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
-		 const cJSON *json_rpc)
+		 const cJSON *json_rpc, int is_state)
 {
 	cJSON *error;
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
-	struct state *s = val.vals[0];
+
+	if (unlikely(s->peer == p)) {
+		error = create_invalid_params_error(
+			p, "owner of method shall not set/call a state/method via jet", path);
+		return error;
+	}
+
+	if ((is_state && (unlikely(s->value == NULL))) ||
+	    (!is_state && unlikely(s->value != NULL))) {
+			error =
+			    create_invalid_params_error(p, "set on method / call on state not possible", path);
+			return error;
+	}
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
 	if ((origin_request_id != NULL) &&
@@ -173,13 +167,13 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	int routed_request_id = get_routed_request_uuid();
-	cJSON *routed_message =
-	    create_routed_message(p, path, "value", value, routed_request_id);
+	cJSON *routed_message = create_routed_message(p, path, is_state, value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 		    p, "reason", "could not create routed JSON object");
 		return error;
 	}
+
 	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
 					       routed_request_id) != 0)) {
 		error = create_internal_error(
@@ -200,6 +194,7 @@ cJSON *set_state(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	free(rendered_message);
+
 delete_json:
 	cJSON_Delete(routed_message);
 	return error;
@@ -207,14 +202,12 @@ delete_json:
 
 cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 {
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (unlikely(ret == HASHTABLE_SUCCESS)) {
+	struct state *s = state_table_get(path);
+	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	struct state *s =
-	    alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "not enough memory");
@@ -228,10 +221,7 @@ cJSON *add_state_to_peer(struct peer *p, const char *path, const cJSON *value)
 		return error;
 	}
 
-	struct value_state_table new_val;
-	new_val.vals[0] = s;
-	if (unlikely(HASHTABLE_PUT(state_table, state_hashtable, s->path,
-				   new_val, NULL) != HASHTABLE_SUCCESS)) {
+	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "state table full");
 		free_state(s);
@@ -247,7 +237,7 @@ static void remove_state(struct state *s)
 {
 	notify_fetchers(s, "remove");
 	list_del(&s->state_list);
-	HASHTABLE_REMOVE(state_table, state_hashtable, s->path, NULL);
+	state_table_remove(s->path);
 	free_state(s);
 }
 

@@ -158,12 +158,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
-	../linux/jet_string.c
 	../json/cJSON.c
+	../linux/jet_string.c
+	../peer.c
 	../response.c
 	../router.c
 	../state.c
-	../peer.c
+	../table.c
 	../uuid.c
 	log.cpp
 	state_test.cpp
@@ -175,12 +176,14 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(METHOD_TEST
-	../linux/jet_string.c
+	../fetch.c
 	../json/cJSON.c
+	../linux/jet_string.c
+	../peer.c
 	../response.c
 	../router.c
-	../method.c
-	../peer.c
+	../state.c
+	../table.c
 	../uuid.c
 	log.cpp
 	method_test.cpp
@@ -193,13 +196,13 @@ TARGET_LINK_LIBRARIES(
 
 SET(COMBINED_TEST
 	../fetch.c
-	../linux/jet_string.c
 	../json/cJSON.c
-	../method.c
+	../linux/jet_string.c
+	../peer.c
 	../response.c
 	../router.c
 	../state.c
-	../peer.c
+	../table.c
 	../uuid.c
 	log.cpp
 	combined_test.cpp
@@ -212,12 +215,13 @@ TARGET_LINK_LIBRARIES(
 
 SET(FETCH_TEST
 	../fetch.c
-	../linux/jet_string.c
 	../json/cJSON.c
+	../linux/jet_string.c
+	../peer.c
 	../response.c
 	../router.c
 	../state.c
-	../peer.c
+	../table.c
 	../uuid.c
 	log.cpp
 	fetch_test.cpp

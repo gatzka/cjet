@@ -130,12 +130,13 @@ extern "C" {
 	}
 
 	cJSON *set_state(struct peer *p, const char *path,
-		const cJSON *value, const cJSON *json_rpc)
+		const cJSON *value, const cJSON *json_rpc, int is_state)
 	{
 		(void)p;
 		(void)path;
 		(void)value;
 		(void)json_rpc;
+		(void)is_state;
 		return NULL;
 	}
 

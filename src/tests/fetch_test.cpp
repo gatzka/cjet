@@ -34,6 +34,7 @@
 #include "peer.h"
 #include "router.h"
 #include "state.h"
+#include "table.h"
 
 enum event {
 	UNKNOWN_EVENT,
@@ -105,7 +106,7 @@ extern "C" {
 struct F {
 	F()
 	{
-		create_state_hashtable();
+		state_hashtable_create();
 		p = alloc_peer(-1);
 		fetch_peer_1 = alloc_peer(-1);
 		message_for_wrong_peer = false;
@@ -115,7 +116,7 @@ struct F {
 	{
 		free_peer(fetch_peer_1);
 		free_peer(p);
-		delete_state_hashtable();
+		state_hashtable_delete();
 	}
 
 	struct peer *p;

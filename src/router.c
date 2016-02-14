@@ -49,7 +49,7 @@ void delete_routing_table(struct peer *p)
 	HASHTABLE_DELETE(route_table, p->routing_table);
 }
 
-cJSON *create_routed_message(const struct peer *p, const char *path, const char *name,
+cJSON *create_routed_message(const struct peer *p, const char *path, int is_state,
 	const cJSON *value, int id)
 {
 	cJSON *message = cJSON_CreateObject();
@@ -79,8 +79,7 @@ cJSON *create_routed_message(const struct peer *p, const char *path, const char 
 		goto error;
 	}
 
-
-	if (name == NULL) {
+	if (!is_state) {
 		cJSON_AddItemToObject(message, "params", value_copy);
 	} else {
 		cJSON *params = cJSON_CreateObject();
@@ -88,8 +87,7 @@ cJSON *create_routed_message(const struct peer *p, const char *path, const char 
 			goto error;
 		}
 		cJSON_AddItemToObject(message, "params", params);
-
-		cJSON_AddItemToObject(params, name, value_copy);
+		cJSON_AddItemToObject(params, "value", value_copy);
 	}
 
 	return message;

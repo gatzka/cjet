@@ -49,11 +49,11 @@ SET(READBUFFER_TEST
 	../../fetch.c
 	../../json/cJSON.c
 	../../linux/jet_string.c
-	../../method.c
 	../../peer.c
 	../../response.c
 	../../router.c
 	../../state.c
+	../../table.c
 	../../uuid.c
 	../linux_io.c
 	log.cpp

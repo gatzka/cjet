@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,30 +24,19 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HANDLE_METHOD_H
-#define CJET_HANDLE_METHOD_H
-
-#include "json/cJSON.h"
-#include "list.h"
-#include "peer.h"
+#ifndef CJET_STATE_TABLE_H
+#define CJET_STATE_TABLE_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct method {
-	struct list_head method_list;
-	char *path;
-	struct peer *peer; // The peer the method belongs to
-};
+int state_hashtable_create(void);
+void state_hashtable_delete(void);
+int state_table_put(const char *path, void *value);
+void *state_table_get(const char *path);
+void state_table_remove(const char *path);
 
-int create_method_hashtable(void);
-void delete_method_hashtable(void);
-cJSON *add_method_to_peer(struct peer *p, const char *path);
-int remove_method_from_peer(struct peer *p, const char *path);
-void remove_all_methods_from_peer(struct peer *p);
-cJSON *call_method(struct peer *p, const char *path,
-	const cJSON *args, const cJSON *json_rpc);
 #ifdef __cplusplus
 }
 #endif
