@@ -39,6 +39,7 @@ char *get_routed_request_uuid(struct peer *p, const cJSON *origin_request_id)
 	uintptr_t peer = (uintptr_t)p;
 	char *buf;
 	int ret;
+	uuid++;
 	if (origin_request_id != NULL) {
 		if (origin_request_id->type == cJSON_String) {
 			ret = asprintf(&buf, "uuid: %s_%x_%016"PRIxPTR"\n", origin_request_id->valuestring, uuid, peer);
@@ -53,5 +54,4 @@ char *get_routed_request_uuid(struct peer *p, const cJSON *origin_request_id)
 	} else {
 		return buf;
 	}
-	uuid++;
 }
