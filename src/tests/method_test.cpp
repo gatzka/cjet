@@ -233,6 +233,17 @@ BOOST_FIXTURE_TEST_CASE(call_not_by_owner, F)
 	}
 }
 
+BOOST_FIXTURE_TEST_CASE(correct_call, F)
+{
+	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL);
+	BOOST_CHECK(error == NULL);
+
+	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
+	error = set_or_call(call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	cJSON_Delete(call_json_rpc);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+}
+
 BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
 	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL);
