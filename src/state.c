@@ -130,7 +130,7 @@ cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 }
 
 cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
-		 const cJSON *json_rpc, int is_state)
+		 const cJSON *json_rpc, enum type what)
 {
 	cJSON *error;
 	struct state_or_method *s = state_table_get(path);
@@ -145,8 +145,8 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	if (unlikely((is_state && (s->value == NULL)) ||
-	    (!is_state && s->value != NULL))) {
+	if (unlikely(((what == STATE) && (s->value == NULL)) ||
+	    ((what == METHOD) && s->value != NULL))) {
 			error =
 			    create_invalid_params_error(p, "set on method / call on state not possible", path);
 			return error;
@@ -162,7 +162,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	int routed_request_id = get_routed_request_uuid();
-	cJSON *routed_message = create_routed_message(p, path, is_state, value, routed_request_id);
+	cJSON *routed_message = create_routed_message(p, path, what, value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 		    p, "reason", "could not create routed JSON object");

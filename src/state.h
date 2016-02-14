@@ -46,12 +46,11 @@ struct state_or_method {
 	unsigned int fetch_table_size;
 };
 
-static const int STATE = 1;
-static const int METHOD =  0;
+enum type { STATE, METHOD };
 
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
 cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
-	const cJSON *json_rpc, int is_state);
+	const cJSON *json_rpc, enum type what);
 cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value);
 int remove_state_or_method_from_peer(struct peer *p, const char *path);
 void remove_all_states_and_methods_from_peer(struct peer *p);
