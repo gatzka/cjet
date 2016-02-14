@@ -177,6 +177,11 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 	cJSON_Delete(message);
 }
 
+static struct state *get_state(const char *path)
+{
+	return (struct state *)state_table_get(path);
+}
+
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{

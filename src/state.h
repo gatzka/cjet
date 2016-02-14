@@ -58,7 +58,6 @@ void remove_all_states_from_peer(struct peer *p);
 
 int create_state_hashtable(void);
 void delete_state_hashtable(void);
-struct state *get_state(const char *path);
 
 #ifdef __cplusplus
 }

@@ -92,6 +92,11 @@ extern "C" {
 	}
 }
 
+static struct state *get_state(const char *path)
+{
+	return (struct state *)state_table_get(path);
+}
+
 static cJSON *parse_send_buffer(void)
 {
 	char *read_ptr = send_buffer;

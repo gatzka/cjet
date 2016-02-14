@@ -40,11 +40,6 @@
 #include "table.h"
 #include "uuid.h"
 
-struct state *get_state(const char *path)
-{
-	return state_table_get(path);
-}
-
 static struct state *alloc_state(const char *path, const cJSON *value_object,
 				 struct peer *p, double timeout)
 {

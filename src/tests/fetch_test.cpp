@@ -122,7 +122,10 @@ struct F {
 	struct peer *p;
 };
 
-
+static struct state *get_state(const char *path)
+{
+	return (struct state *)state_table_get(path);
+}
 
 static cJSON *create_fetch_params(const char *path_equals_string, const char *path_startsWith_string, const char *path_endsWith_string, const char *path_contains, int ignore_case)
 {
