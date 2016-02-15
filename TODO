@@ -1,4 +1,0 @@
-- fetcher/setter search with radix/prefix/patricia trie
-- probably HAT-trie
-- write unit test to ensure that when performing a fetch the add events come before the fetch response.
-- implement jet.FetchOnly (read-only states, set not allowed)
