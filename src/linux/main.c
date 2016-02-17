@@ -39,13 +39,18 @@ int main(int argc, char **argv)
 {
 	int run_foreground = 0;
 	int c;
-	while ((c = getopt (argc, argv, "f")) != -1) {
+	const char *user_name = NULL;
+
+	while ((c = getopt (argc, argv, "fu:")) != -1) {
 		switch (c) {
 			case 'f':
 				run_foreground = 1;
 				break;
+			case 'u':
+				user_name = optarg;
+				break;
 			case '?':
-				fprintf(stderr, "Usage: %s [-f]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-f] [-u username]\n", argv[0]);
 				return EXIT_FAILURE;
 				break;
 		}
@@ -63,7 +68,7 @@ int main(int argc, char **argv)
 	}
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io() < 0) {
+	if (run_io(user_name) < 0) {
 		goto run_io_failed;
 	}
 	log_info("%s stopped", CJET_NAME);

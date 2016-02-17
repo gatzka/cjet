@@ -38,7 +38,7 @@ extern "C" {
 #define IO_ERROR -3
 #define IO_TOOMUCHDATA -4
 
-int run_io(void);
+int run_io(const char *user_name);
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
 int handle_all_peer_operations(struct peer *p);

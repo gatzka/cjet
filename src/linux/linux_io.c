@@ -29,6 +29,7 @@
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <pwd.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/epoll.h>
@@ -556,7 +557,25 @@ static int handle_events(int num_events, struct epoll_event *events,
 	return 0;
 }
 
-int run_io(void)
+static int drop_privileges(const char *user_name)
+{
+	struct passwd *passwd = getpwnam(user_name);
+	if (passwd == NULL) {
+		log_err("user name \"%s\" not available!\n", user_name);
+		return -1;
+	}
+	if (setgid(passwd->pw_gid) == -1) {
+		log_err("Can't set process' gid to gid of \"%s\"!\n", user_name);
+		return -1;
+	}
+	if (setuid(passwd->pw_uid) == -1) {
+		log_err("Can't set process' uid to uid of \"%s\"!\n", user_name);
+		return -1;
+	}
+	return 0;
+}
+
+int run_io(const char *user_name)
 {
 	int ret = 0;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
@@ -572,6 +591,11 @@ int run_io(void)
 
 	struct peer *listen_server = setup_listen_socket();
 	if (listen_server == NULL) {
+		go_ahead = 0;
+		ret = -1;
+	}
+
+	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
 	}
