@@ -27,7 +27,7 @@ ADD_DEFINITIONS(-D_GNU_SOURCE)
 
 SET(WARN_SWITCHES "-Wall -Werror")
 
-SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage")
+SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage -std=c++11")
 SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -ggdb --coverage")
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
@@ -214,10 +214,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(FETCH_TEST
+	../config.c
 	../fetch.c
+	../info.c
 	../json/cJSON.c
 	../linux/jet_string.c
 	../linux/uuid.c
+	../parse.c
 	../peer.c
 	../response.c
 	../router.c
