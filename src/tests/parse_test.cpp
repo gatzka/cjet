@@ -518,6 +518,16 @@ static cJSON *create_correct_set_method()
 	return root;
 }
 
+static cJSON *create_set_without_params()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "set");
+
+	return root;
+}
+
 static cJSON *create_set_without_path()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -944,6 +954,16 @@ BOOST_FIXTURE_TEST_CASE(correct_set, F)
 BOOST_FIXTURE_TEST_CASE(set_without_path, F)
 {
 	cJSON *json = create_set_without_path();
+	char *unformatted_json = cJSON_PrintUnformatted(json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_without_params, F)
+{
+	cJSON *json = create_set_without_params();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
 	cJSON_free(unformatted_json);
