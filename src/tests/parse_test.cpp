@@ -312,6 +312,42 @@ static cJSON *create_add_without_path()
 	return root;
 }
 
+static cJSON *create_add_state_with_fetchonly(bool fetch_only)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "add");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddNumberToObject(params, "value", 123);
+	if (fetch_only) {
+		cJSON_AddTrueToObject(params, "fetchOnly");
+	} else {
+		cJSON_AddFalseToObject(params, "fetchOnly");
+	}
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
+static cJSON *create_add_state_with_illegal_fetchonly()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddStringToObject(root, "method", "add");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", "/foo/bar/state/");
+	cJSON_AddNumberToObject(params, "value", 123);
+	cJSON_AddNumberToObject(params, "fetchOnly", 123);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
 static cJSON *create_correct_remove(const char *what)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -649,6 +685,37 @@ BOOST_AUTO_TEST_CASE(add_without_path_test)
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(add_with_fetchonly_true, F)
+{
+	F f;
+	cJSON *correct_json = create_add_state_with_fetchonly(true);
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(add_with_fetchonly_false, F)
+{
+	cJSON *correct_json = create_add_state_with_fetchonly(false);
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+	BOOST_CHECK(ret == 0);
+}
+
+BOOST_FIXTURE_TEST_CASE(add_with_illegal_fetchonly_false, F)
+{
+	cJSON *correct_json = create_add_state_with_illegal_fetchonly();
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
 }
 
