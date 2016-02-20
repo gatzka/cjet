@@ -359,14 +359,10 @@ static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 	}
 	cJSON_AddItemToObject(root, "params", param);
 
-	if (s->value != NULL) {
-		cJSON *value = cJSON_Duplicate(s->value, 1);
-		if (unlikely(value == NULL)) {
-			cJSON_Delete(root);
-			return -1;
-		}
-		cJSON_AddItemToObject(param, "value", value);
+	if (state_is_fetch_only(s)) {
+		cJSON_AddTrueToObject(param, "fetchOnly");
 	}
+
 	cJSON *path = cJSON_CreateString(s->path);
 	if (unlikely(path == NULL)) {
 		cJSON_Delete(root);
@@ -380,6 +376,15 @@ static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 		return -1;
 	}
 	cJSON_AddItemToObject(param, "event", event);
+
+	if (s->value != NULL) {
+		cJSON *value = cJSON_Duplicate(s->value, 1);
+		if (unlikely(value == NULL)) {
+			cJSON_Delete(root);
+			return -1;
+		}
+		cJSON_AddItemToObject(param, "value", value);
+	}
 
 	char *rendered_message = cJSON_PrintUnformatted(root);
 	if (unlikely(rendered_message == NULL)) {
