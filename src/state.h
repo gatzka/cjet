@@ -27,6 +27,8 @@
 #ifndef CJET_HANDLE_STATE_H
 #define CJET_HANDLE_STATE_H
 
+#include <stdbool.h>
+
 #include "fetch.h"
 #include "json/cJSON.h"
 #include "list.h"
@@ -49,6 +51,9 @@ struct state_or_method {
 
 enum type { STATE, METHOD };
 
+static const int FETCH_ONLY_FLAG = 0x01;
+
+bool state_is_fetch_only(struct state_or_method *s);
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
 cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	const cJSON *json_rpc, enum type what);

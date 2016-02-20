@@ -42,8 +42,6 @@
 #include "router.h"
 #include "state.h"
 
-static const int FETCH_ONLY_FLAG = 0x01;
-
 static const char *get_path_from_params(const struct peer *p, const cJSON *params, cJSON **err)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");

@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -94,6 +95,15 @@ static void free_state_or_method(struct state_or_method *s)
 	free(s->path);
 	free(s->fetcher_table);
 	free(s);
+}
+
+bool state_is_fetch_only(struct state_or_method *s)
+{
+	if ((s->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
