@@ -929,6 +929,7 @@ BOOST_FIXTURE_TEST_CASE(change_without_path, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 BOOST_FIXTURE_TEST_CASE(change_without_value, F)
@@ -939,6 +940,7 @@ BOOST_FIXTURE_TEST_CASE(change_without_value, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 BOOST_FIXTURE_TEST_CASE(correct_set, F)
@@ -959,6 +961,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_path, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 BOOST_FIXTURE_TEST_CASE(set_without_params, F)
@@ -969,6 +972,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_params, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 /*
@@ -993,6 +997,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_value, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
+	check_invalid_params_error();
 }
 
 BOOST_FIXTURE_TEST_CASE(correct_info, F)
