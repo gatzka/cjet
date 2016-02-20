@@ -52,7 +52,6 @@ StaticLibrary {
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
     cpp.cLanguageVersion: "c99"
-    cpp.cxxLanguageVersion: "c++11"
   	cpp.cFlags: [
   	  "--coverage",
   	  "-fprofile-arcs",

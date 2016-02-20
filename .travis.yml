@@ -4,6 +4,8 @@ branches:
   except:
     - /^feature.*$/
 
+sudo: false
+
 env:
   global:
    # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
@@ -15,12 +17,6 @@ env:
 
 before_install:
   - pip install --user travis cpp-coveralls
-  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update -qq
-
-install:
-  - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8"
 
 before_script:
   - mkdir build

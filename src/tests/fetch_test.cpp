@@ -29,7 +29,6 @@
 #define BOOST_TEST_MODULE fetch
 
 #include <boost/test/unit_test.hpp>
-#include <memory>
 #include <list>
 
 #include "json/cJSON.h"
@@ -51,7 +50,7 @@ static char send_buffer[100000];
 static struct peer *fetch_peer_1;
 static bool message_for_wrong_peer;
 
-static std::list<std::unique_ptr<cJSON>> events;
+static std::list<cJSON*> events;
 
 static cJSON *parse_send_buffer(void)
 {
@@ -144,8 +143,7 @@ extern "C" {
 		memcpy(send_buffer, rendered, len);
 		if (p == fetch_peer_1) {
 			cJSON *fetch_event = parse_send_buffer();
-			// make a pointer container of cJSON messages and retrive them later
-			events.push_back(std::unique_ptr<cJSON>(fetch_event));
+			events.push_back(fetch_event);
 		} else {
 			message_for_wrong_peer = true;
 		}
@@ -182,9 +180,9 @@ struct F {
 	~F()
 	{
 		while (!events.empty()) {
-			std::unique_ptr<cJSON> ptr = std::move(events.front());
+			cJSON *ptr = events.front();
 			events.pop_front();
-			cJSON_Delete(ptr.release());
+			cJSON_Delete(ptr);
 		}
 		free_peer(fetch_peer_1);
 		free_peer(p);
@@ -283,9 +281,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -302,9 +299,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -321,9 +317,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -340,9 +335,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -381,9 +375,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -400,9 +393,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -419,9 +411,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -438,9 +429,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -491,9 +481,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		BOOST_REQUIRE(error == NULL);
 
 		BOOST_CHECK(events.size() == 1);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -504,9 +493,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON_Delete(new_value);
 
 		BOOST_CHECK(events.size() == 1);
-		ptr = std::move(events.front());
+		json = events.front();
 		events.pop_front();
-		json = ptr.release();
 		event = get_event_from_json(json);
 		BOOST_CHECK(event == CHANGE_EVENT);
 		cJSON_Delete(json);
@@ -529,16 +517,14 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		remove_state_or_method_from_peer(p, path);
 
 		BOOST_CHECK(events.size() == 2);
-		std::unique_ptr<cJSON> ptr = std::move(events.front());
+		cJSON *json = events.front();
 		events.pop_front();
-		cJSON *json = ptr.release();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
 
-		ptr = std::move(events.front());
+		json = events.front();
 		events.pop_front();
-		json = ptr.release();
 		event = get_event_from_json(json);
 		BOOST_CHECK(event == REMOVE_EVENT);
 		cJSON_Delete(json);
@@ -595,16 +581,14 @@ BOOST_FIXTURE_TEST_CASE(add_events_before_fetch_response, F)
 	BOOST_REQUIRE(ret == 0);
 
 	BOOST_CHECK(events.size() == 2);
-	std::unique_ptr<cJSON> ptr = std::move(events.front());
+	cJSON *json = events.front();
 	events.pop_front();
-	cJSON *json = ptr.release();
 	event event = get_event_from_json(json);
 	BOOST_CHECK(event == ADD_EVENT);
 	cJSON_Delete(json);
 
-	ptr = std::move(events.front());
+	json = events.front();
 	events.pop_front();
-	json = ptr.release();
 	check_response(json, fetch_id);
 	cJSON_Delete(json);
 }

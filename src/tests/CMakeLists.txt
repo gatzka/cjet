@@ -27,7 +27,7 @@ ADD_DEFINITIONS(-D_GNU_SOURCE)
 
 SET(WARN_SWITCHES "-Wall -Werror")
 
-SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage -std=c++11")
+SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage")
 SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -ggdb --coverage")
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
