@@ -156,6 +156,12 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
+	if (unlikely(state_is_fetch_only(s))) {
+		error = create_invalid_params_error(
+			p, "fetchOnly", path);
+		return error;
+	}
+
 	if (unlikely(((what == STATE) && (s->value == NULL)) ||
 	    ((what == METHOD) && (s->value != NULL)))) {
 			error =
