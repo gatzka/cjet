@@ -214,10 +214,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(FETCH_TEST
+	../config.c
 	../fetch.c
+	../info.c
 	../json/cJSON.c
 	../linux/jet_string.c
 	../linux/uuid.c
+	../parse.c
 	../peer.c
 	../response.c
 	../router.c

@@ -1,10 +1,10 @@
 language: cpp
 
-sudo: false
-
 branches:
   except:
     - /^feature.*$/
+
+sudo: false
 
 env:
   global:
