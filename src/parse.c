@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,6 +41,8 @@
 #include "response.h"
 #include "router.h"
 #include "state.h"
+
+static const int FETCH_ONLY_FLAG = 0x01;
 
 static const char *get_path_from_params(const struct peer *p, const cJSON *params, cJSON **err)
 {
@@ -58,6 +61,23 @@ static const char *get_path_from_params(const struct peer *p, const cJSON *param
 	}
 	*err = NULL;
 	return path->valuestring;
+}
+
+static int get_fetch_only_from_params(const struct peer *p, const cJSON *params, cJSON **err)
+{
+	const cJSON *fetch_only = cJSON_GetObjectItem(params, "fetchOnly");
+	if (fetch_only == NULL || (fetch_only->type == cJSON_False)) {
+		*err = NULL;
+		return 0;
+	}
+	if (fetch_only->type == cJSON_True) {
+		*err = NULL;
+		return FETCH_ONLY_FLAG;
+	}
+	cJSON *error = create_invalid_params_error(
+		p, "reason", "fetchOnly is not a bool");
+	*err = error;
+	return 0;
 }
 
 static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct peer *p)
@@ -177,14 +197,19 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	cJSON *error;
+	cJSON *error = NULL;
 	const char *path = get_path_from_params(p, params, &error);
 	if (unlikely(path == NULL)) {
 		return possibly_send_response(json_rpc, error, p);
 	}
 
+	int flags = get_fetch_only_from_params(p, params, &error);
+	if (unlikely(error != NULL)) {
+		return possibly_send_response(json_rpc, error, p);
+	}
+
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	error = add_state_or_method_to_peer(p, path, value);
+	error = add_state_or_method_to_peer(p, path, value, flags);
 
 	return possibly_send_response(json_rpc, error, p);
 }

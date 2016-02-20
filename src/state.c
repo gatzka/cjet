@@ -41,7 +41,7 @@
 #include "uuid.h"
 
 static struct state_or_method *alloc_state(const char *path, const cJSON *value_object,
-				 struct peer *p, double timeout)
+				 struct peer *p, double timeout, int flags)
 {
 	struct state_or_method *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
@@ -49,6 +49,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 			     "state");
 		return NULL;
 	}
+	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
 	s->fetcher_table = calloc(s->fetch_table_size, sizeof(struct fetch *));
@@ -204,14 +205,14 @@ delete_routed_request_id:
 	return error;
 }
 
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value)
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags)
 {
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT, flags);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 		    create_internal_error(p, "reason", "not enough memory");

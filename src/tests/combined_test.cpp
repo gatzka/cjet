@@ -297,7 +297,7 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
 
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
@@ -338,7 +338,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	const char *path = "/foo/bar/";
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -357,7 +357,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -372,7 +372,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 {
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, read_only_state_path, value);
+	cJSON *error = add_state_or_method_to_peer(owner_peer, read_only_state_path, value, 0x00);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 

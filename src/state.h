@@ -42,6 +42,7 @@ struct state_or_method {
 	struct peer *peer; /*The peer the state belongs to */
 	cJSON *value; /* NULL if method */
 	struct fetch **fetcher_table;
+	int flags;
 	double timeout;
 	unsigned int fetch_table_size;
 };
@@ -51,7 +52,7 @@ enum type { STATE, METHOD };
 cJSON *change_state(struct peer *p, const char *path, const cJSON *value);
 cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	const cJSON *json_rpc, enum type what);
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value);
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags);
 int remove_state_or_method_from_peer(struct peer *p, const char *path);
 void remove_all_states_and_methods_from_peer(struct peer *p);
 

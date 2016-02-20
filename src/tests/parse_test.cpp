@@ -121,11 +121,12 @@ extern "C" {
 		return -1;
 	}
 
-	cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value)
+	cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags)
 	{
 		(void)p;
 		(void)path;
 		(void)value;
+		(void)flags;
 		return NULL;
 	}
 
