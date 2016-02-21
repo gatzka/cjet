@@ -44,6 +44,8 @@ void b64_encode_string(const char *restrict in, size_t in_len, char *restrict ou
 				triple[i] = *in++;
 				len++;
 				in_len--;
+			} else {
+				triple[i] = 0;
 			}
 		}
 		if (!len)
