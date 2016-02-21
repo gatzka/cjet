@@ -48,8 +48,6 @@ void b64_encode_string(const char *restrict in, size_t in_len, char *restrict ou
 				triple[i] = 0;
 			}
 		}
-		if (!len)
-			continue;
 
 		char tmp[4];
 		tmp[0] = encode_table[triple[0] >> 2];
