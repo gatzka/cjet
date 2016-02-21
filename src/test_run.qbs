@@ -36,6 +36,7 @@ Project {
   UnittestRunner {
     lcovRemovePatterns: [
       "*/cjet/src/json/*",
+      "/usr/include/*",
     ]
     wrapper: [
       "valgrind",
