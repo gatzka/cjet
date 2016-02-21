@@ -69,8 +69,3 @@ void b64_encode_string(const char *in, size_t in_len, char *out)
 	*out = '\0';
 }
 
-size_t b64_encoded_string_length(size_t input_length)
-{
-	return 4 * ((input_length + 2) / 3);
-}
-
