@@ -234,3 +234,13 @@ TARGET_LINK_LIBRARIES(
 	fetch_test.bin
 	${Boost_LIBRARIES}
 )
+
+SET(BASE64_TEST
+	../base64.c
+	base64_test.cpp
+)
+ADD_EXECUTABLE(base64_test.bin ${BASE64_TEST})
+TARGET_LINK_LIBRARIES(
+	base64_test.bin
+	${Boost_LIBRARIES}
+)

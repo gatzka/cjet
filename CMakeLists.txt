@@ -28,5 +28,6 @@ if(FEATURE_POST_BUILD_UNITTEST)
   ADD_TEST(NAME string_test COMMAND string_test.bin)
   ADD_TEST(NAME router_test COMMAND router_test.bin)
   ADD_TEST(NAME info_test COMMAND info_test.bin)
+  ADD_TEST(NAME base64_test COMMAND base64_test.bin)
 
 endif()

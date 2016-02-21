@@ -192,4 +192,19 @@ Project {
       "linux/tests/log.cpp"
     ] 
   }
+
+  CppApplication {
+    name: "base64_test"
+    type: ["application", "unittest"]
+    consoleApplication: true
+
+    Depends {
+      name: "unittestSettings"
+    }
+
+    files: [
+      "base64.c",
+      "tests/base64_test.cpp",
+    ] 
+  }
 }
