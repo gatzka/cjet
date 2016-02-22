@@ -31,6 +31,8 @@
 #include <boost/test/unit_test.hpp>
 #include <cstring>
 
+#define restrict
+
 #include "base64.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))

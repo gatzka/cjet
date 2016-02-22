@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-void b64_encode_string(const char *in, size_t in_len, char *out);
+void b64_encode_string(const char * restrict in, size_t in_len, char * restrict out);
 static inline size_t b64_encoded_string_length(size_t input_length)
 {
 	return 4 * ((input_length + 2) / 3);
