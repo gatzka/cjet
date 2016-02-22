@@ -48,6 +48,13 @@ BOOST_AUTO_TEST_CASE(rfc4648_tests)
 	for (unsigned int i = 0; i < ARRAY_SIZE(strings); ++i) {
 		b64_encode_string(strings[i], std::strlen(strings[i]), result);
 		BOOST_CHECK_EQUAL(std::strcmp(results[i], result), 0);
+		BOOST_CHECK_EQUAL(std::strlen(results[i]), std::strlen(result));
+	}
+
+	for (unsigned int i = ARRAY_SIZE(strings); i > 0; --i) {
+		b64_encode_string(strings[i - 1], std::strlen(strings[i - 1]), result);
+		BOOST_CHECK_EQUAL(std::strcmp(results[i - 1], result), 0);
+		BOOST_CHECK_EQUAL(std::strlen(results[i - 1]), std::strlen(result));
 	}
 }
 
