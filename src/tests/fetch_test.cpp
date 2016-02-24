@@ -45,18 +45,15 @@ enum event {
 	REMOVE_EVENT
 };
 
-static char send_buffer[100000];
-
 static struct peer *fetch_peer_1;
 static bool message_for_wrong_peer;
 
 static std::list<cJSON*> events;
 
-static cJSON *parse_send_buffer(void)
+static cJSON *parse_send_buffer(const char *json)
 {
-	char *read_ptr = send_buffer;
 	const char *end_parse;
-	cJSON *root = cJSON_ParseWithOpts(read_ptr, &end_parse, 0);
+	cJSON *root = cJSON_ParseWithOpts(json, &end_parse, 0);
 	return root;
 }
 
@@ -140,9 +137,9 @@ static void check_invalid_params(const cJSON *error)
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
-		memcpy(send_buffer, rendered, len);
+		(void)len;
 		if (p == fetch_peer_1) {
-			cJSON *fetch_event = parse_send_buffer();
+			cJSON *fetch_event = parse_send_buffer(rendered);
 			events.push_back(fetch_event);
 		} else {
 			message_for_wrong_peer = true;
