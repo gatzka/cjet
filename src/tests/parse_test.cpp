@@ -32,6 +32,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <cstring>
+#include <list>
 
 #include "cjet_io.h"
 #include "json/cJSON.h"
@@ -39,18 +40,22 @@
 #include "peer.h"
 #include "state.h"
 
-static char readback_buffer[10000];
-static char *readback_buffer_ptr = readback_buffer;
+static std::list<cJSON*> events;
+
+static cJSON *parse_send_buffer(const char *json)
+{
+	const char *end_parse;
+	cJSON *root = cJSON_ParseWithOpts(json, &end_parse, 0);
+	return root;
+}
 
 extern "C" {
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
+		(void)len;
 		(void)p;
-		char *ptr = readback_buffer;
-		uint32_t message_length = htonl(len);
-		memcpy(ptr, &message_length, sizeof(message_length));
-		ptr += 4;
-		memcpy(ptr, rendered, len);
+		cJSON *fetch_event = parse_send_buffer(rendered);
+		events.push_back(fetch_event);
 		return 0;
 	}
 
@@ -166,13 +171,15 @@ struct F {
 	F()
 	{
 		p = NULL;
-
-		readback_buffer_ptr = readback_buffer;
-		std::memset(readback_buffer, 0x00, sizeof(readback_buffer));
 	}
 
 	~F()
 	{
+		while (!events.empty()) {
+			cJSON *ptr = events.front();
+			events.pop_front();
+			cJSON_Delete(ptr);
+		}
 	}
 
 	struct peer *p;
@@ -569,14 +576,11 @@ static cJSON *create_set_without_value()
 	return root;
 }
 
-static void check_invalid_params_error(void)
+static void check_invalid_params_error(const cJSON *json)
 {
-	char *ptr = readback_buffer;
-	ptr += 4;
-	cJSON *root = cJSON_Parse(ptr);
-	BOOST_REQUIRE(root != NULL);
+	BOOST_REQUIRE(json != NULL);
 
-	cJSON *error = cJSON_GetObjectItem(root, "error");
+	cJSON *error = cJSON_GetObjectItem(json, "error");
 	BOOST_REQUIRE(error != NULL);
 
 	cJSON *code = cJSON_GetObjectItem(error, "code");
@@ -586,20 +590,14 @@ static void check_invalid_params_error(void)
 	} else {
 		BOOST_FAIL("No code object!");
 	}
-	cJSON_Delete(root);
 }
 
-static void check_no_error(void)
+static void check_no_error(const cJSON *json)
 {
-	char *ptr = readback_buffer;
-	ptr += 4;
-	cJSON *root = cJSON_Parse(ptr);
-	BOOST_REQUIRE(root != NULL);
+	BOOST_REQUIRE(json != NULL);
 
-	cJSON *error = cJSON_GetObjectItem(root, "error");
+	cJSON *error = cJSON_GetObjectItem(json, "error");
 	BOOST_CHECK(error == NULL);
-
-	cJSON_Delete(root);
 }
 
 static cJSON *create_correct_info_method()
@@ -764,7 +762,11 @@ BOOST_FIXTURE_TEST_CASE(remove_non_existing_state_or_method, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(remove_without_path_test, F)
@@ -929,7 +931,11 @@ BOOST_FIXTURE_TEST_CASE(change_without_path, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(change_without_value, F)
@@ -940,7 +946,11 @@ BOOST_FIXTURE_TEST_CASE(change_without_value, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(correct_set, F)
@@ -961,7 +971,11 @@ BOOST_FIXTURE_TEST_CASE(set_without_path, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_without_params, F)
@@ -972,7 +986,11 @@ BOOST_FIXTURE_TEST_CASE(set_without_params, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 /*
@@ -997,7 +1015,11 @@ BOOST_FIXTURE_TEST_CASE(set_without_value, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_invalid_params_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_invalid_params_error(response);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(correct_info, F)
@@ -1018,5 +1040,9 @@ BOOST_FIXTURE_TEST_CASE(correct_info_without_params, F)
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
-	check_no_error();
+	BOOST_CHECK(events.size() == 1);
+	cJSON *response = events.front();
+	events.pop_front();
+	check_no_error(response);
+	cJSON_Delete(response);
 }
