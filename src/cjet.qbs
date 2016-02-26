@@ -27,6 +27,9 @@
 import qbs 1.0
 
 Project {
+
+  property bool runAnalyzer: false
+
   name: "cjet"
   minimumQbsVersion: "1.4.0"
 
@@ -121,6 +124,11 @@ Project {
         "*.c",
       ]
       cpp.defines: "_GNU_SOURCE"
+    }
+
+    Properties {
+      condition: cpp.compilerName.contains("clang") && runAnalyzer;
+      cpp.compilerWrapper: ["scan-build", "--view"];
     }
   }
 }

@@ -72,6 +72,12 @@ You can specify as many additional parallel build by adding more
 profiles. If `unittest-runner.showCoverageData:true` is given, the
 coverage data is directly displayed in a web browser.
 
+If you have clang and clang-analyzer installed, you can run the static
+code analyzer with
+```
+qbs -f ~/workspace/cjet/all.qbs release profile:clang cjet.runAnalyzer:true
+```
+
 ## Howto run
 Just execute `cjet.bin` to run cjet in daemon mode. Run `cjet.bin -f` to
 run cjet in foreground.
