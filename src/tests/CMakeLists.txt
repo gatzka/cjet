@@ -143,12 +143,19 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(JSON_PARSE_TEST
+	../linux/uuid.c
 	../config.c
+	../fetch.c
 	../info.c
 	../linux/jet_string.c
 	../json/cJSON.c
 	../parse.c
+	../peer.c
 	../response.c
+	../router.c
+	../state.c
+	../table.c
+	log.cpp
 	parse_test.cpp
 )
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})

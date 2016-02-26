@@ -120,6 +120,7 @@ Project {
 
     files: [
       "tests/parse_test.cpp",
+      "tests/log.cpp",
     ] 
   }
 
