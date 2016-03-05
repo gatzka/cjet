@@ -32,7 +32,7 @@
 #include "response.h"
 #include "router.h"
 
-DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 3)
+DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 5)
 
 int add_routing_table(struct peer *p)
 {
@@ -98,15 +98,26 @@ error:
 	return NULL;
 }
 
-int setup_routing_information(const struct peer *routing_peer,
-	struct peer *origin_peer, const cJSON *origin_request_id, char *id)
+int setup_routing_information(struct state_or_method *s,
+	struct peer *origin_peer, const cJSON *origin_request_id, char *id, const cJSON *value)
 {
+	cJSON *value_copy;
+	if (value != NULL) {
+		value_copy = cJSON_Duplicate(value, 1);
+		if (unlikely(value_copy == NULL)) {
+			log_peer_err(origin_peer, "Could not copy value object!\n");
+			goto value_copy_error;
+		}
+	} else {
+		value_copy = NULL;
+	}
+
 	cJSON *id_copy;
 	if (origin_request_id != NULL) {
 		id_copy = cJSON_Duplicate(origin_request_id, 1);
 		if (unlikely(id_copy == NULL)) {
-			log_peer_err(origin_peer, "Could not copy value object!\n");
-			return -1;
+			log_peer_err(origin_peer, "Could not copy origin_request_id object!\n");
+			goto id_copy_error;
 		}
 	} else {
 		id_copy = NULL;
@@ -115,13 +126,21 @@ int setup_routing_information(const struct peer *routing_peer,
 	val.vals[0] = origin_peer;
 	val.vals[1] = id_copy;
 	val.vals[2] = id;
-	if (unlikely(HASHTABLE_PUT(route_table, routing_peer->routing_table,
+	val.vals[3] = s;
+	val.vals[4] = value_copy;
+	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
-		cJSON_Delete(id_copy);
 		log_peer_err(origin_peer, "Routing table full!\n");
-		return -1;
+		goto hash_put_error;
 	}
 	return 0;
+
+hash_put_error:
+	cJSON_Delete(id_copy);
+id_copy_error:
+	cJSON_Delete(value_copy);
+value_copy_error:
+	return -1;
 }
 
 static int format_and_send_response(struct peer *p, const cJSON *response)
@@ -182,9 +201,20 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
 		char *routed_id = val.vals[2];
+		struct state_or_method *s = val.vals[3];
+		cJSON *value_copy = val.vals[4];
+		cJSON_Delete(s->value);
+		s->value = value_copy;
+
 		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
 		free(routed_id);
+
+		if (unlikely(notify_fetchers(s, "change") != 0)) {
+			log_peer_err(p, "Can't notify fetching peer!\n");
+			ret = -1;
+		}
+
 	}
 	return ret;
 }
@@ -225,6 +255,9 @@ void remove_peer_from_routing_table(const struct peer *p,
 				if (origin_peer == peer_to_remove) {
 					cJSON *origin_request_id = val.vals[1];
 					char *id = val.vals[2];
+					cJSON *value_copy = val.vals[4];
+					cJSON_Delete(value_copy);
+
 					send_shutdown_response(origin_peer, origin_request_id);
 					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, &val);
 					cJSON_Delete(origin_request_id);
@@ -248,6 +281,9 @@ void remove_routing_info_from_peer(const struct peer *p)
 				struct peer *origin_peer = val.vals[0];
 				cJSON *origin_request_id = val.vals[1];
 				char *id = val.vals[2];
+				cJSON *value_copy = val.vals[4];
+				cJSON_Delete(value_copy);
+
 				send_shutdown_response(origin_peer, origin_request_id);
 				cJSON_Delete(origin_request_id);
 				free(id);

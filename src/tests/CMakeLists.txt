@@ -90,11 +90,15 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ROUTER_TEST
-	../linux/jet_string.c
+	../fetch.c
 	../json/cJSON.c
+	../linux/jet_string.c
+	../linux/uuid.c
 	../peer.c
 	../response.c
 	../router.c
+	../state.c
+	../table.c
 	log.cpp
 	router_test.cpp
 )

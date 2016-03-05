@@ -145,7 +145,7 @@ static cJSON *create_result_json(const char *id)
 	cJSON *root = cJSON_CreateObject();
 	BOOST_REQUIRE(root != NULL);
 	cJSON_AddStringToObject(root, "id", id);
-	cJSON *result = cJSON_CreateObject();
+	cJSON *result = cJSON_CreateTrue();
 	BOOST_REQUIRE(result != NULL);
 	cJSON_AddItemToObject(root, "result", result);
 	return root;
@@ -646,7 +646,7 @@ BOOST_FIXTURE_TEST_CASE(add_events_before_fetch_response, F)
 	cJSON_Delete(json);
 }
 
-BOOST_FIXTURE_TEST_CASE(set_with_no_value_return, F)
+BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 {
 	static const char *path = "foo/bar";
 	static const int fetch_id = 7386;
