@@ -45,11 +45,6 @@ extern "C" {
 		return 0;
 	}
 
-	void remove_all_states_and_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
 	int add_io(struct peer *p)
 	{
 		(void)p;
@@ -63,11 +58,6 @@ extern "C" {
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
-	void remove_all_fetchers_from_peer(struct peer *p)
 	{
 		(void)p;
 	}

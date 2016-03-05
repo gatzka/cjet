@@ -191,8 +191,8 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		goto delete_routed_request_id;
 	}
 
-	if (unlikely(setup_routing_information(s->peer, p, origin_request_id,
-					       routed_request_id) != 0)) {
+	if (unlikely(setup_routing_information(s, p, origin_request_id,
+					       routed_request_id, value) != 0)) {
 		error = create_internal_error(
 		    p, "reason", "could not setup routing information");
 		goto delete_json;

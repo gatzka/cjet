@@ -46,9 +46,11 @@ enum event {
 };
 
 static struct peer *fetch_peer_1;
-static bool message_for_wrong_peer;
+static struct peer *set_peer;
+static struct peer *owner_peer;
 
-static std::list<cJSON*> events;
+static std::list<cJSON*> fetch_events;
+static std::list<cJSON*> owner_responses;
 
 static cJSON *parse_send_buffer(const char *json)
 {
@@ -70,12 +72,27 @@ static enum event get_event_from_json(cJSON *json)
 	return UNKNOWN_EVENT;
 }
 
-static cJSON *create_correct_add_state(const char *path, int value)
+static cJSON *create_correct_add_state(const char *path, int id, int value)
 {
 	cJSON *root = cJSON_CreateObject();
 	BOOST_REQUIRE(root != NULL);
-	cJSON_AddNumberToObject(root, "id", 7384);
+	cJSON_AddNumberToObject(root, "id", id);
 	cJSON_AddStringToObject(root, "method", "add");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+	cJSON_AddNumberToObject(params, "value", value);
+	cJSON_AddItemToObject(root, "params", params);
+	return root;
+}
+
+static cJSON *create_correct_set_method(const char *path, int value)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddNumberToObject(root, "id", 9999);
+	cJSON_AddStringToObject(root, "method", "set");
 
 	cJSON *params = cJSON_CreateObject();
 	BOOST_REQUIRE(params != NULL);
@@ -115,6 +132,40 @@ static void check_response(cJSON *json, int id)
 	BOOST_CHECK(result != NULL);
 }
 
+static char *get_routed_id(const cJSON *json)
+{
+	cJSON *id = cJSON_GetObjectItem(json, "id");
+	BOOST_REQUIRE(id != NULL);
+	BOOST_REQUIRE(id->type == cJSON_String);
+	return strdup(id->valuestring);
+}
+
+static cJSON *create_result_json(const char *id)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "id", id);
+	cJSON *result = cJSON_CreateTrue();
+	BOOST_REQUIRE(result != NULL);
+	cJSON_AddItemToObject(root, "result", result);
+	return root;
+}
+
+static void check_no_error(int id)
+{
+	cJSON *response = owner_responses.front();
+	owner_responses.pop_front();
+	BOOST_REQUIRE(response != NULL);
+
+	const cJSON *error = cJSON_GetObjectItem(response, "error");
+	BOOST_CHECK(error == NULL);
+	const cJSON *json_id = cJSON_GetObjectItem(response, "id");
+	BOOST_REQUIRE(json_id != NULL);
+	BOOST_REQUIRE(json_id->type == cJSON_Number);
+	BOOST_CHECK(json_id->valueint == id);
+	cJSON_Delete(response);
+}
+
 static void check_invalid_params(const cJSON *error)
 {
 	cJSON *code = cJSON_GetObjectItem(error, "code");
@@ -140,9 +191,10 @@ extern "C" {
 		(void)len;
 		if (p == fetch_peer_1) {
 			cJSON *fetch_event = parse_send_buffer(rendered);
-			events.push_back(fetch_event);
-		} else {
-			message_for_wrong_peer = true;
+			fetch_events.push_back(fetch_event);
+		} else if (p == owner_peer) {
+			cJSON *response = parse_send_buffer(rendered);
+			owner_responses.push_back(response);
 		}
 		return 0;
 	}
@@ -169,24 +221,28 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		p = alloc_peer(-1);
+		owner_peer = alloc_peer(-1);
+		set_peer = alloc_peer(-1);
 		fetch_peer_1 = alloc_peer(-1);
-		message_for_wrong_peer = false;
 	}
 
 	~F()
 	{
-		while (!events.empty()) {
-			cJSON *ptr = events.front();
-			events.pop_front();
+		while (!fetch_events.empty()) {
+			cJSON *ptr = fetch_events.front();
+			fetch_events.pop_front();
+			cJSON_Delete(ptr);
+		}
+		while (!owner_responses.empty()) {
+			cJSON *ptr = owner_responses.front();
+			owner_responses.pop_front();
 			cJSON_Delete(ptr);
 		}
 		free_peer(fetch_peer_1);
-		free_peer(p);
+		free_peer(set_peer);
+		free_peer(owner_peer);
 		state_hashtable_delete();
 	}
-
-	struct peer *p;
 };
 
 static struct state_or_method *get_state(const char *path)
@@ -247,7 +303,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(p, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -264,7 +320,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 0);
+		BOOST_CHECK(fetch_events.size() == 0);
 		remove_all_fetchers_from_peer(fetch_peer_1);
 		cJSON_Delete(params);
 	}
@@ -277,9 +333,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -295,9 +351,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -313,9 +369,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -331,9 +387,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -355,7 +411,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(p, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 	}
@@ -371,9 +427,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -389,9 +445,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -407,9 +463,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -425,9 +481,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
@@ -451,7 +507,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 0);
+		BOOST_CHECK(fetch_events.size() == 0);
 		remove_all_fetchers_from_peer(fetch_peer_1);
 		cJSON_Delete(params);
 	}
@@ -459,7 +515,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(p, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -477,26 +533,25 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		BOOST_CHECK(events.size() == 1);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
 
 		cJSON *new_value = cJSON_CreateNumber(4321);
-		error = change_state(p, path, new_value);
+		error = change_state(owner_peer, path, new_value);
 		BOOST_REQUIRE(error == NULL);
 		cJSON_Delete(new_value);
 
-		BOOST_CHECK(events.size() == 1);
-		json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 1);
+		json = fetch_events.front();
+		fetch_events.pop_front();
 		event = get_event_from_json(json);
 		BOOST_CHECK(event == CHANGE_EVENT);
 		cJSON_Delete(json);
 
-		BOOST_CHECK(!message_for_wrong_peer);
 		remove_all_fetchers_from_peer(fetch_peer_1);
 		cJSON_Delete(params);
 	}
@@ -511,17 +566,17 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		remove_state_or_method_from_peer(p, path);
+		remove_state_or_method_from_peer(owner_peer, path);
 
-		BOOST_CHECK(events.size() == 2);
-		cJSON *json = events.front();
-		events.pop_front();
+		BOOST_CHECK(fetch_events.size() == 2);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
 		event event = get_event_from_json(json);
 		BOOST_CHECK(event == ADD_EVENT);
 		cJSON_Delete(json);
 
-		json = events.front();
-		events.pop_front();
+		json = fetch_events.front();
+		fetch_events.pop_front();
 		event = get_event_from_json(json);
 		BOOST_CHECK(event == REMOVE_EVENT);
 		cJSON_Delete(json);
@@ -562,11 +617,12 @@ BOOST_FIXTURE_TEST_CASE(add_events_before_fetch_response, F)
 {
 	static const char *path = "foo/bar";
 	static const int fetch_id = 7386;
+	static const int add_id = 777;
 
-	cJSON *add = create_correct_add_state(path, 124);
+	cJSON *add = create_correct_add_state(path, add_id, 124);
 	char *unformatted_json = cJSON_PrintUnformatted(add);
 	cJSON_Delete(add);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
 	cJSON_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 
@@ -577,15 +633,71 @@ BOOST_FIXTURE_TEST_CASE(add_events_before_fetch_response, F)
 	cJSON_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 
-	BOOST_CHECK(events.size() == 2);
-	cJSON *json = events.front();
-	events.pop_front();
+	BOOST_CHECK(fetch_events.size() == 2);
+	cJSON *json = fetch_events.front();
+	fetch_events.pop_front();
 	event event = get_event_from_json(json);
 	BOOST_CHECK(event == ADD_EVENT);
 	cJSON_Delete(json);
 
-	json = events.front();
-	events.pop_front();
+	json = fetch_events.front();
+	fetch_events.pop_front();
 	check_response(json, fetch_id);
 	cJSON_Delete(json);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
+{
+	static const char *path = "foo/bar";
+	static const int fetch_id = 7386;
+	static const int add_id = 777;
+
+	cJSON *add = create_correct_add_state(path, add_id, 124);
+	char *unformatted_json = cJSON_PrintUnformatted(add);
+	cJSON_Delete(add);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
+	cJSON_free(unformatted_json);
+	BOOST_REQUIRE(ret == 0);
+	check_no_error(add_id);
+
+	cJSON *fetch = create_correct_fetch("foo/bar", fetch_id);
+	unformatted_json = cJSON_PrintUnformatted(fetch);
+	cJSON_Delete(fetch);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), fetch_peer_1);
+	cJSON_free(unformatted_json);
+	BOOST_REQUIRE(ret == 0);
+
+	BOOST_CHECK(fetch_events.size() == 2);
+	cJSON *json = fetch_events.front();
+	fetch_events.pop_front();
+	event event = get_event_from_json(json);
+	BOOST_CHECK(event == ADD_EVENT);
+	cJSON_Delete(json);
+
+	json = fetch_events.front();
+	fetch_events.pop_front();
+	check_response(json, fetch_id);
+	cJSON_Delete(json);
+
+	cJSON *set_json = create_correct_set_method(path, 124);
+	unformatted_json = cJSON_PrintUnformatted(set_json);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), set_peer);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(set_json);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(owner_responses.size() == 1);
+	char *routed_id = get_routed_id(owner_responses.front());
+	json = owner_responses.front();
+	owner_responses.pop_front();
+	cJSON_Delete(json);
+
+	cJSON *result_json = create_result_json(routed_id);
+	unformatted_json = cJSON_PrintUnformatted(result_json);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(result_json);
+	BOOST_CHECK(ret == 0);
+	free(routed_id);
+
+	BOOST_CHECK(fetch_events.size() == 1);
 }
