@@ -99,19 +99,8 @@ error:
 }
 
 int setup_routing_information(struct state_or_method *s,
-	struct peer *origin_peer, const cJSON *origin_request_id, char *id, const cJSON *value)
+	struct peer *origin_peer, const cJSON *origin_request_id, char *id, cJSON *value)
 {
-	cJSON *value_copy;
-	if (value != NULL) {
-		value_copy = cJSON_Duplicate(value, 1);
-		if (unlikely(value_copy == NULL)) {
-			log_peer_err(origin_peer, "Could not copy value object!\n");
-			goto value_copy_error;
-		}
-	} else {
-		value_copy = NULL;
-	}
-
 	cJSON *id_copy;
 	if (origin_request_id != NULL) {
 		id_copy = cJSON_Duplicate(origin_request_id, 1);
@@ -127,7 +116,7 @@ int setup_routing_information(struct state_or_method *s,
 	val.vals[1] = id_copy;
 	val.vals[2] = id;
 	val.vals[3] = s;
-	val.vals[4] = value_copy;
+	val.vals[4] = value;
 	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
 		log_peer_err(origin_peer, "Routing table full!\n");
@@ -138,8 +127,6 @@ int setup_routing_information(struct state_or_method *s,
 hash_put_error:
 	cJSON_Delete(id_copy);
 id_copy_error:
-	cJSON_Delete(value_copy);
-value_copy_error:
 	return -1;
 }
 
@@ -183,6 +170,11 @@ static int send_routing_response(struct peer *p,
 	return 0;
 }
 
+static bool is_set_response(const cJSON *value)
+{
+	return value != NULL;
+}
+
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p)
 {
@@ -202,19 +194,19 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		cJSON *origin_request_id = val.vals[1];
 		char *routed_id = val.vals[2];
 		struct state_or_method *s = val.vals[3];
-		cJSON *value_copy = val.vals[4];
-		cJSON_Delete(s->value);
-		s->value = value_copy;
-
 		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
 		free(routed_id);
 
-		if (unlikely(notify_fetchers(s, "change") != 0)) {
-			log_peer_err(p, "Can't notify fetching peer!\n");
-			ret = -1;
+		cJSON *value_copy = val.vals[4];
+		if (is_set_response(value_copy)) {
+			cJSON_Delete(s->value);
+			s->value = value_copy;
+			if (unlikely(notify_fetchers(s, "change") != 0)) {
+				log_peer_err(p, "Can't notify fetching peer!\n");
+				ret = -1;
+			}
 		}
-
 	}
 	return ret;
 }

@@ -191,18 +191,30 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		goto delete_routed_request_id;
 	}
 
+	cJSON *value_copy;
+	if (what == STATE) {
+		value_copy = cJSON_Duplicate(value, 1);
+		if (unlikely(value_copy == NULL)) {
+			error = create_internal_error(
+			    p, "reason", "could not copy value object");
+			goto delete_json;
+		}
+	} else {
+		value_copy = NULL;
+	}
+
 	if (unlikely(setup_routing_information(s, p, origin_request_id,
-					       routed_request_id, value) != 0)) {
+					       routed_request_id, value_copy) != 0)) {
 		error = create_internal_error(
 		    p, "reason", "could not setup routing information");
-		goto delete_json;
+		goto delete_value_copy;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
 		error = create_internal_error(p, "reason",
 					      "could not render message");
-		goto delete_json;
+		goto delete_value_copy;
 	}
 	if (unlikely(send_message(s->peer, rendered_message,
 				  strlen(rendered_message)) != 0)) {
@@ -214,6 +226,8 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	cJSON_Delete(routed_message);
 	return error;
 
+delete_value_copy:
+	cJSON_Delete(value_copy);
 delete_json:
 	cJSON_Delete(routed_message);
 delete_routed_request_id:
