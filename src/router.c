@@ -240,6 +240,20 @@ static void send_shutdown_response(struct peer *p,
 	}
 }
 
+static void clear_routing_entry(struct value_route_table *val)
+{
+	struct peer *origin_peer = val->vals[0];
+
+	cJSON *origin_request_id = val->vals[1];
+	char *id = val->vals[2];
+	cJSON *value_copy = val->vals[4];
+	cJSON_Delete(value_copy);
+
+	send_shutdown_response(origin_peer, origin_request_id);
+	cJSON_Delete(origin_request_id);
+	free(id);
+}
+
 void remove_peer_from_routing_table(const struct peer *p,
 	const struct peer *peer_to_remove)
 {
@@ -253,15 +267,8 @@ void remove_peer_from_routing_table(const struct peer *p,
 			if (ret == HASHTABLE_SUCCESS) {
 				struct peer *origin_peer = val.vals[0];
 				if (origin_peer == peer_to_remove) {
-					cJSON *origin_request_id = val.vals[1];
-					char *id = val.vals[2];
-					cJSON *value_copy = val.vals[4];
-					cJSON_Delete(value_copy);
-
-					send_shutdown_response(origin_peer, origin_request_id);
-					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, &val);
-					cJSON_Delete(origin_request_id);
-					free(id);
+					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, NULL);
+					clear_routing_entry(&val);
 				}
 			}
 		}
@@ -278,15 +285,7 @@ void remove_routing_info_from_peer(const struct peer *p)
 			int ret = HASHTABLE_REMOVE(route_table,
 					p->routing_table, entry->key, &val);
 			if (ret == HASHTABLE_SUCCESS) {
-				struct peer *origin_peer = val.vals[0];
-				cJSON *origin_request_id = val.vals[1];
-				char *id = val.vals[2];
-				cJSON *value_copy = val.vals[4];
-				cJSON_Delete(value_copy);
-
-				send_shutdown_response(origin_peer, origin_request_id);
-				cJSON_Delete(origin_request_id);
-				free(id);
+				clear_routing_entry(&val);
 			}
 		}
 	}
