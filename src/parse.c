@@ -287,12 +287,12 @@ static int handle_method(const cJSON *json_rpc, const char *method_name,
 		return process_change(json_rpc, p);
 	} else if (strcmp(method_name, "set") == 0) {
 		return process_set(json_rpc, p);
+	} else if (strcmp(method_name, "call") == 0) {
+		return process_call(json_rpc, p);
 	} else if (strcmp(method_name, "add") == 0) {
 		return process_add(json_rpc, p);
 	} else if (strcmp(method_name, "remove") == 0) {
 		return process_remove(json_rpc, p);
-	} else if (strcmp(method_name, "call") == 0) {
-		return process_call(json_rpc, p);
 	} else if (strcmp(method_name, "fetch") == 0) {
 		return process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
