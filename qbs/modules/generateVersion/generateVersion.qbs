@@ -70,7 +70,7 @@ Module {
         gitDescribe.setWorkingDirectory(product.sourceDirectory);
         var ret = gitDescribe.exec("git", ["describe","--exact-match","--tags", "HEAD"], false);
         gitDescribe.close();
-        var isTag = (ret === 0);
+        var isTag = (ret === 0  && (isDirty === false));
         var last;
         if (isTag) {
           last = "";
@@ -81,10 +81,6 @@ Module {
           gitCount.exec("git", ["rev-list","HEAD","--count"], true)
           last = last + gitCount.readLine();
           gitCount.close();
-        }
-
-        if (isTag && isDirty) {
-          throw "Never build a release from dirty tag!"
         }
 
         var file = new TextFile(input.filePath);
