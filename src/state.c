@@ -150,12 +150,6 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	if (unlikely(s->peer == p)) {
-		error = create_invalid_params_error(
-			p, "owner of method shall not set/call a state/method via jet", path);
-		return error;
-	}
-
 	if (unlikely(state_is_fetch_only(s))) {
 		error = create_invalid_params_error(
 			p, "fetchOnly", path);
