@@ -42,12 +42,12 @@ char *get_routed_request_uuid(struct peer *p, const cJSON *origin_request_id)
 	uuid++;
 	if (origin_request_id != NULL) {
 		if (origin_request_id->type == cJSON_String) {
-			ret = asprintf(&buf, "uuid: %s_%x_%016"PRIxPTR"\n", origin_request_id->valuestring, uuid, peer);
+			ret = asprintf(&buf, "%s_%x_%016"PRIxPTR"\n", origin_request_id->valuestring, uuid, peer);
 		} else {
-			ret = asprintf(&buf, "uuid: %x_%x_%016"PRIxPTR"\n", origin_request_id->valueint, uuid, peer);
+			ret = asprintf(&buf, "%x_%x_%016"PRIxPTR"\n", origin_request_id->valueint, uuid, peer);
 		}
 	} else {
-		ret = asprintf(&buf, "uuid: %x_%016"PRIxPTR"\n", uuid, peer);
+		ret = asprintf(&buf, "%x_%016"PRIxPTR"\n", uuid, peer);
 	}
 	if (ret == -1) {
 		return NULL;
