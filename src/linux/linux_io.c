@@ -162,7 +162,7 @@ static int configure_keepalive(int fd)
 	return 0;
 }
 
-static int handle_new_connection(int fd)
+static struct peer *handle_new_connection(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
@@ -171,23 +171,23 @@ static int handle_new_connection(int fd)
 			sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
-		return -1;
+		return NULL;
 	}
 
 	if (configure_keepalive(fd) < 0) {
 		log_err("Could not configure keepalive!\n");
 		close(fd);
-		return -1;
+		return NULL;
 	}
 
 	struct peer *peer = alloc_peer(fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate peer!\n");
 		close(fd);
-		return -1;
+		return NULL;
 	}
 
-	return 0;
+	return peer;
 }
 
 static int accept_all(int listen_fd)
@@ -202,8 +202,12 @@ static int accept_all(int listen_fd)
 				return -1;
 			}
 		} else {
-			if (unlikely(handle_new_connection(peer_fd) != 0)) {
+			struct peer *client_peer = handle_new_connection(peer_fd);
+			if (unlikely(client_peer == NULL)) {
 				return -1;
+			}
+			if (unlikely(handle_all_peer_operations(client_peer) == -1)) {
+				free_peer(client_peer);
 			}
 		}
 	}
@@ -607,7 +611,7 @@ int run_io(const char *user_name)
 
 	while (likely(go_ahead)) {
 		int num_events =
-		    epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
+			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
 		if (unlikely(handle_events(num_events, events, listen_server) != 0)) {
 			ret = -1;
