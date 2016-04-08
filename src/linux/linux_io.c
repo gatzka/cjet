@@ -600,6 +600,11 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
+	if (accept_all(listen_server->io.fd) < 0) {
+		go_ahead = 0;
+		ret = -1;
+	}
+
 	while (likely(go_ahead)) {
 		int num_events =
 		    epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
