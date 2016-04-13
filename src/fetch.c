@@ -523,6 +523,13 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 	struct fetch **fetch_return)
 {
 	cJSON *error;
+	const cJSON *matches = cJSON_GetObjectItem(params, "match");
+	if (unlikely(matches != NULL)) {
+		error = create_invalid_params_error(p, "reason", "No support for deprecated match");
+		log_peer_err(p, "No support for deprected match");
+		return error;
+	}
+
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
 		return error;

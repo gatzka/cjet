@@ -290,6 +290,22 @@ static cJSON *create_unfetch_params()
 	return root;
 }
 
+BOOST_FIXTURE_TEST_CASE(deprecated_match, F)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "id", "fetch_id_1");
+	cJSON *match = cJSON_CreateObject();
+	BOOST_REQUIRE(match != NULL);
+	cJSON_AddItemToObject(params, "match", match);
+
+	struct fetch *f = NULL;
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
 BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 {
 	const char *path = "foo/bar";
