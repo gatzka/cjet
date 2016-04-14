@@ -533,25 +533,8 @@ static int handle_error_events(struct peer *p,
 		return 0;
 	}
 }
-
-static int handle_normal_events(struct peer *p,
-	const struct peer *listen_server)
-{
-	if (unlikely(p == listen_server)) {
-		if (accept_all(listen_server->io.fd) < 0) {
-			return -1;
-		} else {
-			return 0;
-		}
-	} else {
-		int ret = handle_all_peer_operations(p);
-		if (unlikely(ret == -1)) {
-			free_peer(p);
-		}
-		return 0;
-	}
-}
 */
+
 static int handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
