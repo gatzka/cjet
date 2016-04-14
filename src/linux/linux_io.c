@@ -70,7 +70,7 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
-int add_io_new(struct io_event *ev)
+int add_io(struct io_event *ev)
 {
 	struct epoll_event epoll_ev;
 
@@ -219,7 +219,7 @@ static struct server *setup_listen_socket(int server_port)
 		goto alloc_server_wait_failed;
 	}
 
-	if (add_io_new(&server->ev) < 0) {
+	if (add_io(&server->ev) < 0) {
 		goto add_io_failed;
 	}
 

@@ -98,7 +98,7 @@ struct peer *alloc_peer(int fd)
 	p->ev.read_function = handle_all_peer_operations;
 	p->ev.write_function = 	write_msg;
 
-	if (add_io_new(&p->ev) < 0) {
+	if (add_io(&p->ev) < 0) {
 		free_peer_resources(p);
 		return NULL;
 	} else {

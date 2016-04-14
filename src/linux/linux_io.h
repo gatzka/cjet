@@ -49,7 +49,7 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 int handle_all_peer_operations(union io_context *context);
 int write_msg(union io_context *context);
 int send_buffer(struct peer *p);
-int add_io_new(struct io_event *ev);
+int add_io(struct io_event *ev);
 
 #ifdef __cplusplus
 }
