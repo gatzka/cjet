@@ -572,11 +572,14 @@ static int handle_events(int num_events, struct epoll_event *events)
 		} else {
 			struct io_event *ev = events[i].data.ptr;
 			if (events[i].events & EPOLLIN) {
-				return ev->read_function(&ev->context);
+				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) != 0)) {
+					return -1;
+				}
 			} else if (events[i].events & EPOLLOUT) {
-				return ev->write_function(&ev->context);
+				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) != 0)) {
+					return -1;
+				}
 			} else {
-				// TODO: handle unknown events
 				return -1;
 			}
 		}
