@@ -31,6 +31,7 @@
 #include <netinet/tcp.h>
 #include <pwd.h>
 #include <signal.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
@@ -69,12 +70,29 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
-static struct peer *setup_listen_socket(void)
+int add_io_new(struct io_event *ev)
+{
+	struct epoll_event epoll_ev;
+
+	memset(&epoll_ev, 0, sizeof(epoll_ev));
+	epoll_ev.data.ptr = ev;
+	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->context.fd, &epoll_ev) < 0)) {
+		log_err("epoll_ctl failed!\n");
+		return -1;
+	}
+
+	if (likely(ev->read_function != NULL)) {
+		return ev->read_function(&ev->context);
+	}
+	return 0;
+}
+
+static struct server *setup_listen_socket(int server_port)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
 	static const int reuse_on = 1;
-	struct peer *peer;
 
 	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
@@ -94,7 +112,7 @@ static struct peer *setup_listen_socket(void)
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin6_family = AF_INET6;
-	serveraddr.sin6_port = htons(CONFIG_SERVER_PORT);
+	serveraddr.sin6_port = htons(server_port);
 	serveraddr.sin6_addr = in6addr_any;
 	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
 		sizeof(serveraddr)) < 0) {
@@ -107,14 +125,19 @@ static struct peer *setup_listen_socket(void)
 		goto listen_failed;
 	}
 
-	peer = alloc_peer(listen_fd);
-	if (peer == NULL) {
-		goto alloc_peer_wait_failed;
+	struct server *server = alloc_server(listen_fd);
+	if (server == NULL) {
+		goto alloc_server_wait_failed;
 	}
 
-	return peer;
+	if (add_io_new(&server->ev) < 0) {
+		goto add_io_failed;
+	}
 
-alloc_peer_wait_failed:
+	return server;
+
+add_io_failed:
+alloc_server_wait_failed:
 listen_failed:
 bind_failed:
 nonblock_failed:
@@ -125,12 +148,12 @@ so_reuse_failed:
 
 int add_io(struct peer *p)
 {
-	return add_epoll(p->io.fd, epoll_fd, p);
+	return add_epoll(p->ev.context.fd, epoll_fd, p);
 }
 
 void remove_io(const struct peer *p)
 {
-	remove_epoll(p->io.fd, epoll_fd);
+	remove_epoll(p->ev.context.fd, epoll_fd);
 }
 
 static int configure_keepalive(int fd)
@@ -190,11 +213,11 @@ static struct peer *handle_new_connection(int fd)
 	return peer;
 }
 
-static int accept_all(int listen_fd)
+static int accept_all(union io_context *io)
 {
 	while (1) {
 		int peer_fd;
-		peer_fd = accept(listen_fd, NULL, NULL);
+		peer_fd = accept(io->fd, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return 0;
@@ -206,9 +229,11 @@ static int accept_all(int listen_fd)
 			if (unlikely(client_peer == NULL)) {
 				return -1;
 			}
+			/* TODO: take out
 			if (unlikely(handle_all_peer_operations(client_peer) == -1)) {
 				free_peer(client_peer);
 			}
+			*/
 		}
 	}
 }
@@ -229,7 +254,7 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 			return diff;
 		}
 
-		read_length = READ(p->io.fd, p->write_ptr, (size_t)free_space(p));
+		read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			*read_ptr = NULL;
 			return IO_CLOSE;
@@ -255,7 +280,7 @@ int send_buffer(struct peer *p)
 	while (p->to_write != 0) {
 		ssize_t written;
 		written =
-			SEND(p->io.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+			SEND(p->ev.context.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
@@ -263,10 +288,6 @@ int send_buffer(struct peer *p)
 				return -1;
 			}
 			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
-			if (p->op != WRITE_MSG) {
-				p->next_read_op = p->op;
-				p->op = WRITE_MSG;
-			}
 			return IO_WOULD_BLOCK;
 		}
 		write_buffer_ptr += written;
@@ -332,7 +353,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 #pragma GCC diagnostic pop
 	iov[2].iov_len = len;
 
-	sent = WRITEV(p->io.fd, iov, sizeof(iov) / sizeof(struct iovec));
+	sent = WRITEV(p->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
 	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
 		return 0;
 	}
@@ -364,8 +385,6 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 
 	if (sent == -1) {
 		/* the write call has blocked */
-		p->next_read_op = p->op;
-		p->op = WRITE_MSG;
 		return 0;
 	}
 
@@ -426,11 +445,12 @@ static int read_msg(struct peer *p)
 	}
 }
 
-static int write_msg(struct peer *p)
+int write_msg(union io_context *context)
 {
+	struct peer *p = container_of(context, struct peer, ev);
+
 	int ret = send_buffer(p);
 	if (likely(ret == 0)) {
-		p->op = p->next_read_op;
 		return 0;
 	} else if (unlikely(ret == -1)) {
 		return -1;
@@ -442,8 +462,9 @@ static int write_msg(struct peer *p)
 	 return 0;
 }
 
-int handle_all_peer_operations(struct peer *p)
+int handle_all_peer_operations(union io_context *context)
 {
+	struct peer *p = container_of(context, struct peer, ev);
 	while (1) {
 		int ret;
 
@@ -458,13 +479,6 @@ int handle_all_peer_operations(struct peer *p)
 		case READ_MSG:
 			ret = read_msg(p);
 			if (unlikely(ret <= 0)) {
-				return ret;
-			}
-			break;
-
-		case WRITE_MSG:
-			ret = write_msg(p);
-			if (ret < 0) {
 				return ret;
 			}
 			break;
@@ -504,6 +518,7 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
+/*
 static int handle_error_events(struct peer *p,
 	const struct peer *listen_server)
 {
@@ -534,9 +549,8 @@ static int handle_normal_events(struct peer *p,
 		return 0;
 	}
 }
-
-static int handle_events(int num_events, struct epoll_event *events,
-	struct peer *listen_server)
+*/
+static int handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
@@ -548,12 +562,19 @@ static int handle_events(int num_events, struct epoll_event *events,
 	for (int i = 0; i < num_events; ++i) {
 		if (unlikely((events[i].events & EPOLLERR) ||
 				(events[i].events & EPOLLHUP))) {
+			/* TODO
 			if (handle_error_events(events[i].data.ptr, listen_server) != 0) {
 				return -1;
 			}
+			*/
 		} else {
-			if (unlikely(handle_normal_events(events[i].data.ptr,
-					listen_server) != 0)) {
+			struct io_event *ev = events[i].data.ptr;
+			if (events[i].events & EPOLLIN) {
+				return ev->read_function(&ev->context);
+			} else if (events[i].events & EPOLLOUT) {
+				return ev->write_function(&ev->context);
+			} else {
+				// TODO: handle unknown events
 				return -1;
 			}
 		}
@@ -579,6 +600,18 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
+
+struct server *alloc_server(int fd)
+{
+	struct server *s = malloc(sizeof(*s));
+	if (unlikely(s == NULL)) {
+		return NULL;
+	}
+	s->ev.context.fd = fd;
+	s->ev.read_function = accept_all;
+	return s;
+}
+
 int run_io(const char *user_name)
 {
 	int ret = 0;
@@ -593,7 +626,7 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
-	struct peer *listen_server = setup_listen_socket();
+	struct server *listen_server = setup_listen_socket(CONFIG_SERVER_PORT);
 	if (listen_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
@@ -604,22 +637,18 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
-	if (accept_all(listen_server->io.fd) < 0) {
-		go_ahead = 0;
-		ret = -1;
-	}
-
 	while (likely(go_ahead)) {
 		int num_events =
 			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
-		if (unlikely(handle_events(num_events, events, listen_server) != 0)) {
+		if (unlikely(handle_events(num_events, events) != 0)) {
 			ret = -1;
 			break;
 		}
 	}
 
 	destroy_all_peers();
+
 	close(epoll_fd);
 	unregister_signal_handler();
 	return ret;

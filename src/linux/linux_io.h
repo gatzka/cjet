@@ -27,6 +27,7 @@
 #ifndef CJET_LINUX_IO_H
 #define CJET_LINUX_IO_H
 
+#include "linux/io_event.h"
 #include "peer.h"
 
 #ifdef __cplusplus
@@ -38,11 +39,18 @@ extern "C" {
 #define IO_ERROR -3
 #define IO_TOOMUCHDATA -4
 
+struct server {
+	struct io_event ev;
+};
+
 int run_io(const char *user_name);
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
-int handle_all_peer_operations(struct peer *p);
+int handle_all_peer_operations(union io_context *context);
+int write_msg(union io_context *context);
 int send_buffer(struct peer *p);
+struct server *alloc_server(int fd);
+int add_io_new(struct io_event *ev);
 
 #ifdef __cplusplus
 }

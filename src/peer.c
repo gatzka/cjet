@@ -41,6 +41,7 @@
 #include "peer.h"
 #include "router.h"
 #include "state.h"
+#include "linux/linux_io.h"
 
 static LIST_HEAD(peer_list);
 
@@ -77,7 +78,6 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	p->io.fd = fd;
 	if (unlikely(add_routing_table(p) != 0)) {
 		free(p);
 		return NULL;
@@ -94,7 +94,11 @@ struct peer *alloc_peer(int fd)
 	list_add_tail(&p->next_peer, &peer_list);
 	++number_of_peers;
 
-	if (add_io(p) < 0) {
+	p->ev.context.fd = fd;
+	p->ev.read_function = handle_all_peer_operations;
+	p->ev.write_function = 	write_msg;
+
+	if (add_io_new(&p->ev) < 0) {
 		free_peer_resources(p);
 		return NULL;
 	} else {
