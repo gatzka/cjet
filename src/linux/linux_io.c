@@ -88,74 +88,6 @@ int add_io_new(struct io_event *ev)
 	return 0;
 }
 
-static struct server *setup_listen_socket(int server_port)
-{
-	int listen_fd;
-	struct sockaddr_in6 serveraddr;
-	static const int reuse_on = 1;
-
-	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
-	if (listen_fd < 0) {
-		log_err("Could not create listen socket!\n");
-		return NULL;
-	}
-
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-			sizeof(reuse_on)) < 0) {
-		log_err("Could not set %s!\n", "SO_REUSEADDR");
-		goto so_reuse_failed;
-	}
-
-	if (set_fd_non_blocking(listen_fd) < 0) {
-		goto nonblock_failed;
-	}
-
-	memset(&serveraddr, 0, sizeof(serveraddr));
-	serveraddr.sin6_family = AF_INET6;
-	serveraddr.sin6_port = htons(server_port);
-	serveraddr.sin6_addr = in6addr_any;
-	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
-		sizeof(serveraddr)) < 0) {
-		log_err("bind failed!\n");
-		goto bind_failed;
-	}
-
-	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
-		log_err("listen failed!\n");
-		goto listen_failed;
-	}
-
-	struct server *server = alloc_server(listen_fd);
-	if (server == NULL) {
-		goto alloc_server_wait_failed;
-	}
-
-	if (add_io_new(&server->ev) < 0) {
-		goto add_io_failed;
-	}
-
-	return server;
-
-add_io_failed:
-alloc_server_wait_failed:
-listen_failed:
-bind_failed:
-nonblock_failed:
-so_reuse_failed:
-	close(listen_fd);
-	return NULL;
-}
-
-int add_io(struct peer *p)
-{
-	return add_epoll(p->ev.context.fd, epoll_fd, p);
-}
-
-void remove_io(const struct peer *p)
-{
-	remove_epoll(p->ev.context.fd, epoll_fd);
-}
-
 static int configure_keepalive(int fd)
 {
 	int opt = 12;
@@ -236,6 +168,85 @@ static int accept_all(union io_context *io)
 			*/
 		}
 	}
+}
+
+static struct server *alloc_server(int fd)
+{
+	struct server *s = malloc(sizeof(*s));
+	if (unlikely(s == NULL)) {
+		return NULL;
+	}
+	s->ev.context.fd = fd;
+	s->ev.read_function = accept_all;
+	return s;
+}
+
+static struct server *setup_listen_socket(int server_port)
+{
+	int listen_fd;
+	struct sockaddr_in6 serveraddr;
+	static const int reuse_on = 1;
+
+	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
+	if (listen_fd < 0) {
+		log_err("Could not create listen socket!\n");
+		return NULL;
+	}
+
+	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+			sizeof(reuse_on)) < 0) {
+		log_err("Could not set %s!\n", "SO_REUSEADDR");
+		goto so_reuse_failed;
+	}
+
+	if (set_fd_non_blocking(listen_fd) < 0) {
+		goto nonblock_failed;
+	}
+
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sin6_family = AF_INET6;
+	serveraddr.sin6_port = htons(server_port);
+	serveraddr.sin6_addr = in6addr_any;
+	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
+		sizeof(serveraddr)) < 0) {
+		log_err("bind failed!\n");
+		goto bind_failed;
+	}
+
+	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
+		log_err("listen failed!\n");
+		goto listen_failed;
+	}
+
+	struct server *server = alloc_server(listen_fd);
+	if (server == NULL) {
+		goto alloc_server_wait_failed;
+	}
+
+	if (add_io_new(&server->ev) < 0) {
+		goto add_io_failed;
+	}
+
+	return server;
+
+add_io_failed:
+alloc_server_wait_failed:
+listen_failed:
+bind_failed:
+nonblock_failed:
+so_reuse_failed:
+	close(listen_fd);
+	return NULL;
+}
+
+int add_io(struct peer *p)
+{
+	return add_epoll(p->ev.context.fd, epoll_fd, p);
+}
+
+void remove_io(const struct peer *p)
+{
+	remove_epoll(p->ev.context.fd, epoll_fd);
 }
 
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
@@ -598,18 +609,6 @@ static int drop_privileges(const char *user_name)
 		return -1;
 	}
 	return 0;
-}
-
-
-struct server *alloc_server(int fd)
-{
-	struct server *s = malloc(sizeof(*s));
-	if (unlikely(s == NULL)) {
-		return NULL;
-	}
-	s->ev.context.fd = fd;
-	s->ev.read_function = accept_all;
-	return s;
 }
 
 int run_io(const char *user_name)
