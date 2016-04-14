@@ -161,11 +161,6 @@ static int accept_all(union io_context *io)
 			if (unlikely(client_peer == NULL)) {
 				return -1;
 			}
-			/* TODO: take out
-			if (unlikely(handle_all_peer_operations(client_peer) == -1)) {
-				free_peer(client_peer);
-			}
-			*/
 		}
 	}
 }
