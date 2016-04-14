@@ -41,7 +41,6 @@
 #include "cjet_io.h"
 #include "compiler.h"
 #include "generated/os_config.h"
-#include "linux/io_loop.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
 #include "list.h"
@@ -237,7 +236,8 @@ so_reuse_failed:
 
 void remove_io(const struct peer *p)
 {
-	remove_epoll(p->ev.context.fd, epoll_fd);
+	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, p->ev.context.fd, NULL);
+	close(p->ev.context.fd);
 }
 
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
