@@ -619,8 +619,8 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
-	struct server *listen_server = setup_listen_socket(CONFIG_SERVER_PORT);
-	if (listen_server == NULL) {
+	struct server *jet_server = setup_listen_socket(CONFIG_SERVER_PORT);
+	if (jet_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 	}
@@ -641,6 +641,7 @@ int run_io(const char *user_name)
 	}
 
 	destroy_all_peers();
+	close(jet_server->ev.context.fd);
 
 	close(epoll_fd);
 	unregister_signal_handler();
