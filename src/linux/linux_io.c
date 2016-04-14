@@ -173,6 +173,7 @@ static struct server *alloc_server(int fd)
 	}
 	s->ev.context.fd = fd;
 	s->ev.read_function = accept_all;
+	s->ev.write_function = NULL;
 	return s;
 }
 
@@ -232,11 +233,6 @@ nonblock_failed:
 so_reuse_failed:
 	close(listen_fd);
 	return NULL;
-}
-
-int add_io(struct peer *p)
-{
-	return add_epoll(p->ev.context.fd, epoll_fd, p);
 }
 
 void remove_io(const struct peer *p)
