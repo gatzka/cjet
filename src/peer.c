@@ -97,6 +97,7 @@ struct peer *alloc_peer(int fd)
 	p->ev.context.fd = fd;
 	p->ev.read_function = handle_all_peer_operations;
 	p->ev.write_function = 	write_msg;
+	p->ev.error_function = free_peer;
 
 	if (add_io(&p->ev) < 0) {
 		free_peer_resources(p);
@@ -106,10 +107,17 @@ struct peer *alloc_peer(int fd)
 	}
 }
 
-void free_peer(struct peer *p)
+static void free_peer_local(struct peer *p)
 {
 	remove_io(p);
 	free_peer_resources(p);
+}
+
+int free_peer(union io_context *io)
+{
+	struct peer *p = container_of(io, struct peer, ev);
+	free_peer_local(p);
+	return 0;
 }
 
 void destroy_all_peers(void)
@@ -118,7 +126,7 @@ void destroy_all_peers(void)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		free_peer(p);
+		free_peer_local(p);
 	}
 }
 

@@ -164,6 +164,12 @@ static int accept_all(union io_context *io)
 	}
 }
 
+static int accept_error(union io_context *io)
+{
+	(void)io;
+	return -1;
+}
+
 static struct server *alloc_server(int fd)
 {
 	struct server *s = malloc(sizeof(*s));
@@ -173,6 +179,7 @@ static struct server *alloc_server(int fd)
 	s->ev.context.fd = fd;
 	s->ev.read_function = accept_all;
 	s->ev.write_function = NULL;
+	s->ev.error_function = accept_error;
 	return s;
 }
 
@@ -545,15 +552,14 @@ static int handle_events(int num_events, struct epoll_event *events)
 		}
 	}
 	for (int i = 0; i < num_events; ++i) {
+		struct io_event *ev = events[i].data.ptr;
+
 		if (unlikely((events[i].events & EPOLLERR) ||
 				(events[i].events & EPOLLHUP))) {
-			/* TODO
-			if (handle_error_events(events[i].data.ptr, listen_server) != 0) {
+			if (ev->error_function(&ev->context) != 0) {
 				return -1;
 			}
-			*/
 		} else {
-			struct io_event *ev = events[i].data.ptr;
 			if (events[i].events & EPOLLIN) {
 				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) != 0)) {
 					return -1;

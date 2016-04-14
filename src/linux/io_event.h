@@ -44,7 +44,7 @@ struct io_event {
 	union io_context context;
 	int (*read_function)(union io_context*);
 	int (*write_function)(union io_context*);
-
+	int (*error_function)(union io_context*);
 };
 
 #ifdef __cplusplus

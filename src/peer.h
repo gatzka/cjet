@@ -66,7 +66,7 @@ struct list_head *get_peer_list(void);
 const char *get_peer_name(const struct peer *p);
 
 struct peer *alloc_peer(int fd);
-void free_peer(struct peer *p);
+int free_peer(union io_context *io);
 void destroy_all_peers(void);
 int get_number_of_peers(void);
 void remove_peer_from_routes(const struct peer *p);
