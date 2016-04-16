@@ -234,6 +234,13 @@ int fake_read(int fd, void *buf, size_t count)
 	return 0;
 }
 
+int parse_message(char *msg, uint32_t length)
+{
+	parsed_msg = msg;
+	parsed_length = length;
+	return 0;
+}
+
 enum callback_return add_io(struct io_event *ev)
 {
 	(void)ev;
@@ -541,7 +548,7 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 	if (p != NULL) {
 		p->to_write = sizeof(buffer);
 		int ret = send_buffer(p);
-		BOOST_CHECK(ret == IO_WOULD_BLOCK);
+		BOOST_CHECK(ret == 0);
 
 		free_peer(p);
 	} else {
@@ -563,7 +570,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 		BOOST_REQUIRE(ret == 0);
 
 		ret = send_buffer(p);
-		BOOST_CHECK(ret == IO_WOULD_BLOCK);
+		BOOST_CHECK(ret == 0);
 
 		static char check_buffer[sizeof(sw_message) + sizeof(len_be)];
 		char *buf_ptr = check_buffer;
