@@ -79,6 +79,7 @@ Project {
       name: "platform independent"
       files: [
         "*.c",
+        "*.h"
       ]
       cpp.cLanguageVersion: "c99"
     }
@@ -87,6 +88,7 @@ Project {
       name: "cJSON"
       files: [
         "json/*.c",
+        "json/*.h",
       ]
       cpp.cLanguageVersion: "c99"
     }
@@ -122,6 +124,7 @@ Project {
       prefix: "linux/"
       files: [
         "*.c",
+        "*.h"
       ]
       cpp.defines: "_GNU_SOURCE"
     }
