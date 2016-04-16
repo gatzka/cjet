@@ -117,7 +117,7 @@ static int configure_keepalive(int fd)
 	return 0;
 }
 
-static struct peer *handle_new_connection(int fd)
+static void handle_new_connection(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
@@ -126,23 +126,23 @@ static struct peer *handle_new_connection(int fd)
 			sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
-		return NULL;
+		return;
 	}
 
 	if (configure_keepalive(fd) < 0) {
 		log_err("Could not configure keepalive!\n");
 		close(fd);
-		return NULL;
+		return;
 	}
 
 	struct peer *peer = alloc_peer(fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate peer!\n");
 		close(fd);
-		return NULL;
+		return;
 	}
 
-	return peer;
+	return;
 }
 
 static enum callback_return accept_all(union io_context *io)
@@ -157,10 +157,7 @@ static enum callback_return accept_all(union io_context *io)
 				return ABORT_LOOP;
 			}
 		} else {
-			struct peer *client_peer = handle_new_connection(peer_fd);
-			if (unlikely(client_peer == NULL)) {
-				return ABORT_LOOP;
-			}
+			handle_new_connection(peer_fd);
 		}
 	}
 }
@@ -422,15 +419,13 @@ static int read_msg_length(struct peer *p)
 	if (unlikely(ret <= 0)) {
 		if (ret == IO_WOULD_BLOCK) {
 			return 0;
-		} else {
-			return ret;
 		}
 	} else {
 		memcpy(&message_length, message_length_ptr, sizeof(message_length));
 		p->op = READ_MSG;
 		p->msg_length = ntohl(message_length);
-		return 1;
 	}
+	return ret;
 }
 
 static int read_msg(struct peer *p)
@@ -494,7 +489,6 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 			return CONTINUE_LOOP;
 		}
 	}
-	return ABORT_LOOP;
 }
 
 static void sighandler(int signum)
