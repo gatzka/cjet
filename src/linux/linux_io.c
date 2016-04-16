@@ -527,21 +527,6 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
-/*
-static int handle_error_events(struct peer *p,
-	const struct peer *listen_server)
-{
-	if (p == listen_server) {
-		log_err("epoll error on listen fd!\n");
-		return -1;
-	} else {
-		log_warn("epoll error on peer fd!\n");
-		free_peer(p);
-		return 0;
-	}
-}
-*/
-
 static int handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
