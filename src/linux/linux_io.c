@@ -456,7 +456,7 @@ enum callback_return write_msg(union io_context *context)
 
 	int ret = send_buffer(p);
 	if (unlikely(ret < 0)) {
-		free_peer(context);
+		free_peer(p);
 	}
 	 return CONTINUE_LOOP;
 }
@@ -484,7 +484,7 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
-				free_peer(context);
+				free_peer(p);
 			}
 			return CONTINUE_LOOP;
 		}

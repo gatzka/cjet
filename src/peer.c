@@ -72,6 +72,13 @@ static void free_peer_resources(struct peer *p)
 	--number_of_peers;
 }
 
+static enum callback_return free_peer_on_error(union io_context *context)
+{
+	struct peer *p = container_of(context, struct peer, ev);
+	free_peer(p);
+	return CONTINUE_LOOP;
+}
+
 struct peer *alloc_peer(int fd)
 {
 	struct peer *p = malloc(sizeof(*p));
@@ -97,7 +104,7 @@ struct peer *alloc_peer(int fd)
 	p->ev.context.fd = fd;
 	p->ev.read_function = handle_all_peer_operations;
 	p->ev.write_function = 	write_msg;
-	p->ev.error_function = free_peer;
+	p->ev.error_function = free_peer_on_error;
 
 	if (add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
@@ -107,17 +114,10 @@ struct peer *alloc_peer(int fd)
 	}
 }
 
-static void free_peer_local(struct peer *p)
+void free_peer(struct peer *p)
 {
 	remove_io(p);
 	free_peer_resources(p);
-}
-
-int free_peer(union io_context *io)
-{
-	struct peer *p = container_of(io, struct peer, ev);
-	free_peer_local(p);
-	return 0;
 }
 
 void destroy_all_peers(void)
@@ -126,7 +126,7 @@ void destroy_all_peers(void)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		free_peer_local(p);
+		free_peer(p);
 	}
 }
 
