@@ -58,28 +58,6 @@ extern "C" {
 static uint32_t parsed_length = 0;
 static char *parsed_msg = NULL;
 
-int parse_message(char *msg, uint32_t length)
-{
-	parsed_msg = msg;
-	parsed_length = length;
-	return 0;
-}
-
-int add_epoll(int fd, int epoll_fd, void *cookie)
-{
-	(void)fd;
-	(void)epoll_fd;
-	(void)cookie;
-	return 0;
-}
-
-void remove_epoll(int fd, int epoll_fd)
-{
-	(void)fd;
-	(void)epoll_fd;
-	return;
-}
-
 static unsigned char slow_read_counter = 0;
 static const char fast_read_msg[] = "HelloWorld";
 static const char handle_fast_peer_msg[] = "Hello World!";
@@ -256,6 +234,38 @@ int fake_read(int fd, void *buf, size_t count)
 	return 0;
 }
 
+int parse_message(char *msg, uint32_t length)
+{
+	parsed_msg = msg;
+	parsed_length = length;
+	return 0;
+}
+
+enum callback_return add_io(struct io_event *ev)
+{
+	(void)ev;
+	return CONTINUE_LOOP;
+}
+
+void remove_io(struct io_event *ev)
+{
+	(void)ev;
+}
+
+int eventloop_create(void)
+{
+	return 0;
+}
+
+void eventloop_destroy(void)
+{
+}
+
+int eventloop_run(int *go_ahead)
+{
+	(void)go_ahead;
+	return 0;
+}
 }
 
 BOOST_AUTO_TEST_SUITE(get_read_ptr_test)
@@ -374,8 +384,8 @@ BOOST_AUTO_TEST_CASE(fast_peer)
 	struct peer *p = alloc_peer(HANDLE_FAST_PEER);
 	BOOST_REQUIRE(p != NULL);
 
-	int ret = handle_all_peer_operations(p);
-	BOOST_CHECK(ret == 0);
+	enum callback_return ret = handle_all_peer_operations(&p->ev.context);
+	BOOST_CHECK(ret == CONTINUE_LOOP);
 	BOOST_CHECK_EQUAL(parsed_length, strlen(handle_fast_peer_msg));
 	BOOST_CHECK(strncmp(parsed_msg, handle_fast_peer_msg, parsed_length) == 0);
 
@@ -389,19 +399,19 @@ BOOST_AUTO_TEST_CASE(slow_peer)
 
 	struct peer *p = alloc_peer(HANDLE_SLOW_PEER);
 	if (p != NULL) {
-		int ret = handle_all_peer_operations(p);
+		enum callback_return ret = handle_all_peer_operations(&p->ev.context);
 		BOOST_CHECK(parsed_msg == NULL);
-		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(ret == CONTINUE_LOOP);
 		BOOST_CHECK(p->op == READ_MSG_LENGTH);
 
-		ret = handle_all_peer_operations(p);
+		ret = handle_all_peer_operations(&p->ev.context);
 		BOOST_CHECK(parsed_msg == NULL);
-		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(ret == CONTINUE_LOOP);
 		BOOST_CHECK(p->op == READ_MSG);
 
-		ret = handle_all_peer_operations(p);
+		ret = handle_all_peer_operations(&p->ev.context);
 		BOOST_REQUIRE(parsed_msg != NULL);
-		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(ret == CONTINUE_LOOP);
 		BOOST_CHECK(p->op == READ_MSG_LENGTH);
 		BOOST_CHECK(parsed_length == strlen(handle_slow_peer_msg));
 		if (parsed_msg != NULL) {
@@ -538,8 +548,7 @@ BOOST_AUTO_TEST_CASE(write_blocks)
 	if (p != NULL) {
 		p->to_write = sizeof(buffer);
 		int ret = send_buffer(p);
-		BOOST_CHECK(ret == IO_WOULD_BLOCK);
-		BOOST_CHECK(p->op == WRITE_MSG);
+		BOOST_CHECK(ret == 0);
 
 		free_peer(p);
 	} else {
@@ -561,8 +570,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 		BOOST_REQUIRE(ret == 0);
 
 		ret = send_buffer(p);
-		BOOST_CHECK(ret == IO_WOULD_BLOCK);
-		BOOST_CHECK(p->op == WRITE_MSG);
+		BOOST_CHECK(ret == 0);
 
 		static char check_buffer[sizeof(sw_message) + sizeof(len_be)];
 		char *buf_ptr = check_buffer;
@@ -614,8 +622,6 @@ BOOST_AUTO_TEST_CASE(max_message_length)
 {
 	struct peer *p = alloc_peer(DO_NOT_SEND);
 	if (p != NULL) {
-		p->op = WRITE_MSG;
-
 		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
 		memset(message, 0x42, sizeof(message));
 		message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t)] = '\0';
@@ -632,8 +638,6 @@ BOOST_AUTO_TEST_CASE(message_too_large)
 {
 	struct peer *p = alloc_peer(BADFD);
 	if (p != NULL) {
-		p->op = WRITE_MSG;
-
 		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
 		memset(message, 0x42, sizeof(message));
 		message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1] = '\0';
@@ -683,7 +687,6 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 		static char message[] = "HelloWorld!";
 		int ret = send_message(p, message, ::strlen(message));
 		BOOST_CHECK(ret == 0);
-		BOOST_CHECK(p->op == WRITE_MSG);
 
 		static char check_buffer[CONFIG_MAX_MESSAGE_SIZE];
 		uint32_t len_be = htonl(::strlen(message));

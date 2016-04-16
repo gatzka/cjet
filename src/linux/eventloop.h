@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,32 +24,40 @@
  * SOFTWARE.
  */
 
-#include <string.h>
-#include <sys/epoll.h>
-#include <unistd.h>
+#ifndef CJET_LINUX_EVENTLOOP_H
+#define CJET_LINUX_EVENTLOOP_H
 
-#include "compiler.h"
-#include "linux/io_loop.h"
-#include "log.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-int add_epoll(int fd, int epoll_fd, void *cookie)
-{
-	struct epoll_event ev;
+#include <stdint.h>
 
-	memset(&ev, 0, sizeof(ev));
-	ev.data.ptr = cookie;
-	ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, fd, &ev) < 0)) {
-		log_err("epoll_ctl failed!\n");
-		return -1;
-	}
-	return 0;
+enum callback_return {ABORT_LOOP = -1, CONTINUE_LOOP = 0};
+
+union io_context {
+	void *ptr;
+	int fd;
+	uint32_t u32;
+	uint64_t u64;
+};
+
+struct io_event {
+	union io_context context;
+	enum callback_return (*read_function)(union io_context*);
+	enum callback_return (*write_function)(union io_context*);
+	enum callback_return (*error_function)(union io_context*);
+};
+
+int eventloop_create(void);
+void eventloop_destroy(void);
+int eventloop_run(int *go_ahead);
+enum callback_return add_io(struct io_event *ev);
+void remove_io(struct io_event *ev);
+
+#ifdef __cplusplus
 }
+#endif
 
-void remove_epoll(int fd, int epoll_fd)
-{
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL);
-	close(fd);
-}
-
+#endif
 

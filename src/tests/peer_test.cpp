@@ -40,18 +40,30 @@ enum fds {
 };
 
 extern "C" {
-	int add_io(struct peer *p)
+
+	enum callback_return handle_all_peer_operations(union io_context *context)
 	{
-		if (p->io.fd == ADD_IO_FAILED) {
-			return -1;
-		}
-		return 0;
+		(void)context;
+		return CONTINUE_LOOP;
 	}
 
-	void remove_io(const struct peer *p)
+	enum callback_return write_msg(union io_context *context)
 	{
-		(void)p;
-		return;
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
+	enum callback_return add_io(struct io_event *ev)
+	{
+		if (ev->context.fd == ADD_IO_FAILED) {
+			return ABORT_LOOP;
+		}
+		return CONTINUE_LOOP;
+	}
+
+	void remove_io(struct io_event *ev)
+	{
+		(void)ev;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)
@@ -88,7 +100,7 @@ extern "C" {
 
 	int add_routing_table(struct peer *p)
 	{
-		if (p->io.fd == ADD_ROUTINGTABLE_FAILED) {
+		if (p->ev.context.fd == ADD_ROUTINGTABLE_FAILED) {
 			return -1;
 		}
 		return 0;

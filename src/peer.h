@@ -35,6 +35,7 @@
 #include "generated/os_config.h"
 #include "json/cJSON.h"
 #include "list.h"
+#include "linux/eventloop.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,12 +43,10 @@ extern "C" {
 
 #define READ_MSG_LENGTH 0
 #define READ_MSG 1
-#define WRITE_MSG 2
 
 struct peer {
-	struct io io;
+	struct io_event ev;
 	int op;
-	int next_read_op;
 	unsigned int to_write;
 	uint32_t msg_length;
 	size_t write_buffer_size;
@@ -67,6 +66,7 @@ struct list_head *get_peer_list(void);
 const char *get_peer_name(const struct peer *p);
 
 struct peer *alloc_peer(int fd);
+void close_and_free_peer(struct peer *p);
 void free_peer(struct peer *p);
 void destroy_all_peers(void);
 int get_number_of_peers(void);

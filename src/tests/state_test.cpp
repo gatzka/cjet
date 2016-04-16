@@ -39,6 +39,18 @@
 static char send_buffer[100000];
 
 extern "C" {
+	enum callback_return handle_all_peer_operations(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
+	enum callback_return write_msg(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
 		(void)p;
@@ -46,16 +58,15 @@ extern "C" {
 		return 0;
 	}
 
-	int add_io(struct peer *p)
+	enum callback_return add_io(struct io_event *ev)
 	{
-		(void)p;
-		return 0;
+		(void)ev;
+		return CONTINUE_LOOP;
 	}
 
-	void remove_io(const struct peer *p)
+	void remove_io(struct io_event *ev)
 	{
-		(void)p;
-		return;
+		(void)ev;
 	}
 
 	static bool notify_shall_fail = false;

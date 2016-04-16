@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "cjet_io.h"
 #include "compiler.h"
@@ -41,6 +42,7 @@
 #include "peer.h"
 #include "router.h"
 #include "state.h"
+#include "linux/linux_io.h"
 
 static LIST_HEAD(peer_list);
 
@@ -71,13 +73,25 @@ static void free_peer_resources(struct peer *p)
 	--number_of_peers;
 }
 
+static enum callback_return free_peer_on_error(union io_context *context)
+{
+	struct peer *p = container_of(context, struct peer, ev);
+	close_and_free_peer(p);
+	return CONTINUE_LOOP;
+}
+
 struct peer *alloc_peer(int fd)
 {
 	struct peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	p->io.fd = fd;
+
+	p->ev.context.fd = fd;
+	p->ev.read_function = handle_all_peer_operations;
+	p->ev.write_function = 	write_msg;
+	p->ev.error_function = free_peer_on_error;
+
 	if (unlikely(add_routing_table(p) != 0)) {
 		free(p);
 		return NULL;
@@ -94,7 +108,7 @@ struct peer *alloc_peer(int fd)
 	list_add_tail(&p->next_peer, &peer_list);
 	++number_of_peers;
 
-	if (add_io(p) < 0) {
+	if (add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
 		return NULL;
 	} else {
@@ -104,8 +118,15 @@ struct peer *alloc_peer(int fd)
 
 void free_peer(struct peer *p)
 {
-	remove_io(p);
+	remove_io(&p->ev);
 	free_peer_resources(p);
+}
+
+void close_and_free_peer(struct peer *p)
+{
+	int fd = p->ev.context.fd;
+	free_peer(p);
+	close(fd);
 }
 
 void destroy_all_peers(void)
@@ -114,7 +135,7 @@ void destroy_all_peers(void)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		free_peer(p);
+		close_and_free_peer(p);
 	}
 }
 
