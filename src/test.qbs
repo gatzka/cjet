@@ -181,17 +181,54 @@ Project {
     type: ["application", "unittest"]
     consoleApplication: true
 
-    cpp.defines: ["_GNU_SOURCE"]
+    Depends { name: "generateCjetConfig" }
+    Depends { name: "generateOsConfig" }
 
-    Depends {
-      name: "unittestSettings"
-    }
+    cpp.includePaths: ["../src/", product.buildDirectory]
+    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING", "_GNU_SOURCE"]
+    cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
 
     files: [
+      "fetch.c",
+      "peer.c",
+      "response.c",
+      "router.c",
+      "state.c",
+      "table.c",
+      "linux/jet_string.c",
       "linux/linux_io.c",
+      "linux/uuid.c",
       "linux/tests/readbuffer_test.cpp",
       "linux/tests/log.cpp"
-    ] 
+    ]
+
+    Group {
+      name: "json"
+      prefix: "../src/"
+      cpp.cLanguageVersion: "c99"
+      files: [
+        "json/*.c",
+      ]
+    }
+
+    Group {
+      name: "cjet config file"
+      prefix: "../src/"
+      files: [
+        "cjet_config.h.in"
+      ]
+      fileTags: ["cjet_config_tag"]
+    }
+
+    Group {
+      condition: qbs.targetOS.contains("linux")
+      name: "linux config file"
+      prefix: "../src/"
+      files: [
+        "linux/config/os_config.h.in"
+      ]
+      fileTags: ["os_config_tag"]
+    }
   }
 
   CppApplication {
