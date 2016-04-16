@@ -99,7 +99,7 @@ struct peer *alloc_peer(int fd)
 	p->ev.write_function = 	write_msg;
 	p->ev.error_function = free_peer;
 
-	if (add_io(&p->ev) < 0) {
+	if (add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
 		return NULL;
 	} else {

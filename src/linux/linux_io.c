@@ -41,6 +41,7 @@
 #include "cjet_io.h"
 #include "compiler.h"
 #include "generated/os_config.h"
+#include "linux/io_event.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
 #include "list.h"
@@ -69,7 +70,7 @@ static int set_fd_non_blocking(int fd)
 	return 0;
 }
 
-int add_io(struct io_event *ev)
+enum callback_return add_io(struct io_event *ev)
 {
 	struct epoll_event epoll_ev;
 
@@ -78,13 +79,13 @@ int add_io(struct io_event *ev)
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->context.fd, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
-		return -1;
+		return ABORT_LOOP;
 	}
 
 	if (likely(ev->read_function != NULL)) {
 		return ev->read_function(&ev->context);
 	}
-	return 0;
+	return CONTINUE_LOOP;
 }
 
 static int configure_keepalive(int fd)
@@ -144,21 +145,21 @@ static struct peer *handle_new_connection(int fd)
 	return peer;
 }
 
-static int accept_all(union io_context *io)
+static enum callback_return accept_all(union io_context *io)
 {
 	while (1) {
 		int peer_fd;
 		peer_fd = accept(io->fd, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-				return 0;
+				return CONTINUE_LOOP;
 			} else {
-				return -1;
+				return ABORT_LOOP;
 			}
 		} else {
 			struct peer *client_peer = handle_new_connection(peer_fd);
 			if (unlikely(client_peer == NULL)) {
-				return -1;
+				return ABORT_LOOP;
 			}
 		}
 	}
@@ -180,10 +181,17 @@ static struct server *alloc_server(int fd)
 	s->ev.read_function = accept_all;
 	s->ev.write_function = NULL;
 	s->ev.error_function = accept_error;
+
+
+	if (add_io(&s->ev) < 0) {
+		free(s);
+		return NULL;
+	}
+
 	return s;
 }
 
-static struct server *setup_listen_socket(int server_port)
+static struct server *create_server(int server_port)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
@@ -225,13 +233,8 @@ static struct server *setup_listen_socket(int server_port)
 		goto alloc_server_wait_failed;
 	}
 
-	if (add_io(&server->ev) < 0) {
-		goto add_io_failed;
-	}
-
 	return server;
 
-add_io_failed:
 alloc_server_wait_failed:
 listen_failed:
 bind_failed:
@@ -239,6 +242,12 @@ nonblock_failed:
 so_reuse_failed:
 	close(listen_fd);
 	return NULL;
+}
+
+static void delete_server(struct server *server)
+{
+	close(server->ev.context.fd);
+	free(server);
 }
 
 void remove_io(const struct peer *p)
@@ -297,7 +306,7 @@ int send_buffer(struct peer *p)
 				return -1;
 			}
 			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
-			return IO_WOULD_BLOCK;
+			return 0;
 		}
 		write_buffer_ptr += written;
 		p->to_write -= written;
@@ -402,14 +411,6 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 	 * messages. Try to send the rest.
 	 */
 	ret = send_buffer(p);
-	/*
-	 * write in send_buffer blocked. This is not an error, so
-	 * change ret to 0 (no error). Writing the missing stuff is
-	 * handled via epoll / handle_all_peer_operations.
-	 */
-	if (ret == IO_WOULD_BLOCK) {
-		ret = 0;
-	}
 	return ret;
 }
 
@@ -454,24 +455,18 @@ static int read_msg(struct peer *p)
 	}
 }
 
-int write_msg(union io_context *context)
+enum callback_return write_msg(union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
 
 	int ret = send_buffer(p);
-	if (likely(ret == 0)) {
-		return 0;
-	} else if (unlikely(ret == -1)) {
-		return -1;
+	if (unlikely(ret < 0)) {
+		free_peer(context);
 	}
-	/*
-	 * ret == IO_WOULD_BLOCK shows that send_buffer blocked.
-	 * Leave everything like it is.
-	 */
-	 return 0;
+	 return CONTINUE_LOOP;
 }
 
-int handle_all_peer_operations(union io_context *context)
+enum callback_return handle_all_peer_operations(union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
 	while (1) {
@@ -480,25 +475,26 @@ int handle_all_peer_operations(union io_context *context)
 		switch (p->op) {
 		case READ_MSG_LENGTH:
 			ret = read_msg_length(p);
-			if (unlikely(ret <= 0)) {
-				return ret;
-			}
 			break;
 
 		case READ_MSG:
 			ret = read_msg(p);
-			if (unlikely(ret <= 0)) {
-				return ret;
-			}
 			break;
 
 		default:
 			log_err("Unknown client operation!\n");
-			return -1;
+			ret = -1;
 			break;
 		}
+
+		if (unlikely(ret <= 0)) {
+			if (unlikely(ret < 0)) {
+				free_peer(context);
+			}
+			return CONTINUE_LOOP;
+		}
 	}
-	return -1;
+	return ABORT_LOOP;
 }
 
 static void sighandler(int signum)
@@ -527,13 +523,13 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
-static int handle_events(int num_events, struct epoll_event *events)
+static enum callback_return handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
-			return 0;
+			return CONTINUE_LOOP;
 		} else {
-			return -1;
+			return ABORT_LOOP;
 		}
 	}
 	for (int i = 0; i < num_events; ++i) {
@@ -541,24 +537,24 @@ static int handle_events(int num_events, struct epoll_event *events)
 
 		if (unlikely((events[i].events & EPOLLERR) ||
 				(events[i].events & EPOLLHUP))) {
-			if (ev->error_function(&ev->context) != 0) {
-				return -1;
+			if (ev->error_function(&ev->context) == ABORT_LOOP) {
+				return ABORT_LOOP;
 			}
 		} else {
 			if (events[i].events & EPOLLIN) {
-				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) != 0)) {
-					return -1;
+				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) == ABORT_LOOP)) {
+					return ABORT_LOOP;
 				}
 			} else if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) != 0)) {
-					return -1;
+				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
+					return ABORT_LOOP;
 				}
 			} else {
-				return -1;
+				return ABORT_LOOP;
 			}
 		}
 	}
-	return 0;
+	return CONTINUE_LOOP;
 }
 
 static int drop_privileges(const char *user_name)
@@ -593,7 +589,7 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
-	struct server *jet_server = setup_listen_socket(CONFIG_SERVER_PORT);
+	struct server *jet_server = create_server(CONFIG_SERVER_PORT);
 	if (jet_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
@@ -608,14 +604,14 @@ int run_io(const char *user_name)
 		int num_events =
 			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
-		if (unlikely(handle_events(num_events, events) != 0)) {
+		if (unlikely(handle_events(num_events, events) == ABORT_LOOP)) {
 			ret = -1;
 			break;
 		}
 	}
 
 	destroy_all_peers();
-	close(jet_server->ev.context.fd);
+	delete_server(jet_server);
 
 	close(epoll_fd);
 	unregister_signal_handler();

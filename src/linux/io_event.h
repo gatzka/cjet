@@ -33,6 +33,8 @@ extern "C" {
 
 #include <stdint.h>
 
+enum callback_return {ABORT_LOOP = -1, CONTINUE_LOOP = 0};
+
 union io_context {
 	void *ptr;
 	int fd;
@@ -42,9 +44,9 @@ union io_context {
 
 struct io_event {
 	union io_context context;
-	int (*read_function)(union io_context*);
-	int (*write_function)(union io_context*);
-	int (*error_function)(union io_context*);
+	enum callback_return (*read_function)(union io_context*);
+	enum callback_return (*write_function)(union io_context*);
+	enum callback_return (*error_function)(union io_context*);
 };
 
 #ifdef __cplusplus
