@@ -2,8 +2,8 @@
 #define CJET_VERSION_H
 
 #define CJET_MAJOR "0"
-#define CJET_MINOR "1"
-#define CJET_PATCH "12"
+#define CJET_MINOR "2"
+#define CJET_PATCH "0"
 
 #define CJET_VERSION CJET_MAJOR "." CJET_MINOR "." CJET_PATCH "${CJET_LAST}"
 
