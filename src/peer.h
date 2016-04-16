@@ -34,8 +34,8 @@
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
 #include "json/cJSON.h"
-#include "linux/io_event.h"
 #include "list.h"
+#include "linux/eventloop.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +66,7 @@ struct list_head *get_peer_list(void);
 const char *get_peer_name(const struct peer *p);
 
 struct peer *alloc_peer(int fd);
+void close_and_free_peer(struct peer *p);
 void free_peer(struct peer *p);
 void destroy_all_peers(void);
 int get_number_of_peers(void);

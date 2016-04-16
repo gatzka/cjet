@@ -27,7 +27,7 @@
 #ifndef CJET_LINUX_IO_H
 #define CJET_LINUX_IO_H
 
-#include "linux/io_event.h"
+#include "linux/eventloop.h"
 #include "peer.h"
 
 #ifdef __cplusplus
@@ -49,7 +49,6 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_
 enum callback_return handle_all_peer_operations(union io_context *context);
 enum callback_return write_msg(union io_context *context);
 int send_buffer(struct peer *p);
-enum callback_return add_io(struct io_event *ev);
 
 #ifdef __cplusplus
 }

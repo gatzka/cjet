@@ -33,15 +33,13 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
 #include "cjet_io.h"
 #include "compiler.h"
-#include "generated/os_config.h"
-#include "linux/io_event.h"
+#include "linux/eventloop.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
 #include "list.h"
@@ -51,7 +49,6 @@
 #include "state.h"
 
 static int go_ahead = 1;
-static int epoll_fd;
 
 static int set_fd_non_blocking(int fd)
 {
@@ -68,24 +65,6 @@ static int set_fd_non_blocking(int fd)
 		return -1;
 	}
 	return 0;
-}
-
-enum callback_return add_io(struct io_event *ev)
-{
-	struct epoll_event epoll_ev;
-
-	memset(&epoll_ev, 0, sizeof(epoll_ev));
-	epoll_ev.data.ptr = ev;
-	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->context.fd, &epoll_ev) < 0)) {
-		log_err("epoll_ctl failed!\n");
-		return ABORT_LOOP;
-	}
-
-	if (likely(ev->read_function != NULL)) {
-		return ev->read_function(&ev->context);
-	}
-	return CONTINUE_LOOP;
 }
 
 static int configure_keepalive(int fd)
@@ -245,12 +224,6 @@ static void delete_server(struct server *server)
 {
 	close(server->ev.context.fd);
 	free(server);
-}
-
-void remove_io(const struct peer *p)
-{
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, p->ev.context.fd, NULL);
-	close(p->ev.context.fd);
 }
 
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
@@ -456,7 +429,7 @@ enum callback_return write_msg(union io_context *context)
 
 	int ret = send_buffer(p);
 	if (unlikely(ret < 0)) {
-		free_peer(p);
+		close_and_free_peer(p);
 	}
 	 return CONTINUE_LOOP;
 }
@@ -484,7 +457,7 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
-				free_peer(p);
+				close_and_free_peer(p);
 			}
 			return CONTINUE_LOOP;
 		}
@@ -517,40 +490,6 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
-static enum callback_return handle_events(int num_events, struct epoll_event *events)
-{
-	if (unlikely(num_events == -1)) {
-		if (errno == EINTR) {
-			return CONTINUE_LOOP;
-		} else {
-			return ABORT_LOOP;
-		}
-	}
-	for (int i = 0; i < num_events; ++i) {
-		struct io_event *ev = events[i].data.ptr;
-
-		if (unlikely((events[i].events & EPOLLERR) ||
-				(events[i].events & EPOLLHUP))) {
-			if (ev->error_function(&ev->context) == ABORT_LOOP) {
-				return ABORT_LOOP;
-			}
-		} else {
-			if (events[i].events & EPOLLIN) {
-				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) == ABORT_LOOP)) {
-					return ABORT_LOOP;
-				}
-			} else if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
-					return ABORT_LOOP;
-				}
-			} else {
-				return ABORT_LOOP;
-			}
-		}
-	}
-	return CONTINUE_LOOP;
-}
-
 static int drop_privileges(const char *user_name)
 {
 	struct passwd *passwd = getpwnam(user_name);
@@ -572,13 +511,12 @@ static int drop_privileges(const char *user_name)
 int run_io(const char *user_name)
 {
 	int ret = 0;
-	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
 	if (register_signal_handler() < 0) {
 		return -1;
 	}
-	epoll_fd = epoll_create(1);
-	if (epoll_fd < 0) {
+
+	if (eventloop_create() < 0) {
 		go_ahead = 0;
 		ret = -1;
 	}
@@ -594,20 +532,12 @@ int run_io(const char *user_name)
 		ret = -1;
 	}
 
-	while (likely(go_ahead)) {
-		int num_events =
-			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
-
-		if (unlikely(handle_events(num_events, events) == ABORT_LOOP)) {
-			ret = -1;
-			break;
-		}
-	}
+	ret = eventloop_run(&go_ahead);
 
 	destroy_all_peers();
 	delete_server(jet_server);
 
-	close(epoll_fd);
+	eventloop_destroy();
 	unregister_signal_handler();
 	return ret;
 }

@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "cjet_io.h"
 #include "compiler.h"
@@ -75,7 +76,7 @@ static void free_peer_resources(struct peer *p)
 static enum callback_return free_peer_on_error(union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
-	free_peer(p);
+	close_and_free_peer(p);
 	return CONTINUE_LOOP;
 }
 
@@ -117,8 +118,15 @@ struct peer *alloc_peer(int fd)
 
 void free_peer(struct peer *p)
 {
-	remove_io(p);
+	remove_io(&p->ev);
 	free_peer_resources(p);
+}
+
+void close_and_free_peer(struct peer *p)
+{
+	int fd = p->ev.context.fd;
+	free_peer(p);
+	close(fd);
 }
 
 void destroy_all_peers(void)
@@ -127,7 +135,7 @@ void destroy_all_peers(void)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		free_peer(p);
+		close_and_free_peer(p);
 	}
 }
 

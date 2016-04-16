@@ -58,16 +58,15 @@ extern "C" {
 		return 0;
 	}
 
-	int add_io(struct peer *p)
+	enum callback_return add_io(struct io_event *ev)
 	{
-		(void)p;
-		return 0;
+		(void)ev;
+		return CONTINUE_LOOP;
 	}
 
-	void remove_io(const struct peer *p)
+	void remove_io(struct io_event *ev)
 	{
-		(void)p;
-		return;
+		(void)ev;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)

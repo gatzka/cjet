@@ -234,6 +234,31 @@ int fake_read(int fd, void *buf, size_t count)
 	return 0;
 }
 
+enum callback_return add_io(struct io_event *ev)
+{
+	(void)ev;
+	return CONTINUE_LOOP;
+}
+
+void remove_io(struct io_event *ev)
+{
+	(void)ev;
+}
+
+int eventloop_create(void)
+{
+	return 0;
+}
+
+void eventloop_destroy(void)
+{
+}
+
+int eventloop_run(int *go_ahead)
+{
+	(void)go_ahead;
+	return 0;
+}
 }
 
 BOOST_AUTO_TEST_SUITE(get_read_ptr_test)

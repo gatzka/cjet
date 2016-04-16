@@ -53,18 +53,17 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
-	int add_io(struct peer *p)
+	enum callback_return add_io(struct io_event *ev)
 	{
-		if (p->ev.context.fd == ADD_IO_FAILED) {
-			return -1;
+		if (ev->context.fd == ADD_IO_FAILED) {
+			return ABORT_LOOP;
 		}
-		return 0;
+		return CONTINUE_LOOP;
 	}
 
-	void remove_io(const struct peer *p)
+	void remove_io(struct io_event *ev)
 	{
-		(void)p;
-		return;
+		(void)ev;
 	}
 
 	void remove_all_methods_from_peer(struct peer *p)

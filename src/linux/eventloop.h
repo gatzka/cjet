@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_IO_EVENT_H
-#define CJET_IO_EVENT_H
+#ifndef CJET_LINUX_EVENTLOOP_H
+#define CJET_LINUX_EVENTLOOP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +48,12 @@ struct io_event {
 	enum callback_return (*write_function)(union io_context*);
 	enum callback_return (*error_function)(union io_context*);
 };
+
+int eventloop_create(void);
+void eventloop_destroy(void);
+int eventloop_run(int *go_ahead);
+enum callback_return add_io(struct io_event *ev);
+void remove_io(struct io_event *ev);
 
 #ifdef __cplusplus
 }
