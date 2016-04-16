@@ -85,6 +85,12 @@ struct peer *alloc_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+
+	p->ev.context.fd = fd;
+	p->ev.read_function = handle_all_peer_operations;
+	p->ev.write_function = 	write_msg;
+	p->ev.error_function = free_peer_on_error;
+
 	if (unlikely(add_routing_table(p) != 0)) {
 		free(p);
 		return NULL;
@@ -100,11 +106,6 @@ struct peer *alloc_peer(int fd)
 
 	list_add_tail(&p->next_peer, &peer_list);
 	++number_of_peers;
-
-	p->ev.context.fd = fd;
-	p->ev.read_function = handle_all_peer_operations;
-	p->ev.write_function = 	write_msg;
-	p->ev.error_function = free_peer_on_error;
 
 	if (add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);

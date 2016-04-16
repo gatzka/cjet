@@ -37,6 +37,19 @@
 #include "state.h"
 
 extern "C" {
+
+	enum callback_return handle_all_peer_operations(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
+	enum callback_return write_msg(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
 		(void)p;

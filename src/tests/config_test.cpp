@@ -37,7 +37,17 @@
 #include "state.h"
 
 extern "C" {
+	enum callback_return handle_all_peer_operations(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
 
+	enum callback_return write_msg(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
 	void remove_routing_info_from_peer(const struct peer *p)
 	{
 		(void)p;

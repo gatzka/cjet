@@ -47,7 +47,7 @@ int run_io(const char *user_name);
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr);
 int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
 enum callback_return handle_all_peer_operations(union io_context *context);
-int write_msg(union io_context *context);
+enum callback_return write_msg(union io_context *context);
 int send_buffer(struct peer *p);
 enum callback_return add_io(struct io_event *ev);
 
