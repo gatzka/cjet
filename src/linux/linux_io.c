@@ -519,25 +519,30 @@ int run_io(const char *user_name)
 	if (eventloop_create() < 0) {
 		go_ahead = 0;
 		ret = -1;
+		goto unregister_signal_handler;
 	}
 
 	struct server *jet_server = create_server(CONFIG_SERVER_PORT);
 	if (jet_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
+		goto eventloop_destroy;
 	}
 
 	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
+		goto delete_jet_server;
 	}
 
 	ret = eventloop_run(&go_ahead);
 
 	destroy_all_peers();
+delete_jet_server:
 	delete_server(jet_server);
-
+eventloop_destroy:
 	eventloop_destroy();
+unregister_signal_handler:
 	unregister_signal_handler();
 	return ret;
 }
