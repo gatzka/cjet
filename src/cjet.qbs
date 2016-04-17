@@ -25,6 +25,7 @@
  */
 
 import qbs 1.0
+import '../qbs/versions.js' as Versions
 
 Project {
 
@@ -132,6 +133,11 @@ Project {
     Properties {
       condition: cpp.compilerName.contains("clang") && runAnalyzer;
       cpp.compilerWrapper: ["scan-build", "--view"];
+    }
+
+    Properties {
+      condition: Versions.versionCompare(qbs.version, "1.5.0") >= 0;
+      cpp.enableReproducibleBuilds: true;
     }
   }
 }
