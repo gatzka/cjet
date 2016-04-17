@@ -135,9 +135,14 @@ static void check_response(cJSON *json, int id)
 static char *get_routed_id(const cJSON *json)
 {
 	cJSON *id = cJSON_GetObjectItem(json, "id");
-	BOOST_REQUIRE(id != NULL);
-	BOOST_REQUIRE(id->type == cJSON_String);
-	return strdup(id->valuestring);
+	if (id == NULL) {
+		BOOST_FAIL("No id in JSON object!");
+		return NULL;
+	} else {
+		BOOST_REQUIRE(id != NULL);
+		BOOST_REQUIRE(id->type == cJSON_String);
+		return strdup(id->valuestring);
+	}
 }
 
 static cJSON *create_result_json(const char *id)
@@ -160,9 +165,12 @@ static void check_no_error(int id)
 	const cJSON *error = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(error == NULL);
 	const cJSON *json_id = cJSON_GetObjectItem(response, "id");
-	BOOST_REQUIRE(json_id != NULL);
-	BOOST_REQUIRE(json_id->type == cJSON_Number);
-	BOOST_CHECK(json_id->valueint == id);
+	if (json_id == NULL) {
+		BOOST_FAIL("No id in JSON object!");
+	} else {
+		BOOST_REQUIRE(json_id->type == cJSON_Number);
+		BOOST_CHECK(json_id->valueint == id);
+	}
 	cJSON_Delete(response);
 }
 

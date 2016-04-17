@@ -547,9 +547,14 @@ static void check_invalid_params_error()
 static char *get_routed_id(const cJSON *json)
 {
 	cJSON *id = cJSON_GetObjectItem(json, "id");
-	BOOST_REQUIRE(id != NULL);
-	BOOST_REQUIRE(id->type == cJSON_String);
-	return strdup(id->valuestring);
+	if (id == NULL) {
+		BOOST_FAIL("No id in JSON object!");
+		return NULL;
+	} else {
+		BOOST_REQUIRE(id != NULL);
+		BOOST_REQUIRE(id->type == cJSON_String);
+		return strdup(id->valuestring);
+	}
 }
 
 static void check_no_error()
