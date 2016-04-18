@@ -99,7 +99,7 @@ static int configure_keepalive(int fd)
 	return 0;
 }
 
-static void handle_new_connection(int fd)
+static int prepare_peer_socket(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
@@ -108,12 +108,20 @@ static void handle_new_connection(int fd)
 			sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
-		return;
+		return -1;
 	}
 
 	if (configure_keepalive(fd) < 0) {
 		log_err("Could not configure keepalive!\n");
 		close(fd);
+		return -1;
+	}
+	return 0;
+}
+
+static void handle_new_jet_connection(int fd)
+{
+	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
 
@@ -127,7 +135,15 @@ static void handle_new_connection(int fd)
 	return;
 }
 
-static enum callback_return accept_jet(union io_context *io)
+static void handle_new_jetws_connection(int fd)
+{
+	if (prepare_peer_socket(fd) < 0) {
+		return;
+	}
+	return;
+}
+
+static enum callback_return accept_common(union io_context *io,  void (*peer_function)(int fd))
 {
 	while (1) {
 		int peer_fd;
@@ -139,9 +155,14 @@ static enum callback_return accept_jet(union io_context *io)
 				return ABORT_LOOP;
 			}
 		} else {
-			handle_new_connection(peer_fd);
+			peer_function(peer_fd);
 		}
 	}
+}
+
+static enum callback_return accept_jet(union io_context *io)
+{
+	return accept_common(io, handle_new_jet_connection);
 }
 
 static int accept_jet_error(union io_context *io)
@@ -152,19 +173,7 @@ static int accept_jet_error(union io_context *io)
 
 static enum callback_return accept_jetws(union io_context *io)
 {
-	while (1) {
-		int peer_fd;
-		peer_fd = accept(io->fd, NULL, NULL);
-		if (peer_fd == -1) {
-			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-				return CONTINUE_LOOP;
-			} else {
-				return ABORT_LOOP;
-			}
-		} else {
-			close(peer_fd);
-		}
-	}
+	return accept_common(io, handle_new_jetws_connection);
 }
 
 static int accept_jetws_error(union io_context *io)
