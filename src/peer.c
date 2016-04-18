@@ -81,7 +81,7 @@ static enum callback_return free_peer_on_error(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-struct peer *alloc_jet_peer(int fd)
+static struct peer *alloc_peer_common(int fd, eventloop_function read_function)
 {
 	struct peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
@@ -89,7 +89,7 @@ struct peer *alloc_jet_peer(int fd)
 	}
 
 	p->ev.context.fd = fd;
-	p->ev.read_function = handle_all_peer_operations;
+	p->ev.read_function = read_function;
 	p->ev.write_function = 	write_msg;
 	p->ev.error_function = free_peer_on_error;
 
@@ -115,6 +115,16 @@ struct peer *alloc_jet_peer(int fd)
 	} else {
 		return p;
 	}
+}
+
+struct peer *alloc_jet_peer(int fd)
+{
+	return alloc_peer_common(fd, handle_all_peer_operations);
+}
+
+struct peer *alloc_wsjet_peer(int fd)
+{
+	return alloc_peer_common(fd, handle_ws_upgrade);
 }
 
 void free_peer(struct peer *p)

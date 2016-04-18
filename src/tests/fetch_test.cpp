@@ -200,6 +200,12 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
+	enum callback_return handle_ws_upgrade(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
 	enum callback_return write_msg(union io_context *context)
 	{
 		(void)context;

@@ -127,7 +127,7 @@ static void handle_new_jet_connection(int fd)
 
 	struct peer *peer = alloc_jet_peer(fd);
 	if (unlikely(peer == NULL)) {
-		log_err("Could not allocate peer!\n");
+		log_err("Could not allocate jet peer!\n");
 		close(fd);
 		return;
 	}
@@ -138,6 +138,12 @@ static void handle_new_jet_connection(int fd)
 static void handle_new_jetws_connection(int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
+		return;
+	}
+	struct peer *peer = alloc_wsjet_peer(fd);
+	if (unlikely(peer == NULL)) {
+		log_err("Could not allocate websocket jet peer!\n");
+		close(fd);
 		return;
 	}
 	return;
@@ -496,6 +502,12 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 			return CONTINUE_LOOP;
 		}
 	}
+}
+
+enum callback_return handle_ws_upgrade(union io_context *context)
+{
+	(void)context;
+	return CONTINUE_LOOP;
 }
 
 static void sighandler(int signum)
