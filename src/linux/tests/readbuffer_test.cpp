@@ -34,7 +34,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "cjet_io.h"
 #include "linux/linux_io.h"
 #include "peer.h"
 

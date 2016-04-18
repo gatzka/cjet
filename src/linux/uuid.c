@@ -27,8 +27,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "inttypes.h"
-
 #include "json/cJSON.h"
 #include "uuid.h"
 

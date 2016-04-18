@@ -25,8 +25,8 @@
  */
 
 #include <errno.h>
-#include <string.h>
 #include <sys/epoll.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "compiler.h"

@@ -24,29 +24,32 @@
  * SOFTWARE.
  */
 
-#include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pwd.h>
 #include <signal.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "cjet_io.h"
+
 #include "compiler.h"
 #include "linux/eventloop.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
-#include "list.h"
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
-#include "state.h"
+
+struct server {
+	struct io_event ev;
+};
 
 static int go_ahead = 1;
 
@@ -157,7 +160,6 @@ static struct server *alloc_server(int fd)
 	s->ev.read_function = accept_all;
 	s->ev.write_function = NULL;
 	s->ev.error_function = accept_error;
-
 
 	if (eventloop_add_io(&s->ev) < 0) {
 		free(s);

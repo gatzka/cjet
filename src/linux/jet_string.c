@@ -24,10 +24,8 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <string.h>
 
-#include "compiler.h"
 #include "jet_string.h"
 
 char *duplicate_string(const char *s)

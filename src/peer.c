@@ -32,7 +32,6 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include "cjet_io.h"
 #include "compiler.h"
 #include "fetch.h"
 #include "jet_string.h"

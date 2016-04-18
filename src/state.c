@@ -28,11 +28,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cjet_io.h"
 #include "compiler.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
+#include "linux/linux_io.h"
 #include "list.h"
 #include "peer.h"
 #include "response.h"
@@ -47,7 +47,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	struct state_or_method *s = calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
-			     "state");
+				 "state");
 		return NULL;
 	}
 	s->flags = flags;
@@ -62,7 +62,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
-			     "path");
+				 "path");
 		goto alloc_path_failed;
 	}
 	if (value_object != NULL) {
@@ -111,30 +111,30 @@ cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
-		    create_invalid_params_error(p, "not exists", path);
+			create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 	if (unlikely(s->peer != p)) {
 		cJSON *error =
-		    create_invalid_params_error(p, "not owner of state", path);
+			create_invalid_params_error(p, "not owner of state", path);
 		return error;
 	}
 	if (unlikely(s->value == NULL)) {
 		cJSON *error =
-		    create_invalid_params_error(p, "change on method not possible", path);
+			create_invalid_params_error(p, "change on method not possible", path);
 		return error;
 	}
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (value_copy == NULL) {
 		cJSON *error =
-		    create_internal_error(p, "reason", "not enough memory");
+			create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 	cJSON_Delete(s->value);
 	s->value = value_copy;
 	if (unlikely(notify_fetchers(s, "change") != 0)) {
 		cJSON *error = create_internal_error(
-		    p, "reason", "Can't notify fetching peer");
+			p, "reason", "Can't notify fetching peer");
 		return error;
 	}
 	return NULL;
@@ -157,31 +157,31 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	if (unlikely(((what == STATE) && (s->value == NULL)) ||
-	    ((what == METHOD) && (s->value != NULL)))) {
+		((what == METHOD) && (s->value != NULL)))) {
 			error =
-			    create_invalid_params_error(p, "set on method / call on state not possible", path);
+				create_invalid_params_error(p, "set on method / call on state not possible", path);
 			return error;
 	}
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
 	if ((origin_request_id != NULL) &&
-	    ((origin_request_id->type != cJSON_String) &&
-	     (origin_request_id->type != cJSON_Number))) {
+		((origin_request_id->type != cJSON_String) &&
+		 (origin_request_id->type != cJSON_Number))) {
 		error = create_invalid_params_error(
-		    p, "reason", "request id is neither string nor number");
+			p, "reason", "request id is neither string nor number");
 		return error;
 	}
 
 	char *routed_request_id = get_routed_request_uuid(p, origin_request_id);
 	if (routed_request_id == NULL) {
 		error = create_internal_error(
-		    p, "reason", "could not create request id");
+			p, "reason", "could not create request id");
 		return error;
 	}
 	cJSON *routed_message = create_routed_message(p, path, what, value, routed_request_id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
-		    p, "reason", "could not create routed JSON object");
+			p, "reason", "could not create routed JSON object");
 		goto delete_routed_request_id;
 	}
 
@@ -190,7 +190,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		value_copy = cJSON_Duplicate(value, 1);
 		if (unlikely(value_copy == NULL)) {
 			error = create_internal_error(
-			    p, "reason", "could not copy value object");
+				p, "reason", "could not copy value object");
 			goto delete_json;
 		}
 	} else {
@@ -198,22 +198,22 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 	}
 
 	if (unlikely(setup_routing_information(s, p, origin_request_id,
-					       routed_request_id, value_copy) != 0)) {
+						   routed_request_id, value_copy) != 0)) {
 		error = create_internal_error(
-		    p, "reason", "could not setup routing information");
+			p, "reason", "could not setup routing information");
 		goto delete_value_copy;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
 		error = create_internal_error(p, "reason",
-					      "could not render message");
+						  "could not render message");
 		goto delete_value_copy;
 	}
 	if (unlikely(send_message(s->peer, rendered_message,
 				  strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
-		    p, "reason", "could not send routing information");
+			p, "reason", "could not send routing information");
 	}
 
 	free(rendered_message);
@@ -239,20 +239,20 @@ cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON
 	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT, flags);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
-		    create_internal_error(p, "reason", "not enough memory");
+			create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 
 	if (unlikely(find_fetchers_for_state(s) != 0)) {
 		cJSON *error = create_internal_error(
-		    p, "reason", "Can't notify fetching peer");
+			p, "reason", "Can't notify fetching peer");
 		free_state_or_method(s);
 		return error;
 	}
 
 	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
 		cJSON *error =
-		    create_internal_error(p, "reason", "state table full");
+			create_internal_error(p, "reason", "state table full");
 		free_state_or_method(s);
 		return error;
 	}

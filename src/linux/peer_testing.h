@@ -48,6 +48,8 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt);
 #define WRITEV fake_writev
 #else
 
+#include <unistd.h>
+
 #define READ read
 #define SEND send
 #define WRITEV writev

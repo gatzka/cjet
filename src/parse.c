@@ -29,13 +29,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "cjet_io.h"
 #include "compiler.h"
 #include "config.h"
 #include "fetch.h"
 #include "generated/cjet_config.h"
 #include "info.h"
 #include "json/cJSON.h"
+#include "linux/linux_io.h"
 #include "parse.h"
 #include "peer.h"
 #include "response.h"
