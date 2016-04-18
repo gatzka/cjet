@@ -28,7 +28,8 @@ import qbs 1.0
 import qbs.TextFile
 
 Module {
-  property string serverPort
+  property string jetPort
+  property string jetwsPort
   property string maxListenBacklog
   property string maxMessageSize
   property string maxWriteBufferSize
@@ -56,7 +57,8 @@ Module {
         var file = new TextFile(input.filePath);
         var content = file.readAll();
         file.close()
-        content = content.replace(/\${CONFIG_SERVER_PORT}/g, product.moduleProperty("generateCjetConfig", "serverPort") || "11122");
+        content = content.replace(/\${CONFIG_JET_PORT}/g, product.moduleProperty("generateCjetConfig", "jetPort") || "11122");
+        content = content.replace(/\${CONFIG_JETWS_PORT}/g, product.moduleProperty("generateCjetConfig", "jetwsPort") || "11122");
         content = content.replace(/\${CONFIG_LISTEN_BACKLOG}/g, product.moduleProperty("generateCjetConfig", "maxListenBacklog") || "40");
         content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "512");
         content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxWriteBufferSize") || "5120");
