@@ -187,6 +187,7 @@ Project {
     cpp.includePaths: ["../src/", product.buildDirectory]
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING", "_GNU_SOURCE"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
+    cpp.cLanguageVersion: "c99"
 
     files: [
       "fetch.c",
