@@ -47,6 +47,7 @@ char *get_log_buffer(void);
 #else
 
 #include <syslog.h>
+
 #define log_err(...) syslog(LOG_ERR, __VA_ARGS__)
 #define log_warn(...) syslog(LOG_WARNING, __VA_ARGS__)
 #define log_info(...) syslog(LOG_INFO, __VA_ARGS__)

@@ -25,6 +25,7 @@
  */
 
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -33,6 +34,7 @@
 #include "jet_string.h"
 #include "json/cJSON.h"
 #include "linux/linux_io.h"
+#include "list.h"
 #include "peer.h"
 #include "response.h"
 #include "state.h"

@@ -24,13 +24,14 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
+
 #include "compiler.h"
 #include "json/cJSON.h"
-#include "log.h"
 #include "peer.h"
 #include "response.h"
 
-static cJSON *add_sub_to_object(const struct peer *p, cJSON *root, cJSON *sub, const char *name)
+static cJSON *add_subobject_to_object(const struct peer *p, cJSON *root, cJSON *sub, const char *name)
 {
 	if (unlikely(sub == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", name);
@@ -52,12 +53,12 @@ static cJSON *create_common_response(const struct peer *p, const cJSON *id)
 	switch (id->type) {
 
 	case cJSON_String:
-		root = add_sub_to_object(p, root,
+		root = add_subobject_to_object(p, root,
 			cJSON_CreateString(id->valuestring), "id");
 		break;
 
 	case cJSON_Number:
-		root = add_sub_to_object(p, root,
+		root = add_subobject_to_object(p, root,
 			cJSON_CreateNumber(id->valueint), "id");
 		break;
 
@@ -77,11 +78,11 @@ static cJSON *create_error_object(const struct peer *p, const char *message, int
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
-	error = add_sub_to_object(p, error, cJSON_CreateString(message), "message");
+	error = add_subobject_to_object(p, error, cJSON_CreateString(message), "message");
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
-	error = add_sub_to_object(p, error, cJSON_CreateNumber(code), "code");
+	error = add_subobject_to_object(p, error, cJSON_CreateNumber(code), "code");
 	if (unlikely(error == NULL)) {
 		goto err;
 	}
@@ -89,7 +90,7 @@ static cJSON *create_error_object(const struct peer *p, const char *message, int
 		cJSON *data = cJSON_CreateObject();
 		if (likely(data != NULL)) {
 			cJSON_AddItemToObject(error, "data", data);
-			if (unlikely(add_sub_to_object(p, data, cJSON_CreateString(reason), tag) == NULL)) {
+			if (unlikely(add_subobject_to_object(p, data, cJSON_CreateString(reason), tag) == NULL)) {
 				goto err;
 			}
 		}
@@ -143,7 +144,7 @@ cJSON *create_boolean_success_response(const struct peer *p, const cJSON *id, in
 	} else {
 		boolean = cJSON_CreateTrue();
 	}
-	root = add_sub_to_object(p, root, boolean, "result");
+	root = add_subobject_to_object(p, root, boolean, "result");
 	return root;
 }
 

@@ -36,12 +36,14 @@
 #include "fetch.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
+#include "linux/eventloop.h"
+#include "linux/linux_io.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
-#include "linux/linux_io.h"
+#include "util.h"
 
 static LIST_HEAD(peer_list);
 

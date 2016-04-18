@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "compiler.h"
+#include "generated/cjet_config.h"
 #include "hashtable.h"
 #include "jet_string.h"
 #include "json/cJSON.h"

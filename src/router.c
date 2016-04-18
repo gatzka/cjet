@@ -24,6 +24,8 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
+
 #include "compiler.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
@@ -282,4 +284,3 @@ void remove_routing_info_from_peer(const struct peer *p)
 		}
 	}
 }
-

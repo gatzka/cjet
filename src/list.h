@@ -27,6 +27,8 @@
 #ifndef CJET_LIST_H
 #define CJET_LIST_H
 
+#include "util.h"
+
 struct list_head {
 	struct list_head *next, *prev;
 };
@@ -58,10 +60,6 @@ static inline void list_add_tail(struct list_head *new_entry, struct list_head *
 #define list_for_each_safe(pos, n, head) \
 	for (pos = (head)->next, n = pos->next; pos != (head); \
 		pos = n, n = pos->next)
-
-#define container_of(ptr, type, member) ( \
-	(void *)((char *)ptr - offsetof(type,member) ))
-
 
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)

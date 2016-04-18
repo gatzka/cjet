@@ -38,7 +38,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
 #include "compiler.h"
 #include "linux/eventloop.h"
 #include "linux/linux_io.h"
@@ -46,6 +45,7 @@
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
+#include "util.h"
 
 struct server {
 	struct io_event ev;

@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2014> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,51 +24,10 @@
  * SOFTWARE.
  */
 
-#include <stddef.h>
+#ifndef CJET_UTIL_H
+#define CJET_UTIL_H
 
-#include "compiler.h"
-#include "generated/cjet_config.h"
-#include "hashtable.h"
-#include "table.h"
+#define container_of(ptr, type, member) ( \
+	(void *)((char *)ptr - offsetof(type,member) ))
 
-DECLARE_HASHTABLE_STRING(state_table, CONFIG_STATE_TABLE_ORDER, 1U)
-
-static struct hashtable_string *state_hashtable = NULL;
-
-int state_hashtable_create(void)
-{
-	state_hashtable = HASHTABLE_CREATE(state_table);
-	if (unlikely(state_hashtable == NULL)) {
-		return -1;
-	}
-	return 0;
-}
-
-void state_hashtable_delete(void)
-{
-	HASHTABLE_DELETE(state_table, state_hashtable);
-}
-
-int state_table_put(const char *path, void *value)
-{
-	struct value_state_table new_val;
-	new_val.vals[0] = value;
-	return HASHTABLE_PUT(state_table, state_hashtable, path, new_val, NULL);
-}
-
-void *state_table_get(const char *path)
-{
-	struct value_state_table val;
-	int ret = HASHTABLE_GET(state_table, state_hashtable, path, &val);
-	if (ret == HASHTABLE_SUCCESS) {
-		return val.vals[0];
-	} else {
-		return NULL;
-	}
-}
-
-void state_table_remove(const char *path)
-{
-	int ret = HASHTABLE_REMOVE(state_table, state_hashtable, path, NULL);
-	if (ret == 0) {}
-}
+#endif

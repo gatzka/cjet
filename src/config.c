@@ -24,7 +24,7 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
+#include <stddef.h>
 
 #include "compiler.h"
 #include "config.h"

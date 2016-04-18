@@ -24,12 +24,13 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
+
 #include "compiler.h"
 #include "generated/version.h"
 #include "info.h"
 #include "json/cJSON.h"
 #include "linux/linux_io.h"
-#include "log.h"
 #include "peer.h"
 #include "response.h"
 
