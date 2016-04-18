@@ -47,6 +47,12 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
+	enum callback_return handle_ws_upgrade(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
 	enum callback_return write_msg(union io_context *context)
 	{
 		(void)context;
@@ -77,8 +83,8 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		owner_peer = alloc_peer(-1);
-		call_peer = alloc_peer(-1);
+		owner_peer = alloc_jet_peer(-1);
+		call_peer = alloc_jet_peer(-1);
 	}
 	~F()
 	{

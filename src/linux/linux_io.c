@@ -99,7 +99,7 @@ static int configure_keepalive(int fd)
 	return 0;
 }
 
-static void handle_new_connection(int fd)
+static int prepare_peer_socket(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
@@ -108,18 +108,26 @@ static void handle_new_connection(int fd)
 			sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
-		return;
+		return -1;
 	}
 
 	if (configure_keepalive(fd) < 0) {
 		log_err("Could not configure keepalive!\n");
 		close(fd);
+		return -1;
+	}
+	return 0;
+}
+
+static void handle_new_jet_connection(int fd)
+{
+	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
 
-	struct peer *peer = alloc_peer(fd);
+	struct peer *peer = alloc_jet_peer(fd);
 	if (unlikely(peer == NULL)) {
-		log_err("Could not allocate peer!\n");
+		log_err("Could not allocate jet peer!\n");
 		close(fd);
 		return;
 	}
@@ -127,7 +135,21 @@ static void handle_new_connection(int fd)
 	return;
 }
 
-static enum callback_return accept_all(union io_context *io)
+static void handle_new_jetws_connection(int fd)
+{
+	if (prepare_peer_socket(fd) < 0) {
+		return;
+	}
+	struct peer *peer = alloc_wsjet_peer(fd);
+	if (unlikely(peer == NULL)) {
+		log_err("Could not allocate websocket jet peer!\n");
+		close(fd);
+		return;
+	}
+	return;
+}
+
+static enum callback_return accept_common(union io_context *io,  void (*peer_function)(int fd))
 {
 	while (1) {
 		int peer_fd;
@@ -139,27 +161,43 @@ static enum callback_return accept_all(union io_context *io)
 				return ABORT_LOOP;
 			}
 		} else {
-			handle_new_connection(peer_fd);
+			peer_function(peer_fd);
 		}
 	}
 }
 
-static int accept_error(union io_context *io)
+static enum callback_return accept_jet(union io_context *io)
+{
+	return accept_common(io, handle_new_jet_connection);
+}
+
+static int accept_jet_error(union io_context *io)
 {
 	(void)io;
 	return -1;
 }
 
-static struct server *alloc_server(int fd)
+static enum callback_return accept_jetws(union io_context *io)
+{
+	return accept_common(io, handle_new_jetws_connection);
+}
+
+static int accept_jetws_error(union io_context *io)
+{
+	(void)io;
+	return -1;
+}
+
+static struct server *alloc_server(int fd, eventloop_function read_function, eventloop_function error_function)
 {
 	struct server *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
 		return NULL;
 	}
 	s->ev.context.fd = fd;
-	s->ev.read_function = accept_all;
+	s->ev.read_function = read_function;
 	s->ev.write_function = NULL;
-	s->ev.error_function = accept_error;
+	s->ev.error_function = error_function;
 
 	if (eventloop_add_io(&s->ev) < 0) {
 		free(s);
@@ -169,7 +207,7 @@ static struct server *alloc_server(int fd)
 	return s;
 }
 
-static struct server *create_server(int server_port)
+static struct server *create_server(int server_port, eventloop_function read_function, eventloop_function error_function)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
@@ -206,7 +244,7 @@ static struct server *create_server(int server_port)
 		goto listen_failed;
 	}
 
-	struct server *server = alloc_server(listen_fd);
+	struct server *server = alloc_server(listen_fd, read_function, error_function);
 	if (server == NULL) {
 		goto alloc_server_wait_failed;
 	}
@@ -466,6 +504,12 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 	}
 }
 
+enum callback_return handle_ws_upgrade(union io_context *context)
+{
+	(void)context;
+	return CONTINUE_LOOP;
+}
+
 static void sighandler(int signum)
 {
 	(void)signum;
@@ -524,22 +568,32 @@ int run_io(const char *user_name)
 		goto unregister_signal_handler;
 	}
 
-	struct server *jet_server = create_server(CONFIG_SERVER_PORT);
+	struct server *jet_server = create_server(CONFIG_JET_PORT, accept_jet, accept_jet_error);
 	if (jet_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 		goto eventloop_destroy;
 	}
 
-	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
+	struct server *jetws_server = create_server(CONFIG_JETWS_PORT, accept_jetws, accept_jetws_error);
+	if (jetws_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 		goto delete_jet_server;
 	}
 
+	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
+		go_ahead = 0;
+		ret = -1;
+		goto delete_jetws_server;
+	}
+
 	ret = eventloop_run(&go_ahead);
 
 	destroy_all_peers();
+
+delete_jetws_server:
+	delete_server(jetws_server);
 delete_jet_server:
 	delete_server(jet_server);
 eventloop_destroy:

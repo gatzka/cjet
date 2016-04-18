@@ -271,7 +271,7 @@ BOOST_AUTO_TEST_SUITE(get_read_ptr_test)
 
 BOOST_AUTO_TEST_CASE(wrong_fd)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
 	const char *read_ptr;
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 
 BOOST_AUTO_TEST_CASE(too_much_data_requested)
 {
-	struct peer *p = alloc_peer(TOO_MUCH_DATA);
+	struct peer *p = alloc_jet_peer(TOO_MUCH_DATA);
 	BOOST_REQUIRE(p != NULL);
 
 	const char *read_ptr;
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(too_much_data_requested)
 
 BOOST_AUTO_TEST_CASE(client_closed_connection)
 {
-	struct peer *p = alloc_peer(CLIENT_CLOSE);
+	struct peer *p = alloc_jet_peer(CLIENT_CLOSE);
 	BOOST_REQUIRE(p != NULL);
 
 	const char *read_ptr;
@@ -307,7 +307,7 @@ BOOST_AUTO_TEST_CASE(client_closed_connection)
 
 BOOST_AUTO_TEST_CASE(eagain)
 {
-	struct peer *p = alloc_peer(AGAIN);
+	struct peer *p = alloc_jet_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
 	const char *read_ptr;
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(slow_read)
 {
 	uint32_t value;
 
-	struct peer *p = alloc_peer(SLOW_READ);
+	struct peer *p = alloc_jet_peer(SLOW_READ);
 	BOOST_REQUIRE(p != NULL);
 
 	slow_read_counter = 0;
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE(fast_read)
 	static const int read_len = 5;
 	char buffer[read_len + 1];
 
-	struct peer *p = alloc_peer(FAST_READ);
+	struct peer *p = alloc_jet_peer(FAST_READ);
 	if (p != NULL) {
 		const char *read_ptr;
 		int ret = get_read_ptr(p, read_len, &read_ptr);
@@ -380,7 +380,7 @@ BOOST_AUTO_TEST_SUITE(handle_all_peer_operations_test)
 
 BOOST_AUTO_TEST_CASE(fast_peer)
 {
-	struct peer *p = alloc_peer(HANDLE_FAST_PEER);
+	struct peer *p = alloc_jet_peer(HANDLE_FAST_PEER);
 	BOOST_REQUIRE(p != NULL);
 
 	enum callback_return ret = handle_all_peer_operations(&p->ev.context);
@@ -396,7 +396,7 @@ BOOST_AUTO_TEST_CASE(slow_peer)
 	parsed_length = 0;
 	parsed_msg = NULL;
 
-	struct peer *p = alloc_peer(HANDLE_SLOW_PEER);
+	struct peer *p = alloc_jet_peer(HANDLE_SLOW_PEER);
 	if (p != NULL) {
 		enum callback_return ret = handle_all_peer_operations(&p->ev.context);
 		BOOST_CHECK(parsed_msg == NULL);
@@ -431,7 +431,7 @@ BOOST_AUTO_TEST_SUITE(copy_msg_to_write_buffer_test)
 
 BOOST_AUTO_TEST_CASE(copy_msg_all)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
 	const char message[] = "Hello World!";
@@ -455,7 +455,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_all)
 
 BOOST_AUTO_TEST_CASE(copy_msg_len_already_written)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
 	const char message[] = "Hello World!";
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_already_written)
 
 BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
 	static const size_t already_written = 3;
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(copy_msg_len_written_partly)
 
 BOOST_AUTO_TEST_CASE(copy_msg_msg_written_partly)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
 	unsigned int msg_part_already_written = 3;
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_SUITE(send_buffer_test)
 
 BOOST_AUTO_TEST_CASE(wrong_fd)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	if (p != NULL) {
 		p->to_write = 10;
 		int ret = send_buffer(p);
@@ -543,7 +543,7 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 BOOST_AUTO_TEST_CASE(write_blocks)
 {
 	char buffer[10];
-	struct peer *p = alloc_peer(AGAIN);
+	struct peer *p = alloc_jet_peer(AGAIN);
 	if (p != NULL) {
 		p->to_write = sizeof(buffer);
 		int ret = send_buffer(p);
@@ -561,7 +561,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 	incomplete_write_counter = 0;
 	incomplete_write_written_before_blocking = 0;
 
-	struct peer *p = alloc_peer(INCOMPLETE_WRITE);
+	struct peer *p = alloc_jet_peer(INCOMPLETE_WRITE);
 	if (p != NULL) {
 		static char sw_message[] = "HelloWorld!";
 		uint32_t len_be = htonl(::strlen(sw_message));
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(incomplete_write)
 
 BOOST_AUTO_TEST_CASE(slow_write)
 {
-	struct peer *p = alloc_peer(SLOW_WRITE);
+	struct peer *p = alloc_jet_peer(SLOW_WRITE);
 	BOOST_REQUIRE(p != NULL);
 
 	static char sw_message[] = "HelloWorld!";
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_SUITE(send_message_test)
 
 BOOST_AUTO_TEST_CASE(complete)
 {
-	struct peer *p = alloc_peer(WRITE_COMPLETE);
+	struct peer *p = alloc_jet_peer(WRITE_COMPLETE);
 	BOOST_REQUIRE(p != NULL);
 
 	static char message[] = "HelloWorld!";
@@ -619,7 +619,7 @@ BOOST_AUTO_TEST_CASE(complete)
 
 BOOST_AUTO_TEST_CASE(max_message_length)
 {
-	struct peer *p = alloc_peer(DO_NOT_SEND);
+	struct peer *p = alloc_jet_peer(DO_NOT_SEND);
 	if (p != NULL) {
 		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 1];
 		memset(message, 0x42, sizeof(message));
@@ -635,7 +635,7 @@ BOOST_AUTO_TEST_CASE(max_message_length)
 
 BOOST_AUTO_TEST_CASE(message_too_large)
 {
-	struct peer *p = alloc_peer(BADFD);
+	struct peer *p = alloc_jet_peer(BADFD);
 	if (p != NULL) {
 		static char message[CONFIG_MAX_WRITE_BUFFER_SIZE - sizeof(uint32_t) + 2];
 		memset(message, 0x42, sizeof(message));
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_complete_writemsg)
 	incomplete_write_counter = 0;
 	incomplete_write_buffer_ptr = incomplete_write_check_buffer;
 
-	struct peer *p = alloc_peer(INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG);
+	struct peer *p = alloc_jet_peer(INCOMPLETE_WRITELEN_COMPLETE_WRITEMSG);
 	BOOST_REQUIRE(p != NULL);
 
 	static char message[] = "HelloWorld!";
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(incomplete_writelen_incomplete_writemsg)
 	incomplete_write_counter = 0;
 	incomplete_write_written_before_blocking = 0;
 
-	struct peer *p = alloc_peer(INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG);
+	struct peer *p = alloc_jet_peer(INCOMPLETE_WRITELEN_INCOMPLETE_WRITEMSG);
 	if (p != NULL) {
 		static char message[] = "HelloWorld!";
 		int ret = send_message(p, message, ::strlen(message));

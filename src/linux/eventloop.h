@@ -42,11 +42,13 @@ union io_context {
 	uint64_t u64;
 };
 
+typedef enum callback_return (*eventloop_function)(union io_context*);
+
 struct io_event {
 	union io_context context;
-	enum callback_return (*read_function)(union io_context*);
-	enum callback_return (*write_function)(union io_context*);
-	enum callback_return (*error_function)(union io_context*);
+	eventloop_function read_function;
+	eventloop_function write_function;
+	eventloop_function error_function;
 };
 
 int eventloop_create(void);
