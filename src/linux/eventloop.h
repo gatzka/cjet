@@ -52,8 +52,8 @@ struct io_event {
 int eventloop_create(void);
 void eventloop_destroy(void);
 int eventloop_run(int *go_ahead);
-enum callback_return add_io(struct io_event *ev);
-void remove_io(struct io_event *ev);
+enum callback_return eventloop_add_io(struct io_event *ev);
+void eventloop_remove_io(struct io_event *ev);
 
 #ifdef __cplusplus
 }

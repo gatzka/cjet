@@ -100,7 +100,7 @@ int eventloop_run(int *go_ahead)
 	return 0;
 }
 
-enum callback_return add_io(struct io_event *ev)
+enum callback_return eventloop_add_io(struct io_event *ev)
 {
 	struct epoll_event epoll_ev;
 
@@ -118,7 +118,7 @@ enum callback_return add_io(struct io_event *ev)
 	return CONTINUE_LOOP;
 }
 
-void remove_io(struct io_event *ev)
+void eventloop_remove_io(struct io_event *ev)
 {
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ev->context.fd, NULL);
 }

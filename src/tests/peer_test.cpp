@@ -53,7 +53,7 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
-	enum callback_return add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(struct io_event *ev)
 	{
 		if (ev->context.fd == ADD_IO_FAILED) {
 			return ABORT_LOOP;
@@ -61,7 +61,7 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
-	void remove_io(struct io_event *ev)
+	void eventloop_remove_io(struct io_event *ev)
 	{
 		(void)ev;
 	}

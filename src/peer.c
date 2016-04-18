@@ -108,7 +108,7 @@ struct peer *alloc_peer(int fd)
 	list_add_tail(&p->next_peer, &peer_list);
 	++number_of_peers;
 
-	if (add_io(&p->ev) == ABORT_LOOP) {
+	if (eventloop_add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
 		return NULL;
 	} else {
@@ -118,7 +118,7 @@ struct peer *alloc_peer(int fd)
 
 void free_peer(struct peer *p)
 {
-	remove_io(&p->ev);
+	eventloop_remove_io(&p->ev);
 	free_peer_resources(p);
 }
 

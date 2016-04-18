@@ -159,7 +159,7 @@ static struct server *alloc_server(int fd)
 	s->ev.error_function = accept_error;
 
 
-	if (add_io(&s->ev) < 0) {
+	if (eventloop_add_io(&s->ev) < 0) {
 		free(s);
 		return NULL;
 	}

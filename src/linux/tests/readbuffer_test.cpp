@@ -241,13 +241,13 @@ int parse_message(char *msg, uint32_t length)
 	return 0;
 }
 
-enum callback_return add_io(struct io_event *ev)
+enum callback_return eventloop_add_io(struct io_event *ev)
 {
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-void remove_io(struct io_event *ev)
+void eventloop_remove_io(struct io_event *ev)
 {
 	(void)ev;
 }
