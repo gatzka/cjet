@@ -77,8 +77,8 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		owner_peer = alloc_peer(-1);
-		call_peer = alloc_peer(-1);
+		owner_peer = alloc_jet_peer(-1);
+		call_peer = alloc_jet_peer(-1);
 	}
 	~F()
 	{

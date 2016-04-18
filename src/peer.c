@@ -81,7 +81,7 @@ static enum callback_return free_peer_on_error(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-struct peer *alloc_peer(int fd)
+struct peer *alloc_jet_peer(int fd)
 {
 	struct peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {

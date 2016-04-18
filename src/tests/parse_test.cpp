@@ -114,8 +114,8 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		p = alloc_peer(-1);
-		set_peer = alloc_peer(-1);
+		p = alloc_jet_peer(-1);
+		set_peer = alloc_jet_peer(-1);
 	}
 
 	~F()

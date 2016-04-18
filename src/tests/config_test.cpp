@@ -101,7 +101,7 @@ extern "C" {
 struct F {
 	F()
 	{
-		p = alloc_peer(-1);
+		p = alloc_jet_peer(-1);
 	}
 	~F()
 	{

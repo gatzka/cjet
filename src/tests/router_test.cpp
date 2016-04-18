@@ -103,7 +103,7 @@ static cJSON *create_response_wrong_id()
 struct F {
 	F()
 	{
-		p = alloc_peer(-1);
+		p = alloc_jet_peer(-1);
 	}
 	~F()
 	{

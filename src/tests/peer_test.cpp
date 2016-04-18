@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
-	struct peer *p = alloc_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(TEST_FD);
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 1);
 
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 
 BOOST_AUTO_TEST_CASE(set_name_of_peer)
 {
-	struct peer *p = alloc_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(TEST_FD);
 	set_peer_name(p, "name of peer");
 
 	free_peer(p);
@@ -154,13 +154,13 @@ BOOST_AUTO_TEST_CASE(set_name_of_peer)
 
 BOOST_AUTO_TEST_CASE(add_io_failed)
 {
-	struct peer *p = alloc_peer(ADD_IO_FAILED);
+	struct peer *p = alloc_jet_peer(ADD_IO_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(add_routingtable_failed)
 {
-	struct peer *p = alloc_peer(ADD_ROUTINGTABLE_FAILED);
+	struct peer *p = alloc_jet_peer(ADD_ROUTINGTABLE_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 	BOOST_CHECK(peers == 0);
 
 	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
-		alloc_peer(TEST_FD);
+		alloc_jet_peer(TEST_FD);
 	}
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == PEERS_TO_ALLOCATE);
@@ -184,8 +184,8 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 
 BOOST_AUTO_TEST_CASE(check_peer_list)
 {
-	struct peer *p1 = alloc_peer(TEST_FD);
-	struct peer *p2 = alloc_peer(TEST_FD);
+	struct peer *p1 = alloc_jet_peer(TEST_FD);
+	struct peer *p2 = alloc_jet_peer(TEST_FD);
 
 	struct list_head *peer_list = get_peer_list();
 	BOOST_CHECK(peer_in_list(peer_list, p1) && peer_in_list(peer_list, p2));
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(check_peer_list)
 
 BOOST_AUTO_TEST_CASE(log_unknown_peer)
 {
-	struct peer *p = alloc_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(TEST_FD);
 	log_peer_err(p, "%s", "Hello!");
 
 	char *log_buffer = get_log_buffer();
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(log_unknown_peer)
 
 BOOST_AUTO_TEST_CASE(log_known_peer)
 {
-	struct peer *p = alloc_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(TEST_FD);
 	set_peer_name(p, "test peer");
 	log_peer_err(p, "%s", "Hello!");
 

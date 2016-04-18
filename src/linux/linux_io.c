@@ -125,7 +125,7 @@ static void handle_new_jet_connection(int fd)
 		return;
 	}
 
-	struct peer *peer = alloc_peer(fd);
+	struct peer *peer = alloc_jet_peer(fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate peer!\n");
 		close(fd);

@@ -232,11 +232,11 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		owner_peer = alloc_peer(-1);
-		call_peer = alloc_peer(-1);
-		fetch_peer_1 = alloc_peer(-1);
-		fetch_peer_2 = alloc_peer(-1);
-		set_peer = alloc_peer(-1);
+		owner_peer = alloc_jet_peer(-1);
+		call_peer = alloc_jet_peer(-1);
+		fetch_peer_1 = alloc_jet_peer(-1);
+		fetch_peer_2 = alloc_jet_peer(-1);
+		set_peer = alloc_jet_peer(-1);
 		message_for_wrong_peer = false;
 		setter_caller_error_code = 0;
 		setter_caller_result = UNKNOWN;

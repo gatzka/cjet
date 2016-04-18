@@ -126,7 +126,7 @@ static void check_response(cJSON *json, int id)
 {
 	cJSON *response_id = cJSON_GetObjectItem(json, "id");
 	BOOST_CHECK((response_id != NULL) &&
-	             (response_id->type == cJSON_Number) &&
+				 (response_id->type == cJSON_Number) &&
 				 (response_id->valueint == id));
 	cJSON *result = cJSON_GetObjectItem(json, "result");
 	BOOST_CHECK(result != NULL);
@@ -240,9 +240,9 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		owner_peer = alloc_peer(-1);
-		set_peer = alloc_peer(-1);
-		fetch_peer_1 = alloc_peer(-1);
+		owner_peer = alloc_jet_peer(-1);
+		set_peer = alloc_jet_peer(-1);
+		fetch_peer_1 = alloc_jet_peer(-1);
 	}
 
 	~F()
