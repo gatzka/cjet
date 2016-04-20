@@ -131,6 +131,10 @@ struct ws_peer *alloc_wsjet_peer(int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+
+	http_parser_settings_init(&p->parser_settings);
+	http_parser_init (&p->parser, HTTP_REQUEST);
+
 	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
 		free(p);
 		return NULL;
