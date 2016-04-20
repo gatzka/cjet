@@ -140,8 +140,8 @@ static void handle_new_jetws_connection(int fd)
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct peer *peer = alloc_wsjet_peer(fd);
-	if (unlikely(peer == NULL)) {
+	struct ws_peer *p = alloc_wsjet_peer(fd);
+	if (unlikely(p == NULL)) {
 		log_err("Could not allocate websocket jet peer!\n");
 		close(fd);
 		return;
@@ -266,6 +266,48 @@ static void delete_server(struct server *server)
 	free(server);
 }
 
+ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr)
+{
+	while (1) {
+		while (p->examined_ptr < p->write_ptr) {
+			if ((p->op == READ_CR) && (*p->examined_ptr == '\n')) {
+				*read_ptr = p->read_ptr;
+				ptrdiff_t diff = p->examined_ptr - p->read_ptr + 1;
+				p->read_ptr += diff;
+				p->op = READ_MSG;
+				return diff;
+			} else {
+				p->op = READ_MSG;
+			}
+			if (*p->examined_ptr == '\r') {
+				p->op = READ_CR;
+			}
+			p->examined_ptr++;
+		}
+
+		if (free_space(p) == 0) {
+			log_err("Read buffer too small for a complete line!");
+			*read_ptr = NULL;
+			return IO_BUFFERTOOSMALL;
+		}
+		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
+		if (unlikely(read_length == 0)) {
+			*read_ptr = NULL;
+			return IO_CLOSE;
+		}
+		if (read_length == -1) {
+			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+				*read_ptr = NULL;
+				return IO_ERROR;
+			}
+			*read_ptr = NULL;
+			return IO_WOULD_BLOCK;
+		}
+		p->write_ptr += read_length;
+	}
+}
+
 ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
@@ -274,7 +316,6 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 		return IO_TOOMUCHDATA;
 	}
 	while (1) {
-		ssize_t read_length;
 		ptrdiff_t diff = p->write_ptr - p->read_ptr;
 		if (diff >= (ptrdiff_t)count) {
 			*read_ptr = p->read_ptr;
@@ -282,7 +323,7 @@ ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
 			return diff;
 		}
 
-		read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
+		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
 		if (unlikely(read_length == 0)) {
 			*read_ptr = NULL;
 			return IO_CLOSE;
@@ -506,7 +547,24 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 
 enum callback_return handle_ws_upgrade(union io_context *context)
 {
-	(void)context;
+	struct peer *p = container_of(context, struct peer, ev);
+	const char *line_ptr;
+	while (1) {
+		ssize_t line_length = read_cr_lf_line(p, &line_ptr);
+		if (line_length > 0) {
+			//TODO: attach http parser here
+			reorganize_read_buffer(p);
+			p->examined_ptr = p->read_ptr;
+		} else {
+			if (line_length == IO_WOULD_BLOCK) {
+				return CONTINUE_LOOP;
+			} else {
+				close_and_free_peer(p);
+				return CONTINUE_LOOP;
+			}
+		}
+	}
+
 	return CONTINUE_LOOP;
 }
 
