@@ -552,7 +552,9 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 	while (1) {
 		ssize_t line_length = read_cr_lf_line(p, &line_ptr);
 		if (line_length > 0) {
-			//TODO: attach http parser here
+			struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+			size_t parsed = http_parser_execute(&ws_peer->parser, &ws_peer->parser_settings, line_ptr, line_length);
+			parsed++;
 			reorganize_read_buffer(p);
 			p->examined_ptr = p->read_ptr;
 		} else {
