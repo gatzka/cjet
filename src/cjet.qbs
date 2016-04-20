@@ -95,6 +95,15 @@ Project {
     }
 
     Group {
+      name: "http-parser"
+      files: [
+        "http-parser/http_parser.c",
+        "http-parser/http_parser.h",
+      ]
+      cpp.cLanguageVersion: "c99"
+    }
+
+    Group {
       name: "version file"
       files: [
         "version.h.in"
