@@ -70,8 +70,6 @@ static void free_peer_resources(struct peer *p)
 	if (p->name != NULL) {
 		free(p->name);
 	}
-	free(p);
-	--number_of_peers;
 }
 
 static enum callback_return free_peer_on_error(union io_context *context)
@@ -81,56 +79,78 @@ static enum callback_return free_peer_on_error(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-static struct peer *alloc_peer_common(int fd, eventloop_function read_function)
+static int init_peer(struct peer *p, enum peer_type type, int fd, eventloop_function read_function, eventloop_function error_function)
 {
-	struct peer *p = malloc(sizeof(*p));
-	if (unlikely(p == NULL)) {
-		return NULL;
-	}
-
 	p->ev.context.fd = fd;
+	p->type = type;
 	p->ev.read_function = read_function;
 	p->ev.write_function = 	write_msg;
-	p->ev.error_function = free_peer_on_error;
+	p->ev.error_function = error_function;
 
 	if (unlikely(add_routing_table(p) != 0)) {
-		free(p);
-		return NULL;
+		return -1;
 	}
 	p->name = NULL;
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
 	p->read_ptr = p->read_buffer;
+	p->examined_ptr = p->read_ptr;
 	p->write_ptr = p->read_buffer;
 	INIT_LIST_HEAD(&p->next_peer);
 	INIT_LIST_HEAD(&p->state_list);
 	INIT_LIST_HEAD(&p->fetch_list);
 
 	list_add_tail(&p->next_peer, &peer_list);
-	++number_of_peers;
 
 	if (eventloop_add_io(&p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
-		return NULL;
+		return -1;
 	} else {
-		return p;
+		return 0;
 	}
 }
 
 struct peer *alloc_jet_peer(int fd)
 {
-	return alloc_peer_common(fd, handle_all_peer_operations);
+	struct peer *p = malloc(sizeof(*p));
+	if (unlikely(p == NULL)) {
+		return NULL;
+	}
+	if (init_peer(p, JET, fd, handle_all_peer_operations, free_peer_on_error) < 0) {
+		free(p);
+		return NULL;
+	} else {
+		++number_of_peers;
+		return p;
+	}
 }
 
-struct peer *alloc_wsjet_peer(int fd)
+struct ws_peer *alloc_wsjet_peer(int fd)
 {
-	return alloc_peer_common(fd, handle_ws_upgrade);
+	struct ws_peer *p = malloc(sizeof(*p));
+	if (unlikely(p == NULL)) {
+		return NULL;
+	}
+	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
+		free(p);
+		return NULL;
+	} else {
+		++number_of_peers;
+		return p;
+	}
 }
 
 void free_peer(struct peer *p)
 {
 	eventloop_remove_io(&p->ev);
 	free_peer_resources(p);
+	--number_of_peers;
+	if (p->type == JET) {
+		free(p);
+	} else if (p->type == JETWS) {
+		struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+		free(ws_peer);
+	}
 }
 
 void close_and_free_peer(struct peer *p)

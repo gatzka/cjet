@@ -43,6 +43,9 @@ extern "C" {
 
 #define READ_MSG_LENGTH 0
 #define READ_MSG 1
+#define READ_CR 2
+
+enum peer_type { JET, JETWS };
 
 struct peer {
 	struct io_event ev;
@@ -54,19 +57,25 @@ struct peer {
 	struct list_head next_peer;
 	struct list_head fetch_list;
 	char *read_ptr;
+	char *examined_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
 	void *routing_table;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 	char *name;
+	enum peer_type type;
+};
+
+struct ws_peer {
+	struct peer peer;
 };
 
 struct list_head *get_peer_list(void);
 const char *get_peer_name(const struct peer *p);
 
 struct peer *alloc_jet_peer(int fd);
-struct peer *alloc_wsjet_peer(int fd);
+struct ws_peer *alloc_wsjet_peer(int fd);
 void close_and_free_peer(struct peer *p);
 void free_peer(struct peer *p);
 void destroy_all_peers(void);
