@@ -145,7 +145,7 @@ Project {
     }
 
     Properties {
-      condition: Versions.versionCompare(qbs.version, "1.5.0") >= 0;
+      condition: Versions.versionIsAtLeast(qbs.version, "1.5.0") >= 0;
       cpp.enableReproducibleBuilds: true;
     }
   }
