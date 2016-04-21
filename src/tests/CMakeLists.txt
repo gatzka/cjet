@@ -91,6 +91,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(ROUTER_TEST
 	../fetch.c
+	../http-parser/http_parser.c
 	../json/cJSON.c
 	../linux/jet_string.c
 	../linux/uuid.c
@@ -119,6 +120,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(CONFIG_TEST
+	../http-parser/http_parser.c
 	../linux/jet_string.c
 	../json/cJSON.c
 	../config.c
@@ -134,6 +136,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(PEER_TEST
+	../http-parser/http_parser.c
 	../linux/jet_string.c
 	../json/cJSON.c
 	../peer.c
@@ -147,6 +150,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(JSON_PARSE_TEST
+	../http-parser/http_parser.c
 	../linux/uuid.c
 	../config.c
 	../fetch.c
@@ -169,6 +173,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
+	../http-parser/http_parser.c
 	../json/cJSON.c
 	../linux/jet_string.c
 	../linux/uuid.c
@@ -187,6 +192,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(METHOD_TEST
+	../http-parser/http_parser.c
 	../fetch.c
 	../json/cJSON.c
 	../linux/jet_string.c
@@ -207,6 +213,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(COMBINED_TEST
 	../fetch.c
+	../http-parser/http_parser.c
 	../json/cJSON.c
 	../linux/jet_string.c
 	../linux/uuid.c
@@ -227,6 +234,7 @@ TARGET_LINK_LIBRARIES(
 SET(FETCH_TEST
 	../config.c
 	../fetch.c
+	../http-parser/http_parser.c
 	../info.c
 	../json/cJSON.c
 	../linux/jet_string.c

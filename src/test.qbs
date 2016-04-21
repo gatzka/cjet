@@ -191,6 +191,7 @@ Project {
 
     files: [
       "fetch.c",
+      "http-parser/http_parser.c",
       "peer.c",
       "response.c",
       "router.c",
