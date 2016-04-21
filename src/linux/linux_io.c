@@ -553,8 +553,14 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 		ssize_t line_length = read_cr_lf_line(p, &line_ptr);
 		if (line_length > 0) {
 			struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
-			size_t parsed = http_parser_execute(&ws_peer->parser, &ws_peer->parser_settings, line_ptr, line_length);
-			parsed++;
+			size_t nparsed = http_parser_execute(&ws_peer->parser, &ws_peer->parser_settings, line_ptr, line_length);
+			if (ws_peer->parser.upgrade) {
+			  /* handle new protocol */
+			} else if (nparsed != (size_t)line_length) {
+			  /* Handle error. Usually just close the connection. */
+				close_and_free_peer(p);
+				return CONTINUE_LOOP;
+			}
 			reorganize_read_buffer(p);
 			p->examined_ptr = p->read_ptr;
 		} else {
