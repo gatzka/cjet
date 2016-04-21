@@ -96,6 +96,17 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt)
 	return 0;
 }
 
+void http_init(struct ws_peer *p)
+{
+	(void)p;
+}
+
+enum callback_return handle_ws_upgrade(union io_context *context)
+{
+	(void)context;
+	return CONTINUE_LOOP;
+}
+
 int fake_send(int fd, void *buf, size_t count, int flags)
 {
 	(void)flags;

@@ -188,6 +188,11 @@ extern "C" {
 		(void)context;
 		return CONTINUE_LOOP;
 	}
+	
+	void http_init(struct ws_peer *p)
+	{
+		(void)p;
+	}
 
 	enum callback_return handle_ws_upgrade(union io_context *context)
 	{

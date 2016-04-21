@@ -206,6 +206,11 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
+	void http_init(struct ws_peer *p)
+	{
+		(void)p;
+	}
+	
 	enum callback_return write_msg(union io_context *context)
 	{
 		(void)context;

@@ -69,6 +69,11 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
+	void http_init(struct ws_peer *p)
+	{
+		(void)p;
+	}
+
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
 		(void)len;

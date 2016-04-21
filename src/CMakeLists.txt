@@ -55,6 +55,7 @@ INCLUDE(hardening)
 SET(CJET_FILES
         config.c
         fetch.c
+        http_server.c
         http-parser/http_parser.c
         info.c
         json/cJSON.c
