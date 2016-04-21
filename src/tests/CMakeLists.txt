@@ -25,7 +25,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 
 ADD_DEFINITIONS(-D_GNU_SOURCE)
 
-SET(WARN_SWITCHES "-Wall -Werror")
+SET(WARN_SWITCHES "-Wall")
 
 SET(CMAKE_CXX_FLAGS "-pipe ${WARN_SWITCHES} -ggdb --coverage")
 SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -ggdb --coverage")
@@ -262,4 +262,13 @@ ADD_EXECUTABLE(base64_test.bin ${BASE64_TEST})
 TARGET_LINK_LIBRARIES(
 	base64_test.bin
 	${Boost_LIBRARIES}
+)
+
+SET(HTTP_PARSER_TEST
+	../http-parser/http_parser.c
+	../http-parser/test.c
+)
+ADD_EXECUTABLE(http_parser_test.bin ${HTTP_PARSER_TEST})
+TARGET_LINK_LIBRARIES(
+	http_parser_test.bin
 )

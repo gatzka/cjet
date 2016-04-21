@@ -29,5 +29,6 @@ if(FEATURE_POST_BUILD_UNITTEST)
   ADD_TEST(NAME router_test COMMAND router_test.bin)
   ADD_TEST(NAME info_test COMMAND info_test.bin)
   ADD_TEST(NAME base64_test COMMAND base64_test.bin)
+  ADD_TEST(NAME http_parser_test COMMAND http_parser_test.bin)
 
 endif()
