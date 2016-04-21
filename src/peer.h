@@ -33,6 +33,7 @@
 
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
+#include "http-parser/http_parser.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "linux/eventloop.h"
@@ -69,6 +70,8 @@ struct peer {
 
 struct ws_peer {
 	struct peer peer;
+	http_parser parser;
+	http_parser_settings parser_settings;
 };
 
 struct list_head *get_peer_list(void);

@@ -47,6 +47,7 @@ FILE(COPY "../../../scripts/make_coverage.sh" DESTINATION ${CMAKE_BINARY_DIR})
 
 SET(READBUFFER_TEST
 	../../fetch.c
+	../../http-parser/http_parser.c
 	../../json/cJSON.c
 	../../linux/jet_string.c
 	../../linux/uuid.c

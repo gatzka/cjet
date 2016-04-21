@@ -125,12 +125,88 @@ struct peer *alloc_jet_peer(int fd)
 	}
 }
 
+static int on_message_begin(http_parser *parser)
+{
+	(void)parser;
+	return 0;
+}
+
+static int on_message_complete(http_parser *parser)
+{
+	(void)parser;
+	return 0;
+}
+
+static int on_headers_complete(http_parser *parser)
+{
+	(void)parser;
+	return 0;
+}
+
+static int on_url(http_parser *p, const char *at, size_t length)
+{
+	(void)p;
+	(void)at;
+	(void)length;
+
+	return 0;
+}
+
+static int on_status(http_parser *p, const char *at, size_t length)
+{
+	(void)p;
+	(void)at;
+	(void)length;
+
+	return 0;
+}
+
+static int on_header_field(http_parser *p, const char *at, size_t length)
+{
+	(void)p;
+	(void)at;
+	(void)length;
+
+	return 0;
+}
+
+static int on_header_value(http_parser *p, const char *at, size_t length)
+{
+	(void)p;
+	(void)at;
+	(void)length;
+
+	return 0;
+}
+
+static int on_body(http_parser *p, const char *at, size_t length)
+{
+	(void)p;
+	(void)at;
+	(void)length;
+
+	return 0;
+}
+
 struct ws_peer *alloc_wsjet_peer(int fd)
 {
 	struct ws_peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
+
+	http_parser_settings_init(&p->parser_settings);
+	p->parser_settings.on_message_begin = on_message_begin;
+	p->parser_settings.on_message_complete = on_message_complete;
+	p->parser_settings.on_headers_complete = on_headers_complete;
+	p->parser_settings.on_url = on_url;
+	p->parser_settings.on_status = on_status;
+	p->parser_settings.on_header_field = on_header_field;
+	p->parser_settings.on_header_value = on_header_value;
+	p->parser_settings.on_body = on_body;
+
+	http_parser_init(&p->parser, HTTP_REQUEST);
+
 	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
 		free(p);
 		return NULL;
