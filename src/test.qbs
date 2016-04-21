@@ -247,4 +247,18 @@ Project {
       "tests/base64_test.cpp",
     ] 
   }
+
+  CppApplication {
+    name: "http_parse_test"
+    type: ["application", "unittest"]
+    consoleApplication: true
+
+    Depends {
+      name: "unittestSettings"
+    }
+
+    files: [
+      "http-parser/test.c",
+    ] 
+  }
 }

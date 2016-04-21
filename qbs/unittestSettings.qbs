@@ -47,7 +47,7 @@ StaticLibrary {
     Depends { name: 'cpp' }
 
     cpp.warningLevel: "all"
-    cpp.treatWarningsAsErrors: true
+    cpp.treatWarningsAsErrors: false
     cpp.includePaths: ["../src/", product.buildDirectory]
     cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
