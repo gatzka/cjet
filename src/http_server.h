@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,36 +24,13 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_IO_H
-#define CJET_LINUX_IO_H
-
-#include <stddef.h>
-#include <sys/types.h>
+#ifndef CJET_HTTP_SERVER_H
+#define CJET_HTTP_SERVER_H
 
 #include "linux/eventloop.h"
 #include "peer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#define IO_CLOSE -1
-#define IO_WOULD_BLOCK -2
-#define IO_ERROR -3
-#define IO_TOOMUCHDATA -4
-#define IO_BUFFERTOOSMALL -5
-
-int run_io(const char *user_name);
-ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr);
-ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr);
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
-enum callback_return handle_all_peer_operations(union io_context *context);
-enum callback_return write_msg(union io_context *context);
-int send_buffer(struct peer *p);
-int send_message(struct peer *p, const char *rendered, size_t len);
-
-#ifdef __cplusplus
-}
-#endif
+void http_init(struct ws_peer *p);
+enum callback_return handle_ws_upgrade(union io_context *context);
 
 #endif
