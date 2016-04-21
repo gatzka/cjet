@@ -205,7 +205,7 @@ struct ws_peer *alloc_wsjet_peer(int fd)
 	p->parser_settings.on_header_value = on_header_value;
 	p->parser_settings.on_body = on_body;
 
-	http_parser_init (&p->parser, HTTP_REQUEST);
+	http_parser_init(&p->parser, HTTP_REQUEST);
 
 	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
 		free(p);
