@@ -25,6 +25,7 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "base64.h"
@@ -32,7 +33,7 @@
 
 static const char encode_table[]="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-void b64_encode_string(const char * restrict in, size_t in_len, char * restrict out)
+void b64_encode_string(const uint8_t * restrict in, size_t in_len, char * restrict out)
 {
 	unsigned int triple[3];
 	unsigned int len;

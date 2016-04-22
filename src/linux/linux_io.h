@@ -52,6 +52,8 @@ enum callback_return write_msg(union io_context *context);
 int send_buffer(struct peer *p);
 int send_message(struct peer *p, const char *rendered, size_t len);
 
+int send_ws_response(struct peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length);
+
 #ifdef __cplusplus
 }
 #endif

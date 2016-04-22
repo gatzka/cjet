@@ -171,10 +171,10 @@ static enum callback_return accept_jet(union io_context *io)
 	return accept_common(io, handle_new_jet_connection);
 }
 
-static int accept_jet_error(union io_context *io)
+static enum callback_return accept_jet_error(union io_context *io)
 {
 	(void)io;
-	return -1;
+	return ABORT_LOOP;
 }
 
 static enum callback_return accept_jetws(union io_context *io)
@@ -182,10 +182,10 @@ static enum callback_return accept_jetws(union io_context *io)
 	return accept_common(io, handle_new_jetws_connection);
 }
 
-static int accept_jetws_error(union io_context *io)
+static enum callback_return accept_jetws_error(union io_context *io)
 {
 	(void)io;
-	return -1;
+	return ABORT_LOOP;
 }
 
 static struct server *alloc_server(int fd, eventloop_function read_function, eventloop_function error_function)
@@ -396,6 +396,32 @@ int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
 	p->to_write += to_write;
 
 	return 0;
+}
+
+int send_ws_response(struct peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length)
+{
+	struct iovec iov[4];
+
+	iov[0].iov_base = p->write_buffer;
+	iov[0].iov_len = p->to_write;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	iov[1].iov_base = (void *)begin;
+	iov[1].iov_len = begin_length;
+	iov[2].iov_base = (void *)key;
+	iov[2].iov_len = key_length;
+	iov[3].iov_base = (void *)end;
+	iov[3].iov_len = end_length;
+#pragma GCC diagnostic pop
+
+	ssize_t sent = WRITEV(p->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
+	if (likely(sent == (ssize_t)(begin_length + key_length + end_length))) {
+		return 0;
+	} else {
+		return -1;
+	}
+	// TODO: handle partial writes as below
 }
 
 int send_message(struct peer *p, const char *rendered, size_t len)

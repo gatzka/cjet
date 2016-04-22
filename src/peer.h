@@ -68,10 +68,28 @@ struct peer {
 	enum peer_type type;
 };
 
+enum header_field {
+	HEADER_UNKNOWN,
+	HEADER_SEC_WEBSOCKET_KEY,
+	HEADER_SEC_WEBSOCKET_VERSION,
+	HEADER_SEC_WEBSOCKET_PROTOCOL,
+	HEADER_UPGRADE,
+	HEADER_CONNECTION_UPGRADE,
+};
+
+#define SEC_WEB_SOCKET_KEY_LENGTH 24
+#define SEC_WEB_SOCKET_GUID_LENGTH 36
+
 struct ws_peer {
 	struct peer peer;
 	http_parser parser;
 	http_parser_settings parser_settings;
+	enum header_field current_header_field;
+	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
+	struct {
+		unsigned int header_upgrade: 1;
+		unsigned int connection_upgrade: 1;
+	} flags;
 };
 
 struct list_head *get_peer_list(void);

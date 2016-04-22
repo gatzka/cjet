@@ -104,6 +104,15 @@ Project {
     }
 
     Group {
+      name: "sha1"
+      files: [
+        "sha1/sha1.c",
+        "sha1/sha1.h"
+      ]
+      cpp.cLanguageVersion: "c99"
+    }
+
+    Group {
       name: "version file"
       files: [
         "version.h.in"
