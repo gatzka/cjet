@@ -199,7 +199,7 @@ static struct server *alloc_server(int fd, eventloop_function read_function, eve
 	s->ev.write_function = NULL;
 	s->ev.error_function = error_function;
 
-	if (eventloop_add_io(&s->ev) < 0) {
+	if (eventloop_add_io(&s->ev) == ABORT_LOOP) {
 		free(s);
 		return NULL;
 	}
