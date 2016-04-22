@@ -107,6 +107,25 @@ static int on_body(http_parser *p, const char *at, size_t length)
 	return 0;
 }
 
+#define  CRLF  "\r\n"
+
+static const char *get_response(unsigned int status_code)
+{
+	switch (status_code) {
+	case 400:
+		return "HTTP/1.0 400 Bad Request" CRLF CRLF;
+
+	default:
+		return "HTTP/1.0 500 Internal Server Error" CRLF CRLF;
+	}
+}
+
+static int send_http_error_response(struct ws_peer *ws_peer, unsigned int status_code)
+{
+	const char *response = get_response(status_code);
+	return send_message(&ws_peer->peer, response, strlen(response));
+}
+
 void http_init(struct ws_peer *p)
 {
 	http_parser_settings_init(&p->parser_settings);
@@ -134,7 +153,7 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 			if (ws_peer->parser.upgrade) {
 			  /* handle new protocol */
 			} else if (nparsed != (size_t)line_length) {
-			  /* Handle error. Usually just close the connection. */
+				send_http_error_response(ws_peer, 400);
 				close_and_free_peer(p);
 				return CONTINUE_LOOP;
 			}
