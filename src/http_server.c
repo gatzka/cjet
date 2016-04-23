@@ -446,7 +446,7 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 			}
 		}
 	}
-
+	p->ev.read_function = handle_ws_protocol;
 	return handle_ws_protocol(context);
 }
 
