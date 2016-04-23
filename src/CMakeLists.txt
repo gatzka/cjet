@@ -13,7 +13,7 @@ CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_co
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
-SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=2 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
@@ -37,7 +37,7 @@ IF(CMAKE_C_COMPILER_ID STREQUAL GNU AND CMAKE_C_COMPILER_VERSION VERSION_GREATER
 ENDIF()
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu,--as-needed")
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O2,--gc-sections,-s")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wstrict-overflow=2 -Wl,-O2,--gc-sections,-s")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-Wl,-O0")
 
 IF(NOT CMAKE_BUILD_TYPE)
