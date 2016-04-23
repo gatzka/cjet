@@ -110,9 +110,9 @@ struct ws_peer {
 	uint64_t length;
 	uint8_t mask[4];
 	struct {
-		uint8_t fin: 1;
-		uint8_t opcode: 4;
-		uint8_t mask: 1;
+		unsigned int fin: 1;
+		unsigned int opcode: 4;
+		unsigned int mask: 1;
 	} ws_flags;
 };
 
