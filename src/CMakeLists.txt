@@ -71,6 +71,7 @@ SET(CJET_FILES
 
 SET(CJET_LINUX_FILES
         linux/eventloop.c
+        linux/jet_endian.c
         linux/jet_string.c
         linux/linux_io.c
         linux/main.c

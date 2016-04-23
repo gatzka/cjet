@@ -49,6 +49,7 @@ SET(READBUFFER_TEST
 	../../fetch.c
 	../../http-parser/http_parser.c
 	../../json/cJSON.c
+	../../linux/jet_endian.c
 	../../linux/jet_string.c
 	../../linux/uuid.c
 	../../peer.c

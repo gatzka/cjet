@@ -101,6 +101,7 @@ struct ws_peer {
 	} flags;
 	enum ws_protocol_state ws_protocol;
 	uint64_t length;
+	uint8_t mask[4];
 	struct {
 		uint8_t fin: 1;
 		uint8_t opcode: 4;

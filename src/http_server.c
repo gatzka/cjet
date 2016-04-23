@@ -29,6 +29,7 @@
 
 #include "base64.h"
 #include "compiler.h"
+#include "jet_endian.h"
 #include "jet_string.h"
 #include "http_server.h"
 #include "http-parser/http_parser.h"
@@ -351,6 +352,7 @@ static int ws_get_length16(union io_context *context)
 		}
 	} else {
 		memcpy(&field, read_ptr, sizeof(field));
+		field = jet_be16toh(field);
 		ws_peer->length = field;
 		switch_state_after_length(ws_peer);
 	}
@@ -371,8 +373,26 @@ static int ws_get_length64(union io_context *context)
 		}
 	} else {
 		memcpy(&field, read_ptr, sizeof(field));
+		field = jet_be64toh(field);
 		ws_peer->length = field;
 		switch_state_after_length(ws_peer);
+	}
+	return ret;
+}
+
+static int ws_get_mask(union io_context *context)
+{
+	const char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	ssize_t ret = get_read_ptr(p, sizeof(ws_peer->mask), &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		memcpy(ws_peer->mask, read_ptr, sizeof(ws_peer->mask));
 	}
 	return ret;
 }
@@ -398,6 +418,10 @@ static enum callback_return handle_ws_protocol(union io_context *context)
 
 		case WS_READING_LENGTH64:
 			ret = ws_get_length64(context);
+			break;
+
+		case WS_READING_MASK:
+			ret = ws_get_mask(context);
 			break;
 
 		default:
