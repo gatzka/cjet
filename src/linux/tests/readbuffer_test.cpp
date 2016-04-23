@@ -285,7 +285,7 @@ BOOST_AUTO_TEST_CASE(wrong_fd)
 	struct peer *p = alloc_jet_peer(BADFD);
 	BOOST_REQUIRE(p != NULL);
 
-	const char *read_ptr;
+	char *read_ptr;
 	int ret = get_read_ptr(p, 100, &read_ptr);
 	BOOST_CHECK(ret == IO_ERROR);
 
@@ -297,7 +297,7 @@ BOOST_AUTO_TEST_CASE(too_much_data_requested)
 	struct peer *p = alloc_jet_peer(TOO_MUCH_DATA);
 	BOOST_REQUIRE(p != NULL);
 
-	const char *read_ptr;
+	char *read_ptr;
 	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE + 1, &read_ptr);
 	BOOST_CHECK(ret == IO_TOOMUCHDATA);
 
@@ -309,7 +309,7 @@ BOOST_AUTO_TEST_CASE(client_closed_connection)
 	struct peer *p = alloc_jet_peer(CLIENT_CLOSE);
 	BOOST_REQUIRE(p != NULL);
 
-	const char *read_ptr;
+	char *read_ptr;
 	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE, &read_ptr);
 	BOOST_CHECK(ret == IO_CLOSE);
 
@@ -321,7 +321,7 @@ BOOST_AUTO_TEST_CASE(eagain)
 	struct peer *p = alloc_jet_peer(AGAIN);
 	BOOST_REQUIRE(p != NULL);
 
-	const char *read_ptr;
+	char *read_ptr;
 	int ret = get_read_ptr(p, CONFIG_MAX_MESSAGE_SIZE, &read_ptr);
 	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 
@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE(slow_read)
 
 	slow_read_counter = 0;
 
-	const char *read_ptr;
+	char *read_ptr;
 	int ret = get_read_ptr(p, sizeof(value), &read_ptr);
 	BOOST_CHECK(ret == IO_WOULD_BLOCK);
 	ret = get_read_ptr(p, sizeof(value), &read_ptr);
@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(fast_read)
 
 	struct peer *p = alloc_jet_peer(FAST_READ);
 	if (p != NULL) {
-		const char *read_ptr;
+		char *read_ptr;
 		int ret = get_read_ptr(p, read_len, &read_ptr);
 		if ((read_ptr != NULL) && (ret != IO_WOULD_BLOCK)) {
 			strncpy(buffer, read_ptr, read_len);

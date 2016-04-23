@@ -309,7 +309,7 @@ ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr)
 	}
 }
 
-ssize_t get_read_ptr(struct peer *p, unsigned int count, const char **read_ptr)
+ssize_t get_read_ptr(struct peer *p, unsigned int count, char **read_ptr)
 {
 	if (unlikely((ptrdiff_t)count > unread_space(p))) {
 		log_err("peer asked for too much data: %u!\n", count);
@@ -495,7 +495,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 static int read_msg_length(struct peer *p)
 {
 	uint32_t message_length;
-	const char *message_length_ptr;
+	char *message_length_ptr;
 	ssize_t ret = get_read_ptr(p, sizeof(message_length), &message_length_ptr);
 	if (unlikely(ret <= 0)) {
 		if (ret == IO_WOULD_BLOCK) {
@@ -512,7 +512,7 @@ static int read_msg_length(struct peer *p)
 static int read_msg(struct peer *p)
 {
 	uint32_t message_length = p->msg_length;
-	const char *message_ptr;
+	char *message_ptr;
 	ssize_t ret = get_read_ptr(p, message_length, &message_ptr);
 	if (unlikely(ret <= 0)) {
 		if (ret == IO_WOULD_BLOCK) {

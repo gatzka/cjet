@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <limits.h>
 #include <stddef.h>
 #include <sys/types.h>
 
@@ -272,7 +273,7 @@ void http_init(struct ws_peer *p)
 
 static int ws_get_header(union io_context *context)
 {
-	const char *read_ptr;
+	char *read_ptr;
 	struct peer *p = container_of(context, struct peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
 
@@ -309,7 +310,7 @@ static void switch_state_after_length(struct ws_peer *p)
 
 static int ws_get_first_length(union io_context *context)
 {
-	const char *read_ptr;
+	char *read_ptr;
 	struct peer *p = container_of(context, struct peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
 
@@ -328,6 +329,7 @@ static int ws_get_first_length(union io_context *context)
 		}
 		field = field & ~WS_MASK_SET;
 		if (field < 126) {
+			ws_peer->length = field;
 			switch_state_after_length(ws_peer);
 		} else if (field == 126) {
 			ws_peer->ws_protocol = WS_READING_LENGTH16;
@@ -340,7 +342,7 @@ static int ws_get_first_length(union io_context *context)
 
 static int ws_get_length16(union io_context *context)
 {
-	const char *read_ptr;
+	char *read_ptr;
 	struct peer *p = container_of(context, struct peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
 
@@ -361,7 +363,7 @@ static int ws_get_length16(union io_context *context)
 
 static int ws_get_length64(union io_context *context)
 {
-	const char *read_ptr;
+	char *read_ptr;
 	struct peer *p = container_of(context, struct peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
 
@@ -382,7 +384,7 @@ static int ws_get_length64(union io_context *context)
 
 static int ws_get_mask(union io_context *context)
 {
-	const char *read_ptr;
+	char *read_ptr;
 	struct peer *p = container_of(context, struct peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
 
@@ -393,6 +395,36 @@ static int ws_get_mask(union io_context *context)
 		}
 	} else {
 		memcpy(ws_peer->mask, read_ptr, sizeof(ws_peer->mask));
+		ws_peer->ws_protocol = WS_READING_PAYLOAD;
+	}
+	return ret;
+}
+
+static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
+{
+	for (unsigned int i= 0; i < length; i++) {
+		buffer[i] = buffer[i] ^ (mask[i % 4]);
+	}
+}
+
+static int ws_read_payload(union io_context *context)
+{
+	char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	if (unlikely(ws_peer->length > UINT_MAX)) {
+		log_err("Too much data to read!\n");
+		return IO_ERROR;
+	}
+	unsigned int length = (unsigned int)ws_peer->length;
+	ssize_t ret = get_read_ptr(p, length, &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		unmask_payload(read_ptr, ws_peer->mask, length);
 	}
 	return ret;
 }
@@ -422,6 +454,10 @@ static enum callback_return handle_ws_protocol(union io_context *context)
 
 		case WS_READING_MASK:
 			ret = ws_get_mask(context);
+			break;
+
+		case WS_READING_PAYLOAD:
+			ret = ws_read_payload(context);
 			break;
 
 		default:
