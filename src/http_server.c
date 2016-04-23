@@ -28,11 +28,13 @@
 #include <sys/types.h>
 
 #include "base64.h"
+#include "compiler.h"
 #include "jet_string.h"
 #include "http_server.h"
 #include "http-parser/http_parser.h"
 #include "linux/eventloop.h"
 #include "linux/linux_io.h"
+#include "log.h"
 #include "peer.h"
 #include "sha1/sha1.h"
 #include "util.h"
@@ -267,6 +269,153 @@ void http_init(struct ws_peer *p)
 	http_parser_init(&p->parser, HTTP_REQUEST);
 }
 
+static int ws_get_header(union io_context *context)
+{
+	const char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	ssize_t ret = get_read_ptr(p, 1, &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		uint8_t field;
+		memcpy(&field, read_ptr, 1);
+		static const uint8_t WS_FIN_SET = 0x80;
+		if ((field & WS_FIN_SET) == WS_FIN_SET) {
+			ws_peer->ws_flags.fin = 1;
+		}
+
+		static const uint8_t OPCODE_MASK = 0x0f;
+		field = field & OPCODE_MASK;
+		ws_peer->ws_flags.opcode = field;
+
+		ws_peer->ws_protocol = WS_READING_FIRST_LENGTH;
+	}
+	return ret;
+}
+
+static void switch_state_after_length(struct ws_peer *p)
+{
+	if (p->ws_flags.mask == 1) {
+		p->ws_protocol = WS_READING_MASK;
+	} else {
+		p->ws_protocol = WS_READING_PAYLOAD;
+	}
+}
+
+static int ws_get_first_length(union io_context *context)
+{
+	const char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	uint8_t field;
+	ssize_t ret = get_read_ptr(p, sizeof(field), &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		memcpy(&field, read_ptr, sizeof(field));
+		ws_peer->ws_protocol = WS_READING_FIRST_LENGTH;
+		static const uint8_t WS_MASK_SET = 0x80;
+		if ((field & WS_MASK_SET) == WS_MASK_SET) {
+			ws_peer->ws_flags.mask = 1;
+		}
+		field = field & ~WS_MASK_SET;
+		if (field < 126) {
+			switch_state_after_length(ws_peer);
+		} else if (field == 126) {
+			ws_peer->ws_protocol = WS_READING_LENGTH16;
+		} else {
+			ws_peer->ws_protocol = WS_READING_LENGTH64;
+		}
+	}
+	return ret;
+}
+
+static int ws_get_length16(union io_context *context)
+{
+	const char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	uint16_t field;
+	ssize_t ret = get_read_ptr(p, sizeof(field), &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		memcpy(&field, read_ptr, sizeof(field));
+		ws_peer->length = field;
+		switch_state_after_length(ws_peer);
+	}
+	return ret;
+}
+
+static int ws_get_length64(union io_context *context)
+{
+	const char *read_ptr;
+	struct peer *p = container_of(context, struct peer, ev);
+	struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+
+	uint64_t field;
+	ssize_t ret = get_read_ptr(p, sizeof(field), &read_ptr);
+	if (unlikely(ret <= 0)) {
+		if (ret == IO_WOULD_BLOCK) {
+			return 0;
+		}
+	} else {
+		memcpy(&field, read_ptr, sizeof(field));
+		ws_peer->length = field;
+		switch_state_after_length(ws_peer);
+	}
+	return ret;
+}
+
+static enum callback_return handle_ws_protocol(union io_context *context)
+{
+	while (1) {
+		int ret;
+		struct peer *p = container_of(context, struct peer, ev);
+		struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
+		switch (ws_peer->ws_protocol) {
+		case WS_READING_HEADER:
+			ret = ws_get_header(context);
+			break;
+
+		case WS_READING_FIRST_LENGTH:
+			ret = ws_get_first_length(context);
+			break;
+
+		case WS_READING_LENGTH16:
+			ret = ws_get_length16(context);
+			break;
+
+		case WS_READING_LENGTH64:
+			ret = ws_get_length64(context);
+			break;
+
+		default:
+			log_err("Unknown websocket operation!\n");
+			ret = -1;
+			break;
+		}
+
+		if (unlikely(ret <= 0)) {
+			if (unlikely(ret < 0)) {
+				close_and_free_peer(p);
+			}
+			return CONTINUE_LOOP;
+		}
+	}
+	return CONTINUE_LOOP;
+}
+
 enum callback_return handle_ws_upgrade(union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
@@ -298,8 +447,6 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 		}
 	}
 
-//	return handle_ws_protocol(context);
-
-	return CONTINUE_LOOP;
+	return handle_ws_protocol(context);
 }
 

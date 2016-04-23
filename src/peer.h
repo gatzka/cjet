@@ -80,6 +80,15 @@ enum header_field {
 #define SEC_WEB_SOCKET_KEY_LENGTH 24
 #define SEC_WEB_SOCKET_GUID_LENGTH 36
 
+enum ws_protocol_state {
+	WS_READING_HEADER,
+	WS_READING_FIRST_LENGTH,
+	WS_READING_LENGTH16,
+	WS_READING_LENGTH64,
+	WS_READING_MASK,
+	WS_READING_PAYLOAD
+};
+
 struct ws_peer {
 	struct peer peer;
 	http_parser parser;
@@ -90,6 +99,13 @@ struct ws_peer {
 		unsigned int header_upgrade: 1;
 		unsigned int connection_upgrade: 1;
 	} flags;
+	enum ws_protocol_state ws_protocol;
+	uint64_t length;
+	struct {
+		uint8_t fin: 1;
+		uint8_t opcode: 4;
+		uint8_t mask: 1;
+	} ws_flags;
 };
 
 struct list_head *get_peer_list(void);

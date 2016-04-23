@@ -136,6 +136,7 @@ struct ws_peer *alloc_wsjet_peer(int fd)
 	p->current_header_field = HEADER_UNKNOWN;
 	p->flags.connection_upgrade = 0;
 	p->flags.header_upgrade = 0;
+	p->ws_protocol = WS_READING_HEADER;
 	http_init(p);
 
 	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
