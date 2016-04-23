@@ -37,6 +37,7 @@
 #include "linux/eventloop.h"
 #include "linux/linux_io.h"
 #include "log.h"
+#include "parse.h"
 #include "peer.h"
 #include "sha1/sha1.h"
 #include "util.h"
@@ -407,6 +408,44 @@ static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
 	}
 }
 
+static int ws_handle_frame(struct ws_peer *ws_peer, char *msg, unsigned int length)
+{
+	int ret;
+	switch (ws_peer->ws_flags.opcode) {
+	case WS_CONTINUATION_FRAME:
+		log_err("Fragmented websocket frame not supported!\n");
+		//TODO: close_websocket
+		break;
+
+	case WS_BINARY_FRAME:
+	case WS_TEXT_FRAME:
+		ret = parse_message(msg, length, &ws_peer->peer);
+		if (unlikely(ret == -1)) {
+			return -1;
+		}
+		break;
+
+	case WS_PING_FRAME:
+
+		break;
+
+	case WS_PONG_FRAME:
+
+		break;
+
+	case WS_CLOSE_FRAME:
+
+		break;
+
+	default:
+		log_err("Unsupported websocket frame!\n");
+		//TODO: close_websocket
+		break;
+	}
+
+	return 0;
+}
+
 static int ws_read_payload(union io_context *context)
 {
 	char *read_ptr;
@@ -424,7 +463,13 @@ static int ws_read_payload(union io_context *context)
 			return 0;
 		}
 	} else {
+		// TODO: check if mask bit is set
 		unmask_payload(read_ptr, ws_peer->mask, length);
+		ret = ws_handle_frame(ws_peer, read_ptr, length);
+		if (unlikely(ret == -1)) {
+			return -1;
+		}
+		reorganize_read_buffer(p);
 	}
 	return ret;
 }

@@ -89,6 +89,13 @@ enum ws_protocol_state {
 	WS_READING_PAYLOAD
 };
 
+#define WS_CONTINUATION_FRAME 0x0
+#define WS_TEXT_FRAME 0x1
+#define WS_BINARY_FRAME 0x2
+#define WS_CLOSE_FRAME 0x8
+#define WS_PING_FRAME 0x9
+#define WS_PONG_FRAME 0x0a
+
 struct ws_peer {
 	struct peer peer;
 	http_parser parser;
