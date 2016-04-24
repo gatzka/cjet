@@ -165,6 +165,7 @@ static enum callback_return accept_common(union io_context *io,  void (*peer_fun
 				peer_function(peer_fd);
 			}
 		}
+	/* coverity[leaked_handle] */
 	}
 }
 
