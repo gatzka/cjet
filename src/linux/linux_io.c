@@ -153,8 +153,7 @@ static void handle_new_jetws_connection(int fd)
 static enum callback_return accept_common(union io_context *io,  void (*peer_function)(int fd))
 {
 	while (1) {
-		int peer_fd;
-		peer_fd = accept(io->fd, NULL, NULL);
+		int peer_fd = accept(io->fd, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return CONTINUE_LOOP;
@@ -162,7 +161,9 @@ static enum callback_return accept_common(union io_context *io,  void (*peer_fun
 				return ABORT_LOOP;
 			}
 		} else {
-			peer_function(peer_fd);
+			if (likely(peer_function != NULL)) {
+				peer_function(peer_fd);
+			}
 		}
 	}
 }
