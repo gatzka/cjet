@@ -103,7 +103,7 @@ int handle_info(const cJSON *json_rpc, struct peer *p)
 	char *rendered = cJSON_PrintUnformatted(result);
 	cJSON_Delete(result);
 	if (likely(rendered != NULL)) {
-		int ret = send_message(p, rendered, strlen(rendered));
+		int ret = p->send_message(p, rendered, strlen(rendered));
 		cJSON_free(rendered);
 		return ret;
 	} else {

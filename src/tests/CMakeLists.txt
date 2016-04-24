@@ -65,9 +65,16 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 SET(INFO_TEST
+	../fetch.c
 	../info.c
 	../json/cJSON.c
+	../linux/jet_string.c
+	../linux/uuid.c
+	../peer.c
 	../response.c
+	../router.c
+	../state.c
+	../table.c
 	info_test.cpp
 	log.cpp
 )

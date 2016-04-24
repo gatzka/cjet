@@ -37,10 +37,22 @@
 static char readback_buffer[10000];
 
 extern "C" {
-	void log_peer_err(const struct peer *p, const char *fmt, ...)
+
+	enum callback_return handle_all_peer_operations(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
+	void http_init(struct ws_peer *p)
 	{
 		(void)p;
-		(void)fmt;
+	}
+
+	enum callback_return handle_ws_upgrade(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
 	}
 
 	int send_message(struct peer *p, const char *rendered, size_t len)
@@ -52,6 +64,23 @@ extern "C" {
 		ptr += 4;
 		memcpy(ptr, rendered, len);
 		return 0;
+	}
+
+	enum callback_return write_msg(union io_context *context)
+	{
+		(void)context;
+		return CONTINUE_LOOP;
+	}
+
+	enum callback_return eventloop_add_io(struct io_event *ev)
+	{
+		(void)ev;
+		return CONTINUE_LOOP;
+	}
+
+	void eventloop_remove_io(struct io_event *ev)
+	{
+		(void)ev;
 	}
 }
 
@@ -70,8 +99,9 @@ static cJSON *create_correct_info_method()
 
 BOOST_AUTO_TEST_CASE(create_info)
 {
+	struct peer *p = alloc_jet_peer(-1);
 	cJSON *json_rpc = create_correct_info_method();
-	int ret = handle_info(json_rpc, NULL);
+	int ret = handle_info(json_rpc, p);
 	cJSON_Delete(json_rpc);
 	BOOST_CHECK(ret == 0);
 
@@ -141,5 +171,7 @@ BOOST_AUTO_TEST_CASE(create_info)
 	BOOST_CHECK((::strcmp(fetch->valuestring, "full") == 0) || (::strcmp(fetch->valuestring, "simple")));
 
 	cJSON_Delete(root);
+
+	free_peer(p);
 }
 

@@ -44,3 +44,9 @@ char *get_log_buffer(void)
 {
 	return log_buffer;
 }
+
+void log_peer_err(const struct peer *p, const char *fmt, ...)
+{
+	(void) p;
+	(void)fmt;
+}

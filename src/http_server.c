@@ -257,7 +257,8 @@ static const char *get_response(unsigned int status_code)
 static int send_http_error_response(struct ws_peer *ws_peer, unsigned int status_code)
 {
 	const char *response = get_response(status_code);
-	return send_message(&ws_peer->peer, response, strlen(response));
+	struct peer *p = &ws_peer->peer;
+	return p->send_message(p, response, strlen(response));
 }
 
 void http_init(struct ws_peer *p)
