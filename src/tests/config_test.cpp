@@ -45,6 +45,14 @@ extern "C" {
 		return 0;
 	}
 
+	int ws_send_message(struct peer *p, const char *rendered, size_t len)
+	{
+		(void)p;
+		(void)rendered;
+		(void)len;
+		return 0;
+	}
+
 	enum callback_return handle_all_peer_operations(union io_context *context)
 	{
 		(void)context;

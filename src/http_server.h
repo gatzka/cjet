@@ -32,6 +32,7 @@
 
 void http_init(struct ws_peer *p);
 enum callback_return handle_ws_upgrade(union io_context *context);
+int ws_send_message(struct peer *p, const char *rendered, size_t len);
 
 #endif
 

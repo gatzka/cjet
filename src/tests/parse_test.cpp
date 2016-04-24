@@ -83,6 +83,14 @@ extern "C" {
 		return 0;
 	}
 
+	int ws_send_message(struct peer *p, const char *rendered, size_t len)
+	{
+		(void)p;
+		(void)rendered;
+		(void)len;
+		return 0;
+	}
+
 	int remove_method_from_peer(struct peer *p, const char *path)
 	{
 		(void)p;

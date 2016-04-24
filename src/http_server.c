@@ -25,7 +25,9 @@
  */
 
 #include <limits.h>
+#include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "base64.h"
@@ -43,6 +45,9 @@
 #include "util.h"
 
 #define  CRLF  "\r\n"
+
+static const uint8_t WS_MASK_SET = 0x80;
+static const uint8_t WS_HEADER_FIN = 0x80;
 
 static int on_message_begin(http_parser *parser)
 {
@@ -87,7 +92,7 @@ static int send_upgrade_response(struct ws_peer *p)
 		"Sec-WebSocket-Accept: ";
 	static const char switch_response_end[] = CRLF CRLF;
 
-	int ret = send_ws_response(&p->peer, switch_response, sizeof(switch_response) - 1, accept_value, sizeof(accept_value), switch_response_end, sizeof(switch_response_end) - 1);
+	int ret = send_ws_upgrade_response(&p->peer, switch_response, sizeof(switch_response) - 1, accept_value, sizeof(accept_value), switch_response_end, sizeof(switch_response_end) - 1);
 	// TODO: change read callbacks for the websocket peer
 	return ret;
 }
@@ -287,8 +292,7 @@ static int ws_get_header(union io_context *context)
 	} else {
 		uint8_t field;
 		memcpy(&field, read_ptr, 1);
-		static const uint8_t WS_FIN_SET = 0x80;
-		if ((field & WS_FIN_SET) == WS_FIN_SET) {
+		if ((field & WS_HEADER_FIN) == WS_HEADER_FIN) {
 			ws_peer->ws_flags.fin = 1;
 		}
 
@@ -325,7 +329,6 @@ static int ws_get_first_length(union io_context *context)
 	} else {
 		memcpy(&field, read_ptr, sizeof(field));
 		ws_peer->ws_protocol = WS_READING_FIRST_LENGTH;
-		static const uint8_t WS_MASK_SET = 0x80;
 		if ((field & WS_MASK_SET) == WS_MASK_SET) {
 			ws_peer->ws_flags.mask = 1;
 		}
@@ -467,6 +470,7 @@ static int ws_read_payload(union io_context *context)
 		// TODO: check if mask bit is set
 		unmask_payload(read_ptr, ws_peer->mask, length);
 		ret = ws_handle_frame(ws_peer, read_ptr, length);
+		ws_peer->ws_protocol = WS_READING_HEADER;
 		if (unlikely(ret == -1)) {
 			return -1;
 		}
@@ -554,5 +558,41 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 	}
 	p->ev.read_function = handle_ws_protocol;
 	return handle_ws_protocol(context);
+}
+
+static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+{
+	char ws_header[14];
+	uint8_t first_len;
+	size_t index = 2;
+
+	ws_header[0] = (uint8_t)(WS_TEXT_FRAME | WS_HEADER_FIN);
+	if (length < 126) {
+		first_len = (uint8_t)length;
+	} else if (length < 65536) {
+		uint16_t be_len = jet_htobe16((uint16_t)length);
+		memcpy(&ws_header[2], &be_len, sizeof(be_len));
+		index += sizeof(be_len);
+		first_len = 126;
+	} else {
+		uint64_t be_len = jet_htobe64((uint64_t)length);
+		memcpy(&ws_header[2], &be_len, sizeof(be_len));
+		index += sizeof(be_len);
+		first_len = 127;
+	}
+
+	if (shall_mask) {
+		first_len |= WS_MASK_SET;
+		memcpy(&ws_header[index], &mask, sizeof(mask));
+		index += sizeof(mask);
+	}
+	ws_header[1] = first_len;
+
+	return send_ws_response(p, ws_header, index, payload, length);
+}
+
+int ws_send_message(struct peer *p, const char *rendered, size_t len)
+{
+	return ws_send_frame(p, false, 0x00, rendered, len);
 }
 

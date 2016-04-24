@@ -217,6 +217,14 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
+	int ws_send_message(struct peer *p, const char *rendered, size_t len)
+	{
+		(void)p;
+		(void)rendered;
+		(void)len;
+		return 0;
+	}
+
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
 		(void)len;
