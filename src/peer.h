@@ -50,6 +50,7 @@ enum peer_type { JET, JETWS };
 
 struct peer {
 	struct io_event ev;
+	int (*send_message)(struct peer *p, const char *rendered, size_t len);
 	int op;
 	unsigned int to_write;
 	uint32_t msg_length;

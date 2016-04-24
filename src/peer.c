@@ -84,6 +84,11 @@ static int init_peer(struct peer *p, enum peer_type type, int fd, eventloop_func
 {
 	p->ev.context.fd = fd;
 	p->type = type;
+	if (type == JET) {
+		p->send_message = send_message;
+	} else {
+		p->send_message = NULL;
+	}
 	p->ev.read_function = read_function;
 	p->ev.write_function = 	write_msg;
 	p->ev.error_function = error_function;

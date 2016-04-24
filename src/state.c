@@ -211,7 +211,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 						  "could not render message");
 		goto delete_value_copy;
 	}
-	if (unlikely(send_message(s->peer, rendered_message,
+	if (unlikely(s->peer->send_message(s->peer, rendered_message,
 				  strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
 			p, "reason", "could not send routing information");

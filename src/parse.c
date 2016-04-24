@@ -106,7 +106,7 @@ static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct pe
 			ret = -1;
 			goto render_error;
 		}
-		ret = send_message(p, rendered, strlen(rendered));
+		ret = p->send_message(p, rendered, strlen(rendered));
 		cJSON_free(rendered);
 	render_error:
 		cJSON_Delete(root);

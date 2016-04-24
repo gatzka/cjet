@@ -393,7 +393,8 @@ static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 		cJSON_Delete(root);
 		return -1;
 	}
-	if (unlikely(send_message(f->peer, rendered_message,
+	struct peer *p = f->peer;
+	if (unlikely(p->send_message(p, rendered_message,
 			strlen(rendered_message)) != 0)) {
 		cJSON_Delete(root);
 		free(rendered_message);
