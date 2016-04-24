@@ -564,7 +564,7 @@ static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const c
 {
 	char ws_header[14];
 	uint8_t first_len;
-	size_t index = 2;
+	size_t header_index = 2;
 
 	ws_header[0] = (uint8_t)(WS_TEXT_FRAME | WS_HEADER_FIN);
 	if (length < 126) {
@@ -572,23 +572,23 @@ static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const c
 	} else if (length < 65536) {
 		uint16_t be_len = jet_htobe16((uint16_t)length);
 		memcpy(&ws_header[2], &be_len, sizeof(be_len));
-		index += sizeof(be_len);
+		header_index += sizeof(be_len);
 		first_len = 126;
 	} else {
 		uint64_t be_len = jet_htobe64((uint64_t)length);
 		memcpy(&ws_header[2], &be_len, sizeof(be_len));
-		index += sizeof(be_len);
+		header_index += sizeof(be_len);
 		first_len = 127;
 	}
 
 	if (shall_mask) {
 		first_len |= WS_MASK_SET;
-		memcpy(&ws_header[index], &mask, sizeof(mask));
-		index += sizeof(mask);
+		memcpy(&ws_header[header_index], &mask, sizeof(mask));
+		header_index += sizeof(mask);
 	}
 	ws_header[1] = first_len;
 
-	return send_ws_response(p, ws_header, index, payload, length);
+	return send_ws_response(p, ws_header, header_index, payload, length);
 }
 
 int ws_send_message(struct peer *p, const char *rendered, size_t len)
