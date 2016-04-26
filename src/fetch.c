@@ -148,7 +148,7 @@ static struct path_matcher *create_path_matcher(unsigned int number_of_path_elem
 
 static void free_path_elements(const struct path_matcher *pm)
 {
-	for (unsigned int i; i < pm->number_of_path_elements; i++) {
+	for (unsigned int i = 0; i < pm->number_of_path_elements; i++) {
 		if (pm->path_elements[i] != NULL) {
 			free(pm->path_elements[i]);
 		}
