@@ -94,142 +94,46 @@ static int contains_match_ignore_case(const struct path_matcher *pm,
 	return jet_strcasestr(state_path, pm->path_elements[0]) != NULL;
 }
 
-#if 0
-static int equalsnot_match(const struct path_matcher *pm, const char *state_path)
-{
-	return strcmp(pm->fetch_path, state_path);
-}
-
-static int equalsnot_match_ignore_case(const struct path_matcher *pm, const char *state_path)
-{
-	return jet_strcasecmp(pm->fetch_path, state_path);
-}
-
 static int startswith_match(const struct path_matcher *pm,
 	const char *state_path)
 {
 	size_t length = pm->cookie;
-	return !strncmp(pm->fetch_path, state_path, length);
+	return !strncmp(pm->path_elements[0], state_path, length);
 }
 
 static int startswith_match_ignore_case(const struct path_matcher *pm,
 	const char *state_path)
 {
-	size_t length = pm->cookie;
-	return !jet_strncasecmp(pm->fetch_path, state_path, length);
+	return !jet_strcasecmp(pm->path_elements[0], state_path);
 }
 
 static int endswith_match(const struct path_matcher *pm,
 	const char *state_path)
 {
-	size_t fetch_path_length = pm->cookie;
+	size_t fetch_path_length = strlen(pm->path_elements[0]);
 	size_t state_path_length = strlen(state_path);
 	return (state_path_length >= fetch_path_length) &&
-		(strcmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
+		(strcmp(state_path + state_path_length - fetch_path_length, pm->path_elements[0]) == 0);
 }
 
 static int endswith_match_ignore_case(const struct path_matcher *pm,
 	const char *state_path)
 {
-	size_t fetch_path_length = pm->cookie;
+	size_t fetch_path_length = strlen(pm->path_elements[0]);
 	size_t state_path_length = strlen(state_path);
 	return (state_path_length >= fetch_path_length) &&
-		(jet_strcasecmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
+		(jet_strcasecmp(state_path + state_path_length - fetch_path_length, pm->path_elements[0]) == 0);
 }
 
-static int get_match_function(struct path_matcher *pm, const char *path,
-	const char *fetch_type, int ignore_case)
+static int equalsnot_match(const struct path_matcher *pm, const char *state_path)
 {
-	if (strcmp(fetch_type, "equals") == 0) {
-		if (ignore_case) {
-			pm->match_function = equals_match_ignore_case;
-		} else {
-			pm->match_function = equals_match;
-		}
-		return 0;
-	}
-	if (strcmp(fetch_type, "startsWith") == 0) {
-		if (ignore_case) {
-			pm->match_function = startswith_match_ignore_case;
-		} else {
-			pm->match_function = startswith_match;
-		}
-		pm->cookie = strlen(path);
-		return 0;
-	}
-	if (strcmp(fetch_type, "endsWith") == 0) {
-		if (ignore_case) {
-			pm->match_function = endswith_match_ignore_case;
-		} else {
-			pm->match_function = endswith_match;
-		}
-		pm->cookie = strlen(path);
-		return 0;
-	}
-	if (strcmp(fetch_type, "contains") == 0) {
-		if (ignore_case) {
-			pm->match_function = contains_match_ignore_case;
-		} else {
-			pm->match_function = contains_match;
-		}
-		return 0;
-	}
-	if (strcmp(fetch_type, "equalsNot") == 0) {
-		if (ignore_case) {
-			pm->match_function = equalsnot_match_ignore_case;
-		} else {
-			pm->match_function = equalsnot_match;
-		}
-		return 0;
-	}
-	return -1;
+	return strcmp(pm->path_elements[0], state_path);
 }
 
-static cJSON *fill_matcher(const struct peer *p, struct path_matcher *matcher,
-	const char *fetch_type, int ignore_case, const char *path)
+static int equalsnot_match_ignore_case(const struct path_matcher *pm, const char *state_path)
 {
-	if (unlikely(get_match_function(matcher, path, fetch_type, ignore_case) < 0)) {
-		return create_internal_error(p, "reason",
-			"match function not implemented");
-	}
-	matcher->fetch_path = duplicate_string(path);
-	if (unlikely(matcher->fetch_path == NULL)) {
-		return create_internal_error(p, "reason", "not enough memory");
-	}
-
-	return NULL;
+	return jet_strcasecmp(pm->path_elements[0], state_path);
 }
-static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, const cJSON *params)
-{
-	const cJSON *path = cJSON_GetObjectItem(params, "path");
-	if (path == NULL) {
-		return NULL;
-	}
-	if (unlikely(path->type != cJSON_Object)) {
-		return create_invalid_params_error(
-			p, "reason", "fetch path is not an object");
-	}
-
-	int ignore_case = is_case_insensitive(params);
-
-	const cJSON *matcher = path->child;
-	struct path_matcher *path_matcher = f->matcher;
-	while (matcher) {
-		if (unlikely(matcher->type != cJSON_String)) {
-			return create_invalid_params_error(
-				p, "reason", "match path is not a string");
-		}
-		cJSON *error = fill_matcher(p, path_matcher, matcher->string, ignore_case,
-			matcher->valuestring);
-		if (unlikely(error != NULL)) {
-			return error;
-		}
-		matcher = matcher->next;
-		++path_matcher;
-	}
-	return NULL;
-}
-#endif
 
 static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
@@ -299,6 +203,24 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int in
 			match_function = contains_match;
 		}
 		has_multiple_path_elements = false;
+	} else if (strcmp(matcher->string, "startsWith") == 0) {
+		if (ignore_case) {
+			match_function = startswith_match_ignore_case;
+		} else {
+			match_function = startswith_match;
+		}
+	} else if (strcmp(matcher->string, "endsWith") == 0) {
+		if (ignore_case) {
+			match_function = endswith_match_ignore_case;
+		} else {
+			match_function = endswith_match;
+		}
+	} else if (strcmp(matcher->string, "equalsNot") == 0) {
+		if (ignore_case) {
+			match_function = equalsnot_match_ignore_case;
+		} else {
+			match_function = equalsnot_match;
+		}
 	} else {
 		return -1;
 	}
