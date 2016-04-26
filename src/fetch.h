@@ -42,16 +42,17 @@ struct state_or_method;
 typedef int (*match_func)(const struct path_matcher *pm, const char *state_path);
 
 struct path_matcher {
-	char *fetch_path;
 	match_func match_function;
 	uintptr_t cookie;
+	char *fetch_path[1];
 };
 
 struct fetch {
 	cJSON *fetch_id;
 	struct peer *peer;
+	unsigned int number_of_matchers;
 	struct list_head next_fetch;
-	struct path_matcher matcher[12];
+	struct path_matcher *matcher[1];
 };
 
 cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,

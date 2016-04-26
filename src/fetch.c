@@ -35,12 +35,15 @@
 #include "json/cJSON.h"
 #include "linux/linux_io.h"
 #include "list.h"
+#include "log.h"
 #include "peer.h"
 #include "response.h"
 #include "state.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define MAX(a,b) (((a)>(b))?(a):(b))
+
+static const char case_insensitive[] = "caseInsensitive";
 
 static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSON **err)
 {
@@ -59,78 +62,27 @@ static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSO
 	return id;
 }
 
-static struct fetch *alloc_fetch(struct peer *p, const cJSON *id)
+static int is_case_insensitive(const cJSON *path)
 {
-	struct fetch *f = calloc(1, sizeof(*f));
-	if (unlikely(f == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
-		return NULL;
-	}
-	INIT_LIST_HEAD(&f->next_fetch);
-	f->peer = p;
-	f->fetch_id = cJSON_Duplicate(id, 1);
-	if (unlikely(f->fetch_id == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
-		free(f);
-		return NULL;
-	}
-
-	return f;
-}
-
-static void remove_matchers(struct fetch *f)
-{
-	struct path_matcher *path_matcher = f->matcher;
-	while (path_matcher->fetch_path != NULL) {
-		free(path_matcher->fetch_path);
-		++path_matcher;
-	}
-}
-
-static void free_fetch(struct fetch *f)
-{
-	remove_matchers(f);
-	cJSON_Delete(f->fetch_id);
-	free(f);
-}
-
-static int ids_equal(const cJSON *id1, const cJSON *id2)
-{
-	if (id1->type != id2->type) {
+	const cJSON *match_ignore_case = cJSON_GetObjectItem(path, case_insensitive);
+	if ((match_ignore_case != NULL) && (match_ignore_case->type == cJSON_True)) {
+		return 1;
+	} else {
 		return 0;
 	}
-	if ((id1->type == cJSON_Number) && (id1->valueint == id2->valueint)) {
-		return 1;
-	}
-	if ((id1->type == cJSON_String) && (strcmp(id1->valuestring, id2->valuestring) == 0)) {
-		return 1;
-	}
-	return 0;
-}
-
-static struct fetch *find_fetch(const struct peer *p, const cJSON *id)
-{
-	struct list_head *item;
-	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->fetch_list) {
-		struct fetch *f = list_entry(item, struct fetch, next_fetch);
-		if (ids_equal(f->fetch_id, id)) {
-			return f;
-		}
-	}
-	return NULL;
 }
 
 static int equals_match(const struct path_matcher *pm, const char *state_path)
 {
-	return !strcmp(pm->fetch_path, state_path);
+	return !strcmp(pm->fetch_path[0], state_path);
 }
 
 static int equals_match_ignore_case(const struct path_matcher *pm, const char *state_path)
 {
-	return !jet_strcasecmp(pm->fetch_path, state_path);
+	return !jet_strcasecmp(pm->fetch_path[0], state_path);
 }
 
+#if 0
 static int equalsnot_match(const struct path_matcher *pm, const char *state_path)
 {
 	return strcmp(pm->fetch_path, state_path);
@@ -247,17 +199,6 @@ static cJSON *fill_matcher(const struct peer *p, struct path_matcher *matcher,
 
 	return NULL;
 }
-
-static int is_case_insensitive(const cJSON *params)
-{
-	const cJSON *match_ignore_case = cJSON_GetObjectItem(params, "caseInsensitive");
-	if ((match_ignore_case != NULL) && (match_ignore_case->type == cJSON_True)) {
-		return 1;
-	} else {
-		return 0;
-	}
-}
-
 static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, const cJSON *params)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
@@ -288,19 +229,160 @@ static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, const cJS
 	}
 	return NULL;
 }
+#endif
 
-static cJSON *add_matchers(const struct peer *p, struct fetch *f, const cJSON *params)
+static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
-	cJSON *error = add_path_matchers(p, f, params);
-	if (unlikely(error != NULL)) {
-		return error;
+	struct path_matcher *pm = malloc(sizeof(*pm) + (sizeof(pm->fetch_path) * (number_of_path_elements - 1)));
+	if (unlikely(pm == NULL)) {
+		log_err("Could not create path matcher!\n");
+	}
+	return pm;
+}
+
+static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int index, bool ignore_case)
+{
+	match_func match_function = NULL;
+	if (strcmp(matcher->string, "equals") == 0) {
+		if (ignore_case) {
+			match_function = equals_match_ignore_case;
+		} else {
+			match_function = equals_match;
+		}
+	}
+
+	if (unlikely(match_function == NULL)) {
+		log_err("No suitable matcher found!\n");
+		return -1;
+	}
+	struct path_matcher *pm = create_path_matcher(1);
+	if (unlikely(pm == NULL)) {
+		return -1;
+	}
+	pm->match_function = match_function;
+	f->matcher[index] = pm;
+	return 0;
+}
+
+static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
+{
+	unsigned int index = 0;
+	const cJSON *matcher = path->child;
+	while (matcher) {
+		if (strncmp(matcher->string, case_insensitive, sizeof(case_insensitive)) != 0) {
+			if (unlikely(create_matcher(f, matcher, index, ignore_case) < 0)) {
+				goto error;
+			}
+		}
+		index++;
+		matcher = matcher->next;
+	}
+	return 0;
+error:
+	//TODO free already allocated matchers
+	return -1;
+}
+
+static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, const cJSON *params)
+{
+	const cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (path == NULL) {
+		return NULL;
+	}
+	if (unlikely(path->type != cJSON_Object)) {
+		log_peer_err(p, "Fetch path is not an object!\n");
+		return NULL;
+	}
+
+	unsigned int number_of_matchers = cJSON_GetArraySize(path);
+	int ignore_case = is_case_insensitive(path);
+	if (ignore_case) {
+		number_of_matchers--;
+	}
+	if (unlikely(number_of_matchers == 0)) {
+		log_peer_err(p, "No matcher in path object\n");
+		return NULL;
+	}
+	if (unlikely(number_of_matchers > 12)) {
+		log_peer_err(p, "Too many matchers in path object\n");
+		return NULL;
+	}
+
+	struct fetch *f;
+	size_t matcher_size = sizeof(f->matcher);
+
+	f = malloc(sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
+	if (unlikely(f == NULL)) {
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
+		return NULL;
+	}
+	INIT_LIST_HEAD(&f->next_fetch);
+	f->peer = p;
+	f->number_of_matchers = number_of_matchers;
+	f->fetch_id = cJSON_Duplicate(id, 1);
+	if (unlikely(f->fetch_id == NULL)) {
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
+		free(f);
+		return NULL;
+	}
+
+	if (unlikely(add_matchers(f, path, ignore_case) < 0)) {
+		log_peer_err(p, "Could not add matchers to fetch!\n");
+		cJSON_Delete(f->fetch_id);
+		free(f);
+		return NULL;
+	}
+
+	return f;
+}
+
+static void remove_matchers(struct fetch *f)
+{
+	(void)f;
+//	struct path_matcher *path_matcher = f->matcher;
+//	while (path_matcher->fetch_path != NULL) {
+//		free(path_matcher->fetch_path);
+//		++path_matcher;
+//	}
+}
+
+static void free_fetch(struct fetch *f)
+{
+	remove_matchers(f);
+	cJSON_Delete(f->fetch_id);
+	free(f);
+}
+
+static int ids_equal(const cJSON *id1, const cJSON *id2)
+{
+	if (id1->type != id2->type) {
+		return 0;
+	}
+	if ((id1->type == cJSON_Number) && (id1->valueint == id2->valueint)) {
+		return 1;
+	}
+	if ((id1->type == cJSON_String) && (strcmp(id1->valuestring, id2->valuestring) == 0)) {
+		return 1;
+	}
+	return 0;
+}
+
+static struct fetch *find_fetch(const struct peer *p, const cJSON *id)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->fetch_list) {
+		struct fetch *f = list_entry(item, struct fetch, next_fetch);
+		if (ids_equal(f->fetch_id, id)) {
+			return f;
+		}
 	}
 	return NULL;
 }
 
 static int state_matches(struct state_or_method *s, struct fetch *f)
 {
-	if (f->matcher[0].match_function == NULL) {
+	if (f->matcher[0]->match_function == NULL) {
 		/*
 		 * no match function given, so it was a fetch all
 		 * command
@@ -310,8 +392,8 @@ static int state_matches(struct state_or_method *s, struct fetch *f)
 
 	unsigned int match_array_size = ARRAY_SIZE(f->matcher);
 	for (unsigned int i = 0; i < match_array_size; ++i) {
-		if (f->matcher[i].match_function != NULL) {
-			int ret = f->matcher[i].match_function(&(f->matcher[i]), s->path);
+		if (f->matcher[i]->match_function != NULL) {
+			int ret = f->matcher[i]->match_function((f->matcher[i]), s->path);
 			if (ret == 0) {
 				return 0;
 			}
@@ -545,17 +627,17 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 		return error;
 	}
 
-	f = alloc_fetch(p, id);
+	f = alloc_fetch(p, id, params);
 	if (unlikely(f == NULL)) {
 		error = create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 
-	error = add_matchers(p, f, params);
-	if (unlikely(error != NULL)) {
-		free_fetch(f);
-		return error;
-	}
+	//error = add_matchers(p, f, params);
+	//if (unlikely(error != NULL)) {
+	//	free_fetch(f);
+	//	return error;
+	//}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	*fetch_return = f;
