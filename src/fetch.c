@@ -74,12 +74,24 @@ static int is_case_insensitive(const cJSON *path)
 
 static int equals_match(const struct path_matcher *pm, const char *state_path)
 {
-	return !strcmp(pm->fetch_path[0], state_path);
+	return !strcmp(pm->path_elements[0], state_path);
 }
 
 static int equals_match_ignore_case(const struct path_matcher *pm, const char *state_path)
 {
-	return !jet_strcasecmp(pm->fetch_path[0], state_path);
+	return !jet_strcasecmp(pm->path_elements[0], state_path);
+}
+
+static int contains_match(const struct path_matcher *pm,
+	const char *state_path)
+{
+	return strstr(state_path, pm->path_elements[0]) != NULL;
+}
+
+static int contains_match_ignore_case(const struct path_matcher *pm,
+	const char *state_path)
+{
+	return jet_strcasestr(state_path, pm->path_elements[0]) != NULL;
 }
 
 #if 0
@@ -123,18 +135,6 @@ static int endswith_match_ignore_case(const struct path_matcher *pm,
 	size_t state_path_length = strlen(state_path);
 	return (state_path_length >= fetch_path_length) &&
 		(jet_strcasecmp(state_path + state_path_length - fetch_path_length, pm->fetch_path) == 0);
-}
-
-static int contains_match(const struct path_matcher *pm,
-	const char *state_path)
-{
-	return strstr(state_path, pm->fetch_path) != NULL;
-}
-
-static int contains_match_ignore_case(const struct path_matcher *pm,
-	const char *state_path)
-{
-	return jet_strcasestr(state_path, pm->fetch_path) != NULL;
 }
 
 static int get_match_function(struct path_matcher *pm, const char *path,
@@ -233,30 +233,100 @@ static cJSON *add_path_matchers(const struct peer *p, struct fetch *f, const cJS
 
 static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
-	struct path_matcher *pm = malloc(sizeof(*pm) + (sizeof(pm->fetch_path) * (number_of_path_elements - 1)));
+	struct path_matcher *pm = calloc(1, sizeof(*pm) + (sizeof(pm->path_elements) * (number_of_path_elements - 1)));
 	if (unlikely(pm == NULL)) {
 		log_err("Could not create path matcher!\n");
+	} else {
+		pm->number_of_path_elements = number_of_path_elements;
 	}
 	return pm;
 }
 
+static void free_path_elements(const struct path_matcher *pm)
+{
+	for (unsigned int i; i < pm->number_of_path_elements; i++) {
+		if (pm->path_elements[i] != NULL) {
+			free(pm->path_elements[i]);
+		}
+	}
+}
+
+static int fill_path_elements(struct path_matcher *pm, const cJSON *matcher, unsigned int number_of_path_elements)
+{
+	if (number_of_path_elements == 1) {
+		pm->path_elements[0] = duplicate_string(matcher->valuestring);
+		if (unlikely(pm->path_elements[0] == NULL)) {
+			return -1;
+		}  
+		return 0;
+	} 
+
+	const cJSON *element = matcher->child;
+	for (unsigned i = 0; i < number_of_path_elements; i++) {
+		if (element->type != cJSON_String) {
+			goto error;
+		}
+		pm->path_elements[i] = duplicate_string(matcher->valuestring);
+		if (unlikely(pm->path_elements[i] == NULL)) {
+			goto error;
+		}
+		element = element->next;
+	}
+	return 0;
+
+error:
+	free_path_elements(pm);
+	return -1;
+}
+
 static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int index, bool ignore_case)
 {
+	bool has_multiple_path_elements;
+	unsigned int number_of_path_elements;
 	match_func match_function = NULL;
+	
 	if (strcmp(matcher->string, "equals") == 0) {
 		if (ignore_case) {
 			match_function = equals_match_ignore_case;
 		} else {
 			match_function = equals_match;
 		}
+		has_multiple_path_elements = false;
+	} else if (strcmp(matcher->string, "contains") == 0) {
+		if (ignore_case) {
+			match_function = contains_match_ignore_case;
+		} else {
+			match_function = contains_match;
+		}
+		has_multiple_path_elements = false;
+	} else {
+		return -1;
+	}
+
+	if (has_multiple_path_elements) {
+		if (matcher->type != cJSON_Array) {
+			log_err("No multiple path elements!\n");
+			return -1;
+		}
+		number_of_path_elements = cJSON_GetArraySize(matcher);
+	} else {
+		if (matcher->type != cJSON_String) {
+			log_err("Single path element is not a string!\n");
+			return -1;
+		}
+		number_of_path_elements = 1;
 	}
 
 	if (unlikely(match_function == NULL)) {
 		log_err("No suitable matcher found!\n");
 		return -1;
 	}
-	struct path_matcher *pm = create_path_matcher(1);
+	struct path_matcher *pm = create_path_matcher(number_of_path_elements);
 	if (unlikely(pm == NULL)) {
+		return -1;
+	}
+	if (unlikely(fill_path_elements(pm, matcher, number_of_path_elements))) {
+		free(pm);
 		return -1;
 	}
 	pm->match_function = match_function;
@@ -279,7 +349,7 @@ static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
 	}
 	return 0;
 error:
-	//TODO free already allocated matchers
+	//TODO free already allocated matchers, same as freeeing path elements.
 	return -1;
 }
 
@@ -311,7 +381,7 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, const cJSON *p
 	struct fetch *f;
 	size_t matcher_size = sizeof(f->matcher);
 
-	f = malloc(sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
+	f = calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
 	if (unlikely(f == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
 		return NULL;
