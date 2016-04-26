@@ -334,6 +334,16 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int in
 	return 0;
 }
 
+static void free_matcher(struct fetch *f)
+{
+	for (unsigned int i = 0; i < f->number_of_matchers; i++) {
+		if (f->matcher[i] != NULL) {
+			free_path_elements(f->matcher[i]);
+			free(f->matcher[i]);
+		}
+	}
+}
+
 static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
 {
 	unsigned int index = 0;
@@ -349,7 +359,7 @@ static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
 	}
 	return 0;
 error:
-	//TODO free already allocated matchers, same as freeeing path elements.
+	free_matcher(f);
 	return -1;
 }
 
@@ -406,19 +416,9 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, const cJSON *p
 	return f;
 }
 
-static void remove_matchers(struct fetch *f)
-{
-	(void)f;
-//	struct path_matcher *path_matcher = f->matcher;
-//	while (path_matcher->fetch_path != NULL) {
-//		free(path_matcher->fetch_path);
-//		++path_matcher;
-//	}
-}
-
 static void free_fetch(struct fetch *f)
 {
-	remove_matchers(f);
+	free_matcher(f);
 	cJSON_Delete(f->fetch_id);
 	free(f);
 }
