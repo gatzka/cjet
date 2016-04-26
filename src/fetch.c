@@ -285,11 +285,33 @@ error:
 	return -1;
 }
 
-static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, const cJSON *params)
+static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, unsigned int number_of_matchers)
+{
+	struct fetch *f;
+	size_t matcher_size = sizeof(f->matcher);
+
+	f = calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
+	if (unlikely(f == NULL)) {
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
+		return NULL;
+	}
+	INIT_LIST_HEAD(&f->next_fetch);
+	f->peer = p;
+	f->number_of_matchers = number_of_matchers;
+	f->fetch_id = cJSON_Duplicate(id, 1);
+	if (unlikely(f->fetch_id == NULL)) {
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
+		free(f);
+		return NULL;
+	}
+	return f;
+}
+
+static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *params)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
-		return NULL;
+		return alloc_fetch(p, id, 1);
 	}
 	if (unlikely(path->type != cJSON_Object)) {
 		log_peer_err(p, "Fetch path is not an object!\n");
@@ -310,21 +332,8 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, const cJSON *p
 		return NULL;
 	}
 
-	struct fetch *f;
-	size_t matcher_size = sizeof(f->matcher);
-
-	f = calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
+	struct fetch *f = alloc_fetch(p, id, number_of_matchers);
 	if (unlikely(f == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
-		return NULL;
-	}
-	INIT_LIST_HEAD(&f->next_fetch);
-	f->peer = p;
-	f->number_of_matchers = number_of_matchers;
-	f->fetch_id = cJSON_Duplicate(id, 1);
-	if (unlikely(f->fetch_id == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
-		free(f);
 		return NULL;
 	}
 
@@ -374,7 +383,7 @@ static struct fetch *find_fetch(const struct peer *p, const cJSON *id)
 
 static int state_matches(struct state_or_method *s, struct fetch *f)
 {
-	if (f->matcher[0]->match_function == NULL) {
+	if (f->matcher[0] == NULL) {
 		/*
 		 * no match function given, so it was a fetch all
 		 * command
@@ -619,17 +628,11 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 		return error;
 	}
 
-	f = alloc_fetch(p, id, params);
+	f = create_fetch(p, id, params);
 	if (unlikely(f == NULL)) {
 		error = create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
-
-	//error = add_matchers(p, f, params);
-	//if (unlikely(error != NULL)) {
-	//	free_fetch(f);
-	//	return error;
-	//}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	*fetch_return = f;
