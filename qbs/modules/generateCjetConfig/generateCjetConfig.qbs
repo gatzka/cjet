@@ -66,6 +66,7 @@ Module {
         content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "routingTableOrder") || "6");
         content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, product.moduleProperty("generateCjetConfig", "initialFetchTableSize") || "4");
         content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, product.moduleProperty("generateCjetConfig", "routedMessagesTimeout") || "5.0");
+        content = content.replace(/\${CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH}/g, product.moduleProperty("generateCjetConfig", "maxMatchersInFetch") || "12");
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
