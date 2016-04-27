@@ -639,6 +639,16 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	}
 }
 
+BOOST_FIXTURE_TEST_CASE(fetch_of_path_without_elements, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_params("", "", "", "", 0);
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
 BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 {
 	struct fetch *f = NULL;
