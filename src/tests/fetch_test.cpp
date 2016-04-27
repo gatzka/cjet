@@ -319,6 +319,25 @@ static cJSON *create_fetch_params(const char *path_equals_string, const char *pa
 	return root;
 }
 
+static cJSON *create_fetch_with_multiple_matchers(const char *path_contains, unsigned int number_of_contains)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "id", "fetch_id_1");
+	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
+	cJSON_AddItemToObject(root, "path", path);
+
+	for (unsigned int i = 0; i < number_of_contains; i++) {
+		if (strlen(path_contains)) {
+			cJSON_AddStringToObject(path, "contains", path_contains + number_of_contains);
+		}
+	}
+
+	return root;
+}
+
+
 static cJSON *create_unfetch_params()
 {
 	cJSON *root = cJSON_CreateObject();
@@ -643,6 +662,16 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_path_without_elements, F)
 {
 	struct fetch *f = NULL;
 	cJSON *params = create_fetch_params("", "", "", "", 0);
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(too_many_matcher, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_with_multiple_matchers("bla", CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH + 1);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error != NULL);
 	cJSON_Delete(params);
