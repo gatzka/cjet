@@ -209,18 +209,21 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int in
 		} else {
 			match_function = startswith_match;
 		}
+		has_multiple_path_elements = false;
 	} else if (strcmp(matcher->string, "endsWith") == 0) {
 		if (ignore_case) {
 			match_function = endswith_match_ignore_case;
 		} else {
 			match_function = endswith_match;
 		}
+		has_multiple_path_elements = false;
 	} else if (strcmp(matcher->string, "equalsNot") == 0) {
 		if (ignore_case) {
 			match_function = equalsnot_match_ignore_case;
 		} else {
 			match_function = equalsnot_match;
 		}
+		has_multiple_path_elements = false;
 	} else {
 		return -1;
 	}
