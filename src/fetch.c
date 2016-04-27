@@ -135,6 +135,26 @@ static int equalsnot_match_ignore_case(const struct path_matcher *pm, const char
 	return jet_strcasecmp(pm->path_elements[0], state_path);
 }
 
+static int containsallof_match(const struct path_matcher *pm, const char *state_path)
+{
+	for (unsigned int i = 0; i < pm->number_of_path_elements; i++) {
+		if (strstr(state_path, pm->path_elements[i]) == NULL) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
+static int containsallof_match_ignore_case(const struct path_matcher *pm, const char *state_path)
+{
+	for (unsigned int i = 0; i < pm->number_of_path_elements; i++) {
+		if (jet_strcasestr(state_path, pm->path_elements[i]) == NULL) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
 	struct path_matcher *pm = calloc(1, sizeof(*pm) + (sizeof(pm->path_elements) * (number_of_path_elements - 1)));
@@ -155,9 +175,9 @@ static void free_path_elements(const struct path_matcher *pm)
 	}
 }
 
-static int fill_path_elements(struct path_matcher *pm, const cJSON *matcher, unsigned int number_of_path_elements)
+static int fill_path_elements(struct path_matcher *pm, const cJSON *matcher, bool has_multiple_path_elements, unsigned int number_of_path_elements)
 {
-	if (number_of_path_elements == 1) {
+	if (!has_multiple_path_elements) {
 		pm->path_elements[0] = duplicate_string(matcher->valuestring);
 		if (unlikely(pm->path_elements[0] == NULL)) {
 			return -1;
@@ -170,7 +190,7 @@ static int fill_path_elements(struct path_matcher *pm, const cJSON *matcher, uns
 		if (element->type != cJSON_String) {
 			goto error;
 		}
-		pm->path_elements[i] = duplicate_string(matcher->valuestring);
+		pm->path_elements[i] = duplicate_string(element->valuestring);
 		if (unlikely(pm->path_elements[i] == NULL)) {
 			goto error;
 		}
@@ -224,6 +244,13 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int ma
 			match_function = equalsnot_match;
 		}
 		has_multiple_path_elements = false;
+	} else if (strcmp(matcher->string, "containsAllOf") == 0) {
+		if (ignore_case) {
+			match_function = containsallof_match_ignore_case;
+		} else {
+			match_function = containsallof_match;
+		}
+		has_multiple_path_elements = true;
 	} else {
 		return -1;
 	}
@@ -250,7 +277,7 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int ma
 	if (unlikely(pm == NULL)) {
 		return -1;
 	}
-	if (unlikely(fill_path_elements(pm, matcher, number_of_path_elements))) {
+	if (unlikely(fill_path_elements(pm, matcher, has_multiple_path_elements, number_of_path_elements))) {
 		free(pm);
 		return -1;
 	}
