@@ -40,7 +40,6 @@
 #include "response.h"
 #include "state.h"
 
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 static const char case_insensitive[] = "caseInsensitive";
@@ -97,14 +96,15 @@ static int contains_match_ignore_case(const struct path_matcher *pm,
 static int startswith_match(const struct path_matcher *pm,
 	const char *state_path)
 {
-	size_t length = pm->cookie;
-	return !strncmp(pm->path_elements[0], state_path, length);
+	size_t fetch_path_length = strlen(pm->path_elements[0]);
+	return !strncmp(pm->path_elements[0], state_path, fetch_path_length);
 }
 
 static int startswith_match_ignore_case(const struct path_matcher *pm,
 	const char *state_path)
 {
-	return !jet_strcasecmp(pm->path_elements[0], state_path);
+	size_t fetch_path_length = strlen(pm->path_elements[0]);
+	return !jet_strncasecmp(pm->path_elements[0], state_path, fetch_path_length);
 }
 
 static int endswith_match(const struct path_matcher *pm,
@@ -391,7 +391,7 @@ static int state_matches(struct state_or_method *s, struct fetch *f)
 		 return 1;
 	}
 
-	unsigned int match_array_size = ARRAY_SIZE(f->matcher);
+	unsigned int match_array_size = f->number_of_matchers;
 	for (unsigned int i = 0; i < match_array_size; ++i) {
 		if (f->matcher[i]->match_function != NULL) {
 			int ret = f->matcher[i]->match_function((f->matcher[i]), s->path);
