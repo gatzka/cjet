@@ -183,7 +183,7 @@ error:
 	return -1;
 }
 
-static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int index, bool ignore_case)
+static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int match_index, bool ignore_case)
 {
 	bool has_multiple_path_elements;
 	unsigned int number_of_path_elements;
@@ -255,7 +255,7 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int in
 		return -1;
 	}
 	pm->match_function = match_function;
-	f->matcher[index] = pm;
+	f->matcher[match_index] = pm;
 	return 0;
 }
 
