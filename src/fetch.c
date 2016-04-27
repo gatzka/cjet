@@ -271,15 +271,15 @@ static void free_matcher(struct fetch *f)
 
 static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
 {
-	unsigned int index = 0;
+	unsigned int match_index = 0;
 	const cJSON *matcher = path->child;
 	while (matcher) {
 		if (strncmp(matcher->string, case_insensitive, sizeof(case_insensitive)) != 0) {
-			if (unlikely(create_matcher(f, matcher, index, ignore_case) < 0)) {
+			if (unlikely(create_matcher(f, matcher, match_index, ignore_case) < 0)) {
 				goto error;
 			}
 		}
-		index++;
+		match_index++;
 		matcher = matcher->next;
 	}
 	return 0;
