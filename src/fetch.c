@@ -330,7 +330,7 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 		log_peer_err(p, "No matcher in path object\n");
 		return NULL;
 	}
-	if (unlikely(number_of_matchers > 12)) {
+	if (unlikely(number_of_matchers > CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH)) {
 		log_peer_err(p, "Too many matchers in path object\n");
 		return NULL;
 	}
