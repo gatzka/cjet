@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,40 +24,47 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_IO_H
-#define CJET_LINUX_IO_H
-
-#include <stddef.h>
-#include <sys/types.h>
-
-#include "eventloop.h"
-#include "peer.h"
+#ifndef CJET_LINUX_EVENTLOOP_H
+#define CJET_LINUX_EVENTLOOP_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define IO_CLOSE -1
-#define IO_WOULD_BLOCK -2
-#define IO_ERROR -3
-#define IO_TOOMUCHDATA -4
-#define IO_BUFFERTOOSMALL -5
+#include <stdint.h>
 
-int run_io(const struct eventloop *loop, const char *user_name);
-ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr);
-ssize_t get_read_ptr(struct peer *p, unsigned int count, char **read_ptr);
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
-enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context);
-enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
-int send_buffer(struct peer *p);
-int send_message(struct peer *p, const char *rendered, size_t len);
+enum callback_return {ABORT_LOOP, CONTINUE_LOOP};
 
-int send_ws_upgrade_response(struct peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length);
+union io_context {
+	void *ptr;
+	int fd;
+	uint32_t u32;
+	uint64_t u64;
+};
 
-int send_ws_response(struct peer *p, const char *header, size_t header_size, const char *payload, size_t payload_size);
+struct eventloop;
+
+typedef enum callback_return (*eventloop_function)(const struct eventloop *loop, union io_context*);
+
+struct io_event {
+	union io_context context;
+	eventloop_function read_function;
+	eventloop_function write_function;
+	eventloop_function error_function;
+	const struct eventloop *loop;
+};
+
+struct eventloop {
+	int (*create)(void);
+	void (*destroy)(void);
+	int (*run)(const struct eventloop *loop, int *go_ahead);
+	enum callback_return (*add)(const struct eventloop *loop, struct io_event *ev);
+	void (*remove)(struct io_event *ev);
+};
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif
+

@@ -51,21 +51,24 @@ static cJSON *parse_send_buffer(const char *json)
 }
 
 extern "C" {
-	enum callback_return handle_all_peer_operations(union io_context *context)
+	enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
 	{
 		(void)context;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
-	enum callback_return handle_ws_upgrade(union io_context *context)
+	enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context)
 	{
 		(void)context;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
-	enum callback_return write_msg(union io_context *context)
+	enum callback_return write_msg(const struct eventloop *loop, union io_context *context)
 	{
 		(void)context;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -100,9 +103,10 @@ extern "C" {
 		return -1;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -132,15 +136,17 @@ extern "C" {
 struct F {
 	F()
 	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		p = alloc_jet_peer(-1);
-		set_peer = alloc_jet_peer(-1);
+		p = alloc_jet_peer(&loop, -1);
+		set_peer = alloc_jet_peer(&loop, -1);
 	}
 
 	~F()
 	{
-		free_peer(p);
-		free_peer(set_peer);
+		free_peer(&loop, p);
+		free_peer(&loop, set_peer);
 		while (!events.empty()) {
 			cJSON *ptr = events.front();
 			events.pop_front();
@@ -151,6 +157,7 @@ struct F {
 
 	struct peer *p;
 	struct peer *set_peer;
+	struct eventloop loop;
 };
 
 static cJSON *create_correct_add_state(const char *path)

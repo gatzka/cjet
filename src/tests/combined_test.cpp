@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "eventloop.h"
 #include "json/cJSON.h"
 #include "peer.h"
 #include "router.h"
@@ -235,8 +236,9 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
+		(void)loop;
 		(void)ev;
 		return CONTINUE_LOOP;
 	}
@@ -250,25 +252,28 @@ extern "C" {
 struct F {
 	F()
 	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(-1);
-		call_peer = alloc_jet_peer(-1);
-		fetch_peer_1 = alloc_jet_peer(-1);
-		fetch_peer_2 = alloc_jet_peer(-1);
-		set_peer = alloc_jet_peer(-1);
+		owner_peer = alloc_jet_peer(&loop, -1);
+		call_peer = alloc_jet_peer(&loop, -1);
+		fetch_peer_1 = alloc_jet_peer(&loop, -1);
+		fetch_peer_2 = alloc_jet_peer(&loop, -1);
+		set_peer = alloc_jet_peer(&loop, -1);
 		message_for_wrong_peer = false;
 		setter_caller_error_code = 0;
 		setter_caller_result = UNKNOWN;
 	}
 	~F()
 	{
-		if (set_peer) free_peer(set_peer);
-		if (fetch_peer_2) free_peer(fetch_peer_2);
-		if (fetch_peer_1) free_peer(fetch_peer_1);
-		if (call_peer) free_peer(call_peer);
-		if (owner_peer) free_peer(owner_peer);
+		if (set_peer) free_peer(&loop, set_peer);
+		if (fetch_peer_2) free_peer(&loop, fetch_peer_2);
+		if (fetch_peer_1) free_peer(&loop, fetch_peer_1);
+		if (call_peer) free_peer(&loop, call_peer);
+		if (owner_peer) free_peer(&loop, owner_peer);
 		state_hashtable_delete();
 	}
+	struct eventloop loop;
 };
 
 static cJSON *create_fetch_params(const char *path_string)
@@ -378,7 +383,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
-	free_peer(owner_peer);
+	free_peer(&loop, owner_peer);
 	owner_peer = NULL;
 
 	BOOST_CHECK(setter_caller_result == ERROR);

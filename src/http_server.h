@@ -27,11 +27,11 @@
 #ifndef CJET_HTTP_SERVER_H
 #define CJET_HTTP_SERVER_H
 
-#include "linux/eventloop.h"
+#include "eventloop.h"
 #include "peer.h"
 
 void http_init(struct ws_peer *p);
-enum callback_return handle_ws_upgrade(union io_context *context);
+enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context);
 int ws_send_message(struct peer *p, const char *rendered, size_t len);
 
 #endif

@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_EVENTLOOP_H
-#define CJET_LINUX_EVENTLOOP_H
+#ifndef CJET_LINUX_EVENTLOOP_EPOLL_H
+#define CJET_LINUX_EVENTLOOP_EPOLL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,29 +33,13 @@ extern "C" {
 
 #include <stdint.h>
 
-enum callback_return {ABORT_LOOP, CONTINUE_LOOP};
+#include "eventloop.h"
 
-union io_context {
-	void *ptr;
-	int fd;
-	uint32_t u32;
-	uint64_t u64;
-};
-
-typedef enum callback_return (*eventloop_function)(union io_context*);
-
-struct io_event {
-	union io_context context;
-	eventloop_function read_function;
-	eventloop_function write_function;
-	eventloop_function error_function;
-};
-
-int eventloop_create(void);
-void eventloop_destroy(void);
-int eventloop_run(int *go_ahead);
-enum callback_return eventloop_add_io(struct io_event *ev);
-void eventloop_remove_io(struct io_event *ev);
+int eventloop_epoll_create(void);
+void eventloop_epoll_destroy(void);
+int eventloop_epoll_run(const struct eventloop *loop, int *go_ahead);
+enum callback_return eventloop_epoll_add(const struct eventloop *loop, struct io_event *ev);
+void eventloop_epoll_remove(struct io_event *ev);
 
 #ifdef __cplusplus
 }

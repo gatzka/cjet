@@ -37,7 +37,7 @@
 #include "http_server.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
-#include "linux/eventloop.h"
+#include "eventloop.h"
 #include "linux/linux_io.h"
 #include "list.h"
 #include "log.h"
@@ -73,14 +73,14 @@ static void free_peer_resources(struct peer *p)
 	}
 }
 
-static enum callback_return free_peer_on_error(union io_context *context)
+static enum callback_return free_peer_on_error(const struct eventloop *loop, union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
-	close_and_free_peer(p);
+	close_and_free_peer(loop, p);
 	return CONTINUE_LOOP;
 }
 
-static int init_peer(struct peer *p, enum peer_type type, int fd, eventloop_function read_function, eventloop_function error_function)
+static int init_peer(const struct eventloop *loop, struct peer *p, enum peer_type type, int fd, eventloop_function read_function, eventloop_function error_function)
 {
 	p->ev.context.fd = fd;
 	p->type = type;
@@ -108,7 +108,7 @@ static int init_peer(struct peer *p, enum peer_type type, int fd, eventloop_func
 
 	list_add_tail(&p->next_peer, &peer_list);
 
-	if (eventloop_add_io(&p->ev) == ABORT_LOOP) {
+	if (loop->add(loop, &p->ev) == ABORT_LOOP) {
 		free_peer_resources(p);
 		return -1;
 	} else {
@@ -116,13 +116,13 @@ static int init_peer(struct peer *p, enum peer_type type, int fd, eventloop_func
 	}
 }
 
-struct peer *alloc_jet_peer(int fd)
+struct peer *alloc_jet_peer(const struct eventloop *loop, int fd)
 {
 	struct peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	if (init_peer(p, JET, fd, handle_all_peer_operations, free_peer_on_error) < 0) {
+	if (init_peer(loop, p, JET, fd, handle_all_peer_operations, free_peer_on_error) < 0) {
 		free(p);
 		return NULL;
 	} else {
@@ -131,7 +131,7 @@ struct peer *alloc_jet_peer(int fd)
 	}
 }
 
-struct ws_peer *alloc_wsjet_peer(int fd)
+struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd)
 {
 	struct ws_peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
@@ -144,7 +144,7 @@ struct ws_peer *alloc_wsjet_peer(int fd)
 	p->ws_protocol = WS_READING_HEADER;
 	http_init(p);
 
-	if (init_peer(&p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
+	if (init_peer(loop, &p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
 		free(p);
 		return NULL;
 	} else {
@@ -153,9 +153,9 @@ struct ws_peer *alloc_wsjet_peer(int fd)
 	}
 }
 
-void free_peer(struct peer *p)
+void free_peer(const struct eventloop *loop, struct peer *p)
 {
-	eventloop_remove_io(&p->ev);
+	loop->remove(&p->ev);
 	free_peer_resources(p);
 	--number_of_peers;
 	if (p->type == JET) {
@@ -166,20 +166,20 @@ void free_peer(struct peer *p)
 	}
 }
 
-void close_and_free_peer(struct peer *p)
+void close_and_free_peer(const struct eventloop *loop, struct peer *p)
 {
 	int fd = p->ev.context.fd;
-	free_peer(p);
+	free_peer(loop, p);
 	close(fd);
 }
 
-void destroy_all_peers(void)
+void destroy_all_peers(const struct eventloop *loop)
 {
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		close_and_free_peer(p);
+		close_and_free_peer(loop, p);
 	}
 }
 

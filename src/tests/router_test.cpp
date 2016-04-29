@@ -77,9 +77,10 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -122,14 +123,17 @@ static cJSON *create_response_wrong_id()
 struct F {
 	F()
 	{
-		p = alloc_jet_peer(-1);
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
+		p = alloc_jet_peer(&loop, -1);
 	}
 	~F()
 	{
-		free_peer(p);
+		free_peer(&loop, p);
 	}
 
 	struct peer *p;
+	struct eventloop loop;
 };
 
 BOOST_FIXTURE_TEST_CASE(handle_response, F)

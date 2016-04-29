@@ -40,7 +40,8 @@
 
 #include "compiler.h"
 #include "jet_endian.h"
-#include "linux/eventloop.h"
+#include "eventloop.h"
+#include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
 #include "log.h"
@@ -120,13 +121,13 @@ static int prepare_peer_socket(int fd)
 	return 0;
 }
 
-static void handle_new_jet_connection(int fd)
+static void handle_new_jet_connection(const struct eventloop *loop, int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
 
-	struct peer *peer = alloc_jet_peer(fd);
+	struct peer *peer = alloc_jet_peer(loop, fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
@@ -136,12 +137,12 @@ static void handle_new_jet_connection(int fd)
 	return;
 }
 
-static void handle_new_jetws_connection(int fd)
+static void handle_new_jetws_connection(const struct eventloop *loop ,int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct ws_peer *p = alloc_wsjet_peer(fd);
+	struct ws_peer *p = alloc_wsjet_peer(loop, fd);
 	if (unlikely(p == NULL)) {
 		log_err("Could not allocate websocket jet peer!\n");
 		close(fd);
@@ -150,7 +151,7 @@ static void handle_new_jetws_connection(int fd)
 	return;
 }
 
-static enum callback_return accept_common(union io_context *io,  void (*peer_function)(int fd))
+static enum callback_return accept_common(const struct eventloop *loop, union io_context *io,  void (*peer_function)(const struct eventloop*, int fd))
 {
 	while (1) {
 		int peer_fd = accept(io->fd, NULL, NULL);
@@ -162,47 +163,51 @@ static enum callback_return accept_common(union io_context *io,  void (*peer_fun
 			}
 		} else {
 			if (likely(peer_function != NULL)) {
-				peer_function(peer_fd);
+				peer_function(loop, peer_fd);
 			}
 		}
 	/* coverity[leaked_handle] */
 	}
 }
 
-static enum callback_return accept_jet(union io_context *io)
+static enum callback_return accept_jet(const struct eventloop *loop, union io_context *io)
 {
-	return accept_common(io, handle_new_jet_connection);
+	return accept_common(loop, io, handle_new_jet_connection);
 }
 
-static enum callback_return accept_jet_error(union io_context *io)
+static enum callback_return accept_jet_error(const struct eventloop *loop, union io_context *io)
 {
+	(void)io;
+	(void)loop;
+	return ABORT_LOOP;
+}
+
+static enum callback_return accept_jetws(const struct eventloop *loop, union io_context *io)
+{
+	return accept_common(loop, io, handle_new_jetws_connection);
+}
+
+static enum callback_return accept_jetws_error(const struct eventloop *loop, union io_context *io)
+{
+	(void)loop;
 	(void)io;
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_jetws(union io_context *io)
-{
-	return accept_common(io, handle_new_jetws_connection);
-}
-
-static enum callback_return accept_jetws_error(union io_context *io)
-{
-	(void)io;
-	return ABORT_LOOP;
-}
-
-static struct server *alloc_server(int fd, eventloop_function read_function, eventloop_function error_function)
+static struct server *alloc_server(const struct eventloop *loop, int fd, eventloop_function read_function, eventloop_function error_function)
 {
 	struct server *s = malloc(sizeof(*s));
 	if (unlikely(s == NULL)) {
 		return NULL;
 	}
+	
+	s->ev.loop = loop;
 	s->ev.context.fd = fd;
 	s->ev.read_function = read_function;
 	s->ev.write_function = NULL;
 	s->ev.error_function = error_function;
 
-	if (eventloop_add_io(&s->ev) == ABORT_LOOP) {
+	if (loop->add(loop, &s->ev) == ABORT_LOOP) {
 		free(s);
 		return NULL;
 	}
@@ -210,7 +215,7 @@ static struct server *alloc_server(int fd, eventloop_function read_function, eve
 	return s;
 }
 
-static struct server *create_server(int server_port, eventloop_function read_function, eventloop_function error_function)
+static struct server *create_server(const struct eventloop *loop, int server_port, eventloop_function read_function, eventloop_function error_function)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
@@ -247,7 +252,7 @@ static struct server *create_server(int server_port, eventloop_function read_fun
 		goto listen_failed;
 	}
 
-	struct server *server = alloc_server(listen_fd, read_function, error_function);
+	struct server *server = alloc_server(loop, listen_fd, read_function, error_function);
 	if (server == NULL) {
 		goto alloc_server_wait_failed;
 	}
@@ -557,18 +562,18 @@ static int read_msg(struct peer *p)
 	}
 }
 
-enum callback_return write_msg(union io_context *context)
+enum callback_return write_msg(const struct eventloop *loop, union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
 
 	int ret = send_buffer(p);
 	if (unlikely(ret < 0)) {
-		close_and_free_peer(p);
+		close_and_free_peer(loop, p);
 	}
 	 return CONTINUE_LOOP;
 }
 
-enum callback_return handle_all_peer_operations(union io_context *context)
+enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
 	while (1) {
@@ -591,7 +596,7 @@ enum callback_return handle_all_peer_operations(union io_context *context)
 
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
-				close_and_free_peer(p);
+				close_and_free_peer(loop, p);
 			}
 			return CONTINUE_LOOP;
 		}
@@ -642,7 +647,7 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-int run_io(const char *user_name)
+int run_io(const struct eventloop *loop, const char *user_name)
 {
 	int ret = 0;
 
@@ -650,20 +655,20 @@ int run_io(const char *user_name)
 		return -1;
 	}
 
-	if (eventloop_create() < 0) {
+	if (loop->create() < 0) {
 		go_ahead = 0;
 		ret = -1;
 		goto unregister_signal_handler;
 	}
 
-	struct server *jet_server = create_server(CONFIG_JET_PORT, accept_jet, accept_jet_error);
+	struct server *jet_server = create_server(loop, CONFIG_JET_PORT, accept_jet, accept_jet_error);
 	if (jet_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 		goto eventloop_destroy;
 	}
 
-	struct server *jetws_server = create_server(CONFIG_JETWS_PORT, accept_jetws, accept_jetws_error);
+	struct server *jetws_server = create_server(loop, CONFIG_JETWS_PORT, accept_jetws, accept_jetws_error);
 	if (jetws_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
@@ -676,16 +681,16 @@ int run_io(const char *user_name)
 		goto delete_jetws_server;
 	}
 
-	ret = eventloop_run(&go_ahead);
+	ret = loop->run(loop, &go_ahead);
 
-	destroy_all_peers();
+	destroy_all_peers(loop);
 
 delete_jetws_server:
 	delete_server(jetws_server);
 delete_jet_server:
 	delete_server(jet_server);
 eventloop_destroy:
-	eventloop_destroy();
+	loop->destroy();
 unregister_signal_handler:
 	unregister_signal_handler();
 	return ret;

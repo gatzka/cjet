@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "config.h"
+#include "eventloop.h"
 #include "json/cJSON.h"
 #include "peer.h"
 #include "router.h"
@@ -103,9 +104,10 @@ extern "C" {
 		(void)peer_to_remove;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -129,14 +131,17 @@ extern "C" {
 struct F {
 	F()
 	{
-		p = alloc_jet_peer(-1);
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
+		p = alloc_jet_peer(&loop, -1);
 	}
 	~F()
 	{
-		free_peer(p);
+		free_peer(&loop, p);
 	}
 
 	struct peer *p;
+	struct eventloop loop;
 };
 
 static cJSON *create_config_request_with_name(const char *name)

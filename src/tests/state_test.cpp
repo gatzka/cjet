@@ -77,9 +77,10 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -186,23 +187,26 @@ static cJSON *get_result_from_response(const cJSON *response)
 struct F {
 	F()
 	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
 		notify_shall_fail = false;
 		state_hashtable_create();
-		p = alloc_jet_peer(-1);
-		owner_peer = alloc_jet_peer(-1);
-		set_peer = alloc_jet_peer(-1);
+		p = alloc_jet_peer(&loop, -1);
+		owner_peer = alloc_jet_peer(&loop, -1);
+		set_peer = alloc_jet_peer(&loop, -1);
 	}
 	~F()
 	{
-		free_peer(set_peer);
-		free_peer(owner_peer);
-		free_peer(p);
+		free_peer(&loop, set_peer);
+		free_peer(&loop, owner_peer);
+		free_peer(&loop, p);
 		state_hashtable_delete();
 	}
 
 	struct peer *p;
 	struct peer *owner_peer;
 	struct peer *set_peer;
+	struct eventloop loop;
 };
 
 static void check_invalid_params(const cJSON *error)
