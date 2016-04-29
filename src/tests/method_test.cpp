@@ -80,9 +80,10 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -95,19 +96,22 @@ extern "C" {
 struct F {
 	F()
 	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(-1);
-		call_peer = alloc_jet_peer(-1);
+		owner_peer = alloc_jet_peer(&loop, -1);
+		call_peer = alloc_jet_peer(&loop, -1);
 	}
 	~F()
 	{
-		free_peer(call_peer);
-		free_peer(owner_peer);
+		free_peer(&loop, call_peer);
+		free_peer(&loop, owner_peer);
 		state_hashtable_delete();
 	}
 
 	struct peer *owner_peer;
 	struct peer *call_peer;
+	struct eventloop loop;
 };
 
 static cJSON *create_call_json_rpc(const char *path_string)

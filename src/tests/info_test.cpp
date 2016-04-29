@@ -31,6 +31,7 @@
 #include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
 
+#include "eventloop.h"
 #include "info.h"
 #include "peer.h"
 
@@ -80,9 +81,10 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -107,7 +109,11 @@ static cJSON *create_correct_info_method()
 
 BOOST_AUTO_TEST_CASE(create_info)
 {
-	struct peer *p = alloc_jet_peer(-1);
+	struct eventloop loop;
+	loop.add = eventloop_add_io;
+	loop.remove = eventloop_remove_io;
+
+	struct peer *p = alloc_jet_peer(&loop, -1);
 	cJSON *json_rpc = create_correct_info_method();
 	int ret = handle_info(json_rpc, p);
 	cJSON_Delete(json_rpc);
@@ -180,6 +186,6 @@ BOOST_AUTO_TEST_CASE(create_info)
 
 	cJSON_Delete(root);
 
-	free_peer(p);
+	free_peer(&loop, p);
 }
 

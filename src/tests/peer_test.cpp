@@ -81,8 +81,9 @@ extern "C" {
 		return CONTINUE_LOOP;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
+		(void)loop;
 		if (ev->context.fd == ADD_IO_FAILED) {
 			return ABORT_LOOP;
 		}
@@ -156,39 +157,47 @@ static bool starts_with(const char *str, const char *prefix)
 	return lenstr < lenprefix ? false : ::strncmp(prefix, str, lenprefix) == 0;
 }
 
+static const eventloop loop = {
+	.create = NULL,
+	.destroy = NULL,
+	.run = NULL,
+	.add = eventloop_add_io,
+	.remove = eventloop_remove_io
+};
+
 BOOST_AUTO_TEST_CASE(number_of_peer)
 {
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
-	struct peer *p = alloc_jet_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 1);
 
-	free_peer(p);
+	free_peer(&loop, p);
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
 
 BOOST_AUTO_TEST_CASE(set_name_of_peer)
 {
-	struct peer *p = alloc_jet_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	set_peer_name(p, "name of peer");
 
-	free_peer(p);
+	free_peer(&loop, p);
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
 
 BOOST_AUTO_TEST_CASE(add_io_failed)
 {
-	struct peer *p = alloc_jet_peer(ADD_IO_FAILED);
+	struct peer *p = alloc_jet_peer(&loop, ADD_IO_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
 BOOST_AUTO_TEST_CASE(add_routingtable_failed)
 {
-	struct peer *p = alloc_jet_peer(ADD_ROUTINGTABLE_FAILED);
+	struct peer *p = alloc_jet_peer(&loop, ADD_ROUTINGTABLE_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
@@ -200,25 +209,25 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 	BOOST_CHECK(peers == 0);
 
 	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
-		alloc_jet_peer(TEST_FD);
+		alloc_jet_peer(&loop, TEST_FD);
 	}
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == PEERS_TO_ALLOCATE);
 
-	destroy_all_peers();
+	destroy_all_peers(&loop);
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
 
 BOOST_AUTO_TEST_CASE(check_peer_list)
 {
-	struct peer *p1 = alloc_jet_peer(TEST_FD);
-	struct peer *p2 = alloc_jet_peer(TEST_FD);
+	struct peer *p1 = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p2 = alloc_jet_peer(&loop, TEST_FD);
 
 	struct list_head *peer_list = get_peer_list();
 	BOOST_CHECK(peer_in_list(peer_list, p1) && peer_in_list(peer_list, p2));
 
-	destroy_all_peers();
+	destroy_all_peers(&loop);
 
 	peer_list = get_peer_list();
 	BOOST_CHECK(!peer_in_list(peer_list, p1) && !peer_in_list(peer_list, p2));
@@ -226,23 +235,23 @@ BOOST_AUTO_TEST_CASE(check_peer_list)
 
 BOOST_AUTO_TEST_CASE(log_unknown_peer)
 {
-	struct peer *p = alloc_jet_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	log_peer_err(p, "%s", "Hello!");
 
 	char *log_buffer = get_log_buffer();
 
 	BOOST_CHECK(starts_with(log_buffer, "unknown peer"));
-	free_peer(p);
+	free_peer(&loop, p);
 }
 
 BOOST_AUTO_TEST_CASE(log_known_peer)
 {
-	struct peer *p = alloc_jet_peer(TEST_FD);
+	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	set_peer_name(p, "test peer");
 	log_peer_err(p, "%s", "Hello!");
 
 	char *log_buffer = get_log_buffer();
 
 	BOOST_CHECK(starts_with(log_buffer, "test peer: "));
-	free_peer(p);
+	free_peer(&loop, p);
 }

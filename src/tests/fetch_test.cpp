@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
+#include "eventloop.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
@@ -238,9 +239,10 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return eventloop_add_io(struct io_event *ev)
+	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
+		(void)loop;
 		return CONTINUE_LOOP;
 	}
 
@@ -258,10 +260,12 @@ extern "C" {
 struct F {
 	F()
 	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(-1);
-		set_peer = alloc_jet_peer(-1);
-		fetch_peer_1 = alloc_jet_peer(-1);
+		owner_peer = alloc_jet_peer(&loop, -1);
+		set_peer = alloc_jet_peer(&loop, -1);
+		fetch_peer_1 = alloc_jet_peer(&loop, -1);
 	}
 
 	~F()
@@ -276,11 +280,12 @@ struct F {
 			owner_responses.pop_front();
 			cJSON_Delete(ptr);
 		}
-		free_peer(fetch_peer_1);
-		free_peer(set_peer);
-		free_peer(owner_peer);
+		free_peer(&loop, fetch_peer_1);
+		free_peer(&loop, set_peer);
+		free_peer(&loop, owner_peer);
 		state_hashtable_delete();
 	}
+	struct eventloop loop;
 };
 
 static struct state_or_method *get_state(const char *path)
