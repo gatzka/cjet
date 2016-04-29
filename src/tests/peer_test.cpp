@@ -157,15 +157,19 @@ static bool starts_with(const char *str, const char *prefix)
 	return lenstr < lenprefix ? false : ::strncmp(prefix, str, lenprefix) == 0;
 }
 
-static const eventloop loop = {
-	.create = NULL,
-	.destroy = NULL,
-	.run = NULL,
-	.add = eventloop_add_io,
-	.remove = eventloop_remove_io
+struct F {
+	F()
+	{
+		loop.add = eventloop_add_io;
+		loop.remove = eventloop_remove_io;
+	}
+	~F()
+	{
+	}
+	struct eventloop loop;
 };
 
-BOOST_AUTO_TEST_CASE(number_of_peer)
+BOOST_FIXTURE_TEST_CASE(number_of_peer, F)
 {
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
@@ -179,7 +183,7 @@ BOOST_AUTO_TEST_CASE(number_of_peer)
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_AUTO_TEST_CASE(set_name_of_peer)
+BOOST_FIXTURE_TEST_CASE(set_name_of_peer, F)
 {
 	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	set_peer_name(p, "name of peer");
@@ -189,19 +193,19 @@ BOOST_AUTO_TEST_CASE(set_name_of_peer)
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_AUTO_TEST_CASE(add_io_failed)
+BOOST_FIXTURE_TEST_CASE(add_io_failed, F)
 {
 	struct peer *p = alloc_jet_peer(&loop, ADD_IO_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
-BOOST_AUTO_TEST_CASE(add_routingtable_failed)
+BOOST_FIXTURE_TEST_CASE(add_routingtable_failed, F)
 {
 	struct peer *p = alloc_jet_peer(&loop, ADD_ROUTINGTABLE_FAILED);
 	BOOST_CHECK(p == NULL);
 }
 
-BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
+BOOST_FIXTURE_TEST_CASE(destroy_all_peers_test, F)
 {
 	static const int PEERS_TO_ALLOCATE = 10;
 
@@ -219,7 +223,7 @@ BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_AUTO_TEST_CASE(check_peer_list)
+BOOST_FIXTURE_TEST_CASE(check_peer_list, F)
 {
 	struct peer *p1 = alloc_jet_peer(&loop, TEST_FD);
 	struct peer *p2 = alloc_jet_peer(&loop, TEST_FD);
@@ -233,7 +237,7 @@ BOOST_AUTO_TEST_CASE(check_peer_list)
 	BOOST_CHECK(!peer_in_list(peer_list, p1) && !peer_in_list(peer_list, p2));
 }
 
-BOOST_AUTO_TEST_CASE(log_unknown_peer)
+BOOST_FIXTURE_TEST_CASE(log_unknown_peer, F)
 {
 	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	log_peer_err(p, "%s", "Hello!");
@@ -244,7 +248,7 @@ BOOST_AUTO_TEST_CASE(log_unknown_peer)
 	free_peer(&loop, p);
 }
 
-BOOST_AUTO_TEST_CASE(log_known_peer)
+BOOST_FIXTURE_TEST_CASE(log_known_peer, F)
 {
 	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
 	set_peer_name(p, "test peer");
