@@ -36,7 +36,7 @@
 #include "jet_string.h"
 #include "http_server.h"
 #include "http-parser/http_parser.h"
-#include "linux/eventloop.h"
+#include "eventloop.h"
 #include "linux/linux_io.h"
 #include "log.h"
 #include "parse.h"
@@ -479,7 +479,7 @@ static int ws_read_payload(union io_context *context)
 	return ret;
 }
 
-static enum callback_return handle_ws_protocol(union io_context *context)
+static enum callback_return handle_ws_protocol(const struct eventloop *loop, union io_context *context)
 {
 	while (1) {
 		int ret;
@@ -518,7 +518,7 @@ static enum callback_return handle_ws_protocol(union io_context *context)
 
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
-				close_and_free_peer(p);
+				close_and_free_peer(loop, p);
 			}
 			return CONTINUE_LOOP;
 		}
@@ -526,7 +526,7 @@ static enum callback_return handle_ws_protocol(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-enum callback_return handle_ws_upgrade(union io_context *context)
+enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context)
 {
 	struct peer *p = container_of(context, struct peer, ev);
 	(void)p;
@@ -538,7 +538,7 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 			size_t nparsed = http_parser_execute(&ws_peer->parser, &ws_peer->parser_settings, line_ptr, line_length);
 			if (nparsed != (size_t)line_length) {
 				send_http_error_response(ws_peer, 400);
-				close_and_free_peer(p);
+				close_and_free_peer(loop, p);
 				return CONTINUE_LOOP;
 			} else if (ws_peer->parser.upgrade) {
 			  /* handle new protocol */
@@ -551,13 +551,13 @@ enum callback_return handle_ws_upgrade(union io_context *context)
 			if (line_length == IO_WOULD_BLOCK) {
 				return CONTINUE_LOOP;
 			} else {
-				close_and_free_peer(p);
+				close_and_free_peer(loop, p);
 				return CONTINUE_LOOP;
 			}
 		}
 	}
 	p->ev.read_function = handle_ws_protocol;
-	return handle_ws_protocol(context);
+	return handle_ws_protocol(loop, context);
 }
 
 static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)

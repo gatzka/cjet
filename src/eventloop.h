@@ -42,20 +42,25 @@ union io_context {
 	uint64_t u64;
 };
 
-typedef enum callback_return (*eventloop_function)(union io_context*);
+struct eventloop;
+
+typedef enum callback_return (*eventloop_function)(const struct eventloop *loop, union io_context*);
 
 struct io_event {
 	union io_context context;
 	eventloop_function read_function;
 	eventloop_function write_function;
 	eventloop_function error_function;
+	const struct eventloop *loop;
 };
 
-int eventloop_create(void);
-void eventloop_destroy(void);
-int eventloop_run(int *go_ahead);
-enum callback_return eventloop_add_io(struct io_event *ev);
-void eventloop_remove_io(struct io_event *ev);
+struct eventloop {
+	int (*create)(void);
+	void (*destroy)(void);
+	int (*run)(const struct eventloop *loop, int *go_ahead);
+	enum callback_return (*add)(const struct eventloop *loop, struct io_event *ev);
+	void (*remove)(struct io_event *ev);
+};
 
 #ifdef __cplusplus
 }

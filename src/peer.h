@@ -36,7 +36,7 @@
 #include "http-parser/http_parser.h"
 #include "json/cJSON.h"
 #include "list.h"
-#include "linux/eventloop.h"
+#include "eventloop.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -120,11 +120,11 @@ struct ws_peer {
 struct list_head *get_peer_list(void);
 const char *get_peer_name(const struct peer *p);
 
-struct peer *alloc_jet_peer(int fd);
-struct ws_peer *alloc_wsjet_peer(int fd);
-void close_and_free_peer(struct peer *p);
-void free_peer(struct peer *p);
-void destroy_all_peers(void);
+struct peer *alloc_jet_peer(const struct eventloop *loop, int fd);
+struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd);
+void close_and_free_peer(const struct eventloop *loop, struct peer *p);
+void free_peer(const struct eventloop *loop, struct peer *p);
+void destroy_all_peers(const struct eventloop *loop);
 int get_number_of_peers(void);
 void remove_peer_from_routes(const struct peer *p);
 void set_peer_name(struct peer *peer, const char *name);

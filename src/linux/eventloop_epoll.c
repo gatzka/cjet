@@ -31,12 +31,12 @@
 
 #include "compiler.h"
 #include "generated/os_config.h"
-#include "linux/eventloop.h"
+#include "linux/eventloop_epoll.h"
 #include "log.h"
 
 static int epoll_fd;
 
-static enum callback_return handle_events(int num_events, struct epoll_event *events)
+static enum callback_return handle_events(const struct eventloop *loop, int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
@@ -50,16 +50,16 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 
 		if (unlikely((events[i].events & EPOLLERR) ||
 				(events[i].events & EPOLLHUP))) {
-			if (ev->error_function(&ev->context) == ABORT_LOOP) {
+			if (ev->error_function(loop, &ev->context) == ABORT_LOOP) {
 				return ABORT_LOOP;
 			}
 		} else {
 			if (events[i].events & EPOLLIN) {
-				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) == ABORT_LOOP)) {
+				if (likely(ev->read_function != NULL)  && (ev->read_function(loop, &ev->context) == ABORT_LOOP)) {
 					return ABORT_LOOP;
 				}
 			} else if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
+				if (likely(ev->write_function != NULL) && (ev->write_function(loop, &ev->context) == ABORT_LOOP)) {
 					return ABORT_LOOP;
 				}
 			} else {
@@ -70,7 +70,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 	return CONTINUE_LOOP;
 }
 
-int eventloop_create(void)
+int eventloop_epoll_create(void)
 {
 	epoll_fd = epoll_create(1);
 	if (epoll_fd < 0) {
@@ -79,12 +79,12 @@ int eventloop_create(void)
 	return 0;
 }
 
-void eventloop_destroy(void)
+void eventloop_epoll_destroy(void)
 {
 	close(epoll_fd);
 }
 
-int eventloop_run(int *go_ahead)
+int eventloop_epoll_run(const struct eventloop *loop, int *go_ahead)
 {
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
@@ -92,7 +92,7 @@ int eventloop_run(int *go_ahead)
 		int num_events =
 			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
-		if (unlikely(handle_events(num_events, events) == ABORT_LOOP)) {
+		if (unlikely(handle_events(loop, num_events, events) == ABORT_LOOP)) {
 			return -1;
 			break;
 		}
@@ -100,7 +100,7 @@ int eventloop_run(int *go_ahead)
 	return 0;
 }
 
-enum callback_return eventloop_add_io(struct io_event *ev)
+enum callback_return eventloop_epoll_add(const struct eventloop *loop, struct io_event *ev)
 {
 	struct epoll_event epoll_ev;
 
@@ -113,12 +113,12 @@ enum callback_return eventloop_add_io(struct io_event *ev)
 	}
 
 	if (likely(ev->read_function != NULL)) {
-		return ev->read_function(&ev->context);
+		return ev->read_function(loop, &ev->context);
 	}
 	return CONTINUE_LOOP;
 }
 
-void eventloop_remove_io(struct io_event *ev)
+void eventloop_epoll_remove(struct io_event *ev)
 {
 	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ev->context.fd, NULL);
 }
