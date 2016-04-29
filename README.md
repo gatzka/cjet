@@ -48,7 +48,7 @@ qbs -f <path/to/cjet-sources>/src/cjet.qbs debug profile:gcc release profile:gcc
 ```
 
 You can also configure cjet at compile time via qbs. You will find the
-cjet spedific in
+cjet specific configurations in
 [generateCjetConfig.qbs](qbs/modules/generateCjetConfig/generateCjetConfig.qbs)
 and the Linux specific configurations in
 [generateOsConfig.qbs](qbs/modules/generateOsConfig/generateOsConfig.qbs).
@@ -64,11 +64,11 @@ little runtime overhead. You can disable all hardening by calling qbs like:
 qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:false
 ```
 
-In addition, there is also a qbs project for building und running cjet and all unit tests:
+In addition, there is also a qbs project for building cjet and running all unit tests:
 ```
 qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [unittest-runner.showCoverageData:true]...
 ```
-You can specify as many additional parallel build by adding more
+You can specify as many additional parallel builds by adding more
 profiles. If `unittest-runner.showCoverageData:true` is given, the
 coverage data is directly displayed in a web browser.
 
