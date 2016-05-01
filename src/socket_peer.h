@@ -24,45 +24,47 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_PEER_H
-#define CJET_PEER_H
+#ifndef CJET_SOCKET_PEER_H
+#define CJET_SOCKET_PEER_H
 
-#include <stddef.h>
 #include <stdint.h>
-#include <string.h>
+#include <stddef.h>
 
-#include "generated/cjet_config.h"
-#include "generated/os_config.h"
-#include "http-parser/http_parser.h"
-#include "json/cJSON.h"
-#include "list.h"
 #include "eventloop.h"
+#include "peer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define READ_MSG_LENGTH 0
+#define READ_MSG 1
+#define READ_CR 2
 
-struct peer {
-	struct list_head state_list;
-	struct list_head next_peer;
-	struct list_head fetch_list;
-	void *routing_table;
-	char *name;
-	int (*send_message)(struct peer *p, const char *rendered, size_t len);
-	void (*close)(struct peer *p);
+#define IO_CLOSE -1
+#define IO_WOULD_BLOCK -2
+#define IO_ERROR -3
+#define IO_TOOMUCHDATA -4
+#define IO_BUFFERTOOSMALL -5
+
+struct socket_peer {
+	struct peer peer;
+	struct io_event ev;
+	int op;
+	unsigned int to_write;
+	uint32_t msg_length;
+	size_t write_buffer_size;
+	char *read_ptr;
+	char *examined_ptr;
+	char *write_ptr;
+	char *write_buffer_ptr;
+	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
+	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 };
 
-int init_peer(struct peer *p);
-void free_peer(struct peer *p);
-struct list_head *get_peer_list(void);
-void set_peer_name(struct peer *peer, const char *name);
-const char *get_peer_name(const struct peer *p);
-int get_number_of_peers(void);
-void log_peer_err(const struct peer *p, const char *fmt, ...);
-void destroy_all_peers(void);
+struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd);
+void free_jet_peer(const struct eventloop *loop, struct socket_peer *p);
+int send_message(struct peer *p, const char *rendered, size_t len);
 
-#ifdef __cplusplus
-}
-#endif
+enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
+ssize_t get_read_ptr(struct socket_peer *p, unsigned int count, char **read_ptr);
+ssize_t read_cr_lf_line(struct socket_peer *p, const char **read_ptr);
+void reorganize_read_buffer(struct socket_peer *p); // TODO: avoid that call, reorganize internally.
 
 #endif

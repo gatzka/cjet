@@ -29,6 +29,7 @@
 
 #include "eventloop.h"
 #include "peer.h"
+#include "websocket_peer.h"
 
 void http_init(struct ws_peer *p);
 enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context);

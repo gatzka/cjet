@@ -37,24 +37,15 @@
 extern "C" {
 #endif
 
-#define IO_CLOSE -1
-#define IO_WOULD_BLOCK -2
-#define IO_ERROR -3
-#define IO_TOOMUCHDATA -4
-#define IO_BUFFERTOOSMALL -5
+//#define IO_CLOSE -1
+//#define IO_WOULD_BLOCK -2
+//#define IO_ERROR -3
+//#define IO_TOOMUCHDATA -4
+//#define IO_BUFFERTOOSMALL -5
 
 int run_io(const struct eventloop *loop, const char *user_name);
-ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr);
-ssize_t get_read_ptr(struct peer *p, unsigned int count, char **read_ptr);
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered, uint32_t msg_len_be, size_t already_written);
 enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context);
-enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
-int send_buffer(struct peer *p);
-int send_message(struct peer *p, const char *rendered, size_t len);
-
-int send_ws_upgrade_response(struct peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length);
-
-int send_ws_response(struct peer *p, const char *header, size_t header_size, const char *payload, size_t payload_size);
+//enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
 
 #ifdef __cplusplus
 }
