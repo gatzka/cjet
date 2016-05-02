@@ -80,8 +80,6 @@ struct ws_peer {
 };
 
 struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd);
-void free_wsjet_peer(const struct eventloop *loop, struct ws_peer *p);
-
 int send_ws_upgrade_response(struct ws_peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length);
 int send_ws_response(struct ws_peer *p, const char *header, size_t header_size, const char *payload, size_t payload_size);
 

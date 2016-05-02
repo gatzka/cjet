@@ -33,7 +33,9 @@
 
 void http_init(struct ws_peer *p);
 enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context);
-int ws_send_message(struct peer *p, const char *rendered, size_t len);
+
+static const uint8_t WS_MASK_SET = 0x80;
+static const uint8_t WS_HEADER_FIN = 0x80;
 
 #endif
 

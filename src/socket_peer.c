@@ -140,7 +140,6 @@ ssize_t read_cr_lf_line(struct socket_peer *p, const char **read_ptr)
 	}
 }
 
-
 static int read_msg_length(struct socket_peer *p)
 {
 	uint32_t message_length;
@@ -180,7 +179,6 @@ static int read_msg(struct socket_peer *p)
 	}
 }
 
-
 static enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
 {
 	(void)loop;
@@ -207,7 +205,6 @@ static enum callback_return handle_all_peer_operations(const struct eventloop *l
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
 				p->peer.close(&p->peer);
-		//TODO		close_and_free_peer(loop, p);
 			}
 			return CONTINUE_LOOP;
 		}
@@ -245,7 +242,6 @@ enum callback_return write_msg(const struct eventloop *loop, union io_context *c
 	int ret = send_buffer(s_peer);
 	if (unlikely(ret < 0)) {
 		s_peer->peer.close(&s_peer->peer);
-//		close_and_free_peer(loop, p);
 	}
 	 return CONTINUE_LOOP;
 }

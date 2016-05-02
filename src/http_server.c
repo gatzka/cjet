@@ -46,9 +46,6 @@
 
 #define  CRLF  "\r\n"
 
-static const uint8_t WS_MASK_SET = 0x80;
-static const uint8_t WS_HEADER_FIN = 0x80;
-
 static int on_message_begin(http_parser *parser)
 {
 	(void)parser;
@@ -554,43 +551,3 @@ enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_co
 	p->ev.read_function = handle_ws_protocol;
 	return handle_ws_protocol(loop, ctx);
 }
-
-static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
-{
-	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
-	struct ws_peer *ws_peer = container_of(s_peer, struct ws_peer, s_peer);
-
-	char ws_header[14];
-	uint8_t first_len;
-	size_t header_index = 2;
-
-	ws_header[0] = (uint8_t)(WS_TEXT_FRAME | WS_HEADER_FIN);
-	if (length < 126) {
-		first_len = (uint8_t)length;
-	} else if (length < 65536) {
-		uint16_t be_len = jet_htobe16((uint16_t)length);
-		memcpy(&ws_header[2], &be_len, sizeof(be_len));
-		header_index += sizeof(be_len);
-		first_len = 126;
-	} else {
-		uint64_t be_len = jet_htobe64((uint64_t)length);
-		memcpy(&ws_header[2], &be_len, sizeof(be_len));
-		header_index += sizeof(be_len);
-		first_len = 127;
-	}
-
-	if (shall_mask) {
-		first_len |= WS_MASK_SET;
-		memcpy(&ws_header[header_index], &mask, sizeof(mask));
-		header_index += sizeof(mask);
-	}
-	ws_header[1] = first_len;
-
-	return send_ws_response(ws_peer, ws_header, header_index, payload, length);
-}
-
-int ws_send_message(struct peer *p, const char *rendered, size_t len)
-{
-	return ws_send_frame(p, false, 0x00, rendered, len);
-}
-
