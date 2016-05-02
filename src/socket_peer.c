@@ -207,7 +207,7 @@ static enum callback_return handle_all_peer_operations(const struct eventloop *l
 		if (unlikely(ret <= 0)) {
 			if (unlikely(ret < 0)) {
 				p->peer.close(&p->peer);
-		//		close_and_free_peer(loop, p);
+		//TODO		close_and_free_peer(loop, p);
 			}
 			return CONTINUE_LOOP;
 		}
@@ -250,6 +250,15 @@ enum callback_return write_msg(const struct eventloop *loop, union io_context *c
 	 return CONTINUE_LOOP;
 }
 
+static void free_jet_peer(const struct eventloop *loop, struct socket_peer *p)
+{
+	int fd = p->ev.context.fd;
+	loop->remove(&p->ev);
+	free_peer(&p->peer);
+	free(p);
+	close(fd);
+}
+
 static enum callback_return free_peer_on_error(const struct eventloop *loop, union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
@@ -258,12 +267,23 @@ static enum callback_return free_peer_on_error(const struct eventloop *loop, uni
 	return CONTINUE_LOOP;
 }
 
+static void close_jet_peer(struct peer *p)
+{
+	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
+	free_jet_peer(s_peer->ev.loop, s_peer);
+}
+
 static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
 {
+	init_peer(&p->peer);
+	p->peer.send_message = send_message;
+	p->peer.close = close_jet_peer;
+
 	p->ev.context.fd = fd;
 	p->ev.read_function = handle_all_peer_operations;
 	p->ev.write_function = write_msg;
 	p->ev.error_function = free_peer_on_error;
+	p->ev.loop = loop;
 
 	p->op = READ_MSG_LENGTH;
 	p->to_write = 0;
@@ -291,15 +311,6 @@ struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
 	} else {
 		return p;
 	}
-}
-
-void free_jet_peer(const struct eventloop *loop, struct socket_peer *p)
-{
-	int fd = p->ev.context.fd;
-	loop->remove(&p->ev);
-	free_peer(&p->peer);
-	free(p);
-	close(fd);
 }
 
 static int copy_msg_to_write_buffer(struct socket_peer *p, const void *rendered,

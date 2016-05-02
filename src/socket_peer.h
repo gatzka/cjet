@@ -59,7 +59,6 @@ struct socket_peer {
 };
 
 struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd);
-void free_jet_peer(const struct eventloop *loop, struct socket_peer *p);
 int send_message(struct peer *p, const char *rendered, size_t len);
 
 enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
