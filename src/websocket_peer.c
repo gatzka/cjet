@@ -47,6 +47,7 @@ static enum callback_return free_peer_on_error(const struct eventloop *loop, uni
 
 static int init_websocket_peer(const struct eventloop *loop, struct ws_peer *p, int fd)
 {
+	init_peer(&p->s_peer.peer);
 	p->s_peer.ev.context.fd = fd;
 	p->s_peer.ev.read_function = handle_ws_upgrade;
 	p->s_peer.ev.write_function = write_msg;
