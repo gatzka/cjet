@@ -44,7 +44,7 @@ union io_context {
 
 struct eventloop;
 
-typedef enum callback_return (*eventloop_function)(const struct eventloop *loop, union io_context*);
+typedef enum callback_return (*eventloop_function)(const struct eventloop *loop, union io_context *context);
 
 struct io_event {
 	union io_context context;
