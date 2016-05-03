@@ -172,26 +172,26 @@ static enum callback_return accept_common(const struct eventloop *loop, union io
 	}
 }
 
-static enum callback_return accept_jet(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jet(union io_context *io)
 {
-	return accept_common(loop, io, handle_new_jet_connection);
+	struct io_event *ev = container_of(io, struct io_event, context);
+	return accept_common(ev->loop, io, handle_new_jet_connection);
 }
 
-static enum callback_return accept_jet_error(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jet_error(union io_context *io)
 {
 	(void)io;
-	(void)loop;
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_jetws(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jetws(union io_context *io)
 {
-	return accept_common(loop, io, handle_new_jetws_connection);
+	struct io_event *ev = container_of(io, struct io_event, context);
+	return accept_common(ev->loop, io, handle_new_jetws_connection);
 }
 
-static enum callback_return accept_jetws_error(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jetws_error(union io_context *io)
 {
-	(void)loop;
 	(void)io;
 	return ABORT_LOOP;
 }
@@ -209,7 +209,7 @@ static struct server *alloc_server(const struct eventloop *loop, int fd, eventlo
 	s->ev.write_function = NULL;
 	s->ev.error_function = error_function;
 
-	if (loop->add(loop, &s->ev) == ABORT_LOOP) {
+	if (loop->add(&s->ev) == ABORT_LOOP) {
 		free(s);
 		return NULL;
 	}
@@ -354,7 +354,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto delete_jetws_server;
 	}
 
-	ret = loop->run(loop, &go_ahead);
+	ret = loop->run(&go_ahead);
 
 	destroy_all_peers();
 

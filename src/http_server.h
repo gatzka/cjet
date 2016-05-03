@@ -32,7 +32,7 @@
 #include "websocket_peer.h"
 
 void http_init(struct ws_peer *p);
-enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context);
+enum callback_return handle_ws_upgrade(union io_context *context);
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;

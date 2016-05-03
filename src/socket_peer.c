@@ -179,9 +179,8 @@ static int read_msg(struct socket_peer *p)
 	}
 }
 
-static enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
+static enum callback_return handle_all_peer_operations(union io_context *context)
 {
-	(void)loop;
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct socket_peer *p = container_of(ev, struct socket_peer, ev);
 	while (1) {
@@ -233,9 +232,8 @@ static int send_buffer(struct socket_peer *p)
 	return 0;
 }
 
-enum callback_return write_msg(const struct eventloop *loop, union io_context *context)
+enum callback_return write_msg(union io_context *context)
 {
-	(void)loop;
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct socket_peer *s_peer = container_of(ev, struct socket_peer, ev);
 
@@ -255,11 +253,11 @@ static void free_jet_peer(const struct eventloop *loop, struct socket_peer *p)
 	close(fd);
 }
 
-static enum callback_return free_peer_on_error(const struct eventloop *loop, union io_context *context)
+static enum callback_return free_peer_on_error(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct socket_peer *p = container_of(ev, struct socket_peer, ev);
-	free_jet_peer(loop, p);
+	free_jet_peer(ev->loop, p);
 	return CONTINUE_LOOP;
 }
 
@@ -287,7 +285,7 @@ static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p,
 	p->examined_ptr = p->read_ptr;
 	p->write_ptr = p->read_buffer;
 
-	if (loop->add(loop, &p->ev) == ABORT_LOOP) {
+	if (loop->add(&p->ev) == ABORT_LOOP) {
 		free_peer(&p->peer);
 		return -1;
 	} else {

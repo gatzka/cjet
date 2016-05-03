@@ -464,10 +464,8 @@ static int ws_read_payload(struct ws_peer *p)
 	return ret;
 }
 
-static enum callback_return handle_ws_protocol(const struct eventloop *loop, union io_context *ctx)
+static enum callback_return handle_ws_protocol(union io_context *ctx)
 {
-	(void)loop; // TODO
-
 	struct io_event *ev = container_of(ctx, struct io_event, context);
 	struct socket_peer *p = container_of(ev, struct socket_peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, s_peer);
@@ -515,7 +513,7 @@ static enum callback_return handle_ws_protocol(const struct eventloop *loop, uni
 	return CONTINUE_LOOP;
 }
 
-enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *ctx)
+enum callback_return handle_ws_upgrade(union io_context *ctx)
 {
 
 	struct io_event *ev = container_of(ctx, struct io_event, context);
@@ -549,5 +547,5 @@ enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_co
 	}
 
 	p->ev.read_function = handle_ws_protocol;
-	return handle_ws_protocol(loop, ctx);
+	return handle_ws_protocol(ctx);
 }

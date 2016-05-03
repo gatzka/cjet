@@ -47,12 +47,12 @@ static void free_websocket_peer(const struct eventloop *loop, struct ws_peer *p)
 	close(fd);
 }
 
-static enum callback_return free_websocket_peer_on_error(const struct eventloop *loop, union io_context *context)
+static enum callback_return free_websocket_peer_on_error(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct socket_peer *p = container_of(ev, struct socket_peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, s_peer);
-	free_websocket_peer(loop, ws_peer);
+	free_websocket_peer(ev->loop, ws_peer);
 	return CONTINUE_LOOP;
 }
 
@@ -120,7 +120,7 @@ static int init_websocket_peer(const struct eventloop *loop, struct ws_peer *p, 
 	p->s_peer.examined_ptr = p->s_peer.read_ptr;
 	p->s_peer.write_ptr = p->s_peer.read_buffer;
 
-	if (loop->add(loop, &p->s_peer.ev) == ABORT_LOOP) {
+	if (loop->add(&p->s_peer.ev) == ABORT_LOOP) {
 		free_peer(&p->s_peer.peer);
 		return -1;
 	} else {

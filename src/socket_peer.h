@@ -61,7 +61,7 @@ struct socket_peer {
 struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd);
 int send_message(struct peer *p, const char *rendered, size_t len);
 
-enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
+enum callback_return write_msg(union io_context *context);
 ssize_t get_read_ptr(struct socket_peer *p, unsigned int count, char **read_ptr);
 ssize_t read_cr_lf_line(struct socket_peer *p, const char **read_ptr);
 void reorganize_read_buffer(struct socket_peer *p); // TODO: avoid that call, reorganize internally.
