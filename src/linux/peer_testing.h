@@ -49,6 +49,8 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt);
 #else
 
 #include <unistd.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 
 #define READ read
 #define SEND send
