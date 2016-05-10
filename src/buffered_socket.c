@@ -61,10 +61,10 @@ static enum callback_return on_error(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	ev->loop->remove(ev);
-	
+
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	bs->error(bs->error_context);
-	
+
 	return CONTINUE_LOOP;
 }
 
@@ -77,7 +77,7 @@ static enum callback_return write_msg(union io_context *context)
 	if (unlikely(ret < 0)) {
 		on_error(context);
 	}
-	 return CONTINUE_LOOP;
+	return CONTINUE_LOOP;
 }
 
 int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
@@ -87,15 +87,15 @@ int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *l
 	bs->ev.read_function = NULL;
 	bs->ev.write_function = write_msg;
 	bs->ev.loop = loop;
-	
+
 	bs->to_write = 0;
 	bs->read_ptr = bs->read_buffer;
 	bs->examined_ptr = bs->read_buffer;
 	bs->write_ptr = bs->read_buffer;
-	
+
 	bs->error = error;
 	bs->error_context = error_context;
-	
+
 	if (loop->add(&bs->ev) == ABORT_LOOP) {
 		error(error_context);
 		return -1;
@@ -111,7 +111,7 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 		log_err("not enough space left in write buffer! %zu bytes of %i left", free_space_in_buf, CONFIG_MAX_WRITE_BUFFER_SIZE);
 		return -1;
 	}
-	
+
 	char *write_buffer_ptr = bs->write_buffer + bs->to_write;
 	memcpy(write_buffer_ptr, buf, to_copy);
 	bs->to_write += to_copy;
@@ -137,7 +137,7 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 {
 	struct iovec iov[count + 1];
 	size_t to_write = bs->to_write;
-	
+
 	iov[0].iov_base = bs->write_buffer;
 	iov[0].iov_len = bs->to_write;
 /*
@@ -153,24 +153,24 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 		to_write += io_vec->iov_len;
 	}
 #pragma GCC diagnostic pop
-	
+
 	ssize_t sent = WRITEV(bs->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
 	if (likely(sent == (ssize_t)to_write)) {
 		return 0;
 	}
-	
+
 	size_t written = 0;
 	if (sent > 0) {
 		written = (size_t)sent;
 	}
-	
+
 	if (unlikely((sent == -1) &&
 		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
 		log_err("unexpected %s error: %s!\n", "write",
 			strerror(errno));
 		return -1;
 	}
-	
+
 	size_t io_vec_written;
 	if (written <= bs->to_write) {
 		bs->to_write -= written;
@@ -183,7 +183,7 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0)) {
 		return -1;
 	}
-	
+
 	if (sent == -1) {
 		return 0;
 	}
