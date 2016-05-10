@@ -25,6 +25,7 @@
  */
 
 #include <errno.h>
+#include <stdbool.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/uio.h>
@@ -35,6 +36,10 @@
 #include "linux/peer_testing.h"
 #include "log.h"
 #include "util.h"
+
+#define IO_WOULD_BLOCK -1
+#define IO_ERROR -2
+#define IO_TOOMUCHDATA -3
 
 static int send_buffer(struct buffered_socket *bs)
 {
@@ -57,7 +62,27 @@ static int send_buffer(struct buffered_socket *bs)
 	return 0;
 }
 
-static enum callback_return on_error(union io_context *context)
+static int go_reading(struct buffered_socket *bs)
+{
+	if (unlikely(bs->reader == NULL)) {
+		return 0;
+	}
+	while (1) {
+		char *buffer;
+		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
+		if (len < 0) {
+			if (unlikely(len != IO_WOULD_BLOCK)) {
+				return len;
+			} else {
+				return 0;
+			}
+		} else {
+			bs->read_callback(bs->read_callback_context, buffer, len);
+		}
+	}
+}
+
+static enum callback_return error_function(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	ev->loop->remove(ev);
@@ -68,14 +93,26 @@ static enum callback_return on_error(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return write_msg(union io_context *context)
+static enum callback_return read_function(union io_context *context)
+{
+	struct io_event *ev = container_of(context, struct io_event, context);
+	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
+	int ret = go_reading(bs);
+	if (unlikely(ret < 0)) {
+		error_function(context);
+	}
+
+	return CONTINUE_LOOP;
+}
+
+static enum callback_return write_function(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 
 	int ret = send_buffer(bs);
 	if (unlikely(ret < 0)) {
-		on_error(context);
+		error_function(context);
 	}
 	return CONTINUE_LOOP;
 }
@@ -83,9 +120,9 @@ static enum callback_return write_msg(union io_context *context)
 int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
 	bs->ev.context.fd = fd;
-	bs->ev.error_function = on_error;
-	bs->ev.read_function = NULL;
-	bs->ev.write_function = write_msg;
+	bs->ev.error_function = error_function;
+	bs->ev.read_function = read_function;
+	bs->ev.write_function = write_function;
 	bs->ev.loop = loop;
 
 	bs->to_write = 0;
@@ -93,11 +130,11 @@ int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *l
 	bs->examined_ptr = bs->read_buffer;
 	bs->write_ptr = bs->read_buffer;
 
+	bs->reader = NULL;
 	bs->error = error;
 	bs->error_context = error_context;
 
 	if (loop->add(&bs->ev) == ABORT_LOOP) {
-		error(error_context);
 		return -1;
 	} else {
 		return 0;
@@ -193,4 +230,76 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 	 * messages. Try to send the rest.
 	 */
 	return send_buffer(bs);
+}
+
+static inline ptrdiff_t unread_space(const struct buffered_socket *bs)
+{
+	return &(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->read_ptr;
+}
+
+static inline ptrdiff_t free_space(const struct buffered_socket *bs)
+{
+	return &(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->write_ptr;
+}
+
+static void reorganize_read_buffer(struct buffered_socket *bs)
+{
+	ptrdiff_t unread = bs->write_ptr - bs->read_ptr;
+	if (unread != 0) {
+		memmove(bs->read_buffer, bs->read_ptr, (size_t)unread);
+		bs->write_ptr = bs->read_buffer + unread;
+	} else {
+		bs->write_ptr = bs->read_buffer;
+	}
+	bs->read_ptr = bs->read_buffer;
+}
+
+static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx, char **read_ptr)
+{
+	size_t count = ctx.num;
+	if (unlikely((ptrdiff_t)count > unread_space(bs))) {
+		reorganize_read_buffer(bs);
+		if (unlikely((ptrdiff_t)count > unread_space(bs))) {
+			log_err("peer asked for too much data: %zu!\n", count);
+		}
+		return IO_TOOMUCHDATA;
+	}
+	while (1) {
+		ptrdiff_t diff = bs->write_ptr - bs->read_ptr;
+		if (diff >= (ptrdiff_t)count) {
+			*read_ptr = bs->read_ptr;
+			bs->read_ptr += count;
+			return diff;
+		}
+
+		ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, (size_t)free_space(bs));
+		if (unlikely(read_length == 0)) {
+			return 0;
+		}
+		if (read_length == -1) {
+			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+				*read_ptr = NULL;
+				return IO_ERROR;
+			}
+			return IO_WOULD_BLOCK;
+		}
+		bs->write_ptr += read_length;
+	}
+}
+
+int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+{
+	union reader_context ctx = { .num = num };
+	bool first_run =  (bs->reader == NULL);
+	bs->reader = get_read_ptr;
+	bs->reader_context = ctx;
+	bs->read_callback = read_callback;
+	bs->read_callback_context = context;
+
+	if (likely(!first_run)) {
+		return 0;
+	}
+
+	return go_reading(bs);
 }

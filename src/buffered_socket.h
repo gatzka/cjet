@@ -32,6 +32,11 @@
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 
+union reader_context {
+	const char *ptr;
+	size_t num;
+};
+
 struct buffered_socket {
 	struct io_event ev;
 	unsigned int to_write;
@@ -41,13 +46,12 @@ struct buffered_socket {
 	char *write_buffer_ptr;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
+	ssize_t (*reader)(struct buffered_socket *bs, union reader_context reader_context, char **read_ptr);
+	union reader_context reader_context;
+	void (*read_callback)(void *context, char *buf, ssize_t len);
+	void *read_callback_context;
 	void (*error)(void *error_context);
 	void *error_context;
-};
-
-enum buffered_socket_error {
-	BS_OK,
-	BS_ERROR
 };
 
 struct io_vector {
@@ -58,7 +62,7 @@ struct io_vector {
 int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *io_vec, unsigned int count);
 
-//enum buffered_socket_error read_at_least(const struct buffered_socket *bs, size_t num, read_callback, void *context);
-//enum buffered_socket_error read_until(const struct buffered_socket *bs, const char *delim, read_callback, void *context);
+int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
+int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, size_t len), void *context);
 
 #endif
