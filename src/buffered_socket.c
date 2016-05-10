@@ -188,5 +188,9 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 		return 0;
 	}
 
-	return 0;
+	/*
+	 * The write call didn't block, but only wrote parts of the
+	 * messages. Try to send the rest.
+	 */
+	return send_buffer(bs);
 }
