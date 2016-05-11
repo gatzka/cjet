@@ -233,11 +233,6 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 	return send_buffer(bs);
 }
 
-static inline ptrdiff_t current_space_for_read(const struct buffered_socket *bs)
-{
-	return &(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->read_ptr;
-}
-
 static inline ptrdiff_t readable_space(const struct buffered_socket *bs)
 {
 	return bs->write_ptr - bs->read_ptr;
@@ -310,7 +305,9 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 		char *found = jet_memmem(haystack, readable_space(bs), needle, needle_length);
 		if (found != NULL) {
 			*read_ptr = bs->read_ptr;
-			return (found + needle_length) - bs->read_ptr;
+			ptrdiff_t diff = (found + needle_length) - bs->read_ptr;
+			bs->read_ptr += diff;
+			return diff;
 		} else {
 			haystack = bs->write_ptr - needle_length - 1;
 			ssize_t read = fill_buffer(bs);
@@ -319,8 +316,6 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 			}
 		}
 	}
- 
-	return 0; //TODO
 }
 
 int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
