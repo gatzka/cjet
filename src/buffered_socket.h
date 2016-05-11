@@ -63,6 +63,6 @@ int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *l
 int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *io_vec, unsigned int count);
 
 int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
-int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, size_t len), void *context);
+int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
 
 #endif

@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <stddef.h>
 #include <string.h>
 
 #include "jet_string.h"
@@ -46,4 +47,9 @@ int jet_strcasecmp(const char *s1, const char *s2)
 int jet_strncasecmp(const char *s1, const char *s2, size_t n)
 {
 	return strncasecmp(s1, s2, n);
+}
+
+void *jet_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen)
+{
+	return memmem(haystack, haystacklen, needle, needlelen);
 }

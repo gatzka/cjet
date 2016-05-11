@@ -33,6 +33,7 @@
 #include "buffered_socket.h"
 #include "compiler.h"
 #include "eventloop.h"
+#include "jet_string.h"
 #include "linux/peer_testing.h"
 #include "log.h"
 #include "util.h"
@@ -232,9 +233,14 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 	return send_buffer(bs);
 }
 
-static inline ptrdiff_t unread_space(const struct buffered_socket *bs)
+static inline ptrdiff_t current_space_for_read(const struct buffered_socket *bs)
 {
 	return &(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->read_ptr;
+}
+
+static inline ptrdiff_t readable_space(const struct buffered_socket *bs)
+{
+	return bs->write_ptr - bs->read_ptr;
 }
 
 static inline ptrdiff_t free_space(const struct buffered_socket *bs)
@@ -254,16 +260,33 @@ static void reorganize_read_buffer(struct buffered_socket *bs)
 	bs->read_ptr = bs->read_buffer;
 }
 
+static ssize_t fill_buffer(struct buffered_socket *bs)
+{
+	if (unlikely(free_space(bs) == 0)) {
+		reorganize_read_buffer(bs);
+		if (unlikely(free_space(bs) == 0)) {
+			log_err("read buffer too small to fullful request!\n");
+			return IO_TOOMUCHDATA;
+		}
+	}
+	ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, (size_t)free_space(bs));
+	if (unlikely(read_length == 0)) {
+		return 0;
+	}
+	if (read_length == -1) {
+		if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+			log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+			return IO_ERROR;
+		}
+		return IO_WOULD_BLOCK;
+	}
+	bs->write_ptr += read_length;
+	return read_length;
+}
+
 static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx, char **read_ptr)
 {
 	size_t count = ctx.num;
-	if (unlikely((ptrdiff_t)count > unread_space(bs))) {
-		reorganize_read_buffer(bs);
-		if (unlikely((ptrdiff_t)count > unread_space(bs))) {
-			log_err("peer asked for too much data: %zu!\n", count);
-		}
-		return IO_TOOMUCHDATA;
-	}
 	while (1) {
 		ptrdiff_t diff = bs->write_ptr - bs->read_ptr;
 		if (diff >= (ptrdiff_t)count) {
@@ -271,21 +294,33 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx
 			bs->read_ptr += count;
 			return diff;
 		}
-
-		ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, (size_t)free_space(bs));
-		if (unlikely(read_length == 0)) {
-			return 0;
+		ssize_t read = fill_buffer(bs);
+		if (read <= 0) {
+			return read;
 		}
-		if (read_length == -1) {
-			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
-				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
-				*read_ptr = NULL;
-				return IO_ERROR;
-			}
-			return IO_WOULD_BLOCK;
-		}
-		bs->write_ptr += read_length;
 	}
+}
+
+static ssize_t internal_read_until(struct buffered_socket *bs, union reader_context ctx, char **read_ptr)
+{
+	const char *haystack = bs->read_ptr;
+	const char *needle = ctx.ptr;
+	size_t needle_length = strlen(needle);
+	while (1) {
+		char *found = jet_memmem(haystack, readable_space(bs), needle, needle_length);
+		if (found != NULL) {
+			*read_ptr = bs->read_ptr;
+			return (found + needle_length) - bs->read_ptr;
+		} else {
+			haystack = bs->write_ptr - needle_length - 1;
+			ssize_t read = fill_buffer(bs);
+			if (read <= 0) {
+				return read;
+			}
+		}
+	}
+ 
+	return 0; //TODO
 }
 
 int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
@@ -293,6 +328,22 @@ int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(v
 	union reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
 	bs->reader = get_read_ptr;
+	bs->reader_context = ctx;
+	bs->read_callback = read_callback;
+	bs->read_callback_context = context;
+
+	if (likely(!first_run)) {
+		return 0;
+	}
+
+	return go_reading(bs);
+}
+
+int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+{
+	union reader_context ctx = { .ptr = delim };
+	bool first_run =  (bs->reader == NULL);
+	bs->reader = internal_read_until;
 	bs->reader_context = ctx;
 	bs->read_callback = read_callback;
 	bs->read_callback_context = context;
