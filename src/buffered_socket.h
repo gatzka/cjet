@@ -32,6 +32,10 @@
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 union reader_context {
 	const char *ptr;
 	size_t num;
@@ -64,5 +68,9 @@ int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *i
 
 int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
 int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
