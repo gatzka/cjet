@@ -49,7 +49,7 @@ StaticLibrary {
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: false
     cpp.includePaths: ["../src/", product.buildDirectory]
-    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
+    cpp.defines: ["_GNU_SOURCE", "BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
     cpp.cLanguageVersion: "c99"
   	cpp.cFlags: [
@@ -88,6 +88,7 @@ StaticLibrary {
     fileTags: ["os_config_tag"]
   }
 
+/*
   Group {
     name: "json"
     prefix: "../src/"
@@ -105,7 +106,6 @@ StaticLibrary {
       "http-parser/http_parser.c",
     ]
   }
-
   Group {
     name: "cjet files"
     prefix: "../src/"
@@ -124,5 +124,6 @@ StaticLibrary {
         "linux/uuid.c",
     ]
   }
+*/
 }
 

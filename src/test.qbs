@@ -33,6 +33,7 @@ Project {
   qbsSearchPaths: "../qbs/"
   references: "../qbs/unittestSettings.qbs"
 
+/*
   CppApplication {
     name: "info_test"
     type: ["application", "unittest"]
@@ -248,7 +249,25 @@ Project {
       "tests/base64_test.cpp",
     ] 
   }
+*/
+  CppApplication {
+    name: "buffered_socket_test"
+    type: ["application", "unittest"]
+    consoleApplication: true
 
+    Depends {
+      name: "unittestSettings"
+    }
+
+    files: [
+          "buffered_socket.c",
+          "linux/jet_string.c",
+          "tests/buffered_socket_test.cpp",
+          "tests/log.cpp"
+    ]
+  }
+
+/*
   CppApplication {
     name: "http_parse_test"
     type: ["application", "unittest"]
@@ -262,4 +281,5 @@ Project {
       "http-parser/test.c",
     ] 
   }
+*/
 }
