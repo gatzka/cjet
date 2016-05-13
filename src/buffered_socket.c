@@ -54,6 +54,8 @@ static int send_buffer(struct buffered_socket *bs)
 				(errno != EWOULDBLOCK))) {
 				log_err("unexpected write error: %s!", strerror(errno));
 				return -1;
+			} else {
+				return 0;
 			}
 			memmove(bs->write_buffer, write_buffer_ptr, bs->to_write);
 			return 0;
@@ -143,6 +145,8 @@ static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct i
 				return -1;
 			}
 			iovec_written = 0;
+		} else {
+			iovec_written -= io_vec[i].iov_len;
 		}
 	}
 	return 0;
