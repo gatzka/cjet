@@ -29,12 +29,17 @@
 #define BOOST_TEST_MODULE buffered_socket_tests
 
 #include <boost/test/unit_test.hpp>
+#include "errno.h"
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
 #include "eventloop.h"
 
 static const int WRITEV_COMPLETE_WRITE = 1;
+static const int WRITEV_EINVAL = 2;
+static const int WRITEV_PART_SEND_BLOCKS = 3;
+static const int WRITEV_BLOCKS = 4; //TODO
+
 static char write_buffer[5000];
 
 extern "C" {
@@ -50,13 +55,32 @@ extern "C" {
 			}
 			return complete_length;
 		}
+		
+		if (fd == WRITEV_EINVAL) {
+			errno = EINVAL;
+			return -1;
+		}
+		
+		if (fd == WRITEV_PART_SEND_BLOCKS) {
+			size_t complete_length = 0;
+			char *buf = write_buffer;
+			for (int i = 0; i < iovcnt - 1; i++) {
+				memcpy(buf, iov[i].iov_base, iov[i].iov_len);
+				complete_length += iov[i].iov_len;
+				buf += iov[i].iov_len;
+			}
+			return complete_length;
+		}
 		return 0;
 	}
 	
 	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
+		if (fd == WRITEV_PART_SEND_BLOCKS) {
+			errno = EWOULDBLOCK;
+			return -1;
+		}
 		(void)flags;
-		(void)fd;
 		(void)buf;
 		(void)count;
 		return 0;
@@ -146,4 +170,32 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 	int ret = buffered_socket_writev(&f.bs, vec, 2);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(memcmp(write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
+{
+	F f(WRITEV_EINVAL);
+	
+	struct io_vector vec[2];
+	vec[0].iov_base = "Hello";
+	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
+	vec[1].iov_base = "World";
+	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	BOOST_CHECK(ret < 0);
+}
+
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part)
+{
+	F f(WRITEV_PART_SEND_BLOCKS);
+	
+	struct io_vector vec[2];
+	vec[0].iov_base = "Hello";
+	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
+	vec[1].iov_base = "World";
+	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	BOOST_CHECK(ret == 0);
+	//TODO: Check that remaining part is in bs->write_buffer
 }
