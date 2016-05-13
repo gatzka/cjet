@@ -34,12 +34,22 @@
 #include "buffered_socket.h"
 #include "eventloop.h"
 
+static const int WRITEV_COMPLETE_WRITE = 1;
+static char write_buffer[5000];
+
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
 	{
-		(void)fd;
-		(void)iov;
-		(void)iovcnt;
+		if (fd == WRITEV_COMPLETE_WRITE) {
+			size_t complete_length = 0;
+			char *buf = write_buffer;
+			for (int i = 0; i < iovcnt; i++) {
+				memcpy(buf, iov[i].iov_base, iov[i].iov_len);
+				complete_length += iov[i].iov_len;
+				buf += iov[i].iov_len;
+			}
+			return complete_length;
+		}
 		return 0;
 	}
 	
@@ -67,7 +77,32 @@ static enum callback_return eventloop_fake_add(struct io_event *ev)
 	return CONTINUE_LOOP;
 }
 
-BOOST_AUTO_TEST_CASE(init_buffered_socket_ok)
+static enum callback_return eventloop_fake_failing_add(struct io_event *ev)
+{
+	(void)ev;
+	return ABORT_LOOP;
+}
+
+struct F {
+	F(int fd)
+	{
+		loop.create = NULL;
+		loop.destroy = NULL;
+		loop.run = NULL;
+		loop.add = eventloop_fake_add;
+		loop.remove = NULL;
+		buffered_socket_init(&bs, fd, &loop, NULL, NULL);
+	}
+
+	~F()
+	{
+	}
+
+	struct eventloop loop;
+	struct buffered_socket bs;
+};
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_init_ok)
 {
 	struct eventloop loop = {
 		.create = NULL,
@@ -81,4 +116,34 @@ BOOST_AUTO_TEST_CASE(init_buffered_socket_ok)
 	
 	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
 	BOOST_CHECK(ret == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_init_fail)
+{
+	struct eventloop loop = {
+		.create = NULL,
+		.destroy = NULL,
+		.run = NULL,
+		.add = eventloop_fake_failing_add,
+		.remove = NULL
+	};
+	
+	struct buffered_socket bs;
+	
+	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
+	BOOST_CHECK(ret < 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
+{
+	F f(WRITEV_COMPLETE_WRITE);
+	
+	struct io_vector vec[2];
+	vec[0].iov_base = "Hello";
+	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
+	vec[1].iov_base = "World";
+	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(memcmp(write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
 }

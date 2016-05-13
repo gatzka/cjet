@@ -119,30 +119,6 @@ static enum callback_return write_function(union io_context *context)
 	return CONTINUE_LOOP;
 }
 
-int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
-{
-	bs->ev.context.fd = fd;
-	bs->ev.error_function = error_function;
-	bs->ev.read_function = read_function;
-	bs->ev.write_function = write_function;
-	bs->ev.loop = loop;
-
-	bs->to_write = 0;
-	bs->read_ptr = bs->read_buffer;
-	bs->examined_ptr = bs->read_buffer;
-	bs->write_ptr = bs->read_buffer;
-
-	bs->reader = NULL;
-	bs->error = error;
-	bs->error_context = error_context;
-
-	if (loop->add(&bs->ev) == ABORT_LOOP) {
-		return -1;
-	} else {
-		return 0;
-	}
-}
-
 static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_t to_copy)
 {
 	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - bs->to_write;
@@ -170,68 +146,6 @@ static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct i
 		}
 	}
 	return 0;
-}
-
-int buffered_socket_writev(struct buffered_socket *bs, const struct io_vector *io_vec, unsigned int count)
-{
-	struct iovec iov[count + 1];
-	size_t to_write = bs->to_write;
-
-	iov[0].iov_base = bs->write_buffer;
-	iov[0].iov_len = bs->to_write;
-/*
- * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the parameter io_vec const. Therefore I
- * selectively disabled the cast-qual warning.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	for (unsigned int i = 0; i < count; i++) {
-		iov[i].iov_base = (void *)io_vec->iov_base;
-		iov[i].iov_len = io_vec->iov_len;
-		to_write += io_vec->iov_len;
-	}
-#pragma GCC diagnostic pop
-
-	ssize_t sent = WRITEV(bs->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
-	if (likely(sent == (ssize_t)to_write)) {
-		return 0;
-	}
-
-	size_t written = 0;
-	if (sent > 0) {
-		written = (size_t)sent;
-	}
-
-	if (unlikely((sent == -1) &&
-		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
-		log_err("unexpected %s error: %s!\n", "write",
-			strerror(errno));
-		return -1;
-	}
-
-	size_t io_vec_written;
-	if (written <= bs->to_write) {
-		bs->to_write -= written;
-		memmove(bs->write_buffer, bs->write_buffer + written, bs->to_write);
-		io_vec_written = 0;
-	} else {
-		io_vec_written = written - bs->to_write;
-		bs->to_write = 0;
-	}
-	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0)) {
-		return -1;
-	}
-
-	if (sent == -1) {
-		return 0;
-	}
-
-	/*
-	 * The write call didn't block, but only wrote parts of the
-	 * messages. Try to send the rest.
-	 */
-	return send_buffer(bs);
 }
 
 static inline ptrdiff_t readable_space(const struct buffered_socket *bs)
@@ -317,6 +231,92 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 			}
 		}
 	}
+}
+
+int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
+{
+	bs->ev.context.fd = fd;
+	bs->ev.error_function = error_function;
+	bs->ev.read_function = read_function;
+	bs->ev.write_function = write_function;
+	bs->ev.loop = loop;
+
+	bs->to_write = 0;
+	bs->read_ptr = bs->read_buffer;
+	bs->examined_ptr = bs->read_buffer;
+	bs->write_ptr = bs->read_buffer;
+
+	bs->reader = NULL;
+	bs->error = error;
+	bs->error_context = error_context;
+
+	if (loop->add(&bs->ev) == ABORT_LOOP) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec, unsigned int count)
+{
+	struct iovec iov[count + 1];
+	size_t to_write = bs->to_write;
+
+	iov[0].iov_base = bs->write_buffer;
+	iov[0].iov_len = bs->to_write;
+/*
+ * This pragma is used because iov_base is not declared const.
+ * Nevertheless, I want to have the parameter io_vec const. Therefore I
+ * selectively disabled the cast-qual warning.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	for (unsigned int i = 0; i < count; i++) {
+		iov[i + 1].iov_base = (void *)io_vec[i].iov_base;
+		iov[i + 1].iov_len = io_vec[i].iov_len;
+		to_write += io_vec[i].iov_len;
+	}
+#pragma GCC diagnostic pop
+
+	ssize_t sent = WRITEV(bs->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
+	if (likely(sent == (ssize_t)to_write)) {
+		return 0;
+	}
+
+	size_t written = 0;
+	if (sent > 0) {
+		written = (size_t)sent;
+	}
+
+	if (unlikely((sent == -1) &&
+		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
+		log_err("unexpected %s error: %s!\n", "write",
+			strerror(errno));
+		return -1;
+	}
+
+	size_t io_vec_written;
+	if (written <= bs->to_write) {
+		bs->to_write -= written;
+		memmove(bs->write_buffer, bs->write_buffer + written, bs->to_write);
+		io_vec_written = 0;
+	} else {
+		io_vec_written = written - bs->to_write;
+		bs->to_write = 0;
+	}
+	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0)) {
+		return -1;
+	}
+
+	if (sent == -1) {
+		return 0;
+	}
+
+	/*
+	 * The write call didn't block, but only wrote parts of the
+	 * messages. Try to send the rest.
+	 */
+	return send_buffer(bs);
 }
 
 int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
