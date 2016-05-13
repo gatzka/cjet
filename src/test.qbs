@@ -260,10 +260,10 @@ Project {
     }
 
     files: [
-          "buffered_socket.c",
-          "linux/jet_string.c",
-          "tests/buffered_socket_test.cpp",
-          "tests/log.cpp"
+        "buffered_socket.c",
+        "linux/jet_string.c",
+        "tests/buffered_socket_test.cpp",
+        "tests/log.cpp"
     ]
   }
 
