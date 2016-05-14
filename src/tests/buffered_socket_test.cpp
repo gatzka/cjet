@@ -29,11 +29,13 @@
 #define BOOST_TEST_MODULE buffered_socket_tests
 
 #include <boost/test/unit_test.hpp>
-#include "errno.h"
+#include <errno.h>
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
 #include "eventloop.h"
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 
 static const int WRITEV_COMPLETE_WRITE = 1;
 static const int WRITEV_EINVAL = 2;
@@ -55,12 +57,12 @@ extern "C" {
 			}
 			return complete_length;
 		}
-		
+
 		if (fd == WRITEV_EINVAL) {
 			errno = EINVAL;
 			return -1;
 		}
-		
+
 		if (fd == WRITEV_PART_SEND_BLOCKS) {
 			size_t complete_length = 0;
 			char *buf = write_buffer;
@@ -78,7 +80,7 @@ extern "C" {
 		}
 		return 0;
 	}
-	
+
 	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
 		if (fd == WRITEV_PART_SEND_BLOCKS) {
@@ -90,7 +92,7 @@ extern "C" {
 		(void)count;
 		return 0;
 	}
-	
+
 	int fake_read(int fd, void *buf, size_t count)
 	{
 		(void)fd;
@@ -140,7 +142,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_init_ok)
 		.add = eventloop_fake_add,
 		.remove = NULL
 	};
-	
+
 	struct buffered_socket bs;
 	
 	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
@@ -156,7 +158,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_init_fail)
 		.add = eventloop_fake_failing_add,
 		.remove = NULL
 	};
-	
+
 	struct buffered_socket bs;
 	
 	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
@@ -166,13 +168,13 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_init_fail)
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 {
 	F f(WRITEV_COMPLETE_WRITE);
-	
+
 	struct io_vector vec[2];
 	vec[0].iov_base = "Hello";
 	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
 	vec[1].iov_base = "World";
 	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
-	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(memcmp(write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
 }
@@ -180,13 +182,13 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 {
 	F f(WRITEV_EINVAL);
-	
+
 	struct io_vector vec[2];
 	vec[0].iov_base = "Hello";
 	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
 	vec[1].iov_base = "World";
 	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
-	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret < 0);
 }
 
@@ -194,13 +196,13 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part)
 {
 	F f(WRITEV_PART_SEND_BLOCKS);
-	
+
 	struct io_vector vec[2];
 	vec[0].iov_base = "Hello";
 	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
 	vec[1].iov_base = "World";
 	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
-	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(memcmp(write_buffer, "Hello", strlen("Hello")) == 0);
 	BOOST_CHECK(memcmp(f.bs.write_buffer, "World", strlen("World")) == 0);
@@ -215,7 +217,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks)
 	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
 	vec[1].iov_base = "World";
 	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
-	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(memcmp(f.bs.write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
 }
@@ -229,7 +231,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_too_small)
 	struct io_vector vec[1];
 	vec[0].iov_base = buffer;
 	vec[0].iov_len = sizeof(buffer);
-	int ret = buffered_socket_writev(&f.bs, vec, 1);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret < 0);
 }
 
@@ -242,7 +244,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_fits)
 	struct io_vector vec[1];
 	vec[0].iov_base = buffer;
 	vec[0].iov_len = sizeof(buffer);
-	int ret = buffered_socket_writev(&f.bs, vec, 1);
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, buffer, sizeof(buffer)) == 0);
 }
