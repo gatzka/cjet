@@ -71,6 +71,11 @@ extern "C" {
 			}
 			return complete_length;
 		}
+
+		if (fd == WRITEV_BLOCKS) {
+			errno = EWOULDBLOCK;
+			return -1;
+		}
 		return 0;
 	}
 	
@@ -197,5 +202,47 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part)
 	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
 	int ret = buffered_socket_writev(&f.bs, vec, 2);
 	BOOST_CHECK(ret == 0);
-	//TODO: Check that remaining part is in bs->write_buffer
+	BOOST_CHECK(memcmp(write_buffer, "Hello", strlen("Hello")) == 0);
+	BOOST_CHECK(memcmp(f.bs.write_buffer, "World", strlen("World")) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks)
+{
+	F f(WRITEV_BLOCKS);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = "Hello";
+	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
+	vec[1].iov_base = "World";
+	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	int ret = buffered_socket_writev(&f.bs, vec, 2);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(memcmp(f.bs.write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_too_small)
+{
+	char buffer[CONFIG_MAX_WRITE_BUFFER_SIZE + 1];
+
+	F f(WRITEV_BLOCKS);
+
+	struct io_vector vec[1];
+	vec[0].iov_base = buffer;
+	vec[0].iov_len = sizeof(buffer);
+	int ret = buffered_socket_writev(&f.bs, vec, 1);
+	BOOST_CHECK(ret < 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_fits)
+{
+	char buffer[CONFIG_MAX_WRITE_BUFFER_SIZE] = {0};
+
+	F f(WRITEV_BLOCKS);
+
+	struct io_vector vec[1];
+	vec[0].iov_base = buffer;
+	vec[0].iov_len = sizeof(buffer);
+	int ret = buffered_socket_writev(&f.bs, vec, 1);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(::memcmp(f.bs.write_buffer, buffer, sizeof(buffer)) == 0);
 }
