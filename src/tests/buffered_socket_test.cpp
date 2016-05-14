@@ -47,7 +47,8 @@ static char write_buffer[5000];
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
 	{
-		if (fd == WRITEV_COMPLETE_WRITE) {
+		switch (fd) {
+		case WRITEV_COMPLETE_WRITE: {
 			size_t complete_length = 0;
 			char *buf = write_buffer;
 			for (int i = 0; i < iovcnt; i++) {
@@ -58,12 +59,14 @@ extern "C" {
 			return complete_length;
 		}
 
-		if (fd == WRITEV_EINVAL) {
+		case WRITEV_EINVAL:
+		{
 			errno = EINVAL;
 			return -1;
 		}
 
-		if (fd == WRITEV_PART_SEND_BLOCKS) {
+		case WRITEV_PART_SEND_BLOCKS:
+		{
 			size_t complete_length = 0;
 			char *buf = write_buffer;
 			for (int i = 0; i < iovcnt - 1; i++) {
@@ -74,10 +77,13 @@ extern "C" {
 			return complete_length;
 		}
 
-		if (fd == WRITEV_BLOCKS) {
+		case WRITEV_BLOCKS:
+		{
 			errno = EWOULDBLOCK;
 			return -1;
 		}
+		}
+
 		return 0;
 	}
 
