@@ -44,6 +44,7 @@ static const int WRITEV_PART_SEND_BLOCKS = 3;
 static const int WRITEV_BLOCKS = 4;
 static const int WRITEV_PART_SEND_SINGLE_BYTES = 5;
 static const int WRITEV_PART_SEND_PARTS = 6;
+static const int WRITEV_PART_SEND_FAILS = 7;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -72,6 +73,7 @@ extern "C" {
 			return -1;
 		}
 
+		case WRITEV_PART_SEND_FAILS:
 		case WRITEV_PART_SEND_PARTS:
 		case WRITEV_PART_SEND_SINGLE_BYTES:
 		case WRITEV_PART_SEND_BLOCKS:
@@ -132,6 +134,12 @@ extern "C" {
 				errno = EWOULDBLOCK;
 				return -1;
 			}
+		}
+
+		case WRITEV_PART_SEND_FAILS:
+		{
+			errno = EINVAL;
+			return -1;
 		}
 
 		default:
@@ -266,6 +274,25 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks)
 	BOOST_CHECK(memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt, strlen(send_buffer) - writev_parts_cnt) == 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks_first_chunk_smaller_than_part)
+{
+	F f(WRITEV_PART_SEND_BLOCKS);
+
+	writev_parts_cnt = 8;
+	static const char *send_buffer = "I want to break free";
+	static const size_t first_chunk_size = 4;
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(memcmp(write_buffer, send_buffer, writev_parts_cnt) == 0);
+	BOOST_CHECK(memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt, strlen(send_buffer) - writev_parts_cnt) == 0);
+}
+
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks)
 {
 	static const char *send_buffer = "In the ghetto";
@@ -346,4 +373,22 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(::memcmp(write_buffer, send_buffer, writev_parts_cnt + send_parts_cnt) == 0);
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_fails)
+{
+	static const char *send_buffer = "The show must go on";
+	static const size_t first_chunk_size = 3;
+	writev_parts_cnt = 1;
+	send_parts_cnt = 5;
+
+	F f(WRITEV_PART_SEND_FAILS);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret < 0);
 }
