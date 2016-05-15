@@ -55,10 +55,9 @@ static int send_buffer(struct buffered_socket *bs)
 				log_err("unexpected write error: %s!", strerror(errno));
 				return -1;
 			} else {
+				memmove(bs->write_buffer, write_buffer_ptr, bs->to_write);
 				return 0;
 			}
-			memmove(bs->write_buffer, write_buffer_ptr, bs->to_write);
-			return 0;
 		}
 		write_buffer_ptr += written;
 		bs->to_write -= written;

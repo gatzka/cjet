@@ -36,13 +36,21 @@
 #include "eventloop.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
+#define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
 
 static const int WRITEV_COMPLETE_WRITE = 1;
 static const int WRITEV_EINVAL = 2;
 static const int WRITEV_PART_SEND_BLOCKS = 3;
-static const int WRITEV_BLOCKS = 4; //TODO
+static const int WRITEV_BLOCKS = 4;
+static const int WRITEV_PART_SEND_SINGLE_BYTES = 5;
+static const int WRITEV_PART_SEND_PARTS = 6;
 
 static char write_buffer[5000];
+static char *write_buffer_ptr;
+
+static size_t writev_parts_cnt;
+static int send_parts_cnt;
+static int send_parts_counter;
 
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
@@ -50,11 +58,10 @@ extern "C" {
 		switch (fd) {
 		case WRITEV_COMPLETE_WRITE: {
 			size_t complete_length = 0;
-			char *buf = write_buffer;
 			for (int i = 0; i < iovcnt; i++) {
-				memcpy(buf, iov[i].iov_base, iov[i].iov_len);
+				memcpy(write_buffer_ptr, iov[i].iov_base, iov[i].iov_len);
 				complete_length += iov[i].iov_len;
-				buf += iov[i].iov_len;
+				write_buffer_ptr += iov[i].iov_len;
 			}
 			return complete_length;
 		}
@@ -65,14 +72,21 @@ extern "C" {
 			return -1;
 		}
 
+		case WRITEV_PART_SEND_PARTS:
+		case WRITEV_PART_SEND_SINGLE_BYTES:
 		case WRITEV_PART_SEND_BLOCKS:
 		{
 			size_t complete_length = 0;
-			char *buf = write_buffer;
-			for (int i = 0; i < iovcnt - 1; i++) {
-				memcpy(buf, iov[i].iov_base, iov[i].iov_len);
-				complete_length += iov[i].iov_len;
-				buf += iov[i].iov_len;
+			size_t parts_cnt = writev_parts_cnt;
+			for (int i = 0; i < iovcnt; i++) {
+				int to_write = MIN(iov[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, iov[i].iov_base, to_write);
+				complete_length += to_write;
+				write_buffer_ptr += to_write;
+				parts_cnt -= to_write;
+				if (parts_cnt == 0) {
+					return complete_length;
+				}
 			}
 			return complete_length;
 		}
@@ -82,21 +96,47 @@ extern "C" {
 			errno = EWOULDBLOCK;
 			return -1;
 		}
+		default:
+			return 0;
 		}
-
-		return 0;
 	}
 
 	int fake_send(int fd, void *buf, size_t count, int flags)
 	{
-		if (fd == WRITEV_PART_SEND_BLOCKS) {
-			errno = EWOULDBLOCK;
-			return -1;
-		}
 		(void)flags;
 		(void)buf;
 		(void)count;
-		return 0;
+
+		switch (fd) {
+		case WRITEV_PART_SEND_BLOCKS:
+		{
+			errno = EWOULDBLOCK;
+			return -1;
+		}
+
+		case WRITEV_PART_SEND_SINGLE_BYTES:
+		{
+			*write_buffer_ptr = *((char *)buf);
+			write_buffer_ptr++;
+			return 1;
+		}
+
+		case WRITEV_PART_SEND_PARTS:
+		{
+			if (send_parts_counter < send_parts_cnt) {
+				*write_buffer_ptr = *((char *)buf);
+				write_buffer_ptr++;
+				send_parts_counter++;
+				return 1;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
+		default:
+			return 0;
+		}
 	}
 
 	int fake_read(int fd, void *buf, size_t count)
@@ -129,6 +169,8 @@ struct F {
 		loop.add = eventloop_fake_add;
 		loop.remove = NULL;
 		buffered_socket_init(&bs, fd, &loop, NULL, NULL);
+		write_buffer_ptr = write_buffer;
+		send_parts_counter = 0;
 	}
 
 	~F()
@@ -173,59 +215,72 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_init_fail)
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 {
+	static const char *send_buffer = "Morning has broken";
+	static const size_t first_chunk_size = 8;
+
 	F f(WRITEV_COMPLETE_WRITE);
 
 	struct io_vector vec[2];
-	vec[0].iov_base = "Hello";
-	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
-	vec[1].iov_base = "World";
-	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(memcmp(write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
+	BOOST_CHECK(memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 {
+	static const char *send_buffer = "foobar";
+	static const size_t first_chunk_size = 2;
+
 	F f(WRITEV_EINVAL);
 
 	struct io_vector vec[2];
-	vec[0].iov_base = "Hello";
-	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
-	vec[1].iov_base = "World";
-	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret < 0);
 }
 
 
-BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part)
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks)
 {
 	F f(WRITEV_PART_SEND_BLOCKS);
 
+	writev_parts_cnt = 4;
+	static const char *send_buffer = "HelloWorld";
+	static const size_t first_chunk_size = 6;
+
 	struct io_vector vec[2];
-	vec[0].iov_base = "Hello";
-	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
-	vec[1].iov_base = "World";
-	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(memcmp(write_buffer, "Hello", strlen("Hello")) == 0);
-	BOOST_CHECK(memcmp(f.bs.write_buffer, "World", strlen("World")) == 0);
+	BOOST_CHECK(memcmp(write_buffer, send_buffer, writev_parts_cnt) == 0);
+	BOOST_CHECK(memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt, strlen(send_buffer) - writev_parts_cnt) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks)
 {
+	static const char *send_buffer = "In the ghetto";
+	static const size_t first_chunk_size = 7;
+
 	F f(WRITEV_BLOCKS);
 
 	struct io_vector vec[2];
-	vec[0].iov_base = "Hello";
-	vec[0].iov_len = strlen((const char*)vec[0].iov_base);
-	vec[1].iov_base = "World";
-	vec[1].iov_len = strlen((const char *)vec[1].iov_base);
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(memcmp(f.bs.write_buffer, "HelloWorld", strlen("HelloWorld")) == 0);
+	BOOST_CHECK(memcmp(f.bs.write_buffer, send_buffer, strlen(send_buffer)) == 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_too_small)
@@ -253,4 +308,42 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_fits)
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, buffer, sizeof(buffer)) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_single)
+{
+	static const char *send_buffer = "I want to ride my bicycle";
+	static const size_t first_chunk_size = 9;
+	writev_parts_cnt = 7;
+
+	F f(WRITEV_PART_SEND_SINGLE_BYTES);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(::memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts)
+{
+	static const char *send_buffer = "We are the champions";
+	static const size_t first_chunk_size = 3;
+	writev_parts_cnt = 1;
+	send_parts_cnt = 5;
+
+	F f(WRITEV_PART_SEND_PARTS);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(::memcmp(write_buffer, send_buffer, writev_parts_cnt + send_parts_cnt) == 0);
+	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
 }
