@@ -50,6 +50,7 @@ static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 
 static const int READ_4 = 10;
 static const int READ_5 = 11;
+static const int READ_8 = 12;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -224,6 +225,18 @@ extern "C" {
 			}
 		}
 
+		case READ_8:
+		{
+			(void)count;
+			if (read_called_first) {
+				read_called_first = false;
+				memcpy(buf, read_buffer, 8);
+				return 8;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
 		default:
 			return -1;
 		}
@@ -571,4 +584,18 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_some_more)
 	BOOST_CHECK(f.read_len = 4);
 	BOOST_CHECK(memcmp(f.read_ptr, test_string, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
+{
+	static const char *test_string = "aaaabbbb";
+	::memcpy(read_buffer, test_string, ::strlen(test_string));
+	F f(READ_8);
+
+	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.read_called == 2);
+	BOOST_CHECK(f.read_len = 4);
+	BOOST_CHECK(memcmp(f.read_ptr, test_string + 4, f.read_len) == 0);
+	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
 }
