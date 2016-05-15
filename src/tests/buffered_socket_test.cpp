@@ -48,6 +48,8 @@ static const int WRITEV_PART_SEND_FAILS = 7;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST = 8;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 
+static const int READ_EXACTLY_4 = 10;
+
 static char write_buffer[5000];
 static char *write_buffer_ptr;
 
@@ -55,6 +57,9 @@ static size_t writev_parts_cnt;
 static int send_parts_cnt;
 static int send_parts_counter;
 static bool called_from_eventloop;
+
+static bool read_called_first;
+static char read_buffer[5000];
 
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
@@ -191,10 +196,22 @@ extern "C" {
 
 	int fake_read(int fd, void *buf, size_t count)
 	{
-		(void)fd;
-		(void)buf;
-		(void)count;
-		return 0;
+		switch (fd) {
+		case READ_EXACTLY_4:
+		{
+			(void)count;
+			if (read_called_first) {
+				read_called_first = false;
+				memcpy(buf, read_buffer, 4);
+				return 4;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+		default:
+			return -1;
+		}
 	}
 }
 
@@ -216,6 +233,7 @@ static void eventloop_fake_remove(struct io_event *ev)
 }
 
 struct F {
+	F() : F(-1) {}
 	F(int fd)
 	{
 		loop.create = NULL;
@@ -227,12 +245,20 @@ struct F {
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
+		read_called_first = true;
 	}
 
 	static void error_func(void *context)
 	{
 		struct F *f = (struct F *)context;
 		f->error_func_called = true;
+	}
+
+	static void read_callback(void *context, char *buf, ssize_t len)
+	{
+		struct F *f = (struct F *)context;
+		f->read_ptr = buf;
+		f->read_len = len;
 	}
 
 	~F()
@@ -242,6 +268,9 @@ struct F {
 	bool error_func_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
+
+	char *read_ptr;
+	ssize_t read_len;
 };
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_init_ok)
@@ -495,4 +524,16 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev.context);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.error_func_called);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly)
+{
+	static const char *test_string = "aaaa";
+	::memcpy(read_buffer, test_string, ::strlen(test_string));
+	F f(READ_EXACTLY_4);
+
+	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.read_len = 4);
+	BOOST_CHECK(memcmp(f.read_ptr, test_string, ::strlen(test_string)) == 0);
 }
