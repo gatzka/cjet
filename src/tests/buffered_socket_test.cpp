@@ -45,6 +45,8 @@ static const int WRITEV_BLOCKS = 4;
 static const int WRITEV_PART_SEND_SINGLE_BYTES = 5;
 static const int WRITEV_PART_SEND_PARTS = 6;
 static const int WRITEV_PART_SEND_FAILS = 7;
+static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST = 8;
+static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -52,6 +54,7 @@ static char *write_buffer_ptr;
 static size_t writev_parts_cnt;
 static int send_parts_cnt;
 static int send_parts_counter;
+static bool called_from_eventloop;
 
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
@@ -73,6 +76,8 @@ extern "C" {
 			return -1;
 		}
 
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS:
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST:
 		case WRITEV_PART_SEND_FAILS:
 		case WRITEV_PART_SEND_PARTS:
 		case WRITEV_PART_SEND_SINGLE_BYTES:
@@ -136,6 +141,43 @@ extern "C" {
 			}
 		}
 
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST:
+		{
+			if (!called_from_eventloop) {
+				if (send_parts_counter < send_parts_cnt) {
+					*write_buffer_ptr = *((char *)buf);
+					write_buffer_ptr++;
+					send_parts_counter++;
+					return 1;
+				} else {
+					errno = EWOULDBLOCK;
+					return -1;
+				}
+			} else {
+				*write_buffer_ptr = *((char *)buf);
+				write_buffer_ptr++;
+				return 1;
+			}
+		}
+
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS:
+		{
+			if (!called_from_eventloop) {
+				if (send_parts_counter < send_parts_cnt) {
+					*write_buffer_ptr = *((char *)buf);
+					write_buffer_ptr++;
+					send_parts_counter++;
+					return 1;
+				} else {
+					errno = EWOULDBLOCK;
+					return -1;
+				}
+			} else {
+				errno = EINVAL;
+				return -1;
+			}
+		}
+
 		case WRITEV_PART_SEND_FAILS:
 		{
 			errno = EINVAL;
@@ -168,6 +210,11 @@ static enum callback_return eventloop_fake_failing_add(struct io_event *ev)
 	return ABORT_LOOP;
 }
 
+static void eventloop_fake_remove(struct io_event *ev)
+{
+	(void)ev;
+}
+
 struct F {
 	F(int fd)
 	{
@@ -175,16 +222,24 @@ struct F {
 		loop.destroy = NULL;
 		loop.run = NULL;
 		loop.add = eventloop_fake_add;
-		loop.remove = NULL;
-		buffered_socket_init(&bs, fd, &loop, NULL, NULL);
+		loop.remove = eventloop_fake_remove;
+		buffered_socket_init(&bs, fd, &loop, error_func, this);
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
+		called_from_eventloop = false;
+	}
+
+	static void error_func(void *context)
+	{
+		struct F *f = (struct F *)context;
+		f->error_func_called = true;
 	}
 
 	~F()
 	{
 	}
 
+	bool error_func_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
 };
@@ -253,7 +308,6 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret < 0);
 }
-
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks)
 {
@@ -391,4 +445,54 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_fails)
 	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
 	BOOST_CHECK(ret < 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send_rest)
+{
+	static const char *send_buffer = "Another one bites the dust";
+	static const size_t first_chunk_size = 5;
+	writev_parts_cnt = 2;
+	send_parts_cnt = 4;
+
+	F f(WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(::memcmp(write_buffer, send_buffer, writev_parts_cnt + send_parts_cnt) == 0);
+	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
+
+	called_from_eventloop = true;
+	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev.context);
+	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(::memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send_fail)
+{
+	static const char *send_buffer = "Don't stop me now";
+	static const size_t first_chunk_size = 2;
+	writev_parts_cnt = 2;
+	send_parts_cnt = 4;
+
+	F f(WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS);
+
+	struct io_vector vec[2];
+	vec[0].iov_base = send_buffer;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = send_buffer + first_chunk_size;
+	vec[1].iov_len = strlen(send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(::memcmp(write_buffer, send_buffer, writev_parts_cnt + send_parts_cnt) == 0);
+	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
+
+	called_from_eventloop = true;
+	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev.context);
+	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(f.error_func_called);
 }
