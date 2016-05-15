@@ -48,7 +48,8 @@ static const int WRITEV_PART_SEND_FAILS = 7;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST = 8;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 
-static const int READ_EXACTLY_4 = 10;
+static const int READ_4 = 10;
+static const int READ_5 = 11;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -197,7 +198,7 @@ extern "C" {
 	int fake_read(int fd, void *buf, size_t count)
 	{
 		switch (fd) {
-		case READ_EXACTLY_4:
+		case READ_4:
 		{
 			(void)count;
 			if (read_called_first) {
@@ -246,6 +247,8 @@ struct F {
 		send_parts_counter = 0;
 		called_from_eventloop = false;
 		read_called_first = true;
+		read_called = 0;
+		error_func_called = false;
 	}
 
 	static void error_func(void *context)
@@ -259,12 +262,14 @@ struct F {
 		struct F *f = (struct F *)context;
 		f->read_ptr = buf;
 		f->read_len = len;
+		f->read_called++;
 	}
 
 	~F()
 	{
 	}
 
+	int read_called;
 	bool error_func_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
@@ -530,10 +535,11 @@ BOOST_AUTO_TEST_CASE(test_read_exactly)
 {
 	static const char *test_string = "aaaa";
 	::memcpy(read_buffer, test_string, ::strlen(test_string));
-	F f(READ_EXACTLY_4);
+	F f(READ_4);
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.read_called == 1);
 	BOOST_CHECK(f.read_len = 4);
 	BOOST_CHECK(memcmp(f.read_ptr, test_string, ::strlen(test_string)) == 0);
 }
