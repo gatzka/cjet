@@ -210,6 +210,20 @@ extern "C" {
 				return -1;
 			}
 		}
+
+		case READ_5:
+		{
+			(void)count;
+			if (read_called_first) {
+				read_called_first = false;
+				memcpy(buf, read_buffer, 5);
+				return 5;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
 		default:
 			return -1;
 		}
@@ -541,5 +555,20 @@ BOOST_AUTO_TEST_CASE(test_read_exactly)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.read_called == 1);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_ptr, test_string, ::strlen(test_string)) == 0);
+	BOOST_CHECK(memcmp(f.read_ptr, test_string, f.read_len) == 0);
+	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_some_more)
+{
+	static const char *test_string = "aaaaa";
+	::memcpy(read_buffer, test_string, ::strlen(test_string));
+	F f(READ_5);
+
+	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.read_called == 1);
+	BOOST_CHECK(f.read_len = 4);
+	BOOST_CHECK(memcmp(f.read_ptr, test_string, f.read_len) == 0);
+	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
 }
