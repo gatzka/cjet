@@ -151,11 +151,6 @@ static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct i
 	return 0;
 }
 
-static inline ptrdiff_t readable_space(const struct buffered_socket *bs)
-{
-	return bs->write_ptr - bs->read_ptr;
-}
-
 static inline size_t free_space(const struct buffered_socket *bs)
 {
 	return (size_t)(&(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->write_ptr);
@@ -224,7 +219,7 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 	const char *needle = ctx.ptr;
 	size_t needle_length = strlen(needle);
 	while (1) {
-		char *found = jet_memmem(haystack, readable_space(bs), needle, needle_length);
+		char *found = jet_memmem(haystack, unread_bytes(bs), needle, needle_length);
 		if (found != NULL) {
 			*read_ptr = bs->read_ptr;
 			ptrdiff_t diff = (found + needle_length) - bs->read_ptr;
