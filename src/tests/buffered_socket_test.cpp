@@ -55,6 +55,7 @@ static const int READ_FULL = 13;
 static const int READ_CLOSE = 14;
 static const int READ_ERROR = 15;
 static const int READ_IN_CALLBACK = 16;
+static const int READ_FAILING_EV_ADD = 17;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -315,7 +316,11 @@ struct F {
 		loop.create = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
-		loop.add = eventloop_fake_add;
+		if (fd == READ_FAILING_EV_ADD) {
+			loop.add = eventloop_fake_failing_add;
+		} else {
+			loop.add = eventloop_fake_add;
+		}
 		loop.remove = eventloop_fake_remove;
 		buffered_socket_init(&bs, fd, &loop, error_func, this);
 		write_buffer_ptr = write_buffer;
@@ -355,38 +360,6 @@ struct F {
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	ssize_t read_len;
 };
-
-BOOST_AUTO_TEST_CASE(test_buffered_socket_init_ok)
-{
-	struct eventloop loop = {
-		.create = NULL,
-		.destroy = NULL,
-		.run = NULL,
-		.add = eventloop_fake_add,
-		.remove = NULL
-	};
-
-	struct buffered_socket bs;
-	
-	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
-	BOOST_CHECK(ret == 0);
-}
-
-BOOST_AUTO_TEST_CASE(test_buffered_socket_init_fail)
-{
-	struct eventloop loop = {
-		.create = NULL,
-		.destroy = NULL,
-		.run = NULL,
-		.add = eventloop_fake_failing_add,
-		.remove = NULL
-	};
-
-	struct buffered_socket bs;
-	
-	int ret = buffered_socket_init(&bs, -1, &loop, NULL, NULL);
-	BOOST_CHECK(ret < 0);
-}
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 {
@@ -714,4 +687,13 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_in_callback)
 	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_failing_ev_add)
+{
+	F f(READ_FAILING_EV_ADD);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret < 0);
+	BOOST_CHECK(f.readcallback_called == 0);
 }

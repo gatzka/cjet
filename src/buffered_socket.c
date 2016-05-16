@@ -63,9 +63,6 @@ static int send_buffer(struct buffered_socket *bs)
 
 static int go_reading(struct buffered_socket *bs)
 {
-	if (unlikely(bs->reader == NULL)) {
-		return 0;
-	}
 	while (1) {
 		char *buffer;
 		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
@@ -234,7 +231,7 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 	}
 }
 
-int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
+void buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
 	bs->ev.context.fd = fd;
 	bs->ev.error_function = error_function;
@@ -250,12 +247,6 @@ int buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *l
 	bs->reader = NULL;
 	bs->error = error;
 	bs->error_context = error_context;
-
-	if (loop->add(&bs->ev) == ABORT_LOOP) {
-		return -1;
-	} else {
-		return 0;
-	}
 }
 
 int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec, unsigned int count)
@@ -333,7 +324,11 @@ int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(v
 		return 0;
 	}
 
-	return go_reading(bs);
+	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
+		return -1;
+	} else {
+		return go_reading(bs);
+	}
 }
 
 int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
@@ -349,5 +344,9 @@ int read_until(struct buffered_socket *bs, const char *delim, void (*read_callba
 		return 0;
 	}
 
-	return go_reading(bs);
+	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
+		return -1;
+	} else {
+		return go_reading(bs);
+	}
 }
