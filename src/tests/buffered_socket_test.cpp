@@ -52,6 +52,7 @@ static const int READ_4 = 10;
 static const int READ_5 = 11;
 static const int READ_8 = 12;
 static const int READ_FULL = 13;
+static const int READ_CLOSE = 14;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -249,10 +250,15 @@ extern "C" {
 				read_called++;
 				memset(buf, 'b', count);
 				return count;
-			}else {
+			} else {
 				errno = EWOULDBLOCK;
 				return -1;
 			}
+		}
+
+		case READ_CLOSE:
+		{
+			return 0;
 		}
 
 		default:
@@ -653,4 +659,14 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_more_than_buffer)
 	size_t read_size = CONFIG_MAX_MESSAGE_SIZE + 1;
 	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == IO_TOOMUCHDATA);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_close)
+{
+	F f(READ_CLOSE);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 1);
+	BOOST_CHECK(f.read_len == 0);
 }
