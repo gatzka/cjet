@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_nearly_complete_buffer)
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = read_size);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
-	BOOST_CHECK(*f.read_buffer == 'a');
+	BOOST_CHECK(f.read_buffer[0] == 'a');
 	for (unsigned int i = 1; i < read_size; i++) {
 		BOOST_CHECK(f.read_buffer[i] == 'b');
 	}
@@ -645,4 +645,12 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_complete_buffer)
 	for (unsigned int i = 0; i < read_size; i++) {
 		BOOST_CHECK(f.read_buffer[i] == 'b');
 	}
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_more_than_buffer)
+{
+	F f(READ_FULL);
+	size_t read_size = CONFIG_MAX_MESSAGE_SIZE + 1;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == IO_TOOMUCHDATA);
 }
