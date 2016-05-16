@@ -156,9 +156,14 @@ static inline ptrdiff_t readable_space(const struct buffered_socket *bs)
 	return bs->write_ptr - bs->read_ptr;
 }
 
-static inline ptrdiff_t free_space(const struct buffered_socket *bs)
+static inline size_t free_space(const struct buffered_socket *bs)
 {
-	return &(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->write_ptr;
+	return (size_t)(&(bs->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - bs->write_ptr);
+}
+
+static inline size_t unread_bytes(const struct buffered_socket *bs)
+{
+	return (size_t)(bs->write_ptr - bs->read_ptr);
 }
 
 static void reorganize_read_buffer(struct buffered_socket *bs)
@@ -173,16 +178,16 @@ static void reorganize_read_buffer(struct buffered_socket *bs)
 	bs->read_ptr = bs->read_buffer;
 }
 
-static ssize_t fill_buffer(struct buffered_socket *bs)
+static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 {
-	if (unlikely(free_space(bs) == 0)) {
+	if (unlikely(free_space(bs) < count)) {
 		reorganize_read_buffer(bs);
-		if (unlikely(free_space(bs) == 0)) {
-			log_err("read buffer too small to fullful request!\n");
+		if (unlikely(free_space(bs) < count)) {
+			log_err("read buffer too small to fulfill request!\n");
 			return IO_TOOMUCHDATA;
 		}
 	}
-	ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, (size_t)free_space(bs));
+	ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, free_space(bs));
 	if (unlikely(read_length == 0)) {
 		return 0;
 	}
@@ -201,13 +206,12 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx
 {
 	size_t count = ctx.num;
 	while (1) {
-		ptrdiff_t diff = bs->write_ptr - bs->read_ptr;
-		if (diff >= (ptrdiff_t)count) {
+		if (unread_bytes(bs) >= count) {
 			*read_ptr = bs->read_ptr;
 			bs->read_ptr += count;
-			return diff;
+			return count;
 		}
-		ssize_t read = fill_buffer(bs);
+		ssize_t read = fill_buffer(bs, count);
 		if (read <= 0) {
 			return read;
 		}
@@ -228,7 +232,7 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 			return diff;
 		} else {
 			haystack = bs->write_ptr - needle_length - 1;
-			ssize_t read = fill_buffer(bs);
+			ssize_t read = fill_buffer(bs, 1);
 			if (read <= 0) {
 				return read;
 			}
