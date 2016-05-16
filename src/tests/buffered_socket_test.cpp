@@ -54,6 +54,7 @@ static const int READ_8 = 12;
 static const int READ_FULL = 13;
 static const int READ_CLOSE = 14;
 static const int READ_ERROR = 15;
+static const int READ_IN_CALLBACK = 16;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -257,6 +258,22 @@ extern "C" {
 			}
 		}
 
+		case READ_IN_CALLBACK:
+		{
+			if (read_called == 0) {
+				read_called++;
+				memset(buf, 'a', 4);
+				return 4;
+			} if (read_called == 1) {
+				read_called++;
+				memset(buf, 'b', 2);
+				return 2;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
 		case READ_CLOSE:
 		{
 			return 0;
@@ -321,6 +338,9 @@ struct F {
 		memcpy(f->read_buffer, buf, len);
 		f->read_len = len;
 		f->readcallback_called++;
+		if (f->bs.ev.context.fd == READ_IN_CALLBACK) {
+			read_exactly(&f->bs, 2, read_callback, f);
+		}
 	}
 
 	~F()
@@ -685,4 +705,13 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_error)
 	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == IO_ERROR);
 	BOOST_CHECK(f.readcallback_called == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_in_callback)
+{
+	F f(READ_IN_CALLBACK);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 2);
 }
