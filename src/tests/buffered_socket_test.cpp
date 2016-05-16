@@ -51,6 +51,7 @@ static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 static const int READ_4 = 10;
 static const int READ_5 = 11;
 static const int READ_8 = 12;
+static const int READ_FULL = 13;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -60,7 +61,7 @@ static int send_parts_cnt;
 static int send_parts_counter;
 static bool called_from_eventloop;
 
-static bool read_called_first;
+static int read_called;
 static char read_buffer[5000];
 
 extern "C" {
@@ -202,8 +203,8 @@ extern "C" {
 		case READ_4:
 		{
 			(void)count;
-			if (read_called_first) {
-				read_called_first = false;
+			if (read_called == 0) {
+				read_called++;
 				memcpy(buf, read_buffer, 4);
 				return 4;
 			} else {
@@ -215,8 +216,8 @@ extern "C" {
 		case READ_5:
 		{
 			(void)count;
-			if (read_called_first) {
-				read_called_first = false;
+			if (read_called == 0) {
+				read_called++;
 				memcpy(buf, read_buffer, 5);
 				return 5;
 			} else {
@@ -228,8 +229,8 @@ extern "C" {
 		case READ_8:
 		{
 			(void)count;
-			if (read_called_first) {
-				read_called_first = false;
+			if (read_called == 0) {
+				read_called++;
 				memcpy(buf, read_buffer, 8);
 				return 8;
 			} else {
@@ -237,6 +238,23 @@ extern "C" {
 				return -1;
 			}
 		}
+
+		case READ_FULL:
+		{
+			if (read_called == 0) {
+				read_called++;
+				memset(buf, 'a', count);
+				return count;
+			} if (read_called == 1) {
+				read_called++;
+				memset(buf, 'b', count);
+				return count;
+			}else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
 		default:
 			return -1;
 		}
@@ -273,8 +291,8 @@ struct F {
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
-		read_called_first = true;
 		read_called = 0;
+		readcallback_called = 0;
 		error_func_called = false;
 	}
 
@@ -287,21 +305,21 @@ struct F {
 	static void read_callback(void *context, char *buf, ssize_t len)
 	{
 		struct F *f = (struct F *)context;
-		f->read_ptr = buf;
+		memcpy(f->read_buffer, buf, len);
 		f->read_len = len;
-		f->read_called++;
+		f->readcallback_called++;
 	}
 
 	~F()
 	{
 	}
 
-	int read_called;
+	int readcallback_called;
 	bool error_func_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
 
-	char *read_ptr;
+	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	ssize_t read_len;
 };
 
@@ -566,9 +584,9 @@ BOOST_AUTO_TEST_CASE(test_read_exactly)
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(f.read_called == 1);
+	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_ptr, test_string, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, test_string, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
 }
 
@@ -580,9 +598,9 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_some_more)
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(f.read_called == 1);
+	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_ptr, test_string, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, test_string, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
 }
 
@@ -594,8 +612,19 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(f.read_called == 2);
+	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_ptr, test_string + 4, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, test_string + 4, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_nearly_complete_buffer)
+{
+	F f(READ_FULL);
+	int ret = read_exactly(&f.bs, CONFIG_MAX_MESSAGE_SIZE - 1, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 2);
+	BOOST_CHECK(f.read_len = CONFIG_MAX_MESSAGE_SIZE - 1);
+	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
+	BOOST_CHECK(*f.read_buffer == 'a');
 }
