@@ -77,6 +77,9 @@ static int go_reading(struct buffered_socket *bs)
 			}
 		} else {
 			bs->read_callback(bs->read_callback_context, buffer, len);
+			if (unlikely(len == 0)) {
+				return 0;
+			}
 		}
 	}
 }
