@@ -36,6 +36,10 @@
 extern "C" {
 #endif
 
+#define IO_WOULD_BLOCK -1
+#define IO_ERROR -2
+#define IO_TOOMUCHDATA -3
+
 union reader_context {
 	const char *ptr;
 	size_t num;

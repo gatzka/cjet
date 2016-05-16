@@ -39,10 +39,6 @@
 #include "log.h"
 #include "util.h"
 
-#define IO_WOULD_BLOCK -1
-#define IO_ERROR -2
-#define IO_TOOMUCHDATA -3
-
 static int send_buffer(struct buffered_socket *bs)
 {
 	char *write_buffer_ptr = bs->write_buffer;
