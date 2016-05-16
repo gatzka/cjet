@@ -56,6 +56,8 @@ static const int READ_CLOSE = 14;
 static const int READ_ERROR = 15;
 static const int READ_IN_CALLBACK = 16;
 static const int READ_FAILING_EV_ADD = 17;
+static const int READ_FROM_EVENTLOOP = 18;
+static const int READ_FROM_EVENTLOOP_FAIL = 19;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -269,6 +271,38 @@ extern "C" {
 				read_called++;
 				memset(buf, 'b', 2);
 				return 2;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
+		case READ_FROM_EVENTLOOP:
+		{
+			if (read_called == 0) {
+				read_called++;
+				errno = EWOULDBLOCK;
+				return -1;
+			} if (read_called == 1) {
+				read_called++;
+				memset(buf, 'a', 4);
+				return 4;
+			} else {
+				errno = EWOULDBLOCK;
+				return -1;
+			}
+		}
+
+		case READ_FROM_EVENTLOOP_FAIL:
+		{
+			if (read_called == 0) {
+				read_called++;
+				errno = EWOULDBLOCK;
+				return -1;
+			} if (read_called == 1) {
+				read_called++;
+				errno = EINVAL;
+				return -1;
 			} else {
 				errno = EWOULDBLOCK;
 				return -1;
@@ -696,4 +730,32 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_failing_ev_add)
 	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret < 0);
 	BOOST_CHECK(f.readcallback_called == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
+{
+	F f(READ_FROM_EVENTLOOP);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 0);
+
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(f.readcallback_called == 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
+{
+	F f(READ_FROM_EVENTLOOP_FAIL);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 0);
+	BOOST_CHECK(!f.error_func_called);
+
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(f.readcallback_called == 0);
+	BOOST_CHECK(f.error_func_called);
 }
