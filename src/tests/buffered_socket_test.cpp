@@ -621,21 +621,28 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 BOOST_AUTO_TEST_CASE(test_read_exactly_nearly_complete_buffer)
 {
 	F f(READ_FULL);
-	int ret = read_exactly(&f.bs, CONFIG_MAX_MESSAGE_SIZE - 1, f.read_callback, &f);
+	size_t read_size = CONFIG_MAX_MESSAGE_SIZE - 1;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
-	BOOST_CHECK(f.read_len = CONFIG_MAX_MESSAGE_SIZE - 1);
+	BOOST_CHECK(f.read_len = read_size);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
 	BOOST_CHECK(*f.read_buffer == 'a');
+	for (unsigned int i = 1; i < read_size; i++) {
+		BOOST_CHECK(f.read_buffer[i] == 'b');
+	}
 }
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_complete_buffer)
 {
 	F f(READ_FULL);
-	int ret = read_exactly(&f.bs, CONFIG_MAX_MESSAGE_SIZE, f.read_callback, &f);
+	size_t read_size = CONFIG_MAX_MESSAGE_SIZE;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
-	BOOST_CHECK(f.read_len = CONFIG_MAX_MESSAGE_SIZE);
+	BOOST_CHECK(f.read_len = read_size);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
-	BOOST_CHECK(*f.read_buffer == 'b');
+	for (unsigned int i = 0; i < read_size; i++) {
+		BOOST_CHECK(f.read_buffer[i] == 'b');
+	}
 }
