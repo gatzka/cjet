@@ -53,6 +53,7 @@ static const int READ_5 = 11;
 static const int READ_8 = 12;
 static const int READ_FULL = 13;
 static const int READ_CLOSE = 14;
+static const int READ_ERROR = 15;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -259,6 +260,12 @@ extern "C" {
 		case READ_CLOSE:
 		{
 			return 0;
+		}
+
+		case READ_ERROR:
+		{
+			errno = EINVAL;
+			return -1;
 		}
 
 		default:
@@ -669,4 +676,13 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_error)
+{
+	F f(READ_ERROR);
+	size_t read_size = 4;
+	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == IO_ERROR);
+	BOOST_CHECK(f.readcallback_called == 0);
 }
