@@ -48,16 +48,14 @@ static const int WRITEV_PART_SEND_FAILS = 7;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST = 8;
 static const int WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS = 9;
 
-static const int READ_4 = 10;
-static const int READ_5 = 11;
-static const int READ_8 = 12;
-static const int READ_FULL = 13;
-static const int READ_CLOSE = 14;
-static const int READ_ERROR = 15;
-static const int READ_IN_CALLBACK = 16;
-static const int READ_FAILING_EV_ADD = 17;
-static const int READ_FROM_EVENTLOOP = 18;
-static const int READ_FROM_EVENTLOOP_FAIL = 19;
+static const int READ_COMPLETE_BUFFER = 10;
+static const int READ_FULL = 11;
+static const int READ_CLOSE = 12;
+static const int READ_ERROR = 13;
+static const int READ_IN_CALLBACK = 14;
+static const int READ_FAILING_EV_ADD = 15;
+static const int READ_FROM_EVENTLOOP = 16;
+static const int READ_FROM_EVENTLOOP_FAIL = 17;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -68,7 +66,9 @@ static int send_parts_counter;
 static bool called_from_eventloop;
 
 static int read_called;
-static char read_buffer[5000];
+static const char *readbuffer;
+static const char *readbuffer_ptr;
+static size_t readbuffer_length;
 
 extern "C" {
 	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
@@ -206,39 +206,13 @@ extern "C" {
 	int fake_read(int fd, void *buf, size_t count)
 	{
 		switch (fd) {
-		case READ_4:
+		case READ_COMPLETE_BUFFER:
 		{
-			(void)count;
-			if (read_called == 0) {
-				read_called++;
-				memcpy(buf, read_buffer, 4);
-				return 4;
-			} else {
-				errno = EWOULDBLOCK;
-				return -1;
-			}
-		}
-
-		case READ_5:
-		{
-			(void)count;
-			if (read_called == 0) {
-				read_called++;
-				memcpy(buf, read_buffer, 5);
-				return 5;
-			} else {
-				errno = EWOULDBLOCK;
-				return -1;
-			}
-		}
-
-		case READ_8:
-		{
-			(void)count;
-			if (read_called == 0) {
-				read_called++;
-				memcpy(buf, read_buffer, 8);
-				return 8;
+			if (readbuffer_length > 0) {
+				size_t len = MIN(readbuffer_length, count);
+				readbuffer_length -= len;
+				memcpy(buf, readbuffer, len);
+				return len;
 			} else {
 				errno = EWOULDBLOCK;
 				return -1;
@@ -251,7 +225,7 @@ extern "C" {
 				read_called++;
 				memset(buf, 'a', count);
 				return count;
-			} if (read_called == 1) {
+			} else if (read_called == 1) {
 				read_called++;
 				memset(buf, 'b', count);
 				return count;
@@ -267,7 +241,7 @@ extern "C" {
 				read_called++;
 				memset(buf, 'a', 4);
 				return 4;
-			} if (read_called == 1) {
+			} else if (read_called == 1) {
 				read_called++;
 				memset(buf, 'b', 2);
 				return 2;
@@ -283,13 +257,16 @@ extern "C" {
 				read_called++;
 				errno = EWOULDBLOCK;
 				return -1;
-			} if (read_called == 1) {
-				read_called++;
-				memset(buf, 'a', 4);
-				return 4;
-			} else {
-				errno = EWOULDBLOCK;
-				return -1;
+			} else  {
+				if (readbuffer_length > 0) {
+					size_t len = MIN(readbuffer_length, count);
+					readbuffer_length -= len;
+					memcpy(buf, readbuffer, len);
+					return len;
+				} else {
+					errno = EWOULDBLOCK;
+					return -1;
+				}
 			}
 		}
 
@@ -299,7 +276,7 @@ extern "C" {
 				read_called++;
 				errno = EWOULDBLOCK;
 				return -1;
-			} if (read_called == 1) {
+			} else if (read_called == 1) {
 				read_called++;
 				errno = EINVAL;
 				return -1;
@@ -344,7 +321,6 @@ static void eventloop_fake_remove(struct io_event *ev)
 }
 
 struct F {
-	F() : F(-1) {}
 	F(int fd)
 	{
 		loop.create = NULL;
@@ -360,6 +336,7 @@ struct F {
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
+		readbuffer_ptr = read_buffer;
 		read_called = 0;
 		readcallback_called = 0;
 		error_func_called = false;
@@ -618,43 +595,43 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 
 BOOST_AUTO_TEST_CASE(test_read_exactly)
 {
-	static const char *test_string = "aaaa";
-	::memcpy(read_buffer, test_string, ::strlen(test_string));
-	F f(READ_4);
+	readbuffer = "aaaa";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_COMPLETE_BUFFER);
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_buffer, test_string, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, readbuffer, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
 }
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_some_more)
 {
-	static const char *test_string = "aaaaa";
-	::memcpy(read_buffer, test_string, ::strlen(test_string));
-	F f(READ_5);
+	readbuffer = "aaaaa";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_COMPLETE_BUFFER);
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_buffer, test_string, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, readbuffer, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 {
-	static const char *test_string = "aaaabbbb";
-	::memcpy(read_buffer, test_string, ::strlen(test_string));
-	F f(READ_8);
+	readbuffer = "aaaabbbb";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_COMPLETE_BUFFER);
 
 	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = 4);
-	BOOST_CHECK(memcmp(f.read_buffer, test_string + 4, f.read_len) == 0);
+	BOOST_CHECK(memcmp(f.read_buffer, readbuffer + 4, f.read_len) == 0);
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
 }
 
@@ -734,9 +711,10 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_failing_ev_add)
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
 {
+	readbuffer = "aaaa";
+	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_FROM_EVENTLOOP);
-	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = read_exactly(&f.bs, ::strlen(readbuffer), f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
@@ -758,4 +736,16 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(f.error_func_called);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_until)
+{
+	readbuffer = "ccccc\r\ndd";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_COMPLETE_BUFFER);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 1);
+	BOOST_CHECK(f.read_len == 7);
+	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer, f.read_len) == 0);
 }

@@ -222,7 +222,7 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 			bs->read_ptr += diff;
 			return diff;
 		} else {
-			haystack = bs->write_ptr - needle_length - 1;
+			haystack += unread_bytes(bs);
 			ssize_t read = fill_buffer(bs, 1);
 			if (read <= 0) {
 				return read;
