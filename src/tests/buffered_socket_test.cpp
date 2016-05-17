@@ -364,7 +364,7 @@ struct F {
 	{
 	}
 
-	int readcallback_called;
+	size_t readcallback_called;
 	bool error_func_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
@@ -636,6 +636,20 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 	BOOST_CHECK(f.bs.write_ptr - f.bs.read_ptr == 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_read_exactly_buffer_wrap)
+{
+	for (unsigned int chunk_size = 1; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
+		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1; 
+		char buffer[chunk_size * chunks];
+		::memset(buffer, 0, sizeof(buffer));
+		readbuffer_length = sizeof(buffer);
+		F f(READ_COMPLETE_BUFFER);
+		int ret = read_exactly(&f.bs, chunk_size, f.read_callback, &f);
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(f.readcallback_called == chunks);
+	}
+}
+
 BOOST_AUTO_TEST_CASE(test_read_exactly_nearly_complete_buffer)
 {
 	F f(READ_FULL);
@@ -817,4 +831,24 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
+{
+	for (unsigned int chunk_size = 2; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
+		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1; 
+		char buffer[chunk_size * chunks];
+		::memset(buffer, 0, sizeof(buffer));
+		for (unsigned int j = 0; j < chunks; j++) {
+			unsigned int index = (chunk_size * j) + (chunk_size - 2);
+			buffer[index] = '\r';
+			buffer[index + 1] = '\n';
+		}
+		readbuffer = buffer;
+		readbuffer_length = sizeof(buffer);
+		F f(READ_COMPLETE_BUFFER);
+		int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+		BOOST_CHECK(ret == 0);
+		BOOST_CHECK(f.readcallback_called == chunks);
+	}
 }
