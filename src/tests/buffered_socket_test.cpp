@@ -210,8 +210,9 @@ extern "C" {
 		{
 			if (readbuffer_length > 0) {
 				size_t len = MIN(readbuffer_length, count);
+				memcpy(buf, readbuffer_ptr, len);
 				readbuffer_length -= len;
-				memcpy(buf, readbuffer, len);
+				readbuffer_ptr += len;
 				return len;
 			} else {
 				errno = EWOULDBLOCK;
@@ -336,7 +337,7 @@ struct F {
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
-		readbuffer_ptr = read_buffer;
+		readbuffer_ptr = readbuffer;
 		read_called = 0;
 		readcallback_called = 0;
 		error_func_called = false;
@@ -798,4 +799,22 @@ BOOST_AUTO_TEST_CASE(test_read_until_more_than_buffer)
 	F f(READ_COMPLETE_BUFFER);
 	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == IO_TOOMUCHDATA);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
+{
+	char buffer[2 * CONFIG_MAX_MESSAGE_SIZE];
+	::memset(buffer, 0, sizeof(buffer));
+	::memset(buffer, 'g', CONFIG_MAX_MESSAGE_SIZE - 5);
+	buffer[CONFIG_MAX_MESSAGE_SIZE - 4] = '\r';
+	buffer[CONFIG_MAX_MESSAGE_SIZE - 3] = '\n';
+	::memset(buffer + CONFIG_MAX_MESSAGE_SIZE - 2, 'f', 8);
+	buffer[CONFIG_MAX_MESSAGE_SIZE + 6] = '\r';
+	buffer[CONFIG_MAX_MESSAGE_SIZE + 7] = '\n';
+	readbuffer = buffer;
+	readbuffer_length = sizeof(buffer);
+	F f(READ_COMPLETE_BUFFER);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 2);
 }

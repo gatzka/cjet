@@ -159,7 +159,7 @@ static inline size_t unread_bytes(const struct buffered_socket *bs)
 
 static void reorganize_read_buffer(struct buffered_socket *bs)
 {
-	ptrdiff_t unread = bs->write_ptr - bs->read_ptr;
+	size_t unread = unread_bytes(bs);
 	if (unread != 0) {
 		memmove(bs->read_buffer, bs->read_ptr, (size_t)unread);
 		bs->write_ptr = bs->read_buffer + unread;
@@ -222,8 +222,8 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union reader_cont
 			bs->read_ptr += diff;
 			return diff;
 		} else {
-			haystack += unread_bytes(bs);
 			ssize_t read = fill_buffer(bs, 1);
+			haystack = bs->read_ptr;
 			if (read <= 0) {
 				return read;
 			}
