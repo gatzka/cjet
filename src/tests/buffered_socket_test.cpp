@@ -761,3 +761,13 @@ BOOST_AUTO_TEST_CASE(test_read_until_twice)
 	BOOST_CHECK(f.read_len == 8);
 	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer + 5, f.read_len) == 0);
 }
+
+BOOST_AUTO_TEST_CASE(test_read_until_more_than_buffer)
+{
+	const char buffer[CONFIG_MAX_MESSAGE_SIZE + 1] = {0};
+	readbuffer = buffer;
+	readbuffer_length = sizeof(buffer);
+	F f(READ_COMPLETE_BUFFER);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == IO_TOOMUCHDATA);
+}
