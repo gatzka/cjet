@@ -835,19 +835,22 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 
 BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
 {
-	for (unsigned int chunk_size = 2; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
+	const char *needle = "\r\n";
+	size_t needle_length = ::strlen(needle);
+	for (unsigned int chunk_size = needle_length; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
 		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1; 
 		char buffer[chunk_size * chunks];
 		::memset(buffer, 0, sizeof(buffer));
 		for (unsigned int j = 0; j < chunks; j++) {
-			unsigned int index = (chunk_size * j) + (chunk_size - 2);
-			buffer[index] = '\r';
-			buffer[index + 1] = '\n';
+			unsigned int index = (chunk_size * j) + (chunk_size - needle_length);
+			for (unsigned int k = 0; k < needle_length; k++) {
+				buffer[index + k] = needle[k];
+			}
 		}
 		readbuffer = buffer;
 		readbuffer_length = sizeof(buffer);
 		F f(READ_COMPLETE_BUFFER);
-		int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+		int ret = read_until(&f.bs, needle, f.read_callback, &f);
 		BOOST_CHECK(ret == 0);
 		BOOST_CHECK(f.readcallback_called == chunks);
 	}
