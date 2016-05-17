@@ -774,6 +774,22 @@ BOOST_AUTO_TEST_CASE(test_read_until_twice)
 	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer + 5, f.read_len) == 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_read_until_complete_buffer)
+{
+	char buffer[CONFIG_MAX_MESSAGE_SIZE];
+	::memset(buffer, 'a', sizeof(buffer));
+	buffer[CONFIG_MAX_MESSAGE_SIZE -2] = '\r';
+	buffer[CONFIG_MAX_MESSAGE_SIZE -1] = '\n';
+	readbuffer = buffer;
+	readbuffer_length = sizeof(buffer);
+	F f(READ_COMPLETE_BUFFER);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 1);
+	BOOST_CHECK(f.read_len == CONFIG_MAX_MESSAGE_SIZE);
+	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer, f.read_len) == 0);
+}
+
 BOOST_AUTO_TEST_CASE(test_read_until_more_than_buffer)
 {
 	const char buffer[CONFIG_MAX_MESSAGE_SIZE + 1] = {0};
