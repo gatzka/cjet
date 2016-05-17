@@ -749,3 +749,15 @@ BOOST_AUTO_TEST_CASE(test_read_until)
 	BOOST_CHECK(f.read_len == 7);
 	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer, f.read_len) == 0);
 }
+
+BOOST_AUTO_TEST_CASE(test_read_until_twice)
+{
+	readbuffer = "eee\r\nffffff\r\n";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_COMPLETE_BUFFER);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 2);
+	BOOST_CHECK(f.read_len == 8);
+	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer + 5, f.read_len) == 0);
+}
