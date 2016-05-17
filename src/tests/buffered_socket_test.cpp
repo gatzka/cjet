@@ -855,3 +855,11 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
 		BOOST_CHECK(f.readcallback_called == chunks);
 	}
 }
+
+BOOST_AUTO_TEST_CASE(test_read_until_failing_ev_add)
+{
+	F f(READ_FAILING_EV_ADD);
+	int ret = read_until(&f.bs, "bla", f.read_callback, &f);
+	BOOST_CHECK(ret < 0);
+	BOOST_CHECK(f.readcallback_called == 0);
+}
