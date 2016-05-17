@@ -52,10 +52,11 @@ static const int READ_COMPLETE_BUFFER = 10;
 static const int READ_FULL = 11;
 static const int READ_CLOSE = 12;
 static const int READ_ERROR = 13;
-static const int READ_IN_CALLBACK = 14;
+static const int READ_EXACTLY_IN_CALLBACK = 14;
 static const int READ_FAILING_EV_ADD = 15;
 static const int READ_FROM_EVENTLOOP = 16;
 static const int READ_FROM_EVENTLOOP_FAIL = 17;
+static const int READ_UNTIL_IN_CALLBACK = 18;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -206,6 +207,7 @@ extern "C" {
 	int fake_read(int fd, void *buf, size_t count)
 	{
 		switch (fd) {
+		case READ_UNTIL_IN_CALLBACK:
 		case READ_COMPLETE_BUFFER:
 		{
 			if (readbuffer_length > 0) {
@@ -236,7 +238,7 @@ extern "C" {
 			}
 		}
 
-		case READ_IN_CALLBACK:
+		case READ_EXACTLY_IN_CALLBACK:
 		{
 			if (read_called == 0) {
 				read_called++;
@@ -355,8 +357,10 @@ struct F {
 		memcpy(f->read_buffer, buf, len);
 		f->read_len = len;
 		f->readcallback_called++;
-		if (f->bs.ev.context.fd == READ_IN_CALLBACK) {
+		if (f->bs.ev.context.fd == READ_EXACTLY_IN_CALLBACK) {
 			read_exactly(&f->bs, 2, read_callback, f);
+		} else if (f->bs.ev.context.fd == READ_UNTIL_IN_CALLBACK) {
+			read_until(&f->bs, "\n\r", read_callback, f);
 		}
 	}
 
@@ -708,7 +712,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_error)
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_read_in_callback)
 {
-	F f(READ_IN_CALLBACK);
+	F f(READ_EXACTLY_IN_CALLBACK);
 	size_t read_size = 4;
 	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
@@ -862,4 +866,16 @@ BOOST_AUTO_TEST_CASE(test_read_until_failing_ev_add)
 	int ret = read_until(&f.bs, "bla", f.read_callback, &f);
 	BOOST_CHECK(ret < 0);
 	BOOST_CHECK(f.readcallback_called == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_until_read_in_callback)
+{
+	readbuffer = "foo\r\nbar\n\r";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_UNTIL_IN_CALLBACK);
+	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 2);
+	BOOST_CHECK(f.read_len == 5);
+	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer + 5, f.read_len) == 0);
 }
