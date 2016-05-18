@@ -249,6 +249,12 @@ void buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *
 	bs->error_context = error_context;
 }
 
+int buffered_socket_close(struct buffered_socket *bs)
+{
+	bs->ev.loop->remove(&bs->ev);
+	return CLOSE(bs->ev.context.fd);
+}
+
 int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec, unsigned int count)
 {
 	struct iovec iov[count + 1];

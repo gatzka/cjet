@@ -304,6 +304,12 @@ extern "C" {
 			return -1;
 		}
 	}
+	
+	int fake_close(int fd)
+	{
+		(void)fd;
+		return 0;
+	}
 }
 
 static enum callback_return eventloop_fake_add(struct io_event *ev)
@@ -878,4 +884,11 @@ BOOST_AUTO_TEST_CASE(test_read_until_read_in_callback)
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len == 5);
 	BOOST_CHECK(::memcmp(f.read_buffer, readbuffer + 5, f.read_len) == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_close)
+{
+	F f(READ_COMPLETE_BUFFER);
+	int ret = buffered_socket_close(&f.bs);
+	BOOST_CHECK(ret == 0);
 }

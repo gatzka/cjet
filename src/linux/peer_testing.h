@@ -38,6 +38,7 @@ extern "C" {
 int fake_read(int fd, void *buf, size_t count);
 int fake_send(int fd, void *buf, size_t count, int flags);
 int fake_writev(int fd, const struct iovec *iov, int iovcnt);
+int fake_close(int fd);
 
 #ifdef __cplusplus
 }
@@ -46,6 +47,7 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt);
 #define READ fake_read
 #define SEND fake_send
 #define WRITEV fake_writev
+#define CLOSE fake_close
 #else
 
 #include <unistd.h>
@@ -55,6 +57,7 @@ int fake_writev(int fd, const struct iovec *iov, int iovcnt);
 #define READ read
 #define SEND send
 #define WRITEV writev
+#define CLOSE close
 
 #endif
 
