@@ -364,9 +364,9 @@ struct F {
 		f->read_len = len;
 		f->readcallback_called++;
 		if (f->bs.ev.context.fd == READ_EXACTLY_IN_CALLBACK) {
-			read_exactly(&f->bs, 2, read_callback, f);
+			buffered_socket_read_exactly(&f->bs, 2, read_callback, f);
 		} else if (f->bs.ev.context.fd == READ_UNTIL_IN_CALLBACK) {
-			read_until(&f->bs, "\n\r", read_callback, f);
+			buffered_socket_read_until(&f->bs, "\n\r", read_callback, f);
 		}
 	}
 
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly)
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
 
-	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
@@ -624,7 +624,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_some_more)
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
 
-	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len = 4);
@@ -638,7 +638,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
 
-	int ret = read_exactly(&f.bs, 4, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, 4, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = 4);
@@ -654,7 +654,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_buffer_wrap)
 		::memset(buffer, 0, sizeof(buffer));
 		readbuffer_length = sizeof(buffer);
 		F f(READ_COMPLETE_BUFFER);
-		int ret = read_exactly(&f.bs, chunk_size, f.read_callback, &f);
+		int ret = buffered_socket_read_exactly(&f.bs, chunk_size, f.read_callback, &f);
 		BOOST_CHECK(ret == 0);
 		BOOST_CHECK(f.readcallback_called == chunks);
 	}
@@ -664,7 +664,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_nearly_complete_buffer)
 {
 	F f(READ_FULL);
 	size_t read_size = CONFIG_MAX_MESSAGE_SIZE - 1;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = read_size);
@@ -679,7 +679,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_complete_buffer)
 {
 	F f(READ_FULL);
 	size_t read_size = CONFIG_MAX_MESSAGE_SIZE;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len = read_size);
@@ -693,7 +693,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_more_than_buffer)
 {
 	F f(READ_FULL);
 	size_t read_size = CONFIG_MAX_MESSAGE_SIZE + 1;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == IO_TOOMUCHDATA);
 }
 
@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close)
 {
 	F f(READ_CLOSE);
 	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == 0);
@@ -711,7 +711,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_error)
 {
 	F f(READ_ERROR);
 	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == IO_ERROR);
 	BOOST_CHECK(f.readcallback_called == 0);
 }
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_in_callback)
 {
 	F f(READ_EXACTLY_IN_CALLBACK);
 	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 }
@@ -729,7 +729,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_failing_ev_add)
 {
 	F f(READ_FAILING_EV_ADD);
 	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret < 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 }
@@ -739,7 +739,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
 	readbuffer = "aaaa";
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_FROM_EVENTLOOP);
-	int ret = read_exactly(&f.bs, ::strlen(readbuffer), f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, ::strlen(readbuffer), f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
@@ -752,7 +752,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
 {
 	F f(READ_FROM_EVENTLOOP_FAIL);
 	size_t read_size = 4;
-	int ret = read_exactly(&f.bs, read_size, f.read_callback, &f);
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(!f.error_func_called);
@@ -768,7 +768,7 @@ BOOST_AUTO_TEST_CASE(test_read_until)
 	readbuffer = "ccccc\r\ndd";
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == 7);
@@ -780,7 +780,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_pattern_at_begin)
 	readbuffer = "\r\ndd";
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == 2);
@@ -792,7 +792,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_twice)
 	readbuffer = "eee\r\nffffff\r\n";
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len == 8);
@@ -808,7 +808,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_complete_buffer)
 	readbuffer = buffer;
 	readbuffer_length = sizeof(buffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == CONFIG_MAX_MESSAGE_SIZE);
@@ -821,7 +821,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_more_than_buffer)
 	readbuffer = buffer;
 	readbuffer_length = sizeof(buffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == IO_TOOMUCHDATA);
 }
 
@@ -838,7 +838,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 	readbuffer = buffer;
 	readbuffer_length = sizeof(buffer);
 	F f(READ_COMPLETE_BUFFER);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 }
@@ -860,7 +860,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
 		readbuffer = buffer;
 		readbuffer_length = sizeof(buffer);
 		F f(READ_COMPLETE_BUFFER);
-		int ret = read_until(&f.bs, needle, f.read_callback, &f);
+		int ret = buffered_socket_read_until(&f.bs, needle, f.read_callback, &f);
 		BOOST_CHECK(ret == 0);
 		BOOST_CHECK(f.readcallback_called == chunks);
 	}
@@ -869,7 +869,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
 BOOST_AUTO_TEST_CASE(test_read_until_failing_ev_add)
 {
 	F f(READ_FAILING_EV_ADD);
-	int ret = read_until(&f.bs, "bla", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "bla", f.read_callback, &f);
 	BOOST_CHECK(ret < 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 }
@@ -879,7 +879,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_read_in_callback)
 	readbuffer = "foo\r\nbar\n\r";
 	readbuffer_length = ::strlen(readbuffer);
 	F f(READ_UNTIL_IN_CALLBACK);
-	int ret = read_until(&f.bs, "\r\n", f.read_callback, &f);
+	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 2);
 	BOOST_CHECK(f.read_len == 5);

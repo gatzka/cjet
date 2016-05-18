@@ -317,7 +317,7 @@ int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec,
 	return send_buffer(bs);
 }
 
-int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
@@ -337,7 +337,7 @@ int read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(v
 	}
 }
 
-int read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);
