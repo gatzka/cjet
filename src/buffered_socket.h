@@ -66,7 +66,7 @@ struct buffered_socket_io_vector {
 	size_t iov_len;
 };
 
-void buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
+void buffered_socket_init(struct buffered_socket *bs, int fd, const struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(struct buffered_socket *bs);
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count);
 
