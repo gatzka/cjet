@@ -241,7 +241,6 @@ void buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *
 
 	bs->to_write = 0;
 	bs->read_ptr = bs->read_buffer;
-	bs->examined_ptr = bs->read_buffer;
 	bs->write_ptr = bs->read_buffer;
 
 	bs->reader = NULL;

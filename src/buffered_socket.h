@@ -49,7 +49,6 @@ struct buffered_socket {
 	struct io_event ev;
 	unsigned int to_write;
 	char *read_ptr;
-	char *examined_ptr;
 	char *write_ptr;
 	char *write_buffer_ptr;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
