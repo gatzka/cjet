@@ -48,24 +48,21 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 	for (int i = 0; i < num_events; ++i) {
 		struct io_event *ev = events[i].data.ptr;
 
-		if (unlikely((events[i].events & EPOLLERR) ||
-				(events[i].events & EPOLLHUP))) {
+		if (unlikely((events[i].events & ~(EPOLLIN | EPOLLOUT)) != 0)) {
 			if (ev->error_function(&ev->context) == ABORT_LOOP) {
 				return ABORT_LOOP;
 			}
 		} else {
+			if (events[i].events & EPOLLOUT) {
+				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
+					return ABORT_LOOP;
+				}
+			}
 			if (events[i].events & EPOLLIN) {
 				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) == ABORT_LOOP)) {
 					return ABORT_LOOP;
 				}
 			} 
-			if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
-					return ABORT_LOOP;
-				}
-			} else {
-				return ABORT_LOOP;
-			}
 		}
 	}
 	return CONTINUE_LOOP;
