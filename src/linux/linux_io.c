@@ -133,10 +133,7 @@ static void handle_new_jet_connection(const struct eventloop *loop, int fd)
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
-		return;
 	}
-
-	return;
 }
 
 static void handle_new_jetws_connection(const struct eventloop *loop ,int fd)
@@ -148,9 +145,7 @@ static void handle_new_jetws_connection(const struct eventloop *loop ,int fd)
 	if (unlikely(p == NULL)) {
 		log_err("Could not allocate websocket jet peer!\n");
 		close(fd);
-		return;
 	}
-	return;
 }
 
 static enum callback_return accept_common(const struct eventloop *loop, union io_context *io,  void (*peer_function)(const struct eventloop*, int fd))

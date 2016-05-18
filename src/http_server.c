@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <errno.h>
 #include <limits.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -41,6 +42,7 @@
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
+#include "linux/peer_testing.h"
 #include "sha1/sha1.h"
 #include "util.h"
 
@@ -273,6 +275,140 @@ void http_init(struct ws_peer *p)
 	p->parser_settings.on_header_value = on_header_value;
 
 	http_parser_init(&p->parser, HTTP_REQUEST);
+}
+
+
+static inline ptrdiff_t free_space(const struct socket_peer *p)
+{
+	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->write_ptr;
+}
+
+static inline ptrdiff_t unread_space(const struct socket_peer *p)
+{
+	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->read_ptr;
+}
+
+void reorganize_read_buffer(struct socket_peer *p)
+{
+	ptrdiff_t unread = p->write_ptr - p->read_ptr;
+	if (unread != 0) {
+		memmove(p->read_buffer, p->read_ptr, (size_t)unread);
+		p->write_ptr = p->read_buffer + unread;
+	} else {
+		p->write_ptr = p->read_buffer;
+	}
+	p->read_ptr = p->read_buffer;
+}
+
+ssize_t get_read_ptr(struct socket_peer *p, unsigned int count, char **read_ptr)
+{
+	if (unlikely((ptrdiff_t)count > unread_space(p))) {
+		log_err("peer asked for too much data: %u!\n", count);
+		*read_ptr = NULL;
+		return IO_TOOMUCHDATA;
+	}
+	while (1) {
+		ptrdiff_t diff = p->write_ptr - p->read_ptr;
+		if (diff >= (ptrdiff_t)count) {
+			*read_ptr = p->read_ptr;
+			p->read_ptr += count;
+			return diff;
+		}
+
+		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
+		if (unlikely(read_length == 0)) {
+			*read_ptr = NULL;
+			return IO_CLOSE;
+		}
+		if (read_length == -1) {
+			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+				*read_ptr = NULL;
+				return IO_ERROR;
+			}
+			*read_ptr = NULL;
+			return IO_WOULD_BLOCK;
+		}
+		p->write_ptr += read_length;
+	}
+	*read_ptr = NULL;
+	return IO_ERROR;
+}
+
+static int send_buffer(struct socket_peer *p)
+{
+	char *write_buffer_ptr = p->write_buffer;
+	while (p->to_write != 0) {
+		ssize_t written;
+		written =
+			SEND(p->ev.context.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
+		if (unlikely(written == -1)) {
+			if (unlikely((errno != EAGAIN) &&
+				(errno != EWOULDBLOCK))) {
+				log_err("unexpected write error: %s!", strerror(errno));
+				return -1;
+			}
+			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
+			return 0;
+		}
+		write_buffer_ptr += written;
+		p->to_write -= written;
+	}
+	return 0;
+}
+
+enum callback_return write_msg(union io_context *context)
+{
+	struct io_event *ev = container_of(context, struct io_event, context);
+	struct socket_peer *s_peer = container_of(ev, struct socket_peer, ev);
+
+	int ret = send_buffer(s_peer);
+	if (unlikely(ret < 0)) {
+		s_peer->peer.close(&s_peer->peer);
+	}
+	 return CONTINUE_LOOP;
+}
+
+ssize_t read_cr_lf_line(struct socket_peer *p, const char **read_ptr)
+{
+	while (1) {
+		while (p->examined_ptr < p->write_ptr) {
+			if ((p->op == READ_CR) && (*p->examined_ptr == '\n')) {
+				*read_ptr = p->read_ptr;
+				ptrdiff_t diff = p->examined_ptr - p->read_ptr + 1;
+				p->read_ptr += diff;
+				p->op = READ_MSG;
+				return diff;
+			} else {
+				p->op = READ_MSG;
+			}
+			if (*p->examined_ptr == '\r') {
+				p->op = READ_CR;
+			}
+			p->examined_ptr++;
+		}
+
+		if (free_space(p) == 0) {
+			log_err("Read buffer too small for a complete line!");
+			*read_ptr = NULL;
+			return IO_BUFFERTOOSMALL;
+		}
+		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
+		if (unlikely(read_length == 0)) {
+			*read_ptr = NULL;
+			return IO_CLOSE;
+		}
+		if (read_length == -1) {
+			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
+				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+				*read_ptr = NULL;
+				return IO_ERROR;
+			}
+			*read_ptr = NULL;
+			return IO_WOULD_BLOCK;
+		}
+		p->write_ptr += read_length;
+	}
 }
 
 static int ws_get_header(struct ws_peer *p)
