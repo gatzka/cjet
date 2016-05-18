@@ -40,7 +40,7 @@ extern "C" {
 #define IO_ERROR -2
 #define IO_TOOMUCHDATA -3
 
-union reader_context {
+union buffered_socket_reader_context {
 	const char *ptr;
 	size_t num;
 };
@@ -54,22 +54,22 @@ struct buffered_socket {
 	char *write_buffer_ptr;
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
-	ssize_t (*reader)(struct buffered_socket *bs, union reader_context reader_context, char **read_ptr);
-	union reader_context reader_context;
+	ssize_t (*reader)(struct buffered_socket *bs, union buffered_socket_reader_context reader_context, char **read_ptr);
+	union buffered_socket_reader_context reader_context;
 	void (*read_callback)(void *context, char *buf, ssize_t len);
 	void *read_callback_context;
 	void (*error)(void *error_context);
 	void *error_context;
 };
 
-struct io_vector {
+struct buffered_socket_io_vector {
 	const void *iov_base;
 	size_t iov_len;
 };
 
 void buffered_socket_init(struct buffered_socket *bs, int fd, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(struct buffered_socket *bs);
-int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec, unsigned int count);
+int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count);
 
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);

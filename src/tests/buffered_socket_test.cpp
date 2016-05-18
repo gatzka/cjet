@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 
 	F f(WRITEV_COMPLETE_WRITE);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -407,7 +407,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 
 	F f(WRITEV_EINVAL);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks)
 	static const char *send_buffer = "HelloWorld";
 	static const size_t first_chunk_size = 6;
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_part_send_blocks_first_chunk_sm
 	static const char *send_buffer = "I want to break free";
 	static const size_t first_chunk_size = 4;
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -461,7 +461,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks)
 
 	F f(WRITEV_BLOCKS);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -477,7 +477,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_too_small)
 
 	F f(WRITEV_BLOCKS);
 
-	struct io_vector vec[1];
+	struct buffered_socket_io_vector vec[1];
 	vec[0].iov_base = buffer;
 	vec[0].iov_len = sizeof(buffer);
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_blocks_buffer_fits)
 
 	F f(WRITEV_BLOCKS);
 
-	struct io_vector vec[1];
+	struct buffered_socket_io_vector vec[1];
 	vec[0].iov_base = buffer;
 	vec[0].iov_len = sizeof(buffer);
 	int ret = buffered_socket_writev(&f.bs, vec, ARRAY_SIZE(vec));
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_single)
 
 	F f(WRITEV_PART_SEND_SINGLE_BYTES);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -525,7 +525,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts)
 
 	F f(WRITEV_PART_SEND_PARTS);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -545,7 +545,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_fails)
 
 	F f(WRITEV_PART_SEND_FAILS);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -563,7 +563,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 
 	F f(WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;
@@ -588,7 +588,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 
 	F f(WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS);
 
-	struct io_vector vec[2];
+	struct buffered_socket_io_vector vec[2];
 	vec[0].iov_base = send_buffer;
 	vec[0].iov_len = first_chunk_size;
 	vec[1].iov_base = send_buffer + first_chunk_size;

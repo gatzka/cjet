@@ -130,7 +130,7 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 	return 0;
 }
 
-static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct io_vector *io_vec, unsigned int count, size_t iovec_written)
+static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct buffered_socket_io_vector *io_vec, unsigned int count, size_t iovec_written)
 {
 	for (unsigned int i = 0; i < count; i++) {
 		if (iovec_written < io_vec[i].iov_len) {
@@ -193,7 +193,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 	return read_length;
 }
 
-static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx, char **read_ptr)
+static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
 {
 	size_t count = ctx.num;
 	while (1) {
@@ -209,7 +209,7 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union reader_context ctx
 	}
 }
 
-static ssize_t internal_read_until(struct buffered_socket *bs, union reader_context ctx, char **read_ptr)
+static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
 {
 	const char *haystack = bs->read_ptr;
 	const char *needle = ctx.ptr;
@@ -255,7 +255,7 @@ int buffered_socket_close(struct buffered_socket *bs)
 	return CLOSE(bs->ev.context.fd);
 }
 
-int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec, unsigned int count)
+int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
 	struct iovec iov[count + 1];
 	size_t to_write = bs->to_write;
@@ -319,7 +319,7 @@ int buffered_socket_writev(struct buffered_socket *bs, struct io_vector *io_vec,
 
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
-	union reader_context ctx = { .num = num };
+	union buffered_socket_reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
 	bs->reader = get_read_ptr;
 	bs->reader_context = ctx;
@@ -339,7 +339,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*
 
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
-	union reader_context ctx = { .ptr = delim };
+	union buffered_socket_reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);
 	bs->reader = internal_read_until;
 	bs->reader_context = ctx;
