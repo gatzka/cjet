@@ -30,21 +30,24 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "buffered_socket.h"
 #include "eventloop.h"
 #include "peer.h"
 
+//TODO: take out
 #define READ_MSG_LENGTH 0
 #define READ_MSG 1
 #define READ_CR 2
 
+//TODO: take out
 #define IO_CLOSE -1
-#define IO_WOULD_BLOCK -2
-#define IO_ERROR -3
-#define IO_TOOMUCHDATA -4
 #define IO_BUFFERTOOSMALL -5
 
 struct socket_peer {
 	struct peer peer;
+	struct buffered_socket bs;
+	
+	
 	struct io_event ev;
 	int op;
 	unsigned int to_write;

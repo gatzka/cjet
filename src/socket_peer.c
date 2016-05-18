@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "compiler.h"
+#include "buffered_socket.h"
 #include "generated/cjet_config.h"
 #include "eventloop.h"
 #include "jet_endian.h"
@@ -140,6 +141,7 @@ ssize_t read_cr_lf_line(struct socket_peer *p, const char **read_ptr)
 	}
 }
 
+#if 0
 static int read_msg_length(struct socket_peer *p)
 {
 	uint32_t message_length;
@@ -178,7 +180,6 @@ static int read_msg(struct socket_peer *p)
 		return 1;
 	}
 }
-
 static enum callback_return handle_all_peer_operations(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
@@ -209,6 +210,7 @@ static enum callback_return handle_all_peer_operations(union io_context *context
 		}
 	}
 }
+#endif
 
 static int send_buffer(struct socket_peer *p)
 {
@@ -244,15 +246,14 @@ enum callback_return write_msg(union io_context *context)
 	 return CONTINUE_LOOP;
 }
 
-static void free_jet_peer(const struct eventloop *loop, struct socket_peer *p)
+static void free_jet_peer(struct socket_peer *p)
 {
-	int fd = p->ev.context.fd;
-	loop->remove(&p->ev);
 	free_peer(&p->peer);
+	buffered_socket_close(&p->bs);
 	free(p);
-	close(fd);
 }
 
+#if 0
 static enum callback_return free_peer_on_error(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
@@ -260,11 +261,38 @@ static enum callback_return free_peer_on_error(union io_context *context)
 	free_jet_peer(ev->loop, p);
 	return CONTINUE_LOOP;
 }
+#endif
+static void free_peer_on_error(void *context)
+{
+	struct socket_peer *p = (struct socket_peer *)context;
+	free_jet_peer(p);
+}
 
 static void close_jet_peer(struct peer *p)
 {
 	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
-	free_jet_peer(s_peer->ev.loop, s_peer);
+	free_jet_peer(s_peer);
+}
+
+static void read_msg_length(void *context, char *buf, ssize_t len);
+
+static void read_msg(void *context, char *buf, ssize_t len)
+{
+	// TODO: error handling if len <= 0
+	struct socket_peer *p = (struct socket_peer *)context;
+	int ret = parse_message(buf, len, &p->peer);
+	(void)ret;
+	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
+}
+
+static void read_msg_length(void *context, char *buf, ssize_t len)
+{
+	// TODO: error handling if len <= 0
+	struct socket_peer *p = (struct socket_peer *)context;
+	uint32_t message_length;
+	memcpy(&message_length, buf, len);
+	message_length = ntohl(message_length);
+	buffered_socket_read_exactly(&p->bs, message_length, read_msg, p);
 }
 
 static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
@@ -272,11 +300,17 @@ static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p,
 	init_peer(&p->peer);
 	p->peer.send_message = send_message;
 	p->peer.close = close_jet_peer;
+	
+	buffered_socket_init(&p->bs, fd, loop, free_peer_on_error, p);
 
+	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
+	// TODO start reading messages
+	return 0;
+#if 0
 	p->ev.context.fd = fd;
 	p->ev.read_function = handle_all_peer_operations;
 	p->ev.write_function = write_msg;
-	p->ev.error_function = free_peer_on_error;
+//	p->ev.error_function = free_peer_on_error;
 	p->ev.loop = loop;
 
 	p->op = READ_MSG_LENGTH;
@@ -291,6 +325,7 @@ static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p,
 	} else {
 		return 0;
 	}
+#endif
 }
 
 struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
