@@ -84,11 +84,8 @@ static int go_reading(struct buffered_socket *bs)
 static enum callback_return error_function(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
-	ev->loop->remove(ev);
-
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	bs->error(bs->error_context);
-
 	return CONTINUE_LOOP;
 }
 
@@ -161,7 +158,7 @@ static void reorganize_read_buffer(struct buffered_socket *bs)
 {
 	size_t unread = unread_bytes(bs);
 	if (unread != 0) {
-		memmove(bs->read_buffer, bs->read_ptr, (size_t)unread);
+		memmove(bs->read_buffer, bs->read_ptr, unread);
 		bs->write_ptr = bs->read_buffer + unread;
 	} else {
 		bs->write_ptr = bs->read_buffer;
