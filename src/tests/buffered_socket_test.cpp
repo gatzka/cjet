@@ -57,6 +57,7 @@ static const int READ_FAILING_EV_ADD = 15;
 static const int READ_FROM_EVENTLOOP = 16;
 static const int READ_FROM_EVENTLOOP_FAIL = 17;
 static const int READ_UNTIL_IN_CALLBACK = 18;
+static const int READ_CLOSE_FROM_EVENTLOOP = 19;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -270,6 +271,17 @@ extern "C" {
 					errno = EWOULDBLOCK;
 					return -1;
 				}
+			}
+		}
+			
+		case READ_CLOSE_FROM_EVENTLOOP:
+		{
+			if (read_called == 0) {
+				read_called++;
+				errno = EWOULDBLOCK;
+				return -1;
+			} else  {
+				return 0;
 			}
 		}
 
@@ -745,6 +757,20 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
 
 	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(f.readcallback_called == 1);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_exactly_read_close_from_eventloop)
+{
+	readbuffer = "aaaa";
+	readbuffer_length = ::strlen(readbuffer);
+	F f(READ_CLOSE_FROM_EVENTLOOP);
+	int ret = buffered_socket_read_exactly(&f.bs, ::strlen(readbuffer), f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 0);
+
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	BOOST_CHECK(cb_ret == IO_REMOVED);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
 

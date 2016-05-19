@@ -67,11 +67,7 @@ static int go_reading(struct buffered_socket *bs)
 		char *buffer;
 		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
 		if (len < 0) {
-			if (unlikely(len != IO_WOULD_BLOCK)) {
-				return len;
-			} else {
-				return 0;
-			}
+			return len;
 		} else {
 			bs->read_callback(bs->read_callback_context, buffer, len);
 			if (unlikely(len == 0)) {
@@ -94,11 +90,14 @@ static enum callback_return read_function(union io_context *context)
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	int ret = go_reading(bs);
-	if (unlikely(ret < 0)) {
+	if (unlikely((ret < 0) && (ret != IO_WOULD_BLOCK))) {
 		error_function(context);
 	}
-
-	return CONTINUE_LOOP;
+	if (ret == 0) {
+		return IO_REMOVED;
+	} else {
+		return CONTINUE_LOOP;
+	}
 }
 
 static enum callback_return write_function(union io_context *context)
@@ -329,7 +328,11 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*
 	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
 		return -1;
 	} else {
-		return go_reading(bs);
+		int ret = go_reading(bs);
+		if (ret == IO_WOULD_BLOCK) {
+			ret = 0;
+		}
+		return ret;
 	}
 }
 
@@ -349,6 +352,10 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, vo
 	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
 		return -1;
 	} else {
-		return go_reading(bs);
+		int ret = go_reading(bs);
+		if (ret == IO_WOULD_BLOCK) {
+			ret = 0;
+		}
+		return ret;
 	}
 }

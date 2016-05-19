@@ -53,16 +53,28 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 				return ABORT_LOOP;
 			}
 		} else {
-			if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL) && (ev->write_function(&ev->context) == ABORT_LOOP)) {
-					return ABORT_LOOP;
+			if (events[i].events & EPOLLIN) {
+				if (likely(ev->read_function != NULL)) {
+					enum callback_return ret = ev->read_function(&ev->context);
+					if (unlikely(ret == ABORT_LOOP)) {
+						return ABORT_LOOP;
+					}
+					if (unlikely(ret == IO_REMOVED)) {
+						continue;
+					}
 				}
 			}
-			if (events[i].events & EPOLLIN) {
-				if (likely(ev->read_function != NULL)  && (ev->read_function(&ev->context) == ABORT_LOOP)) {
-					return ABORT_LOOP;
+			if (events[i].events & EPOLLOUT) {
+				if (likely(ev->write_function != NULL)) {
+					enum callback_return ret = ev->write_function(&ev->context);
+					if (unlikely(ret == ABORT_LOOP)) {
+						return ABORT_LOOP;
+					}
+					if (unlikely(ret == IO_REMOVED)) {
+						continue;
+					}
 				}
-			} 
+			}
 		}
 	}
 	return CONTINUE_LOOP;
