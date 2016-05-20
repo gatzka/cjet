@@ -29,9 +29,11 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/types.h>
 
 #include "base64.h"
+#include "buffered_socket.h"
 #include "compiler.h"
 #include "jet_endian.h"
 #include "jet_string.h"
@@ -258,7 +260,7 @@ static const char *get_response(unsigned int status_code)
 	}
 }
 
-static int send_http_error_response(struct ws_peer *ws_peer, unsigned int status_code)
+static int send_http_error_response_old(struct ws_peer *ws_peer, unsigned int status_code)
 {
 	const char *response = get_response(status_code);
 	struct peer *p = &ws_peer->s_peer.peer;
@@ -662,7 +664,7 @@ enum callback_return handle_ws_upgrade(union io_context *ctx)
 		if (line_length > 0) {
 			size_t nparsed = http_parser_execute(&ws_peer->parser, &ws_peer->parser_settings, line_ptr, line_length);
 			if (nparsed != (size_t)line_length) {
-				send_http_error_response(ws_peer, 400);
+				send_http_error_response_old(ws_peer, 400);
 				p->peer.close(&p->peer);
 				return CONTINUE_LOOP;
 			} else if (ws_peer->parser.upgrade) {
@@ -684,4 +686,68 @@ enum callback_return handle_ws_upgrade(union io_context *ctx)
 
 	p->ev.read_function = handle_ws_protocol;
 	return handle_ws_protocol(ctx);
+}
+
+static void free_server(struct http_server *server)
+{
+	buffered_socket_close(&server->bs);
+	free(server);
+}
+
+static void free_server_on_error(void *context)
+{
+	struct http_server *server = (struct http_server *)context;
+	free_server(server);
+}
+
+static int send_http_error_response(struct http_server *server, unsigned int status_code)
+{
+	const char *response = get_response(status_code);
+	struct buffered_socket_io_vector iov;
+	iov.iov_base = response;
+	iov.iov_len = strlen(response);
+	return buffered_socket_writev(&server->bs, &iov, 1);
+}
+
+static void read_start_line(void *context, char *buf, ssize_t len)
+{
+	struct http_server *server = (struct http_server *)context;
+
+	if (likely(len > 0)) {
+		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
+		
+		if (nparsed != (size_t)len) {
+			send_http_error_response(server, 400);
+			free_server(server);
+		}
+	} else {
+		if (len < 0) {
+			log_err("Error while reading start line!\n");
+		}
+		free_server(server);
+	}
+}
+
+static void init_http_server(struct http_server *server, const struct eventloop *loop, int fd)
+{
+	http_parser_settings_init(&server->parser_settings);
+	server->parser_settings.on_message_begin = on_message_begin;
+	server->parser_settings.on_message_complete = on_message_complete;
+	server->parser_settings.on_headers_complete = on_headers_complete;
+	server->parser_settings.on_header_field = on_header_field;
+	server->parser_settings.on_header_value = on_header_value;
+
+	http_parser_init(&server->parser, HTTP_REQUEST);
+	buffered_socket_init(&server->bs, fd, loop, free_server_on_error, server);
+	buffered_socket_read_until(&server->bs, CRLF, read_start_line, server);
+}
+
+struct http_server *alloc_http_server(const struct eventloop *loop, int fd)
+{
+	struct http_server *server = malloc(sizeof(*server));
+	if (unlikely(server == NULL)) {
+		return NULL;
+	}
+	init_http_server(server, loop, fd);
+	return server;
 }

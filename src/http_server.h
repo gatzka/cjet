@@ -27,9 +27,25 @@
 #ifndef CJET_HTTP_SERVER_H
 #define CJET_HTTP_SERVER_H
 
+#include "buffered_socket.h"
 #include "eventloop.h"
 #include "peer.h"
 #include "websocket_peer.h"
+
+struct request_target_handler {
+	int tmp;
+};
+
+struct http_server {
+	struct buffered_socket bs;
+	http_parser parser;
+	http_parser_settings parser_settings;
+	unsigned int number_of_req_handlers;
+	const struct request_target_handler *req_handler;
+};
+
+struct http_server *alloc_http_server(const struct eventloop *loop, int fd);
+
 
 void http_init(struct ws_peer *p);
 enum callback_return handle_ws_upgrade(union io_context *context);

@@ -97,15 +97,13 @@ static void read_msg_length(void *context, char *buf, ssize_t len)
 	}
 }
 
-static int init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
+static void init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
 {
 	init_peer(&p->peer);
 	p->peer.send_message = send_message;
 	p->peer.close = close_jet_peer;
 	buffered_socket_init(&p->bs, fd, loop, free_peer_on_error, p);
 	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
-
-	return 0;
 }
 
 struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
@@ -114,12 +112,8 @@ struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	if (init_socket_peer(loop, p, fd) < 0) {
-		free(p);
-		return NULL;
-	} else {
-		return p;
-	}
+	init_socket_peer(loop, p, fd);
+	return p;
 }
 
 int send_message(struct peer *p, const char *rendered, size_t len)
