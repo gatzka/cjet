@@ -41,6 +41,7 @@
 #include "compiler.h"
 #include "jet_endian.h"
 #include "eventloop.h"
+#include "http_server.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
@@ -153,9 +154,9 @@ static void handle_http(const struct eventloop *loop ,int fd)
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct ws_peer *p = alloc_wsjet_peer(loop, fd);
-	if (unlikely(p == NULL)) {
-		log_err("Could not allocate websocket jet peer!\n");
+	struct http_server *server = alloc_http_server(loop, fd);
+	if (unlikely(server == NULL)) {
+		log_err("Could not allocate http server!\n");
 		close(fd);
 	}
 }
@@ -191,14 +192,14 @@ static enum callback_return accept_jet_error(union io_context *io)
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_jetws(union io_context *io)
+enum callback_return accept_jetws(union io_context *io);
+enum callback_return accept_jetws(union io_context *io)
 {
 	struct io_event *ev = container_of(io, struct io_event, context);
 	return accept_common(ev->loop, io, handle_new_jetws_connection);
 }
 
-enum callback_return accept_http(union io_context *io);
-enum callback_return accept_http(union io_context *io)
+static enum callback_return accept_http(union io_context *io)
 {
 	struct io_event *ev = container_of(io, struct io_event, context);
 	return accept_common(ev->loop, io, handle_http);
@@ -355,8 +356,8 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto eventloop_destroy;
 	}
 
-	struct server *jetws_server = create_server(loop, CONFIG_JETWS_PORT, accept_jetws, accept_jetws_error);
-	if (jetws_server == NULL) {
+	struct server *http_server = create_server(loop, CONFIG_JETWS_PORT, accept_http, accept_jetws_error);
+	if (http_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 		goto delete_jet_server;
@@ -365,15 +366,15 @@ int run_io(const struct eventloop *loop, const char *user_name)
 	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
-		goto delete_jetws_server;
+		goto delete_http_server;
 	}
 
 	ret = loop->run(&go_ahead);
 
 	destroy_all_peers();
 
-delete_jetws_server:
-	delete_server(jetws_server);
+delete_http_server:
+	delete_server(http_server);
 delete_jet_server:
 	delete_server(jet_server);
 eventloop_destroy:

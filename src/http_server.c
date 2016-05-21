@@ -168,6 +168,20 @@ static int check_connection_upgrade(const char *at, size_t length)
 	}
 }
 
+static int on_url(http_parser *parser, const char *at, size_t length)
+{
+	(void)parser;
+	(void)at;
+	(void)length;
+
+	struct http_parser_url u;
+	http_parser_url_init(&u);
+	int ret = http_parser_parse_url(at, length, 0, &u);
+	(void)ret;
+
+	return 0;
+}
+
 static int on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
@@ -709,6 +723,30 @@ static int send_http_error_response(struct http_server *server, unsigned int sta
 	return buffered_socket_writev(&server->bs, &iov, 1);
 }
 
+static void read_header_line(void *context, char *buf, ssize_t len)
+{
+	struct http_server *server = (struct http_server *)context;
+
+	if (likely(len > 0)) {
+		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
+
+		if (nparsed != (size_t)len) {
+			send_http_error_response(server, 400);
+			free_server(server);
+		} else if (server->parser.upgrade) {
+		  /* handle new protocol */
+			//buffered_socket_read_exactly(&server->bs, 1, ws_get_header, newly_allocated ws_peer);
+		} else {
+			buffered_socket_read_until(&server->bs, CRLF, read_header_line, server);
+		}
+	} else {
+		if (len < 0) {
+			log_err("Error while reading header line!\n");
+		}
+		free_server(server);
+	}
+}
+
 static void read_start_line(void *context, char *buf, ssize_t len)
 {
 	struct http_server *server = (struct http_server *)context;
@@ -720,6 +758,8 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 			send_http_error_response(server, 400);
 			free_server(server);
 		}
+
+		buffered_socket_read_until(&server->bs, CRLF, read_header_line, server);
 	} else {
 		if (len < 0) {
 			log_err("Error while reading start line!\n");
@@ -730,12 +770,14 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 
 static void init_http_server(struct http_server *server, const struct eventloop *loop, int fd)
 {
+	//TODO: Use only required callbacks
 	http_parser_settings_init(&server->parser_settings);
 	server->parser_settings.on_message_begin = on_message_begin;
 	server->parser_settings.on_message_complete = on_message_complete;
 	server->parser_settings.on_headers_complete = on_headers_complete;
 	server->parser_settings.on_header_field = on_header_field;
 	server->parser_settings.on_header_value = on_header_value;
+	server->parser_settings.on_url = on_url;
 
 	http_parser_init(&server->parser, HTTP_REQUEST);
 	buffered_socket_init(&server->bs, fd, loop, free_server_on_error, server);
