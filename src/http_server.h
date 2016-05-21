@@ -36,6 +36,14 @@ struct http_server {
 	struct buffered_socket bs;
 	http_parser parser;
 	http_parser_settings parser_settings;
+
+	// TODO:Websocket specific stuff, should be factored out
+	struct {
+		unsigned int header_upgrade: 1;
+		unsigned int connection_upgrade: 1;
+	} flags;
+	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
+	enum header_field current_header_field;
 };
 
 struct http_server *alloc_http_server(const struct eventloop *loop, int fd);

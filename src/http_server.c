@@ -50,17 +50,9 @@
 
 #define  CRLF  "\r\n"
 
-static int on_message_begin(http_parser *parser)
-{
-	(void)parser;
-	return 0;
-}
-
-static int on_message_complete(http_parser *parser)
-{
-	(void)parser;
-	return 0;
-}
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
 
 static int check_http_version(const struct http_parser *parser)
 {
@@ -74,7 +66,7 @@ static int check_http_version(const struct http_parser *parser)
 	}
 }
 
-static int send_upgrade_response(struct ws_peer *p)
+static int old_send_upgrade_response(struct ws_peer *p)
 {
 	char accept_value[28];
 	struct SHA1Context context;
@@ -98,7 +90,7 @@ static int send_upgrade_response(struct ws_peer *p)
 	return ret;
 }
 
-static int on_headers_complete(http_parser *parser)
+static int old_on_headers_complete(http_parser *parser)
 {
 	if (check_http_version(parser) < 0) {
 		return -1;
@@ -111,7 +103,52 @@ static int on_headers_complete(http_parser *parser)
 	if ((peer->flags.header_upgrade == 0) || (peer->flags.connection_upgrade == 0)) {
 		return -1;
 	}
-	return send_upgrade_response(peer);
+	return old_send_upgrade_response(peer);
+}
+
+static int send_upgrade_response(struct http_server *s)
+{
+	char accept_value[28];
+	struct SHA1Context context;
+	uint8_t sha1_buffer[SHA1HashSize];
+
+	SHA1Reset(&context);
+	SHA1Input(&context, s->sec_web_socket_key, SEC_WEB_SOCKET_GUID_LENGTH + SEC_WEB_SOCKET_KEY_LENGTH);
+	SHA1Result(&context, sha1_buffer);
+	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
+
+	static const char switch_response[] =
+		"HTTP/1.1 101 Switching Protocols" CRLF
+		"Upgrade: websocket" CRLF
+		"Connection: Upgrade" CRLF
+		"Sec-Websocket-Protocol: jet" CRLF
+		"Sec-WebSocket-Accept: ";
+	static const char switch_response_end[] = CRLF CRLF;
+
+	struct buffered_socket_io_vector iov[3];
+	iov[0].iov_base = switch_response;
+	iov[0].iov_len = sizeof(switch_response ) - 1;
+	iov[1].iov_base = accept_value;
+	iov[1].iov_len = sizeof(accept_value) - 1;
+	iov[2].iov_base = switch_response_end;
+	iov[2].iov_len = sizeof(switch_response_end) - 1;
+	return buffered_socket_writev(&s->bs, iov, ARRAY_SIZE(iov));
+}
+
+static int on_headers_complete(http_parser *parser)
+{
+	if (check_http_version(parser) < 0) {
+		return -1;
+	}
+	if (parser->method != HTTP_GET) {
+		return -1;
+	}
+
+	struct http_server *server = container_of(parser, struct http_server, parser);
+	if ((server->flags.header_upgrade == 0) || (server->flags.connection_upgrade == 0)) {
+		return -1;
+	}
+	return send_upgrade_response(server);
 }
 
 static int save_websocket_key(uint8_t *dest, const char *at, size_t length)
@@ -182,7 +219,7 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 	return 0;
 }
 
-static int on_header_value(http_parser *p, const char *at, size_t length)
+static int old_on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
 
@@ -226,7 +263,7 @@ static int on_header_value(http_parser *p, const char *at, size_t length)
 }
 
 
-static int on_header_field(http_parser *p, const char *at, size_t length)
+static int old_on_header_field(http_parser *p, const char *at, size_t length)
 {
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, parser);
 
@@ -263,6 +300,85 @@ static int on_header_field(http_parser *p, const char *at, size_t length)
 	return 0;
 }
 
+static int on_header_field(http_parser *p, const char *at, size_t length)
+{
+	struct http_server *server = container_of(p, struct http_server, parser);
+
+	static const char sec_key[] = "Sec-WebSocket-Key";
+	if ((sizeof(sec_key) - 1  == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
+		server->current_header_field = HEADER_SEC_WEBSOCKET_KEY;
+		return 0;
+	}
+
+	static const char ws_version[] = "Sec-WebSocket-Version";
+	if ((sizeof(ws_version) - 1  == length) && (jet_strncasecmp(at, ws_version, length) == 0)) {
+		server->current_header_field = HEADER_SEC_WEBSOCKET_VERSION;
+		return 0;
+	}
+
+	static const char ws_protocol[] = "Sec-WebSocket-Protocol";
+	if ((sizeof(ws_protocol) - 1  == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
+		server->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
+		return 0;
+	}
+
+	static const char header_upgrade[] = "Upgrade";
+	if ((sizeof(header_upgrade) - 1  == length) && (jet_strncasecmp(at, header_upgrade, length) == 0)) {
+		server->current_header_field = HEADER_UPGRADE;
+		return 0;
+	}
+
+	static const char conn_upgrade[] = "Connection";
+	if ((sizeof(conn_upgrade) - 1  == length) && (jet_strncasecmp(at, conn_upgrade, length) == 0)) {
+		server->current_header_field = HEADER_CONNECTION_UPGRADE;
+		return 0;
+	}
+
+	return 0;
+}
+
+static int on_header_value(http_parser *p, const char *at, size_t length)
+{
+	int ret = 0;
+
+	struct http_server *server = container_of(p, struct http_server, parser);
+
+	switch(server->current_header_field) {
+	case HEADER_SEC_WEBSOCKET_KEY:
+		ret = save_websocket_key(server->sec_web_socket_key, at, length);
+		break;
+
+	case HEADER_SEC_WEBSOCKET_VERSION:
+		ret = check_websocket_version(at, length);
+		break;
+
+	case HEADER_SEC_WEBSOCKET_PROTOCOL:
+		ret = check_websocket_protocol(at, length);
+		break;
+
+	case HEADER_UPGRADE:
+		ret = check_upgrade(at, length);
+		if (ret == 0) {
+			server->flags.header_upgrade = 1;
+		}
+		break;
+
+	case HEADER_CONNECTION_UPGRADE:
+		ret = check_connection_upgrade(at, length);
+		if (ret == 0) {
+			server->flags.connection_upgrade = 1;
+		}
+		break;
+
+	case HEADER_UNKNOWN:
+	default:
+		break;
+	}
+
+	server->current_header_field = HEADER_UNKNOWN;
+	return ret;
+}
+
 static const char *get_response(unsigned int status_code)
 {
 	switch (status_code) {
@@ -284,11 +400,9 @@ static int send_http_error_response_old(struct ws_peer *ws_peer, unsigned int st
 void http_init(struct ws_peer *p)
 {
 	http_parser_settings_init(&p->parser_settings);
-	p->parser_settings.on_message_begin = on_message_begin;
-	p->parser_settings.on_message_complete = on_message_complete;
-	p->parser_settings.on_headers_complete = on_headers_complete;
-	p->parser_settings.on_header_field = on_header_field;
-	p->parser_settings.on_header_value = on_header_value;
+	p->parser_settings.on_headers_complete = old_on_headers_complete;
+	p->parser_settings.on_header_field = old_on_header_field;
+	p->parser_settings.on_header_value = old_on_header_value;
 
 	http_parser_init(&p->parser, HTTP_REQUEST);
 }
