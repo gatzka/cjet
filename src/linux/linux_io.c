@@ -300,12 +300,16 @@ static void sighandler(int signum)
 static int register_signal_handler(void)
 {
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
-		log_err("signal failed!\n");
+		log_err("installing signal handler for SIGTERM failed!\n");
 		return -1;
 	}
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
-		log_err("signal failed!\n");
+		log_err("installing signal handler for SIGINT failed!\n");
 		signal(SIGTERM, SIG_DFL);
+		return -1;
+	}
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+		log_err("ignoring SIGPIPE failed!\n");
 		return -1;
 	}
 	return 0;
