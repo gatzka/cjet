@@ -129,7 +129,7 @@ static int send_upgrade_response(struct http_server *s)
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response ) - 1;
 	iov[1].iov_base = accept_value;
-	iov[1].iov_len = sizeof(accept_value) - 1;
+	iov[1].iov_len = sizeof(accept_value);
 	iov[2].iov_base = switch_response_end;
 	iov[2].iov_len = sizeof(switch_response_end) - 1;
 	return buffered_socket_writev(&s->bs, iov, ARRAY_SIZE(iov));
