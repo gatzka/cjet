@@ -770,10 +770,7 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 
 static void init_http_server(struct http_server *server, const struct eventloop *loop, int fd)
 {
-	//TODO: Use only required callbacks
 	http_parser_settings_init(&server->parser_settings);
-	server->parser_settings.on_message_begin = on_message_begin;
-	server->parser_settings.on_message_complete = on_message_complete;
 	server->parser_settings.on_headers_complete = on_headers_complete;
 	server->parser_settings.on_header_field = on_header_field;
 	server->parser_settings.on_header_value = on_header_value;
