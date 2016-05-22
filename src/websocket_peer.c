@@ -34,6 +34,7 @@
 #include "http_server.h"
 #include "jet_endian.h"
 #include "linux/peer_testing.h"
+#include "parse.h"
 #include "peer.h"
 #include "socket_peer.h"
 #include "websocket_peer.h"
@@ -200,12 +201,94 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
+static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
+{
+	for (unsigned int i= 0; i < length; i++) {
+		buffer[i] = buffer[i] ^ (mask[i % 4]);
+	}
+}
+
+static int ws_handle_frame(struct websocket_peer *ws_peer, char *msg, unsigned int length)
+{
+	int ret;
+	switch (ws_peer->ws_flags.opcode) {
+	case WS_CONTINUATION_FRAME:
+		log_peer_err(&ws_peer->peer, "Fragmented websocket frame not supported!\n");
+		return -1;
+
+	case WS_BINARY_FRAME:
+	case WS_TEXT_FRAME:
+		ret = parse_message(msg, length, &ws_peer->peer);
+		if (unlikely(ret == -1)) {
+			return -1;
+		}
+		break;
+
+	case WS_PING_FRAME:
+
+		break;
+
+	case WS_PONG_FRAME:
+
+		break;
+
+	case WS_CLOSE_FRAME:
+
+		break;
+
+	default:
+		log_peer_err(&ws_peer->peer, "Unsupported websocket frame!\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void ws_get_header(void *context, char *buf, ssize_t len);
+
+static void ws_get_payload(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (likely(len > 0)) {
+		if (ws_peer->ws_flags.mask == 1) {
+			unmask_payload(buf, ws_peer->mask, len);
+			int ret = ws_handle_frame(ws_peer, buf, len);
+			if (likely(ret == 0)) {
+				buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_header, ws_peer);
+			} else {
+				free_websocket_peer(ws_peer);
+			}
+		}
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket payload!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
+static void ws_get_mask(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (likely(len > 0)) {
+		memcpy(ws_peer->mask, buf, sizeof(ws_peer->mask));
+		buffered_socket_read_exactly(ws_peer->bs, ws_peer->length, ws_get_payload, ws_peer);
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket mask!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
 static void read_mask_or_payload(struct websocket_peer *ws_peer)
 {
 	if (ws_peer->ws_flags.mask == 1) {
-		//buffered_socket_read_exactly(ws_peer->bs, sizeof(ws_peer->mask), ws_get_mask, ws_peer);
+		buffered_socket_read_exactly(ws_peer->bs, sizeof(ws_peer->mask), ws_get_mask, ws_peer);
 	} else {
-	//	buffered_socket_read_exactly(ws_peer->bs, ws_peer->length), ws_get_payload, ws_peer);
+		buffered_socket_read_exactly(ws_peer->bs, ws_peer->length, ws_get_payload, ws_peer);
 	}
 }
 
@@ -254,6 +337,8 @@ static void ws_get_first_length(void *context, char *buf, ssize_t len)
 		memcpy(&field, buf, sizeof(field));
 		if ((field & WS_MASK_SET) == WS_MASK_SET) {
 			ws_peer->ws_flags.mask = 1;
+		} else {
+			ws_peer->ws_flags.mask = 0;
 		}
 		field = field & ~WS_MASK_SET;
 		if (field < 126) {
@@ -281,12 +366,14 @@ static void ws_get_header(void *context, char *buf, ssize_t len)
 		memcpy(&field, buf, sizeof(field));
 		if ((field & WS_HEADER_FIN) == WS_HEADER_FIN) {
 			ws_peer->ws_flags.fin = 1;
-
-			static const uint8_t OPCODE_MASK = 0x0f;
-			field = field & OPCODE_MASK;
-			ws_peer->ws_flags.opcode = field;
-			buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_first_length, ws_peer);
+		} else {
+			ws_peer->ws_flags.fin = 0;
 		}
+
+		static const uint8_t OPCODE_MASK = 0x0f;
+		field = field & OPCODE_MASK;
+		ws_peer->ws_flags.opcode = field;
+		buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_first_length, ws_peer);
 
 	} else {
 		if (len < 0) {
