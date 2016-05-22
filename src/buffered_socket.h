@@ -69,6 +69,7 @@ struct buffered_socket_io_vector {
 void buffered_socket_init(struct buffered_socket *bs, int fd, const struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(struct buffered_socket *bs);
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count);
+void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *error_context), void *error_context);
 
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context);

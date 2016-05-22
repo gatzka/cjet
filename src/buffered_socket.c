@@ -227,6 +227,12 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_so
 	}
 }
 
+void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *error_context), void *error_context)
+{
+	bs->error = error;
+	bs->error_context = error_context;
+}
+
 void buffered_socket_init(struct buffered_socket *bs, int fd, const struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
 	bs->ev.context.fd = fd;
