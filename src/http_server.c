@@ -818,7 +818,9 @@ enum callback_return handle_ws_upgrade(union io_context *ctx)
 
 static void free_server(struct http_server *server)
 {
-	buffered_socket_close(server->bs);
+	if (server->bs) {
+		buffered_socket_close(server->bs);
+	}
 	free(server);
 }
 
