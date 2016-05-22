@@ -33,7 +33,7 @@
 #include "websocket_peer.h"
 
 struct http_server {
-	struct buffered_socket bs;
+	struct buffered_socket *bs;
 	http_parser parser;
 	http_parser_settings parser_settings;
 

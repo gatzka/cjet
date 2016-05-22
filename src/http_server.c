@@ -132,7 +132,7 @@ static int send_upgrade_response(struct http_server *s)
 	iov[1].iov_len = sizeof(accept_value);
 	iov[2].iov_base = switch_response_end;
 	iov[2].iov_len = sizeof(switch_response_end) - 1;
-	return buffered_socket_writev(&s->bs, iov, ARRAY_SIZE(iov));
+	return buffered_socket_writev(s->bs, iov, ARRAY_SIZE(iov));
 }
 
 static int on_headers_complete(http_parser *parser)
@@ -818,7 +818,7 @@ enum callback_return handle_ws_upgrade(union io_context *ctx)
 
 static void free_server(struct http_server *server)
 {
-	buffered_socket_close(&server->bs);
+	buffered_socket_close(server->bs);
 	free(server);
 }
 
@@ -834,7 +834,7 @@ static int send_http_error_response(struct http_server *server, unsigned int sta
 	struct buffered_socket_io_vector iov;
 	iov.iov_base = response;
 	iov.iov_len = strlen(response);
-	return buffered_socket_writev(&server->bs, &iov, 1);
+	return buffered_socket_writev(server->bs, &iov, 1);
 }
 
 static void read_header_line(void *context, char *buf, ssize_t len)
@@ -851,7 +851,7 @@ static void read_header_line(void *context, char *buf, ssize_t len)
 		  /* handle new protocol */
 			//buffered_socket_read_exactly(&server->bs, 1, ws_get_header, newly_allocated ws_peer);
 		} else {
-			buffered_socket_read_until(&server->bs, CRLF, read_header_line, server);
+			buffered_socket_read_until(server->bs, CRLF, read_header_line, server);
 		}
 	} else {
 		if (len < 0) {
@@ -873,7 +873,7 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 			free_server(server);
 		}
 
-		buffered_socket_read_until(&server->bs, CRLF, read_header_line, server);
+		buffered_socket_read_until(server->bs, CRLF, read_header_line, server);
 	} else {
 		if (len < 0) {
 			log_err("Error while reading start line!\n");
@@ -891,14 +891,19 @@ static void init_http_server(struct http_server *server, const struct eventloop 
 	server->parser_settings.on_url = on_url;
 
 	http_parser_init(&server->parser, HTTP_REQUEST);
-	buffered_socket_init(&server->bs, fd, loop, free_server_on_error, server);
-	buffered_socket_read_until(&server->bs, CRLF, read_start_line, server);
+	buffered_socket_init(server->bs, fd, loop, free_server_on_error, server);
+	buffered_socket_read_until(server->bs, CRLF, read_start_line, server);
 }
 
 struct http_server *alloc_http_server(const struct eventloop *loop, int fd)
 {
 	struct http_server *server = malloc(sizeof(*server));
 	if (unlikely(server == NULL)) {
+		return NULL;
+	}
+	server->bs = malloc(sizeof(*(server->bs)));
+	if (unlikely(server->bs == NULL)) {
+		free(server);
 		return NULL;
 	}
 	init_http_server(server, loop, fd);
