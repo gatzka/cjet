@@ -187,6 +187,7 @@ int send_ws_upgrade_response(struct ws_peer *p, const char *begin, size_t begin_
 
 // TODO: delete old stuff
 
+
 static void free_websocket_peer(struct websocket_peer *p)
 {
 	free_peer(&p->peer);
@@ -200,6 +201,29 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
+static void ws_get_header(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+	if (likely(len > 0)) {
+		uint8_t field;
+		memcpy(&field, buf, sizeof(field));
+		if ((field & WS_HEADER_FIN) == WS_HEADER_FIN) {
+			ws_peer->ws_flags.fin = 1;
+
+			static const uint8_t OPCODE_MASK = 0x0f;
+			field = field & OPCODE_MASK;
+			ws_peer->ws_flags.opcode = field;
+			//TODO: start reading length
+		}
+
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket header!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
 static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_socket *bs)
 {
 	init_peer(&ws_peer->peer);
@@ -207,7 +231,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_
 	ws_peer->peer.close = close_websocket_peer;
 	ws_peer->bs = bs;
 	buffered_socket_set_error(bs, free_websocket_peer_on_error, ws_peer);
-	//buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
+	buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_header, ws_peer);
 }
 
 struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs)

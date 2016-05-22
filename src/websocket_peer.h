@@ -86,6 +86,12 @@ int send_ws_upgrade_response(struct ws_peer *p, const char *begin, size_t begin_
 struct websocket_peer {
 	struct peer peer;
 	struct buffered_socket *bs;
+
+	struct {
+		unsigned int fin: 1;
+		unsigned int opcode: 4;
+		unsigned int mask: 1;
+	} ws_flags;
 };
 
 struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs);
