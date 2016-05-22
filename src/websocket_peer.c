@@ -69,7 +69,6 @@ static void close_websocket_peer(struct peer *p)
 
 static int ws_send_frame(struct websocket_peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
 {
-
 	char ws_header[14];
 	uint8_t first_len;
 	size_t header_index = 2;
@@ -201,9 +200,82 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
+static void read_mask_or_payload(struct websocket_peer *ws_peer)
+{
+	if (ws_peer->ws_flags.mask == 1) {
+		//buffered_socket_read_exactly(ws_peer->bs, sizeof(ws_peer->mask), ws_get_mask, ws_peer);
+	} else {
+	//	buffered_socket_read_exactly(ws_peer->bs, ws_peer->length), ws_get_payload, ws_peer);
+	}
+}
+
+static void ws_get_length16(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (likely(len > 0)) {
+		uint16_t field;
+		memcpy(&field, buf, sizeof(field));
+		field = jet_be16toh(field);
+		ws_peer->length = field;
+		read_mask_or_payload(ws_peer);
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket 16 bit length!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
+static void ws_get_length64(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (likely(len > 0)) {
+		uint64_t field;
+		memcpy(&field, buf, sizeof(field));
+		field = jet_be64toh(field);
+		ws_peer->length = field;
+		read_mask_or_payload(ws_peer);
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket 64 bit length!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
+static void ws_get_first_length(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (likely(len > 0)) {
+		uint8_t field;
+		memcpy(&field, buf, sizeof(field));
+		if ((field & WS_MASK_SET) == WS_MASK_SET) {
+			ws_peer->ws_flags.mask = 1;
+		}
+		field = field & ~WS_MASK_SET;
+		if (field < 126) {
+			ws_peer->length = field;
+			read_mask_or_payload(ws_peer);
+		} else if (field == 126) {
+			buffered_socket_read_exactly(ws_peer->bs, 2, ws_get_length16, ws_peer);
+		} else {
+			buffered_socket_read_exactly(ws_peer->bs, 8, ws_get_length64, ws_peer);
+		}
+	} else {
+		if (len < 0) {
+			log_peer_err(&ws_peer->peer, "Error while reading websocket first length!\n");
+		}
+		free_websocket_peer(ws_peer);
+	}
+}
+
 static void ws_get_header(void *context, char *buf, ssize_t len)
 {
 	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
 	if (likely(len > 0)) {
 		uint8_t field;
 		memcpy(&field, buf, sizeof(field));
@@ -213,7 +285,7 @@ static void ws_get_header(void *context, char *buf, ssize_t len)
 			static const uint8_t OPCODE_MASK = 0x0f;
 			field = field & OPCODE_MASK;
 			ws_peer->ws_flags.opcode = field;
-			//TODO: start reading length
+			buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_first_length, ws_peer);
 		}
 
 	} else {
@@ -236,7 +308,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_
 
 struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs)
 {
-	struct websocket_peer *ws_peer = malloc(sizeof(*ws_peer));
+	struct websocket_peer *ws_peer = calloc(1, sizeof(*ws_peer));
 	if (ws_peer == NULL) {
 		return NULL;
 	}
@@ -244,11 +316,3 @@ struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs)
 	init_websocket_peer(ws_peer, bs);
 	return ws_peer;
 }
-
-
-
-
-
-
-
-

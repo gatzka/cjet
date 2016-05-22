@@ -92,6 +92,8 @@ struct websocket_peer {
 		unsigned int opcode: 4;
 		unsigned int mask: 1;
 	} ws_flags;
+	uint64_t length;
+	uint8_t mask[4];
 };
 
 struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs);
