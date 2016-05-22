@@ -42,7 +42,7 @@
 # define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-static void free_websocket_peer(const struct eventloop *loop, struct ws_peer *p)
+static void free_websocket_peer_old(const struct eventloop *loop, struct ws_peer *p)
 {
 	int fd = p->s_peer.ev.context.fd;
 	loop->remove(&p->s_peer.ev);
@@ -51,12 +51,12 @@ static void free_websocket_peer(const struct eventloop *loop, struct ws_peer *p)
 	close(fd);
 }
 
-static enum callback_return free_websocket_peer_on_error(union io_context *context)
+static enum callback_return free_websocket_peer_on_error_old(union io_context *context)
 {
 	struct io_event *ev = container_of(context, struct io_event, context);
 	struct socket_peer *p = container_of(ev, struct socket_peer, ev);
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, s_peer);
-	free_websocket_peer(ev->loop, ws_peer);
+	free_websocket_peer_old(ev->loop, ws_peer);
 	return CONTINUE_LOOP;
 }
 
@@ -64,7 +64,7 @@ static void close_websocket_peer(struct peer *p)
 {
 	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
 	struct ws_peer *ws_peer = container_of(s_peer, struct ws_peer, s_peer);
-	free_websocket_peer(s_peer->ev.loop, ws_peer);
+	free_websocket_peer_old(s_peer->ev.loop, ws_peer);
 }
 
 static int ws_send_frame(struct websocket_peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
@@ -119,7 +119,7 @@ static int init_websocket_peer_old(const struct eventloop *loop, struct ws_peer 
 	p->s_peer.ev.context.fd = fd;
 	p->s_peer.ev.read_function = handle_ws_upgrade;
 	p->s_peer.ev.write_function = write_msg;
-	p->s_peer.ev.error_function = free_websocket_peer_on_error;
+	p->s_peer.ev.error_function = free_websocket_peer_on_error_old;
 	p->s_peer.ev.loop = loop;
 
 	p->s_peer.op = READ_MSG_LENGTH;
@@ -187,12 +187,26 @@ int send_ws_upgrade_response(struct ws_peer *p, const char *begin, size_t begin_
 
 // TODO: delete old stuff
 
+static void free_websocket_peer(struct websocket_peer *p)
+{
+	free_peer(&p->peer);
+	buffered_socket_close(p->bs);
+	free(p);
+}
+
+static void free_websocket_peer_on_error(void *context)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+	free_websocket_peer(ws_peer);
+}
+
 static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_socket *bs)
 {
 	init_peer(&ws_peer->peer);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	ws_peer->bs = bs;
+	buffered_socket_set_error(bs, free_websocket_peer_on_error, ws_peer);
 	//buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
 }
 
