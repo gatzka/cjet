@@ -47,7 +47,7 @@ struct socket_peer {
 	struct peer peer;
 	struct buffered_socket bs;
 	
-	
+// TODO: delete
 	struct io_event ev;
 	int op;
 	unsigned int to_write;

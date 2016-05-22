@@ -38,6 +38,10 @@
 #include "socket_peer.h"
 #include "websocket_peer.h"
 
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 static void free_websocket_peer(const struct eventloop *loop, struct ws_peer *p)
 {
 	int fd = p->s_peer.ev.context.fd;
@@ -63,10 +67,8 @@ static void close_websocket_peer(struct peer *p)
 	free_websocket_peer(s_peer->ev.loop, ws_peer);
 }
 
-static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+static int ws_send_frame(struct websocket_peer *p, bool shall_mask, uint32_t mask, const char *payload, size_t length)
 {
-	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
-	struct ws_peer *ws_peer = container_of(s_peer, struct ws_peer, s_peer);
 
 	char ws_header[14];
 	uint8_t first_len;
@@ -94,15 +96,21 @@ static int ws_send_frame(struct peer *p, bool shall_mask, uint32_t mask, const c
 	}
 	ws_header[1] = first_len;
 
-	return send_ws_response(ws_peer, ws_header, header_index, payload, length);
+	struct buffered_socket_io_vector iov[2];
+	iov[0].iov_base = ws_header;
+	iov[0].iov_len = header_index;
+	iov[1].iov_base = payload;
+	iov[1].iov_len = length;
+	return buffered_socket_writev(p->bs, iov, ARRAY_SIZE(iov));
 }
 
 static int ws_send_message(struct peer *p, const char *rendered, size_t len)
 {
-	return ws_send_frame(p, false, 0x00, rendered, len);
+	struct websocket_peer *ws_peer = container_of(p, struct websocket_peer, peer);
+	return ws_send_frame(ws_peer, false, 0x00, rendered, len);
 }
 
-static int init_websocket_peer(const struct eventloop *loop, struct ws_peer *p, int fd)
+static int init_websocket_peer_old(const struct eventloop *loop, struct ws_peer *p, int fd)
 {
 	init_peer(&p->s_peer.peer);
 	p->s_peer.peer.send_message = ws_send_message;
@@ -141,7 +149,7 @@ struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd)
 	p->ws_protocol = WS_READING_HEADER;
 	http_init(p);
 
-	if (init_websocket_peer(loop, p, fd) < 0) {
+	if (init_websocket_peer_old(loop, p, fd) < 0) {
 		free(p);
 		return NULL;
 	} else {
@@ -175,26 +183,34 @@ int send_ws_upgrade_response(struct ws_peer *p, const char *begin, size_t begin_
 	// TODO: handle partial writes as below
 }
 
-int send_ws_response(struct ws_peer *p, const char *header, size_t header_size, const char *payload, size_t payload_size)
+
+
+// TODO: delete old stuff
+
+static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_socket *bs)
 {
-	struct iovec iov[3];
-
-	iov[0].iov_base = p->s_peer.write_buffer;
-	iov[0].iov_len = p->s_peer.to_write;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	iov[1].iov_base = (void *)header;
-	iov[1].iov_len = header_size;
-	iov[2].iov_base = (void *)payload;
-	iov[2].iov_len = payload_size;
-#pragma GCC diagnostic pop
-
-	ssize_t sent = WRITEV(p->s_peer.ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
-	if (likely(sent == (ssize_t)(header_size + payload_size))) {
-		return 0;
-	} else {
-		return -1;
-	}
-	// TODO: handle partial writes as below
+	init_peer(&ws_peer->peer);
+	ws_peer->peer.send_message = ws_send_message;
+	ws_peer->peer.close = close_websocket_peer;
+	ws_peer->bs = bs;
+	//buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
 }
+
+struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs)
+{
+	struct websocket_peer *ws_peer = malloc(sizeof(*ws_peer));
+	if (ws_peer == NULL) {
+		return NULL;
+	}
+
+	init_websocket_peer(ws_peer, bs);
+	return ws_peer;
+}
+
+
+
+
+
+
+
+

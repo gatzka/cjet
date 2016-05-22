@@ -262,7 +262,6 @@ static int old_on_header_value(http_parser *p, const char *at, size_t length)
 	return ret;
 }
 
-
 static int old_on_header_field(http_parser *p, const char *at, size_t length)
 {
 	struct ws_peer *ws_peer = container_of(p, struct ws_peer, parser);
@@ -850,8 +849,14 @@ static void read_header_line(void *context, char *buf, ssize_t len)
 			send_http_error_response(server, 400);
 			free_server(server);
 		} else if (server->parser.upgrade) {
-		  /* handle new protocol */
-			//buffered_socket_read_exactly(&server->bs, 1, ws_get_header, newly_allocated ws_peer);
+			struct websocket_peer *ws_peer = alloc_websocket_peer(server->bs);
+			if(ws_peer == NULL) {
+				send_http_error_response(server, 500);
+				log_err("Could not allocate websocket peer!\n");
+			} else {
+				server->bs = NULL;
+			}
+			free_server(server);
 		} else {
 			buffered_socket_read_until(server->bs, CRLF, read_header_line, server);
 		}
