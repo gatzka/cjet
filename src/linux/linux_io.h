@@ -27,25 +27,13 @@
 #ifndef CJET_LINUX_IO_H
 #define CJET_LINUX_IO_H
 
-#include <stddef.h>
-#include <sys/types.h>
-
 #include "eventloop.h"
-#include "peer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-//#define IO_CLOSE -1
-//#define IO_WOULD_BLOCK -2
-//#define IO_ERROR -3
-//#define IO_TOOMUCHDATA -4
-//#define IO_BUFFERTOOSMALL -5
-
 int run_io(const struct eventloop *loop, const char *user_name);
-enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context);
-//enum callback_return write_msg(const struct eventloop *loop, union io_context *context);
 
 #ifdef __cplusplus
 }

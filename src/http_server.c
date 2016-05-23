@@ -25,8 +25,6 @@
  */
 
 #include <errno.h>
-#include <limits.h>
-#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -40,13 +38,10 @@
 #include "http_server.h"
 #include "http-parser/http_parser.h"
 #include "eventloop.h"
-#include "linux/linux_io.h"
 #include "log.h"
-#include "parse.h"
-#include "peer.h"
-#include "linux/peer_testing.h"
 #include "sha1/sha1.h"
 #include "util.h"
+#include "websocket_peer.h"
 
 #define CRLF "\r\n"
 

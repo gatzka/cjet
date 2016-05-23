@@ -61,4 +61,3 @@ struct http_server {
 struct http_server *alloc_http_server(const struct eventloop *loop, int fd);
 
 #endif
-

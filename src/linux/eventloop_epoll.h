@@ -31,8 +31,6 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 #include "eventloop.h"
 
 int eventloop_epoll_create(void);

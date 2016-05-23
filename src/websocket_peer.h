@@ -31,7 +31,6 @@
 
 #include "buffered_socket.h"
 
-
 struct websocket_peer {
 	struct peer peer;
 	struct buffered_socket *bs;

@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include "compiler.h"
+#include "eventloop.h"
 #include "generated/os_config.h"
 #include "linux/eventloop_epoll.h"
 #include "log.h"

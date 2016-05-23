@@ -36,7 +36,7 @@
 #include "websocket_peer.h"
 
 #ifndef ARRAY_SIZE
-# define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 static const uint8_t WS_MASK_SET = 0x80;
