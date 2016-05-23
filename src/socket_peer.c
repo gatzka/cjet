@@ -25,15 +25,11 @@
  */
 
 #include <arpa/inet.h>
-#include <errno.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 
 #include "compiler.h"
 #include "buffered_socket.h"
-#include "generated/cjet_config.h"
 #include "eventloop.h"
 #include "jet_endian.h"
 #include "linux/peer_testing.h"
@@ -97,6 +93,16 @@ static void read_msg_length(void *context, char *buf, ssize_t len)
 	}
 }
 
+static int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	struct buffered_socket_io_vector iov;
+	iov.iov_base = rendered;
+	iov.iov_len = len;
+	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
+
+	return buffered_socket_writev(&s_peer->bs, &iov, 1);
+}
+
 static void init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
 {
 	init_peer(&p->peer);
@@ -114,14 +120,4 @@ struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
 	}
 	init_socket_peer(loop, p, fd);
 	return p;
-}
-
-int send_message(struct peer *p, const char *rendered, size_t len)
-{
-	struct buffered_socket_io_vector iov;
-	iov.iov_base = rendered;
-	iov.iov_len = len;
-	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
-
-	return buffered_socket_writev(&s_peer->bs, &iov, 1);
 }

@@ -137,18 +137,6 @@ static void handle_new_jet_connection(const struct eventloop *loop, int fd)
 	}
 }
 
-static void handle_new_jetws_connection(const struct eventloop *loop ,int fd)
-{
-	if (prepare_peer_socket(fd) < 0) {
-		return;
-	}
-	struct ws_peer *p = alloc_wsjet_peer(loop, fd);
-	if (unlikely(p == NULL)) {
-		log_err("Could not allocate websocket jet peer!\n");
-		close(fd);
-	}
-}
-
 static void handle_http(const struct eventloop *loop ,int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
@@ -190,13 +178,6 @@ static enum callback_return accept_jet_error(union io_context *io)
 {
 	(void)io;
 	return ABORT_LOOP;
-}
-
-enum callback_return accept_jetws(union io_context *io);
-enum callback_return accept_jetws(union io_context *io)
-{
-	struct io_event *ev = container_of(io, struct io_event, context);
-	return accept_common(ev->loop, io, handle_new_jetws_connection);
 }
 
 static enum callback_return accept_http(union io_context *io)

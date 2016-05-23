@@ -32,6 +32,18 @@
 #include "peer.h"
 #include "websocket_peer.h"
 
+#define SEC_WEB_SOCKET_KEY_LENGTH 24
+#define SEC_WEB_SOCKET_GUID_LENGTH 36
+
+enum header_field {
+	HEADER_UNKNOWN,
+	HEADER_SEC_WEBSOCKET_KEY,
+	HEADER_SEC_WEBSOCKET_VERSION,
+	HEADER_SEC_WEBSOCKET_PROTOCOL,
+	HEADER_UPGRADE,
+	HEADER_CONNECTION_UPGRADE,
+};
+
 struct http_server {
 	struct buffered_socket *bs;
 	http_parser parser;
@@ -47,13 +59,6 @@ struct http_server {
 };
 
 struct http_server *alloc_http_server(const struct eventloop *loop, int fd);
-
-
-void http_init(struct ws_peer *p);
-enum callback_return handle_ws_upgrade(union io_context *context);
-
-static const uint8_t WS_MASK_SET = 0x80;
-static const uint8_t WS_HEADER_FIN = 0x80;
 
 #endif
 
