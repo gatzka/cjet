@@ -151,7 +151,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "combined_test"
     type: ["application", "unittest"]
@@ -165,6 +164,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "fetch_test"
     type: ["application", "unittest"]
