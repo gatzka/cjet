@@ -54,10 +54,11 @@ INCLUDE(hardening)
 
 SET(CJET_FILES
         base64.c
+        buffered_socket.c
         config.c
         fetch.c
-        http_server.c
         http-parser/http_parser.c
+        http_server.c
         info.c
         json/cJSON.c
         parse.c
@@ -65,8 +66,10 @@ SET(CJET_FILES
         response.c
         router.c
         sha1/sha1.c
+        socket_peer.c
         state.c
         table.c
+        websocket_peer.c
 )
 
 SET(CJET_LINUX_FILES
