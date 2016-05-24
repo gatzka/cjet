@@ -112,7 +112,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "parse_test"
     type: ["application", "unittest"]
@@ -126,6 +125,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "state_test"
     type: ["application", "unittest"]
