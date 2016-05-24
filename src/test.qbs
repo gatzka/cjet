@@ -177,65 +177,6 @@ Project {
     ] 
   }
 
-/*
-  CppApplication {
-    name: "readbuffer_test"
-    type: ["application", "unittest"]
-    consoleApplication: true
-
-    Depends { name: "generateCjetConfig" }
-    Depends { name: "generateOsConfig" }
-
-    cpp.includePaths: ["../src/", product.buildDirectory]
-    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING", "_GNU_SOURCE"]
-    cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
-    cpp.cLanguageVersion: "c99"
-
-    files: [
-      "fetch.c",
-      "http-parser/http_parser.c",
-      "peer.c",
-      "response.c",
-      "router.c",
-      "state.c",
-      "table.c",
-      "linux/jet_endian.c",
-      "linux/jet_string.c",
-      "linux/linux_io.c",
-      "linux/uuid.c",
-      "linux/tests/readbuffer_test.cpp",
-      "linux/tests/log.cpp"
-    ]
-
-    Group {
-      name: "json"
-      prefix: "../src/"
-      cpp.cLanguageVersion: "c99"
-      files: [
-        "json/*.c",
-      ]
-    }
-
-    Group {
-      name: "cjet config file"
-      prefix: "../src/"
-      files: [
-        "cjet_config.h.in"
-      ]
-      fileTags: ["cjet_config_tag"]
-    }
-
-    Group {
-      condition: qbs.targetOS.contains("linux")
-      name: "linux config file"
-      prefix: "../src/"
-      files: [
-        "linux/config/os_config.h.in"
-      ]
-      fileTags: ["os_config_tag"]
-    }
-  }
-
   CppApplication {
     name: "base64_test"
     type: ["application", "unittest"]
@@ -250,7 +191,7 @@ Project {
       "tests/base64_test.cpp",
     ] 
   }
-*/
+
   CppApplication {
     name: "buffered_socket_test"
     type: ["application", "unittest"]
