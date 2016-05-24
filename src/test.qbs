@@ -125,7 +125,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "state_test"
     type: ["application", "unittest"]
@@ -139,6 +138,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "method_test"
     type: ["application", "unittest"]
