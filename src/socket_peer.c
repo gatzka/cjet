@@ -40,7 +40,7 @@
 
 static void free_jet_peer(struct socket_peer *p)
 {
-	free_peer(&p->peer);
+	free_peer_resources(&p->peer);
 	buffered_socket_close(&p->bs);
 	free(p);
 }

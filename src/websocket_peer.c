@@ -93,7 +93,7 @@ static int ws_send_message(struct peer *p, const char *rendered, size_t len)
 
 static void free_websocket_peer(struct websocket_peer *p)
 {
-	free_peer(&p->peer);
+	free_peer_resources(&p->peer);
 	buffered_socket_close(p->bs);
 	free(p);
 }
