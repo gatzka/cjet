@@ -74,7 +74,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "string_test"
     type: ["application", "unittest"]
@@ -87,6 +86,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "config_test"
     type: ["application", "unittest"]
