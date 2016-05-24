@@ -194,56 +194,6 @@ static void check_invalid_params(const cJSON *error)
 	}
 }
 
-extern "C" {
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-	
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
-
-	void remove_all_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-}
-
 int send_message(struct peer *p, const char *rendered, size_t len)
 {
 	(void)len;
