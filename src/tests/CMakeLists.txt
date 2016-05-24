@@ -33,7 +33,7 @@ SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -ggdb --coverage")
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
-	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
+	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0.0)
 		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -flto")
 		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
 	ENDIF()
@@ -64,55 +64,51 @@ ENDIF()
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
+add_library(jet STATIC 
+	../config.c
+ 	../fetch.c
+ 	../info.c
+ 	../json/cJSON.c
+ 	../linux/jet_string.c
+ 	../linux/uuid.c
+ 	../parse.c
+ 	../peer.c
+ 	../response.c
+ 	../router.c
+ 	../state.c
+ 	../table.c
+)
+
 SET(INFO_TEST
-	../fetch.c
-	../info.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	info_test.cpp
 	log.cpp
 )
 ADD_EXECUTABLE(info_test.bin ${INFO_TEST})
 TARGET_LINK_LIBRARIES(
 	info_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(RESPONSE_TEST
-	../linux/jet_string.c
-	../json/cJSON.c
-	../response.c
+	log.cpp
 	response_test.cpp
 )
 ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
 	response_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(ROUTER_TEST
-	../fetch.c
-	../http-parser/http_parser.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	router_test.cpp
 )
 ADD_EXECUTABLE(router_test.bin ${ROUTER_TEST})
 TARGET_LINK_LIBRARIES(
 	router_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
@@ -126,138 +122,92 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
-SET(CONFIG_TEST
-	../http-parser/http_parser.c
+SET(BUFFEREDSOCKET_TEST
+	../buffered_socket.c
 	../linux/jet_string.c
-	../json/cJSON.c
-	../config.c
-	../peer.c
-	../response.c
+	buffered_socket_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(buffered_socket_test.bin ${BUFFEREDSOCKET_TEST})
+TARGET_LINK_LIBRARIES(
+	buffered_socket_test.bin
+	${Boost_LIBRARIES}
+)
+
+SET(CONFIG_TEST
 	config_test.cpp
 	log.cpp
 )
 ADD_EXECUTABLE(config_test.bin ${CONFIG_TEST})
 TARGET_LINK_LIBRARIES(
 	config_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(PEER_TEST
-	../http-parser/http_parser.c
-	../linux/jet_string.c
-	../json/cJSON.c
-	../peer.c
 	log.cpp
 	peer_test.cpp
 )
 ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
 TARGET_LINK_LIBRARIES(
 	peer_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(JSON_PARSE_TEST
-	../http-parser/http_parser.c
-	../linux/uuid.c
-	../config.c
-	../fetch.c
-	../info.c
-	../linux/jet_string.c
-	../json/cJSON.c
-	../parse.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	parse_test.cpp
 )
 ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 TARGET_LINK_LIBRARIES(
 	parse_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(STATE_TEST
-	../http-parser/http_parser.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	state_test.cpp
 )
 ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 TARGET_LINK_LIBRARIES(
 	state_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(METHOD_TEST
-	../http-parser/http_parser.c
-	../fetch.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	method_test.cpp
 )
 ADD_EXECUTABLE(method_test.bin ${METHOD_TEST})
 TARGET_LINK_LIBRARIES(
 	method_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(COMBINED_TEST
-	../fetch.c
-	../http-parser/http_parser.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	combined_test.cpp
 )
 ADD_EXECUTABLE(combined_test.bin ${COMBINED_TEST})
 TARGET_LINK_LIBRARIES(
 	combined_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
 SET(FETCH_TEST
-	../config.c
-	../fetch.c
-	../http-parser/http_parser.c
-	../info.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../parse.c
-	../peer.c
-	../response.c
-	../router.c
-	../state.c
-	../table.c
 	log.cpp
 	fetch_test.cpp
 )
 ADD_EXECUTABLE(fetch_test.bin ${FETCH_TEST})
 TARGET_LINK_LIBRARIES(
 	fetch_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 

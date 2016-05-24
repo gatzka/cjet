@@ -194,78 +194,40 @@ static void check_invalid_params(const cJSON *error)
 	}
 }
 
-extern "C" {
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
+int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	(void)len;
+	if (p == fetch_peer_1) {
+		cJSON *fetch_event = parse_send_buffer(rendered);
+		fetch_events.push_back(fetch_event);
+	} else if (p == owner_peer) {
+		cJSON *response = parse_send_buffer(rendered);
+		owner_responses.push_back(response);
 	}
+	return 0;
+}
 
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
+struct peer *alloc_peer()
+{
+	struct peer *p = (struct peer *)::malloc(sizeof(*p));
+	init_peer(p);
+	p->send_message = send_message;
+	return p;
+}
 
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-	
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)len;
-		if (p == fetch_peer_1) {
-			cJSON *fetch_event = parse_send_buffer(rendered);
-			fetch_events.push_back(fetch_event);
-		} else if (p == owner_peer) {
-			cJSON *response = parse_send_buffer(rendered);
-			owner_responses.push_back(response);
-		}
-		return 0;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
-
-	void remove_all_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
+void free_peer(struct peer *p)
+{
+	free_peer_resources(p);
+	::free(p);
 }
 
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(&loop, -1);
-		set_peer = alloc_jet_peer(&loop, -1);
-		fetch_peer_1 = alloc_jet_peer(&loop, -1);
+		owner_peer = alloc_peer();
+		set_peer = alloc_peer();
+		fetch_peer_1 = alloc_peer();
 	}
 
 	~F()
@@ -280,12 +242,11 @@ struct F {
 			owner_responses.pop_front();
 			cJSON_Delete(ptr);
 		}
-		free_peer(&loop, fetch_peer_1);
-		free_peer(&loop, set_peer);
-		free_peer(&loop, owner_peer);
+		free_peer(fetch_peer_1);
+		free_peer(set_peer);
+		free_peer(owner_peer);
 		state_hashtable_delete();
 	}
-	struct eventloop loop;
 };
 
 static struct state_or_method *get_state(const char *path)
@@ -335,13 +296,14 @@ static cJSON *create_fetch_with_multiple_matchers(const char *path_contains, uns
 
 	for (unsigned int i = 0; i < number_of_contains; i++) {
 		if (strlen(path_contains)) {
-			cJSON_AddStringToObject(path, "contains", path_contains + number_of_contains);
+			std::stringstream ss;
+			ss << path_contains << number_of_contains;
+			cJSON_AddStringToObject(path, "contains", ss.str().c_str());
 		}
 	}
 
 	return root;
 }
-
 
 static cJSON *create_unfetch_params()
 {

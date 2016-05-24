@@ -33,7 +33,7 @@ extern "C" {
 
 #include <stdint.h>
 
-enum callback_return {ABORT_LOOP, CONTINUE_LOOP};
+enum callback_return {ABORT_LOOP, CONTINUE_LOOP, IO_REMOVED};
 
 union io_context {
 	void *ptr;
@@ -44,7 +44,7 @@ union io_context {
 
 struct eventloop;
 
-typedef enum callback_return (*eventloop_function)(const struct eventloop *loop, union io_context*);
+typedef enum callback_return (*eventloop_function)(union io_context *context);
 
 struct io_event {
 	union io_context context;
@@ -57,8 +57,8 @@ struct io_event {
 struct eventloop {
 	int (*create)(void);
 	void (*destroy)(void);
-	int (*run)(const struct eventloop *loop, int *go_ahead);
-	enum callback_return (*add)(const struct eventloop *loop, struct io_event *ev);
+	int (*run)(int *go_ahead);
+	enum callback_return (*add)(struct io_event *ev);
 	void (*remove)(struct io_event *ev);
 };
 

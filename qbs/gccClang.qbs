@@ -53,7 +53,7 @@ Product {
           flags.push("-fno-asynchronous-unwind-tables");
           var toolchain = qbs.toolchain[0];
           var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
-          if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "4.8"))) {
+          if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "5.0"))) {
             flags.push("-flto");
           }
         }
@@ -71,7 +71,7 @@ Product {
 
           var toolchain = qbs.toolchain[0];
           var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
-          if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "4.8"))) {
+          if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "5.0"))) {
             flags.push("-flto");
           }
         }

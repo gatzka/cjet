@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2014> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,24 +24,26 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_EVENTLOOP_EPOLL_H
-#define CJET_LINUX_EVENTLOOP_EPOLL_H
+#ifndef CJET_WEBSOCKET_PEER_H
+#define CJET_WEBSOCKET_PEER_H
 
-#ifdef __cplusplus
-extern "C" {
+#include <stdint.h>
+
+#include "buffered_socket.h"
+
+struct websocket_peer {
+	struct peer peer;
+	struct buffered_socket *bs;
+
+	struct {
+		unsigned int fin: 1;
+		unsigned int opcode: 4;
+		unsigned int mask: 1;
+	} ws_flags;
+	uint64_t length;
+	uint8_t mask[4];
+};
+
+struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs);
+
 #endif
-
-#include "eventloop.h"
-
-int eventloop_epoll_create(void);
-void eventloop_epoll_destroy(void);
-int eventloop_epoll_run(int *go_ahead);
-enum callback_return eventloop_epoll_add(struct io_event *ev);
-void eventloop_epoll_remove(struct io_event *ev);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
-

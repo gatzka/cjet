@@ -28,14 +28,12 @@
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE parse JSON
 
-#include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
 
 #include <cstring>
 #include <list>
 
 #include "json/cJSON.h"
-#include "linux/linux_io.h"
 #include "parse.h"
 #include "peer.h"
 #include "state.h"
@@ -50,103 +48,29 @@ static cJSON *parse_send_buffer(const char *json)
 	return root;
 }
 
-extern "C" {
-	enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
-	{
-		(void)context;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return handle_ws_upgrade(const struct eventloop *loop, union io_context *context)
-	{
-		(void)context;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return write_msg(const struct eventloop *loop, union io_context *context)
-	{
-		(void)context;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)len;
-		(void)p;
-		cJSON *fetch_event = parse_send_buffer(rendered);
-		events.push_back(fetch_event);
-		return 0;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	int remove_method_from_peer(struct peer *p, const char *path)
-	{
-		(void)p;
-		if (strcmp(path, "method") == 0) {
-			return 0;
-		}
-		return -1;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
-
-	cJSON *add_method_to_peer(struct peer *p, const char *path)
-	{
-		(void)p;
-		(void)path;
-		return NULL;
-	}
-
-	cJSON *call_method(struct peer *p, const char *path,
-		const cJSON *args, const cJSON *json_rpc)
-	{
-		(void)p;
-		(void)path;
-		(void)args;
-		(void)json_rpc;
-		return NULL;
-	}
+int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	(void)len;
+	(void)p;
+	cJSON *fetch_event = parse_send_buffer(rendered);
+	events.push_back(fetch_event);
+	return 0;
 }
 
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
+		init_peer(&p);
+		p.send_message = send_message;
+		init_peer(&set_peer);
+		set_peer.send_message = send_message;
 		state_hashtable_create();
-		p = alloc_jet_peer(&loop, -1);
-		set_peer = alloc_jet_peer(&loop, -1);
 	}
 
 	~F()
 	{
-		free_peer(&loop, p);
-		free_peer(&loop, set_peer);
+		free_peer_resources(&p);
+		free_peer_resources(&set_peer);
 		while (!events.empty()) {
 			cJSON *ptr = events.front();
 			events.pop_front();
@@ -155,9 +79,8 @@ struct F {
 		state_hashtable_delete();
 	}
 
-	struct peer *p;
-	struct peer *set_peer;
-	struct eventloop loop;
+	struct peer p;
+	struct peer set_peer;
 };
 
 static cJSON *create_correct_add_state(const char *path)
@@ -621,7 +544,7 @@ BOOST_FIXTURE_TEST_CASE(parse_correct_json, F)
 {
 	cJSON *correct_json = create_correct_add_state("/foo/bar/state");
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -653,12 +576,11 @@ BOOST_AUTO_TEST_CASE(length_too_short)
 	}
 }
 
-BOOST_AUTO_TEST_CASE(two_method)
+BOOST_FIXTURE_TEST_CASE(two_method, F)
 {
-	F f;
 	cJSON *array = create_two_method_json();
 	char *unformatted_json = cJSON_PrintUnformatted(array);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), f.p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(array);
 	BOOST_CHECK(ret == 0);
@@ -669,7 +591,7 @@ BOOST_FIXTURE_TEST_CASE(wrong_array, F)
 	const int numbers[2] = {1,2};
 	cJSON *root = cJSON_CreateIntArray(numbers, 2);
 	char *unformatted_json = cJSON_PrintUnformatted(root);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(root);
 
@@ -680,7 +602,7 @@ BOOST_FIXTURE_TEST_CASE(add_without_path_test, F)
 {
 	cJSON *json = create_add_without_path();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -690,7 +612,7 @@ BOOST_FIXTURE_TEST_CASE(add_with_fetchonly_true, F)
 {
 	cJSON *correct_json = create_add_state_with_fetchonly(true);
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -702,7 +624,7 @@ BOOST_FIXTURE_TEST_CASE(add_with_fetchonly_false, F)
 {
 	cJSON *correct_json = create_add_state_with_fetchonly(false);
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -714,7 +636,7 @@ BOOST_FIXTURE_TEST_CASE(add_with_illegal_fetchonly_false, F)
 {
 	cJSON *correct_json = create_add_state_with_illegal_fetchonly();
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -728,7 +650,7 @@ BOOST_FIXTURE_TEST_CASE(correct_remove_state_test, F)
 
 	cJSON *add_json = create_correct_add_state(path);
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -737,7 +659,7 @@ BOOST_FIXTURE_TEST_CASE(correct_remove_state_test, F)
 
 	cJSON *remove_json = create_correct_remove(path);
 	unformatted_json = cJSON_PrintUnformatted(remove_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(remove_json);
 	BOOST_CHECK(ret == 0);
@@ -749,7 +671,7 @@ BOOST_FIXTURE_TEST_CASE(correct_add_method_test, F)
 {
 	cJSON *correct_json = create_correct_add_method();
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -761,7 +683,7 @@ BOOST_FIXTURE_TEST_CASE(correct_remove_method_test, F)
 {
 	cJSON *add_json = create_correct_add_method();
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -770,7 +692,7 @@ BOOST_FIXTURE_TEST_CASE(correct_remove_method_test, F)
 
 	cJSON *remove_json = create_correct_remove("/foo/bar/method/");
 	unformatted_json = cJSON_PrintUnformatted(remove_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(remove_json);
 	BOOST_CHECK(ret == 0);
@@ -782,7 +704,7 @@ BOOST_FIXTURE_TEST_CASE(remove_non_existing_state_or_method, F)
 {
 	cJSON *json = create_correct_remove("non_exist");
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -794,7 +716,7 @@ BOOST_FIXTURE_TEST_CASE(remove_without_path_test, F)
 {
 	cJSON *json = create_remove_without_path();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -804,7 +726,7 @@ BOOST_FIXTURE_TEST_CASE(path_no_string_test, F)
 {
 	cJSON *json = create_path_no_string();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -814,7 +736,7 @@ BOOST_FIXTURE_TEST_CASE(no_params_test, F)
 {
 	cJSON *json = create_json_no_params();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -824,7 +746,7 @@ BOOST_FIXTURE_TEST_CASE(unsupported_method, F)
 {
 	cJSON *json = create_json_unsupported_method();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -834,7 +756,7 @@ BOOST_FIXTURE_TEST_CASE(no_method, F)
 {
 	cJSON *json = create_json_no_method();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -844,7 +766,7 @@ BOOST_FIXTURE_TEST_CASE(no_string_method, F)
 {
 	cJSON *json = create_json_no_string_method();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -856,7 +778,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set_with_error_response, F)
 
 	cJSON *add_json = create_correct_add_state(path);
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -865,7 +787,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set_with_error_response, F)
 
 	cJSON *set_json = create_correct_set_method(path);
 	unformatted_json = cJSON_PrintUnformatted(set_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), set_peer);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &set_peer);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(set_json);
 	BOOST_CHECK(ret == 0);
@@ -875,7 +797,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set_with_error_response, F)
 
 	cJSON *result_json = create_error_json(routed_id);
 	unformatted_json = cJSON_PrintUnformatted(result_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(result_json);
 	BOOST_CHECK(ret == 0);
@@ -885,14 +807,14 @@ BOOST_FIXTURE_TEST_CASE(correct_set_with_error_response, F)
 BOOST_FIXTURE_TEST_CASE(parse_wrong_json, F)
 {
 	static const char wrong_json[] =   "{\"id\": 7384,\"method\": add\",\"params\":{\"path\": \"foo/bar/state\",\"value\": 123}}";
-	int ret = parse_message(wrong_json, strlen(wrong_json), p);
+	int ret = parse_message(wrong_json, strlen(wrong_json), &p);
 	BOOST_CHECK(ret == -1);
 }
 
 BOOST_FIXTURE_TEST_CASE(parse_json_no_object_or_array, F)
 {
 	static const char json[] = "\"foo\"";
-	int ret = parse_message(json, strlen(json), p);
+	int ret = parse_message(json, strlen(json), &p);
 	BOOST_CHECK(ret == -1);
 }
 
@@ -900,7 +822,7 @@ BOOST_FIXTURE_TEST_CASE(correct_fetch_test, F)
 {
 	cJSON *json = create_correct_fetch();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -910,7 +832,7 @@ BOOST_FIXTURE_TEST_CASE(correct_unfetch_test, F)
 {
 	cJSON *json = create_correct_unfetch();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -920,7 +842,7 @@ BOOST_FIXTURE_TEST_CASE(correct_config_test, F)
 {
 	cJSON *json = create_correct_config_method();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -930,7 +852,7 @@ BOOST_FIXTURE_TEST_CASE(correct_call_method_test, F)
 {
 	cJSON *correct_json = create_correct_call_method();
 	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
@@ -940,7 +862,7 @@ BOOST_FIXTURE_TEST_CASE(call_without_path_test, F)
 {
 	cJSON *json = create_call_without_path();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -951,7 +873,7 @@ BOOST_FIXTURE_TEST_CASE(correct_change, F)
 	static const char path[] = "/foo/bar/state";
 	cJSON *add_json = create_correct_add_state(path);
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -960,7 +882,7 @@ BOOST_FIXTURE_TEST_CASE(correct_change, F)
 
 	cJSON *set_json = create_correct_change_method(path);
 	unformatted_json = cJSON_PrintUnformatted(set_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(set_json);
 	BOOST_CHECK(ret == 0);
@@ -973,7 +895,7 @@ BOOST_FIXTURE_TEST_CASE(change_without_path, F)
 {
 	cJSON *json = create_change_without_path();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -985,7 +907,7 @@ BOOST_FIXTURE_TEST_CASE(change_without_value, F)
 {
 	cJSON *json = create_change_without_value();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -999,7 +921,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set, F)
 
 	cJSON *add_json = create_correct_add_state(path);
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -1008,7 +930,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set, F)
 
 	cJSON *set_json = create_correct_set_method(path);
 	unformatted_json = cJSON_PrintUnformatted(set_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), set_peer);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &set_peer);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(set_json);
 	BOOST_CHECK(ret == 0);
@@ -1018,7 +940,7 @@ BOOST_FIXTURE_TEST_CASE(correct_set, F)
 
 	cJSON *result_json = create_result_json(routed_id);
 	unformatted_json = cJSON_PrintUnformatted(result_json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(result_json);
 	BOOST_CHECK(ret == 0);
@@ -1031,7 +953,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_path, F)
 
 	cJSON *add_json = create_correct_add_state(path);
 	char *unformatted_json = cJSON_PrintUnformatted(add_json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(add_json);
 	BOOST_CHECK(ret == 0);
@@ -1040,7 +962,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_path, F)
 
 	cJSON *json = create_set_without_path();
 	unformatted_json = cJSON_PrintUnformatted(json);
-	ret = parse_message(unformatted_json, strlen(unformatted_json), set_peer);
+	ret = parse_message(unformatted_json, strlen(unformatted_json), &set_peer);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -1052,7 +974,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_params, F)
 {
 	cJSON *json = create_set_without_params();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -1068,7 +990,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_path_and_no_id, F)
 {
 	cJSON *json = create_set_without_path_and_no_id();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -1078,7 +1000,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_value, F)
 {
 	cJSON *json = create_set_without_value();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -1090,7 +1012,7 @@ BOOST_FIXTURE_TEST_CASE(correct_info, F)
 {
 	cJSON *json = create_correct_info_method();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);
@@ -1100,7 +1022,7 @@ BOOST_FIXTURE_TEST_CASE(correct_info_without_params, F)
 {
 	cJSON *json = create_correct_info_method_without_params();
 	char *unformatted_json = cJSON_PrintUnformatted(json);
-	int ret = parse_message(unformatted_json, strlen(unformatted_json), p);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
 	cJSON_free(unformatted_json);
 	cJSON_Delete(json);
 	BOOST_CHECK(ret == 0);

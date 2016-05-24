@@ -34,11 +34,8 @@
 
 #include "compiler.h"
 #include "fetch.h"
-#include "http_server.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
-#include "eventloop.h"
-#include "linux/linux_io.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"
@@ -60,7 +57,18 @@ struct list_head *get_peer_list(void)
 	return &peer_list;
 }
 
-static void free_peer_resources(struct peer *p)
+static void remove_peer_from_routes(const struct peer *peer_to_remove)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		remove_peer_from_routing_table(p, peer_to_remove);
+	}
+	return;
+}
+
+void free_peer_resources(struct peer *p)
 {
 	remove_routing_info_from_peer(p);
 	remove_peer_from_routes(p);
@@ -71,127 +79,22 @@ static void free_peer_resources(struct peer *p)
 	if (p->name != NULL) {
 		free(p->name);
 	}
+	--number_of_peers;
 }
 
-static enum callback_return free_peer_on_error(const struct eventloop *loop, union io_context *context)
+int init_peer(struct peer *p)
 {
-	struct peer *p = container_of(context, struct peer, ev);
-	close_and_free_peer(loop, p);
-	return CONTINUE_LOOP;
-}
-
-static int init_peer(const struct eventloop *loop, struct peer *p, enum peer_type type, int fd, eventloop_function read_function, eventloop_function error_function)
-{
-	p->ev.context.fd = fd;
-	p->type = type;
-	if (type == JET) {
-		p->send_message = send_message;
-	} else {
-		p->send_message = ws_send_message;
-	}
-	p->ev.read_function = read_function;
-	p->ev.write_function = 	write_msg;
-	p->ev.error_function = error_function;
-
 	if (unlikely(add_routing_table(p) != 0)) {
 		return -1;
 	}
 	p->name = NULL;
-	p->op = READ_MSG_LENGTH;
-	p->to_write = 0;
-	p->read_ptr = p->read_buffer;
-	p->examined_ptr = p->read_ptr;
-	p->write_ptr = p->read_buffer;
 	INIT_LIST_HEAD(&p->next_peer);
 	INIT_LIST_HEAD(&p->state_list);
 	INIT_LIST_HEAD(&p->fetch_list);
 
 	list_add_tail(&p->next_peer, &peer_list);
-
-	if (loop->add(loop, &p->ev) == ABORT_LOOP) {
-		free_peer_resources(p);
-		return -1;
-	} else {
-		return 0;
-	}
-}
-
-struct peer *alloc_jet_peer(const struct eventloop *loop, int fd)
-{
-	struct peer *p = malloc(sizeof(*p));
-	if (unlikely(p == NULL)) {
-		return NULL;
-	}
-	if (init_peer(loop, p, JET, fd, handle_all_peer_operations, free_peer_on_error) < 0) {
-		free(p);
-		return NULL;
-	} else {
-		++number_of_peers;
-		return p;
-	}
-}
-
-struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd)
-{
-	struct ws_peer *p = malloc(sizeof(*p));
-	if (unlikely(p == NULL)) {
-		return NULL;
-	}
-
-	p->current_header_field = HEADER_UNKNOWN;
-	p->flags.connection_upgrade = 0;
-	p->flags.header_upgrade = 0;
-	p->ws_protocol = WS_READING_HEADER;
-	http_init(p);
-
-	if (init_peer(loop, &p->peer, JETWS, fd, handle_ws_upgrade, free_peer_on_error) < 0) {
-		free(p);
-		return NULL;
-	} else {
-		++number_of_peers;
-		return p;
-	}
-}
-
-void free_peer(const struct eventloop *loop, struct peer *p)
-{
-	loop->remove(&p->ev);
-	free_peer_resources(p);
-	--number_of_peers;
-	if (p->type == JET) {
-		free(p);
-	} else if (p->type == JETWS) {
-		struct ws_peer *ws_peer = container_of(p, struct ws_peer, peer);
-		free(ws_peer);
-	}
-}
-
-void close_and_free_peer(const struct eventloop *loop, struct peer *p)
-{
-	int fd = p->ev.context.fd;
-	free_peer(loop, p);
-	close(fd);
-}
-
-void destroy_all_peers(const struct eventloop *loop)
-{
-	struct list_head *item;
-	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct peer, next_peer);
-		close_and_free_peer(loop, p);
-	}
-}
-
-void remove_peer_from_routes(const struct peer *peer_to_remove)
-{
-	struct list_head *item;
-	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &peer_list) {
-		struct peer *p = list_entry(item, struct peer, next_peer);
-		remove_peer_from_routing_table(p, peer_to_remove);
-	}
-	return;
+	++number_of_peers;
+	return 0;
 }
 
 void set_peer_name(struct peer *peer, const char *name)
@@ -208,6 +111,16 @@ const char *get_peer_name(const struct peer *p)
 		return p->name;
 	} else {
 		return "unknown peer";
+	}
+}
+
+void destroy_all_peers(void)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &peer_list) {
+		struct peer *p = list_entry(item, struct peer, next_peer);
+		p->close(p);
 	}
 }
 

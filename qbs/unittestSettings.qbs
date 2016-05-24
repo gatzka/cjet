@@ -49,7 +49,7 @@ StaticLibrary {
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: false
     cpp.includePaths: ["../src/", product.buildDirectory]
-    cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
+    cpp.defines: ["_GNU_SOURCE", "BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
     cpp.cLanguageVersion: "c99"
   	cpp.cFlags: [
@@ -97,15 +97,6 @@ StaticLibrary {
     ]
   }
   
-  Group {
-    name: "http-parser"
-    prefix: "../src/"
-    cpp.cLanguageVersion: "c99"
-    files: [
-      "http-parser/http_parser.c",
-    ]
-  }
-
   Group {
     name: "cjet files"
     prefix: "../src/"

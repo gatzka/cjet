@@ -31,39 +31,12 @@
 #include <arpa/inet.h>
 #include <boost/test/unit_test.hpp>
 
-#include "eventloop.h"
 #include "info.h"
 #include "peer.h"
 
 static char readback_buffer[10000];
 
 extern "C" {
-
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
 	int send_message(struct peer *p, const char *rendered, size_t len)
 	{
 		(void)p;
@@ -75,22 +48,17 @@ extern "C" {
 		return 0;
 	}
 
-	enum callback_return write_msg(union io_context *context)
+	struct peer *alloc_peer()
 	{
-		(void)context;
-		return CONTINUE_LOOP;
+		struct peer *p = (struct peer *)::malloc(sizeof(*p));
+		init_peer(p);
+		return p;
 	}
 
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
+	void free_peer(struct peer *p)
 	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
+		free_peer_resources(p);
+		::free(p);
 	}
 }
 
@@ -109,11 +77,8 @@ static cJSON *create_correct_info_method()
 
 BOOST_AUTO_TEST_CASE(create_info)
 {
-	struct eventloop loop;
-	loop.add = eventloop_add_io;
-	loop.remove = eventloop_remove_io;
-
-	struct peer *p = alloc_jet_peer(&loop, -1);
+	struct peer *p = alloc_peer();
+	p->send_message = send_message;
 	cJSON *json_rpc = create_correct_info_method();
 	int ret = handle_info(json_rpc, p);
 	cJSON_Delete(json_rpc);
@@ -186,6 +151,6 @@ BOOST_AUTO_TEST_CASE(create_info)
 
 	cJSON_Delete(root);
 
-	free_peer(&loop, p);
+	free_peer(p);
 }
 

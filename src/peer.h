@@ -42,115 +42,24 @@
 extern "C" {
 #endif
 
-#define READ_MSG_LENGTH 0
-#define READ_MSG 1
-#define READ_CR 2
-
-enum peer_type { JET, JETWS };
-
 struct peer {
-	struct io_event ev;
-	int (*send_message)(struct peer *p, const char *rendered, size_t len);
-	int op;
-	unsigned int to_write;
-	uint32_t msg_length;
-	size_t write_buffer_size;
 	struct list_head state_list;
 	struct list_head next_peer;
 	struct list_head fetch_list;
-	char *read_ptr;
-	char *examined_ptr;
-	char *write_ptr;
-	char *write_buffer_ptr;
 	void *routing_table;
-	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
 	char *name;
-	enum peer_type type;
+	int (*send_message)(struct peer *p, const char *rendered, size_t len);
+	void (*close)(struct peer *p);
 };
 
-enum header_field {
-	HEADER_UNKNOWN,
-	HEADER_SEC_WEBSOCKET_KEY,
-	HEADER_SEC_WEBSOCKET_VERSION,
-	HEADER_SEC_WEBSOCKET_PROTOCOL,
-	HEADER_UPGRADE,
-	HEADER_CONNECTION_UPGRADE,
-};
-
-#define SEC_WEB_SOCKET_KEY_LENGTH 24
-#define SEC_WEB_SOCKET_GUID_LENGTH 36
-
-enum ws_protocol_state {
-	WS_READING_HEADER,
-	WS_READING_FIRST_LENGTH,
-	WS_READING_LENGTH16,
-	WS_READING_LENGTH64,
-	WS_READING_MASK,
-	WS_READING_PAYLOAD
-};
-
-#define WS_CONTINUATION_FRAME 0x0
-#define WS_TEXT_FRAME 0x1
-#define WS_BINARY_FRAME 0x2
-#define WS_CLOSE_FRAME 0x8
-#define WS_PING_FRAME 0x9
-#define WS_PONG_FRAME 0x0a
-
-struct ws_peer {
-	struct peer peer;
-	http_parser parser;
-	http_parser_settings parser_settings;
-	enum header_field current_header_field;
-	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
-	struct {
-		unsigned int header_upgrade: 1;
-		unsigned int connection_upgrade: 1;
-	} flags;
-	enum ws_protocol_state ws_protocol;
-	uint64_t length;
-	uint8_t mask[4];
-	struct {
-		unsigned int fin: 1;
-		unsigned int opcode: 4;
-		unsigned int mask: 1;
-	} ws_flags;
-};
-
+int init_peer(struct peer *p);
+void free_peer_resources(struct peer *p);
 struct list_head *get_peer_list(void);
-const char *get_peer_name(const struct peer *p);
-
-struct peer *alloc_jet_peer(const struct eventloop *loop, int fd);
-struct ws_peer *alloc_wsjet_peer(const struct eventloop *loop, int fd);
-void close_and_free_peer(const struct eventloop *loop, struct peer *p);
-void free_peer(const struct eventloop *loop, struct peer *p);
-void destroy_all_peers(const struct eventloop *loop);
-int get_number_of_peers(void);
-void remove_peer_from_routes(const struct peer *p);
 void set_peer_name(struct peer *peer, const char *name);
+const char *get_peer_name(const struct peer *p);
+int get_number_of_peers(void);
 void log_peer_err(const struct peer *p, const char *fmt, ...);
-
-static inline ptrdiff_t unread_space(const struct peer *p)
-{
-	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->read_ptr;
-}
-
-static inline ptrdiff_t free_space(const struct peer *p)
-{
-	return &(p->read_buffer[CONFIG_MAX_MESSAGE_SIZE]) - p->write_ptr;
-}
-
-static inline void reorganize_read_buffer(struct peer *p)
-{
-	ptrdiff_t unread = p->write_ptr - p->read_ptr;
-	if (unread != 0) {
-		memmove(p->read_buffer, p->read_ptr, (size_t)unread);
-		p->write_ptr = p->read_buffer + unread;
-	} else {
-		p->write_ptr = p->read_buffer;
-	}
-	p->read_ptr = p->read_buffer;
-}
+void destroy_all_peers(void);
 
 #ifdef __cplusplus
 }

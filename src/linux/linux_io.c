@@ -41,13 +41,16 @@
 #include "compiler.h"
 #include "jet_endian.h"
 #include "eventloop.h"
+#include "http_server.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
+#include "socket_peer.h"
 #include "util.h"
+#include "websocket_peer.h"
 
 struct server {
 	struct io_event ev;
@@ -127,28 +130,23 @@ static void handle_new_jet_connection(const struct eventloop *loop, int fd)
 		return;
 	}
 
-	struct peer *peer = alloc_jet_peer(loop, fd);
+	struct socket_peer *peer = alloc_jet_peer(loop, fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
-		return;
 	}
-
-	return;
 }
 
-static void handle_new_jetws_connection(const struct eventloop *loop ,int fd)
+static void handle_http(const struct eventloop *loop ,int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct ws_peer *p = alloc_wsjet_peer(loop, fd);
-	if (unlikely(p == NULL)) {
-		log_err("Could not allocate websocket jet peer!\n");
+	struct http_server *server = alloc_http_server(loop, fd);
+	if (unlikely(server == NULL)) {
+		log_err("Could not allocate http server!\n");
 		close(fd);
-		return;
 	}
-	return;
 }
 
 static enum callback_return accept_common(const struct eventloop *loop, union io_context *io,  void (*peer_function)(const struct eventloop*, int fd))
@@ -170,26 +168,26 @@ static enum callback_return accept_common(const struct eventloop *loop, union io
 	}
 }
 
-static enum callback_return accept_jet(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jet(union io_context *io)
 {
-	return accept_common(loop, io, handle_new_jet_connection);
+	struct io_event *ev = container_of(io, struct io_event, context);
+	return accept_common(ev->loop, io, handle_new_jet_connection);
 }
 
-static enum callback_return accept_jet_error(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jet_error(union io_context *io)
 {
 	(void)io;
-	(void)loop;
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_jetws(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_http(union io_context *io)
 {
-	return accept_common(loop, io, handle_new_jetws_connection);
+	struct io_event *ev = container_of(io, struct io_event, context);
+	return accept_common(ev->loop, io, handle_http);
 }
 
-static enum callback_return accept_jetws_error(const struct eventloop *loop, union io_context *io)
+static enum callback_return accept_jetws_error(union io_context *io)
 {
-	(void)loop;
 	(void)io;
 	return ABORT_LOOP;
 }
@@ -200,14 +198,14 @@ static struct server *alloc_server(const struct eventloop *loop, int fd, eventlo
 	if (unlikely(s == NULL)) {
 		return NULL;
 	}
-	
+
 	s->ev.loop = loop;
 	s->ev.context.fd = fd;
 	s->ev.read_function = read_function;
 	s->ev.write_function = NULL;
 	s->ev.error_function = error_function;
 
-	if (loop->add(loop, &s->ev) == ABORT_LOOP) {
+	if (loop->add(&s->ev) == ABORT_LOOP) {
 		free(s);
 		return NULL;
 	}
@@ -274,335 +272,6 @@ static void delete_server(struct server *server)
 	free(server);
 }
 
-ssize_t read_cr_lf_line(struct peer *p, const char **read_ptr)
-{
-	while (1) {
-		while (p->examined_ptr < p->write_ptr) {
-			if ((p->op == READ_CR) && (*p->examined_ptr == '\n')) {
-				*read_ptr = p->read_ptr;
-				ptrdiff_t diff = p->examined_ptr - p->read_ptr + 1;
-				p->read_ptr += diff;
-				p->op = READ_MSG;
-				return diff;
-			} else {
-				p->op = READ_MSG;
-			}
-			if (*p->examined_ptr == '\r') {
-				p->op = READ_CR;
-			}
-			p->examined_ptr++;
-		}
-
-		if (free_space(p) == 0) {
-			log_err("Read buffer too small for a complete line!");
-			*read_ptr = NULL;
-			return IO_BUFFERTOOSMALL;
-		}
-		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
-		if (unlikely(read_length == 0)) {
-			*read_ptr = NULL;
-			return IO_CLOSE;
-		}
-		if (read_length == -1) {
-			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
-				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
-				*read_ptr = NULL;
-				return IO_ERROR;
-			}
-			*read_ptr = NULL;
-			return IO_WOULD_BLOCK;
-		}
-		p->write_ptr += read_length;
-	}
-}
-
-ssize_t get_read_ptr(struct peer *p, unsigned int count, char **read_ptr)
-{
-	if (unlikely((ptrdiff_t)count > unread_space(p))) {
-		log_err("peer asked for too much data: %u!\n", count);
-		*read_ptr = NULL;
-		return IO_TOOMUCHDATA;
-	}
-	while (1) {
-		ptrdiff_t diff = p->write_ptr - p->read_ptr;
-		if (diff >= (ptrdiff_t)count) {
-			*read_ptr = p->read_ptr;
-			p->read_ptr += count;
-			return diff;
-		}
-
-		ssize_t read_length = READ(p->ev.context.fd, p->write_ptr, (size_t)free_space(p));
-		if (unlikely(read_length == 0)) {
-			*read_ptr = NULL;
-			return IO_CLOSE;
-		}
-		if (read_length == -1) {
-			if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
-				log_err("unexpected %s error: %s!\n", "read", strerror(errno));
-				*read_ptr = NULL;
-				return IO_ERROR;
-			}
-			*read_ptr = NULL;
-			return IO_WOULD_BLOCK;
-		}
-		p->write_ptr += read_length;
-	}
-	*read_ptr = NULL;
-	return IO_ERROR;
-}
-
-int send_buffer(struct peer *p)
-{
-	char *write_buffer_ptr = p->write_buffer;
-	while (p->to_write != 0) {
-		ssize_t written;
-		written =
-			SEND(p->ev.context.fd, write_buffer_ptr, p->to_write, MSG_NOSIGNAL);
-		if (unlikely(written == -1)) {
-			if (unlikely((errno != EAGAIN) &&
-				(errno != EWOULDBLOCK))) {
-				log_err("unexpected write error: %s!", strerror(errno));
-				return -1;
-			}
-			memmove(p->write_buffer, write_buffer_ptr, p->to_write);
-			return 0;
-		}
-		write_buffer_ptr += written;
-		p->to_write -= written;
-	}
-	return 0;
-}
-
-int copy_msg_to_write_buffer(struct peer *p, const void *rendered,
-			 uint32_t msg_len_be, size_t already_written)
-{
-	size_t to_write;
-	uint32_t msg_len = jet_be32toh(msg_len_be);
-	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - p->to_write;
-	size_t bytes_to_copy =  (sizeof(msg_len_be) + msg_len) - already_written;
-
-	if (unlikely(bytes_to_copy > free_space_in_buf)) {
-		log_err("not enough space left in write buffer! %zu bytes of %i left", free_space_in_buf, CONFIG_MAX_WRITE_BUFFER_SIZE);
-		return -1;
-	}
-
-	char *write_buffer_ptr = p->write_buffer + p->to_write;
-	if (already_written < sizeof(msg_len_be)) {
-		char *msg_len_ptr = (char *)(&msg_len_be);
-		msg_len_ptr += already_written;
-		to_write = sizeof(msg_len_be) - already_written;
-		memcpy(write_buffer_ptr, msg_len_ptr, to_write);
-		write_buffer_ptr += to_write;
-		already_written += to_write;
-		p->to_write += to_write;
-	}
-
-	size_t msg_offset = already_written - sizeof(msg_len_be);
-	const char *message_ptr = (const char *)rendered + msg_offset;
-	to_write = msg_len - msg_offset;
-	memcpy(write_buffer_ptr, message_ptr, to_write);
-	p->to_write += to_write;
-
-	return 0;
-}
-
-int send_ws_upgrade_response(struct peer *p, const char *begin, size_t begin_length, const char *key, size_t key_length, const char *end, size_t end_length)
-{
-	struct iovec iov[4];
-
-	iov[0].iov_base = p->write_buffer;
-	iov[0].iov_len = p->to_write;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	iov[1].iov_base = (void *)begin;
-	iov[1].iov_len = begin_length;
-	iov[2].iov_base = (void *)key;
-	iov[2].iov_len = key_length;
-	iov[3].iov_base = (void *)end;
-	iov[3].iov_len = end_length;
-#pragma GCC diagnostic pop
-
-	ssize_t sent = WRITEV(p->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
-	if (likely(sent == (ssize_t)(begin_length + key_length + end_length))) {
-		return 0;
-	} else {
-		return -1;
-	}
-	// TODO: handle partial writes as below
-}
-
-int send_ws_response(struct peer *p, const char *header, size_t header_size, const char *payload, size_t payload_size)
-{
-	struct iovec iov[3];
-
-	iov[0].iov_base = p->write_buffer;
-	iov[0].iov_len = p->to_write;
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	iov[1].iov_base = (void *)header;
-	iov[1].iov_len = header_size;
-	iov[2].iov_base = (void *)payload;
-	iov[2].iov_len = payload_size;
-#pragma GCC diagnostic pop
-
-	ssize_t sent = WRITEV(p->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
-	if (likely(sent == (ssize_t)(header_size + payload_size))) {
-		return 0;
-	} else {
-		return -1;
-	}
-	// TODO: handle partial writes as below
-}
-
-int send_message(struct peer *p, const char *rendered, size_t len)
-{
-	int ret;
-	struct iovec iov[3];
-	ssize_t sent;
-	size_t written = 0;
-	uint32_t message_length = htonl(len);
-
-	iov[0].iov_base = p->write_buffer;
-	iov[0].iov_len = p->to_write;
-
-	iov[1].iov_base = &message_length;
-	iov[1].iov_len = sizeof(message_length);
-/*
- * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the rendered parameter const. Therefore I
- * selectively disabled the cast-qual warning.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	iov[2].iov_base = (void *)rendered;
-#pragma GCC diagnostic pop
-	iov[2].iov_len = len;
-
-	sent = WRITEV(p->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
-	if (likely(sent == ((ssize_t)len + (ssize_t)sizeof(message_length)))) {
-		return 0;
-	}
-
-	if (sent > 0) {
-		written = (size_t)sent;
-	}
-
-	if (unlikely((sent == -1) &&
-		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
-		log_err("unexpected %s error: %s!\n", "write",
-			strerror(errno));
-		return -1;
-	}
-
-	size_t already_written;
-	if (written <= p->to_write) {
-		p->to_write -= written;
-		memmove(p->write_buffer, p->write_buffer + written, p->to_write);
-		already_written = 0;
-	} else {
-		already_written = written;
-		p->to_write = 0;
-	}
-	if (unlikely(copy_msg_to_write_buffer(p, rendered, message_length,
-		already_written) == -1)) {
-		return -1;
-	}
-
-	if (sent == -1) {
-		/* the write call has blocked */
-		return 0;
-	}
-
-	/*
-	 * The write call didn't block, but only wrote parts of the
-	 * messages. Try to send the rest.
-	 */
-	ret = send_buffer(p);
-	return ret;
-}
-
-static int read_msg_length(struct peer *p)
-{
-	uint32_t message_length;
-	char *message_length_ptr;
-	ssize_t ret = get_read_ptr(p, sizeof(message_length), &message_length_ptr);
-	if (unlikely(ret <= 0)) {
-		if (ret == IO_WOULD_BLOCK) {
-			return 0;
-		}
-	} else {
-		memcpy(&message_length, message_length_ptr, sizeof(message_length));
-		p->op = READ_MSG;
-		p->msg_length = ntohl(message_length);
-	}
-	return ret;
-}
-
-static int read_msg(struct peer *p)
-{
-	uint32_t message_length = p->msg_length;
-	char *message_ptr;
-	ssize_t ret = get_read_ptr(p, message_length, &message_ptr);
-	if (unlikely(ret <= 0)) {
-		if (ret == IO_WOULD_BLOCK) {
-			return 0;
-		} else {
-			return ret;
-		}
-	} else {
-		p->op = READ_MSG_LENGTH;
-		ret = parse_message(message_ptr, message_length, p);
-		if (unlikely(ret == -1)) {
-			return -1;
-		}
-		reorganize_read_buffer(p);
-		return 1;
-	}
-}
-
-enum callback_return write_msg(const struct eventloop *loop, union io_context *context)
-{
-	struct peer *p = container_of(context, struct peer, ev);
-
-	int ret = send_buffer(p);
-	if (unlikely(ret < 0)) {
-		close_and_free_peer(loop, p);
-	}
-	 return CONTINUE_LOOP;
-}
-
-enum callback_return handle_all_peer_operations(const struct eventloop *loop, union io_context *context)
-{
-	struct peer *p = container_of(context, struct peer, ev);
-	while (1) {
-		int ret;
-
-		switch (p->op) {
-		case READ_MSG_LENGTH:
-			ret = read_msg_length(p);
-			break;
-
-		case READ_MSG:
-			ret = read_msg(p);
-			break;
-
-		default:
-			log_err("Unknown client operation!\n");
-			ret = -1;
-			break;
-		}
-
-		if (unlikely(ret <= 0)) {
-			if (unlikely(ret < 0)) {
-				close_and_free_peer(loop, p);
-			}
-			return CONTINUE_LOOP;
-		}
-	}
-}
-
 static void sighandler(int signum)
 {
 	(void)signum;
@@ -612,12 +281,16 @@ static void sighandler(int signum)
 static int register_signal_handler(void)
 {
 	if (signal(SIGTERM, sighandler) == SIG_ERR) {
-		log_err("signal failed!\n");
+		log_err("installing signal handler for SIGTERM failed!\n");
 		return -1;
 	}
 	if (signal(SIGINT, sighandler) == SIG_ERR) {
-		log_err("signal failed!\n");
+		log_err("installing signal handler for SIGINT failed!\n");
 		signal(SIGTERM, SIG_DFL);
+		return -1;
+	}
+	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+		log_err("ignoring SIGPIPE failed!\n");
 		return -1;
 	}
 	return 0;
@@ -668,8 +341,8 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto eventloop_destroy;
 	}
 
-	struct server *jetws_server = create_server(loop, CONFIG_JETWS_PORT, accept_jetws, accept_jetws_error);
-	if (jetws_server == NULL) {
+	struct server *http_server = create_server(loop, CONFIG_JETWS_PORT, accept_http, accept_jetws_error);
+	if (http_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
 		goto delete_jet_server;
@@ -678,15 +351,15 @@ int run_io(const struct eventloop *loop, const char *user_name)
 	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
-		goto delete_jetws_server;
+		goto delete_http_server;
 	}
 
-	ret = loop->run(loop, &go_ahead);
+	ret = loop->run(&go_ahead);
 
-	destroy_all_peers(loop);
+	destroy_all_peers();
 
-delete_jetws_server:
-	delete_server(jetws_server);
+delete_http_server:
+	delete_server(http_server);
 delete_jet_server:
 	delete_server(jet_server);
 eventloop_destroy:
