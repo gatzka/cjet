@@ -296,13 +296,14 @@ static cJSON *create_fetch_with_multiple_matchers(const char *path_contains, uns
 
 	for (unsigned int i = 0; i < number_of_contains; i++) {
 		if (strlen(path_contains)) {
-			cJSON_AddStringToObject(path, "contains", path_contains + number_of_contains);
+			std::stringstream ss;
+			ss << path_contains << number_of_contains;
+			cJSON_AddStringToObject(path, "contains", ss.str().c_str());
 		}
 	}
 
 	return root;
 }
-
 
 static cJSON *create_unfetch_params()
 {
