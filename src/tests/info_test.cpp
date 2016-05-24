@@ -51,11 +51,13 @@ extern "C" {
 	struct peer *alloc_peer()
 	{
 		struct peer *p = (struct peer *)::malloc(sizeof(*p));
+		init_peer(p);
 		return p;
 	}
 
 	void free_peer(struct peer *p)
 	{
+		free_peer_resources(p);
 		::free(p);
 	}
 }
@@ -76,7 +78,6 @@ static cJSON *create_correct_info_method()
 BOOST_AUTO_TEST_CASE(create_info)
 {
 	struct peer *p = alloc_peer();
-	init_peer(p);
 	p->send_message = send_message;
 	cJSON *json_rpc = create_correct_info_method();
 	int ret = handle_info(json_rpc, p);
@@ -150,7 +151,6 @@ BOOST_AUTO_TEST_CASE(create_info)
 
 	cJSON_Delete(root);
 
-	free_peer_resources(p);
 	free_peer(p);
 }
 
