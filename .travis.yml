@@ -26,7 +26,7 @@ script:
   - if [ "$COVERITY_SCAN_BRANCH" != 1 ]; then
       case ${BUILD} in
         gcc)
-          cmake ../ &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/gcc.cmake ../  &&
           make &&
           make test
           ;;
