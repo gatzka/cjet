@@ -39,101 +39,27 @@ enum fds {
 	ADD_ROUTINGTABLE_FAILED,
 };
 
-extern "C" {
-
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
+struct peer *alloc_peer()
+{
+	struct peer *p = (struct peer *)::malloc(sizeof(*p));
+	int ret = init_peer(p);
+	if (ret != 0) {
+		free(p);
+		p = NULL;
 	}
+	return p;
+}
 
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
+void close_peer(struct peer *p)
+{
+	free_peer_resources(p);
+}
 
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
 
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)loop;
-		if (ev->context.fd == ADD_IO_FAILED) {
-			return ABORT_LOOP;
-		}
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
-
-	void remove_all_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
-	void remove_all_fetchers_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
-	void remove_peer_from_routing_table(const struct peer *p,
-		const struct peer *peer_to_remove)
-	{
-		(void)p;
-		(void)peer_to_remove;
-	}
-
-	void remove_routing_info_from_peer(const struct peer *p)
-	{
-		(void)p;
-	}
-
-	void remove_all_states_and_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-
-	void delete_routing_table(struct peer *p)
-	{
-		(void)p;
-	}
-
-	int add_routing_table(struct peer *p)
-	{
-		if (p->ev.context.fd == ADD_ROUTINGTABLE_FAILED) {
-			return -1;
-		}
-		return 0;
-	}
+void free_peer(struct peer *p)
+{
+	close_peer(p);
+	::free(p);
 }
 
 static bool peer_in_list(struct list_head *peer_list, struct peer *p)
@@ -157,105 +83,106 @@ static bool starts_with(const char *str, const char *prefix)
 	return lenstr < lenprefix ? false : ::strncmp(prefix, str, lenprefix) == 0;
 }
 
-struct F {
-	F()
-	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
-	}
-	~F()
-	{
-	}
-	struct eventloop loop;
-};
-
-BOOST_FIXTURE_TEST_CASE(number_of_peer, F)
+BOOST_AUTO_TEST_CASE(number_of_peer)
 {
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
-	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p = alloc_peer();
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 1);
 
-	free_peer(&loop, p);
+	free_peer(p);
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_FIXTURE_TEST_CASE(set_name_of_peer, F)
+BOOST_AUTO_TEST_CASE(set_name_of_peer)
 {
-	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p = alloc_peer();
 	set_peer_name(p, "name of peer");
 
-	free_peer(&loop, p);
+	free_peer(p);
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
 
-BOOST_FIXTURE_TEST_CASE(add_io_failed, F)
-{
-	struct peer *p = alloc_jet_peer(&loop, ADD_IO_FAILED);
-	BOOST_CHECK(p == NULL);
-}
+//BOOST_AUTO_TEST_CASE(add_io_failed)
+//{
+//	struct peer *p = alloc_jet_peer(&loop, ADD_IO_FAILED);
+//	BOOST_CHECK(p == NULL);
+//}
 
-BOOST_FIXTURE_TEST_CASE(add_routingtable_failed, F)
-{
-	struct peer *p = alloc_jet_peer(&loop, ADD_ROUTINGTABLE_FAILED);
-	BOOST_CHECK(p == NULL);
-}
+//BOOST_AUTO_TEST_CASE(add_routingtable_failed)
+//{
+//	struct peer *p = alloc_jet_peer(&loop, ADD_ROUTINGTABLE_FAILED);
+//	BOOST_CHECK(p == NULL);
+//}
 
-BOOST_FIXTURE_TEST_CASE(destroy_all_peers_test, F)
+BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 {
 	static const int PEERS_TO_ALLOCATE = 10;
+	
+	struct peer *peer_array[PEERS_TO_ALLOCATE];
 
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 
 	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
-		alloc_jet_peer(&loop, TEST_FD);
+		struct peer *p = alloc_peer();
+		p->close = close_peer;
+		peer_array[i] = p;
 	}
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == PEERS_TO_ALLOCATE);
 
-	destroy_all_peers(&loop);
+	destroy_all_peers();
 	peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
+	
+	for (int i = 0; i < PEERS_TO_ALLOCATE; ++i) {
+		::free(peer_array[i]);
+	}
 }
 
-BOOST_FIXTURE_TEST_CASE(check_peer_list, F)
+BOOST_AUTO_TEST_CASE(check_peer_list)
 {
-	struct peer *p1 = alloc_jet_peer(&loop, TEST_FD);
-	struct peer *p2 = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p1 = alloc_peer();
+	p1->close = close_peer;
+	struct peer *p2 = alloc_peer();
+	p2->close = close_peer;
 
 	struct list_head *peer_list = get_peer_list();
 	BOOST_CHECK(peer_in_list(peer_list, p1) && peer_in_list(peer_list, p2));
 
-	destroy_all_peers(&loop);
+	destroy_all_peers();
 
 	peer_list = get_peer_list();
 	BOOST_CHECK(!peer_in_list(peer_list, p1) && !peer_in_list(peer_list, p2));
+
+	::free(p1);
+	::free(p2);
 }
 
-BOOST_FIXTURE_TEST_CASE(log_unknown_peer, F)
+BOOST_AUTO_TEST_CASE(log_unknown_peer)
 {
-	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p = alloc_peer();
 	log_peer_err(p, "%s", "Hello!");
 
 	char *log_buffer = get_log_buffer();
 
 	BOOST_CHECK(starts_with(log_buffer, "unknown peer"));
-	free_peer(&loop, p);
+	free_peer(p);
 }
 
-BOOST_FIXTURE_TEST_CASE(log_known_peer, F)
+BOOST_AUTO_TEST_CASE(log_known_peer)
 {
-	struct peer *p = alloc_jet_peer(&loop, TEST_FD);
+	struct peer *p = alloc_peer();
 	set_peer_name(p, "test peer");
 	log_peer_err(p, "%s", "Hello!");
 
 	char *log_buffer = get_log_buffer();
 
 	BOOST_CHECK(starts_with(log_buffer, "test peer: "));
-	free_peer(&loop, p);
+	free_peer(p);
 }

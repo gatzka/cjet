@@ -99,7 +99,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "peer_test"
     type: ["application", "unittest"]
@@ -113,6 +112,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "parse_test"
     type: ["application", "unittest"]
