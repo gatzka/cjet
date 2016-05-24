@@ -86,7 +86,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "config_test"
     type: ["application", "unittest"]
@@ -100,6 +99,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "peer_test"
     type: ["application", "unittest"]
