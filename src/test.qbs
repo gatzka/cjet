@@ -203,13 +203,11 @@ Project {
 
     files: [
         "buffered_socket.c",
-        "linux/jet_string.c",
         "tests/buffered_socket_test.cpp",
         "tests/log.cpp"
     ]
   }
 
-/*
   CppApplication {
     name: "http_parse_test"
     type: ["application", "unittest"]
@@ -220,8 +218,8 @@ Project {
     }
 
     files: [
+      "http-parser/http_parser.c",
       "http-parser/test.c",
     ] 
   }
-*/
 }
