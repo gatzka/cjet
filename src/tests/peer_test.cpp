@@ -33,12 +33,6 @@
 #include "log.h"
 #include "peer.h"
 
-enum fds {
-	TEST_FD = 0,
-	ADD_IO_FAILED,
-	ADD_ROUTINGTABLE_FAILED,
-};
-
 struct peer *alloc_peer()
 {
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));
@@ -54,7 +48,6 @@ void close_peer(struct peer *p)
 {
 	free_peer_resources(p);
 }
-
 
 void free_peer(struct peer *p)
 {
@@ -106,18 +99,6 @@ BOOST_AUTO_TEST_CASE(set_name_of_peer)
 	int peers = get_number_of_peers();
 	BOOST_CHECK(peers == 0);
 }
-
-//BOOST_AUTO_TEST_CASE(add_io_failed)
-//{
-//	struct peer *p = alloc_jet_peer(&loop, ADD_IO_FAILED);
-//	BOOST_CHECK(p == NULL);
-//}
-
-//BOOST_AUTO_TEST_CASE(add_routingtable_failed)
-//{
-//	struct peer *p = alloc_jet_peer(&loop, ADD_ROUTINGTABLE_FAILED);
-//	BOOST_CHECK(p == NULL);
-//}
 
 BOOST_AUTO_TEST_CASE(destroy_all_peers_test)
 {
