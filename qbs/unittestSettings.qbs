@@ -97,14 +97,6 @@ StaticLibrary {
     ]
   }
   
-//  Group {
-//    name: "http-parser"
-//    prefix: "../src/"
-//    cpp.cLanguageVersion: "c99"
-//    files: [
-//      "http-parser/http_parser.c",
-//    ]
-//  }
   Group {
     name: "cjet files"
     prefix: "../src/"
