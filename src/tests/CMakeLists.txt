@@ -122,6 +122,18 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(BUFFEREDSOCKET_TEST
+	../buffered_socket.c
+	../linux/jet_string.c
+	buffered_socket_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(buffered_socket_test.bin ${BUFFEREDSOCKET_TEST})
+TARGET_LINK_LIBRARIES(
+	buffered_socket_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(CONFIG_TEST
 	config_test.cpp
 	log.cpp
