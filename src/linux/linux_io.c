@@ -198,7 +198,7 @@ static struct server *alloc_server(const struct eventloop *loop, int fd, eventlo
 	if (unlikely(s == NULL)) {
 		return NULL;
 	}
-	
+
 	s->ev.loop = loop;
 	s->ev.context.fd = fd;
 	s->ev.read_function = read_function;
