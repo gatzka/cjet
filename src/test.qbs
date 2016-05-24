@@ -61,7 +61,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "router_test"
     type: ["application", "unittest"]
@@ -75,6 +74,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "string_test"
     type: ["application", "unittest"]
