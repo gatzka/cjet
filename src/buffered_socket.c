@@ -198,9 +198,9 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
 			bs->read_ptr += count;
 			return count;
 		}
-		ssize_t read = fill_buffer(bs, count);
-		if (read <= 0) {
-			return read;
+		ssize_t number_of_bytes_read = fill_buffer(bs, count);
+		if (number_of_bytes_read <= 0) {
+			return number_of_bytes_read;
 		}
 	}
 }
