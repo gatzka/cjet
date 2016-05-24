@@ -226,19 +226,6 @@ extern "C" {
 		return 0;
 	}
 
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)len;
-		if (p == fetch_peer_1) {
-			cJSON *fetch_event = parse_send_buffer(rendered);
-			fetch_events.push_back(fetch_event);
-		} else if (p == owner_peer) {
-			cJSON *response = parse_send_buffer(rendered);
-			owner_responses.push_back(response);
-		}
-		return 0;
-	}
-
 	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
 	{
 		(void)ev;
@@ -257,15 +244,40 @@ extern "C" {
 	}
 }
 
+int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	(void)len;
+	if (p == fetch_peer_1) {
+		cJSON *fetch_event = parse_send_buffer(rendered);
+		fetch_events.push_back(fetch_event);
+	} else if (p == owner_peer) {
+		cJSON *response = parse_send_buffer(rendered);
+		owner_responses.push_back(response);
+	}
+	return 0;
+}
+
+struct peer *alloc_peer()
+{
+	struct peer *p = (struct peer *)::malloc(sizeof(*p));
+	init_peer(p);
+	p->send_message = send_message;
+	return p;
+}
+
+void free_peer(struct peer *p)
+{
+	free_peer_resources(p);
+	::free(p);
+}
+
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(&loop, -1);
-		set_peer = alloc_jet_peer(&loop, -1);
-		fetch_peer_1 = alloc_jet_peer(&loop, -1);
+		owner_peer = alloc_peer();
+		set_peer = alloc_peer();
+		fetch_peer_1 = alloc_peer();
 	}
 
 	~F()
@@ -280,12 +292,11 @@ struct F {
 			owner_responses.pop_front();
 			cJSON_Delete(ptr);
 		}
-		free_peer(&loop, fetch_peer_1);
-		free_peer(&loop, set_peer);
-		free_peer(&loop, owner_peer);
+		free_peer(fetch_peer_1);
+		free_peer(set_peer);
+		free_peer(owner_peer);
 		state_hashtable_delete();
 	}
-	struct eventloop loop;
 };
 
 static struct state_or_method *get_state(const char *path)
