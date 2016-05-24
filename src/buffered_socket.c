@@ -218,10 +218,10 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_so
 			bs->read_ptr += diff;
 			return diff;
 		} else {
-			ssize_t read = fill_buffer(bs, 1);
+			ssize_t number_of_bytes_read = fill_buffer(bs, 1);
 			haystack = bs->read_ptr;
-			if (read <= 0) {
-				return read;
+			if (number_of_bytes_read <= 0) {
+				return number_of_bytes_read;
 			}
 		}
 	}
