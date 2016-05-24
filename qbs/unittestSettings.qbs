@@ -88,7 +88,6 @@ StaticLibrary {
     fileTags: ["os_config_tag"]
   }
 
-/*
   Group {
     name: "json"
     prefix: "../src/"
@@ -98,14 +97,14 @@ StaticLibrary {
     ]
   }
   
-  Group {
-    name: "http-parser"
-    prefix: "../src/"
-    cpp.cLanguageVersion: "c99"
-    files: [
-      "http-parser/http_parser.c",
-    ]
-  }
+//  Group {
+//    name: "http-parser"
+//    prefix: "../src/"
+//    cpp.cLanguageVersion: "c99"
+//    files: [
+//      "http-parser/http_parser.c",
+//    ]
+//  }
   Group {
     name: "cjet files"
     prefix: "../src/"
@@ -124,6 +123,5 @@ StaticLibrary {
         "linux/uuid.c",
     ]
   }
-*/
 }
 

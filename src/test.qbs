@@ -33,7 +33,6 @@ Project {
   qbsSearchPaths: "../qbs/"
   references: "../qbs/unittestSettings.qbs"
 
-/*
   CppApplication {
     name: "info_test"
     type: ["application", "unittest"]
@@ -45,9 +44,10 @@ Project {
 
     files: [
       "tests/info_test.cpp",
-      "tests/log.cpp"
+      "tests/log.cpp",
     ] 
   }
+/*
 
   CppApplication {
     name: "response_test"
