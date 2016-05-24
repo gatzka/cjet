@@ -26,6 +26,7 @@
 
 import qbs 1.0
 import qbs.ModUtils
+import qbs.Utilities
 
 Product {
   name: "unittest-runner"
@@ -47,7 +48,7 @@ Product {
     inputsFromDependencies: "application"
 
     Artifact {
-      filePath: qbs.getHash(inputs.application[0].filePath) + ".result.dummy" // Will never exist.
+      filePath: Utilities.getHash(inputs.application[0].filePath) + ".result.dummy" // Will never exist.
       fileTags: "unittest-result"
       alwaysUpdated: false
     }

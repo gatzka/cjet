@@ -183,97 +183,63 @@ static struct state_or_method *get_state(const char *path)
 	return (struct state_or_method *)state_table_get(path);
 }
 
-extern "C" {
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
+int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	(void)len;
+	if (p == fetch_peer_1) {
+		cJSON *fetch_event = parse_send_buffer(rendered);
+		fetch_peer_1_event = get_event_from_json(fetch_event);
+		cJSON_Delete(fetch_event);
+	} else if (p == fetch_peer_2) {
+		cJSON *fetch_event = parse_send_buffer(rendered);
+		fetch_peer_2_event = get_event_from_json(fetch_event);
+		cJSON_Delete(fetch_event);
+	} else if ((p == set_peer) || (p == call_peer)) {
+		handle_message_for_setter_or_caller(rendered);
+	} else if (p == owner_peer) {
+		create_and_send_owner_response(rendered);
+	} else {
+		message_for_wrong_peer = true;
 	}
-	
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
+	return 0;
+}
 
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
+struct peer *alloc_peer()
+{
+	struct peer *p = (struct peer *)::malloc(sizeof(*p));
+	init_peer(p);
+	p->send_message = send_message;
+	return p;
+}
 
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)len;
-		if (p == fetch_peer_1) {
-			cJSON *fetch_event = parse_send_buffer(rendered);
-			fetch_peer_1_event = get_event_from_json(fetch_event);
-			cJSON_Delete(fetch_event);
-		} else if (p == fetch_peer_2) {
-			cJSON *fetch_event = parse_send_buffer(rendered);
-			fetch_peer_2_event = get_event_from_json(fetch_event);
-			cJSON_Delete(fetch_event);
-		} else if ((p == set_peer) || (p == call_peer)) {
-			handle_message_for_setter_or_caller(rendered);
-		} else if (p == owner_peer) {
-			create_and_send_owner_response(rendered);
-		} else {
-			message_for_wrong_peer = true;
-		}
-		return 0;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)loop;
-		(void)ev;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
+void free_peer(struct peer *p)
+{
+	free_peer_resources(p);
+	::free(p);
 }
 
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(&loop, -1);
-		call_peer = alloc_jet_peer(&loop, -1);
-		fetch_peer_1 = alloc_jet_peer(&loop, -1);
-		fetch_peer_2 = alloc_jet_peer(&loop, -1);
-		set_peer = alloc_jet_peer(&loop, -1);
+		owner_peer = alloc_peer();
+		call_peer = alloc_peer();
+		fetch_peer_1 = alloc_peer();
+		fetch_peer_2 = alloc_peer();
+		set_peer = alloc_peer();
 		message_for_wrong_peer = false;
 		setter_caller_error_code = 0;
 		setter_caller_result = UNKNOWN;
 	}
 	~F()
 	{
-		if (set_peer) free_peer(&loop, set_peer);
-		if (fetch_peer_2) free_peer(&loop, fetch_peer_2);
-		if (fetch_peer_1) free_peer(&loop, fetch_peer_1);
-		if (call_peer) free_peer(&loop, call_peer);
-		if (owner_peer) free_peer(&loop, owner_peer);
+		if (set_peer) free_peer(set_peer);
+		if (fetch_peer_2) free_peer(fetch_peer_2);
+		if (fetch_peer_1) free_peer( fetch_peer_1);
+		if (call_peer) free_peer( call_peer);
+		if (owner_peer) free_peer(owner_peer);
 		state_hashtable_delete();
 	}
-	struct eventloop loop;
 };
 
 static cJSON *create_fetch_params(const char *path_string)
@@ -383,7 +349,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
-	free_peer(&loop, owner_peer);
+	free_peer(owner_peer);
 	owner_peer = NULL;
 
 	BOOST_CHECK(setter_caller_result == ERROR);

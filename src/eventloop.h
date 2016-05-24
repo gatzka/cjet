@@ -33,7 +33,7 @@ extern "C" {
 
 #include <stdint.h>
 
-enum callback_return {ABORT_LOOP, CONTINUE_LOOP};
+enum callback_return {ABORT_LOOP, CONTINUE_LOOP, IO_REMOVED};
 
 union io_context {
 	void *ptr;

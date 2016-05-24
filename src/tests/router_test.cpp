@@ -30,70 +30,9 @@
 
 #include <boost/test/unit_test.hpp>
 
-#include "config.h"
 #include "json/cJSON.h"
 #include "peer.h"
 #include "router.h"
-#include "state.h"
-
-extern "C" {
-
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-	
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	enum callback_return eventloop_add_io(const struct eventloop *loop, struct io_event *ev)
-	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
-
-	void remove_all_methods_from_peer(struct peer *p)
-	{
-		(void)p;
-	}
-}
 
 static cJSON *create_response_no_id()
 {
@@ -123,31 +62,28 @@ static cJSON *create_response_wrong_id()
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
-		p = alloc_jet_peer(&loop, -1);
-	}
-	~F()
-	{
-		free_peer(&loop, p);
+		init_peer(&p);
 	}
 
-	struct peer *p;
-	struct eventloop loop;
+	~F()
+	{
+		free_peer_resources(&p);
+	}
+
+	struct peer p;
 };
 
 BOOST_FIXTURE_TEST_CASE(handle_response, F)
 {
 	cJSON *response = create_response_no_id();
 	cJSON *result = cJSON_GetObjectItem(response, "result");
-	int ret = handle_routing_response(response, result, "result", p);
+	int ret = handle_routing_response(response, result, "result", &p);
 	BOOST_CHECK(ret == -1);
 	cJSON_Delete(response);
 
 	response = create_response_wrong_id();
 	result = cJSON_GetObjectItem(response, "result");
-	ret = handle_routing_response(response, result, "result", p);
+	ret = handle_routing_response(response, result, "result", &p);
 	BOOST_CHECK(ret == -1);
 	cJSON_Delete(response);
 }
-

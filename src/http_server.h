@@ -27,15 +27,37 @@
 #ifndef CJET_HTTP_SERVER_H
 #define CJET_HTTP_SERVER_H
 
+#include "buffered_socket.h"
 #include "eventloop.h"
 #include "peer.h"
 #include "websocket_peer.h"
 
-void http_init(struct ws_peer *p);
-enum callback_return handle_ws_upgrade(union io_context *context);
+#define SEC_WEB_SOCKET_KEY_LENGTH 24
+#define SEC_WEB_SOCKET_GUID_LENGTH 36
 
-static const uint8_t WS_MASK_SET = 0x80;
-static const uint8_t WS_HEADER_FIN = 0x80;
+enum header_field {
+	HEADER_UNKNOWN,
+	HEADER_SEC_WEBSOCKET_KEY,
+	HEADER_SEC_WEBSOCKET_VERSION,
+	HEADER_SEC_WEBSOCKET_PROTOCOL,
+	HEADER_UPGRADE,
+	HEADER_CONNECTION_UPGRADE,
+};
+
+struct http_server {
+	struct buffered_socket *bs;
+	http_parser parser;
+	http_parser_settings parser_settings;
+
+	// TODO:Websocket specific stuff, should be factored out
+	struct {
+		unsigned int header_upgrade: 1;
+		unsigned int connection_upgrade: 1;
+	} flags;
+	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
+	enum header_field current_header_field;
+};
+
+struct http_server *alloc_http_server(const struct eventloop *loop, int fd);
 
 #endif
-

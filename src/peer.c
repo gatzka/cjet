@@ -68,7 +68,7 @@ static void remove_peer_from_routes(const struct peer *peer_to_remove)
 	return;
 }
 
-static void free_peer_resources(struct peer *p)
+void free_peer_resources(struct peer *p)
 {
 	remove_routing_info_from_peer(p);
 	remove_peer_from_routes(p);
@@ -79,6 +79,7 @@ static void free_peer_resources(struct peer *p)
 	if (p->name != NULL) {
 		free(p->name);
 	}
+	--number_of_peers;
 }
 
 int init_peer(struct peer *p)
@@ -94,13 +95,6 @@ int init_peer(struct peer *p)
 	list_add_tail(&p->next_peer, &peer_list);
 	++number_of_peers;
 	return 0;
-}
-
-
-void free_peer(struct peer *p)
-{
-	free_peer_resources(p);
-	--number_of_peers;
 }
 
 void set_peer_name(struct peer *peer, const char *name)
