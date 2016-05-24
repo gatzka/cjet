@@ -47,7 +47,6 @@ Project {
       "tests/log.cpp",
     ] 
   }
-/*
 
   CppApplication {
     name: "response_test"
@@ -58,9 +57,11 @@ Project {
 
     files: [
       "tests/response_test.cpp",
+      "tests/log.cpp",
     ] 
   }
 
+/*
   CppApplication {
     name: "router_test"
     type: ["application", "unittest"]

@@ -34,18 +34,24 @@
 #include "peer.h"
 #include "response.h"
 
-extern "C" {
-	void log_peer_err(const struct peer *p, const char *fmt, ...)
+struct F {
+	F()
 	{
-		(void)p;
-		(void)fmt;
+		init_peer(&p);
 	}
-}
 
-BOOST_AUTO_TEST_CASE(boolean_success_false)
+	~F()
+	{
+		free_peer_resources(&p);
+	}
+
+	struct peer p;
+};
+
+BOOST_FIXTURE_TEST_CASE(boolean_success_false, F)
 {
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *response = create_boolean_success_response(NULL, id, 0);
+	cJSON *response = create_boolean_success_response(&p, id, 0);
 
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	BOOST_CHECK(result->type == cJSON_False);
@@ -54,10 +60,10 @@ BOOST_AUTO_TEST_CASE(boolean_success_false)
 	cJSON_Delete(response);
 }
 
-BOOST_AUTO_TEST_CASE(boolean_success_true)
+BOOST_FIXTURE_TEST_CASE(boolean_success_true, F)
 {
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *response = create_boolean_success_response(NULL, id, 1);
+	cJSON *response = create_boolean_success_response(&p, id, 1);
 
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	BOOST_CHECK(result->type == cJSON_True);
@@ -66,23 +72,23 @@ BOOST_AUTO_TEST_CASE(boolean_success_true)
 	cJSON_Delete(response);
 }
 
-BOOST_AUTO_TEST_CASE(boolean_success_true_wrong_id_type)
+BOOST_FIXTURE_TEST_CASE(boolean_success_true_wrong_id_type, F)
 {
 	cJSON *id = cJSON_CreateBool(0);
-	cJSON *response = create_boolean_success_response(NULL, id, 1);
+	cJSON *response = create_boolean_success_response(&p, id, 1);
 
 	BOOST_CHECK(response == NULL);
 
 	cJSON_Delete(id);
 }
 
-BOOST_AUTO_TEST_CASE(internal_error_response)
+BOOST_FIXTURE_TEST_CASE(internal_error_response, F)
 {
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_internal_error(NULL, tag, reason);
-	cJSON *response = create_error_response(NULL, id, error);
+	cJSON *error = create_internal_error(&p, tag, reason);
+	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -98,18 +104,17 @@ BOOST_AUTO_TEST_CASE(internal_error_response)
 	cJSON *r = cJSON_GetObjectItem(data, tag);
 	BOOST_CHECK(r->type == cJSON_String && strcmp(r->valuestring, reason) == 0);
 
-
 	cJSON_Delete(id);
 	cJSON_Delete(response);
 }
 
-BOOST_AUTO_TEST_CASE(internal_error_response_wrong_id_type)
+BOOST_FIXTURE_TEST_CASE(internal_error_response_wrong_id_type, F)
 {
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateBool(0);
-	cJSON *error = create_internal_error(NULL, tag, reason);
-	cJSON *response = create_error_response(NULL, id, error);
+	cJSON *error = create_internal_error(&p, tag, reason);
+	cJSON *response = create_error_response(&p, id, error);
 
 	BOOST_CHECK(response == NULL);
 
@@ -117,13 +122,13 @@ BOOST_AUTO_TEST_CASE(internal_error_response_wrong_id_type)
 	cJSON_Delete(error);
 }
 
-BOOST_AUTO_TEST_CASE(invalid_request_response)
+BOOST_FIXTURE_TEST_CASE(invalid_request_response, F)
 {
 	const char *tag = "reason";
 	const char *reason = "neither request nor response";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_invalid_request_error(NULL, tag, reason);
-	cJSON *response = create_error_response(NULL, id, error);
+	cJSON *error = create_invalid_request_error(&p, tag, reason);
+	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -139,18 +144,17 @@ BOOST_AUTO_TEST_CASE(invalid_request_response)
 	cJSON *r = cJSON_GetObjectItem(data, tag);
 	BOOST_CHECK(r->type == cJSON_String && strcmp(r->valuestring, reason) == 0);
 
-
 	cJSON_Delete(id);
 	cJSON_Delete(response);
 }
 
-BOOST_AUTO_TEST_CASE(method_not_found_response)
+BOOST_FIXTURE_TEST_CASE(method_not_found_response, F)
 {
 	const char *tag = "reason";
 	const char *reason = "calling";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_method_not_found_error(NULL, tag, reason);
-	cJSON *response = create_error_response(NULL, id, error);
+	cJSON *error = create_method_not_found_error(&p, tag, reason);
+	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -166,18 +170,17 @@ BOOST_AUTO_TEST_CASE(method_not_found_response)
 	cJSON *r = cJSON_GetObjectItem(data, tag);
 	BOOST_CHECK(r->type == cJSON_String && strcmp(r->valuestring, reason) == 0);
 
-
 	cJSON_Delete(id);
 	cJSON_Delete(response);
 }
 
-BOOST_AUTO_TEST_CASE(invalid_params_response)
+BOOST_FIXTURE_TEST_CASE(invalid_params_response, F)
 {
 	const char *tag = "not exists";
 	const char *reason = "/foo/bar/";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_invalid_params_error(NULL, tag, reason);
-	cJSON *response = create_error_response(NULL, id, error);
+	cJSON *error = create_invalid_params_error(&p, tag, reason);
+	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -193,8 +196,6 @@ BOOST_AUTO_TEST_CASE(invalid_params_response)
 	cJSON *r = cJSON_GetObjectItem(data, tag);
 	BOOST_CHECK(r->type == cJSON_String && strcmp(r->valuestring, reason) == 0);
 
-
 	cJSON_Delete(id);
 	cJSON_Delete(response);
 }
-
