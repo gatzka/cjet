@@ -138,7 +138,6 @@ Project {
     ] 
   }
 
-/*
   CppApplication {
     name: "method_test"
     type: ["application", "unittest"]
@@ -152,6 +151,7 @@ Project {
     ] 
   }
 
+/*
   CppApplication {
     name: "combined_test"
     type: ["application", "unittest"]

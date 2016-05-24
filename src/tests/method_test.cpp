@@ -40,78 +40,33 @@ static const char *method_no_args_path = "/method_no_args/";
 
 static const int INVALID_PARAMS_ERROR = -32602;
 
-extern "C" {
-	enum callback_return handle_all_peer_operations(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	enum callback_return handle_ws_upgrade(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	void http_init(struct ws_peer *p)
-	{
-		(void)p;
-	}
-
-	enum callback_return write_msg(union io_context *context)
-	{
-		(void)context;
-		return CONTINUE_LOOP;
-	}
-
-	int ws_send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	int send_message(struct peer *p, const char *rendered, size_t len)
-	{
-		(void)p;
-		(void)rendered;
-		(void)len;
-		return 0;
-	}
-
-	enum callback_return eventloop_add_io(const eventloop *loop, struct io_event *ev)
-	{
-		(void)ev;
-		(void)loop;
-		return CONTINUE_LOOP;
-	}
-
-	void eventloop_remove_io(struct io_event *ev)
-	{
-		(void)ev;
-	}
+int send_message(struct peer *p, const char *rendered, size_t len)
+{
+	(void)p;
+	(void)rendered;
+	(void)len;
+	return 0;
 }
+
 
 struct F {
 	F()
 	{
-		loop.add = eventloop_add_io;
-		loop.remove = eventloop_remove_io;
 		state_hashtable_create();
-		owner_peer = alloc_jet_peer(&loop, -1);
-		call_peer = alloc_jet_peer(&loop, -1);
+		init_peer(&owner_peer);
+		owner_peer.send_message = send_message;
+		init_peer(&call_peer);
+		call_peer.send_message = send_message;
 	}
 	~F()
 	{
-		free_peer(&loop, call_peer);
-		free_peer(&loop, owner_peer);
+		free_peer_resources(&call_peer);
+		free_peer_resources(&owner_peer);
 		state_hashtable_delete();
 	}
 
-	struct peer *owner_peer;
-	struct peer *call_peer;
-	struct eventloop loop;
+	struct peer owner_peer;
+	struct peer call_peer;
 };
 
 static cJSON *create_call_json_rpc(const char *path_string)
@@ -164,18 +119,18 @@ static void check_invalid_params(const cJSON *error)
 BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 {
 	const char path[] = "/foo/bar/";
-	int ret = remove_state_or_method_from_peer(owner_peer, path);
+	int ret = remove_state_or_method_from_peer(&owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 
 BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 {
 
-	cJSON *error = add_state_or_method_to_peer(owner_peer, "/foo/bar", NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, "/foo/bar", NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(owner_peer, "/bar/foo", NULL, call_json_rpc, METHOD);
+	error = set_or_call(&owner_peer, "/bar/foo", NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if (error != NULL) {
@@ -190,10 +145,10 @@ BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
 {
 	const char path[] = "/foo/bar";
 
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
-	error = add_state_or_method_to_peer(owner_peer, path, NULL, 0x00);
+	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -205,11 +160,11 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 	int state_value = 12345;
 
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	error = add_state_or_method_to_peer(owner_peer, path, NULL, 0x00);
+	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -221,12 +176,12 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 	int state_value = 12345;
 
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(call_peer, path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, path, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if (error != NULL) {
@@ -240,35 +195,35 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 {
 	const char path[] = "/foo/bar";
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
-	int ret = remove_state_or_method_from_peer(owner_peer, path);
+	int ret = remove_state_or_method_from_peer(&owner_peer, path);
 	BOOST_CHECK(ret == 0);
 
-	ret = remove_state_or_method_from_peer(owner_peer, path);
+	ret = remove_state_or_method_from_peer(&owner_peer, path);
 	BOOST_CHECK(ret == -1);
 }
 
 
 BOOST_FIXTURE_TEST_CASE(correct_call, F)
 {
-	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
-	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(method_no_args_path);
-	error = set_or_call(call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if ((error != NULL) && (error != (cJSON *)ROUTED_MESSAGE)) {
