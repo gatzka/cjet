@@ -186,7 +186,7 @@ static enum callback_return accept_http(union io_context *io)
 	return accept_common(ev->loop, io, handle_http);
 }
 
-static enum callback_return accept_jetws_error(union io_context *io)
+static enum callback_return accept_http_error(union io_context *io)
 {
 	(void)io;
 	return ABORT_LOOP;
@@ -341,7 +341,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto eventloop_destroy;
 	}
 
-	struct server *http_server = create_server(loop, CONFIG_JETWS_PORT, accept_http, accept_jetws_error);
+	struct server *http_server = create_server(loop, CONFIG_JETWS_PORT, accept_http, accept_http_error);
 	if (http_server == NULL) {
 		go_ahead = 0;
 		ret = -1;
