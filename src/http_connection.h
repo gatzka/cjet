@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HTTP_SERVER_H
-#define CJET_HTTP_SERVER_H
+#ifndef CJET_HTTP_CONNECTION_H
+#define CJET_HTTP_CONNECTION_H
 
 #include "buffered_socket.h"
 #include "eventloop.h"
@@ -44,7 +44,7 @@ enum header_field {
 	HEADER_CONNECTION_UPGRADE,
 };
 
-struct http_server {
+struct http_connection {
 	struct buffered_socket *bs;
 	http_parser parser;
 	http_parser_settings parser_settings;
@@ -58,6 +58,6 @@ struct http_server {
 	enum header_field current_header_field;
 };
 
-struct http_server *alloc_http_server(const struct eventloop *loop, int fd);
+struct http_connection *alloc_http_server(const struct eventloop *loop, int fd);
 
 #endif

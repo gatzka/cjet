@@ -35,7 +35,7 @@
 #include "compiler.h"
 #include "jet_endian.h"
 #include "jet_string.h"
-#include "http_server.h"
+#include "http_connection.h"
 #include "http-parser/http_parser.h"
 #include "eventloop.h"
 #include "log.h"
@@ -61,7 +61,7 @@ static int check_http_version(const struct http_parser *parser)
 	}
 }
 
-static int send_upgrade_response(struct http_server *s)
+static int send_upgrade_response(struct http_connection *s)
 {
 	char accept_value[28];
 	struct SHA1Context context;
@@ -99,7 +99,7 @@ static int on_headers_complete(http_parser *parser)
 		return -1;
 	}
 
-	struct http_server *server = container_of(parser, struct http_server, parser);
+	struct http_connection *server = container_of(parser, struct http_connection, parser);
 	if ((server->flags.header_upgrade == 0) || (server->flags.connection_upgrade == 0)) {
 		return -1;
 	}
@@ -176,7 +176,7 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 
 static int on_header_field(http_parser *p, const char *at, size_t length)
 {
-	struct http_server *server = container_of(p, struct http_server, parser);
+	struct http_connection *server = container_of(p, struct http_connection, parser);
 
 	static const char sec_key[] = "Sec-WebSocket-Key";
 	if ((sizeof(sec_key) - 1  == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
@@ -215,7 +215,7 @@ static int on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
 
-	struct http_server *server = container_of(p, struct http_server, parser);
+	struct http_connection *server = container_of(p, struct http_connection, parser);
 
 	switch(server->current_header_field) {
 	case HEADER_SEC_WEBSOCKET_KEY:
@@ -264,7 +264,7 @@ static const char *get_response(unsigned int status_code)
 	}
 }
 
-static void free_server(struct http_server *server)
+static void free_server(struct http_connection *server)
 {
 	if (server->bs) {
 		buffered_socket_close(server->bs);
@@ -274,11 +274,11 @@ static void free_server(struct http_server *server)
 
 static void free_server_on_error(void *context)
 {
-	struct http_server *server = (struct http_server *)context;
+	struct http_connection *server = (struct http_connection *)context;
 	free_server(server);
 }
 
-static int send_http_error_response(struct http_server *server, unsigned int status_code)
+static int send_http_error_response(struct http_connection *server, unsigned int status_code)
 {
 	const char *response = get_response(status_code);
 	struct buffered_socket_io_vector iov;
@@ -289,7 +289,7 @@ static int send_http_error_response(struct http_server *server, unsigned int sta
 
 static void read_header_line(void *context, char *buf, ssize_t len)
 {
-	struct http_server *server = (struct http_server *)context;
+	struct http_connection *server = (struct http_connection *)context;
 
 	if (likely(len > 0)) {
 		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
@@ -319,7 +319,7 @@ static void read_header_line(void *context, char *buf, ssize_t len)
 
 static void read_start_line(void *context, char *buf, ssize_t len)
 {
-	struct http_server *server = (struct http_server *)context;
+	struct http_connection *server = (struct http_connection *)context;
 
 	if (likely(len > 0)) {
 		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
@@ -338,7 +338,7 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 	}
 }
 
-static void init_http_server(struct http_server *server, const struct eventloop *loop, int fd)
+static void init_http_server(struct http_connection *server, const struct eventloop *loop, int fd)
 {
 	http_parser_settings_init(&server->parser_settings);
 	server->parser_settings.on_headers_complete = on_headers_complete;
@@ -351,9 +351,9 @@ static void init_http_server(struct http_server *server, const struct eventloop 
 	buffered_socket_read_until(server->bs, CRLF, read_start_line, server);
 }
 
-struct http_server *alloc_http_server(const struct eventloop *loop, int fd)
+struct http_connection *alloc_http_server(const struct eventloop *loop, int fd)
 {
-	struct http_server *server = malloc(sizeof(*server));
+	struct http_connection *server = malloc(sizeof(*server));
 	if (unlikely(server == NULL)) {
 		return NULL;
 	}
