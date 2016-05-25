@@ -38,6 +38,10 @@
 #include "router.h"
 #include "socket_peer.h"
 
+#ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 static void free_jet_peer(struct socket_peer *p)
 {
 	free_peer_resources(&p->peer);
@@ -95,12 +99,15 @@ static void read_msg_length(void *context, char *buf, ssize_t len)
 
 static int send_message(struct peer *p, const char *rendered, size_t len)
 {
-	struct buffered_socket_io_vector iov;
-	iov.iov_base = rendered;
-	iov.iov_len = len;
+	uint32_t message_length = htonl(len);
+	struct buffered_socket_io_vector iov[2];
+	iov[0].iov_base = &message_length;
+	iov[0].iov_len = sizeof(message_length);
+	iov[1].iov_base = rendered;
+	iov[1].iov_len = len;
 	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
 
-	return buffered_socket_writev(&s_peer->bs, &iov, 1);
+	return buffered_socket_writev(&s_peer->bs, iov, ARRAY_SIZE(iov));
 }
 
 static void init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)

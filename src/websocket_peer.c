@@ -29,7 +29,7 @@
 #include <unistd.h>
 
 #include "compiler.h"
-#include "http_server.h"
+#include "http_connection.h"
 #include "jet_endian.h"
 #include "parse.h"
 #include "peer.h"

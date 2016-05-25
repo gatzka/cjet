@@ -24,12 +24,12 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HTTP_SERVER_H
-#define CJET_HTTP_SERVER_H
+#ifndef CJET_JET_SERVER_H
+#define CJET_JET_SERVER_H
 
 #include "eventloop.h"
 
-struct http_server {
+struct jet_server {
 	struct io_event ev;
 };
 

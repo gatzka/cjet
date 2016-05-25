@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2015> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,9 +24,40 @@
  * SOFTWARE.
  */
 
-#include "log.h"
+#ifndef CJET_HTTP_CONNECTION_H
+#define CJET_HTTP_CONNECTION_H
 
-void test_log(const char *format, ...)
-{
-	(void)format;
-}
+#include "buffered_socket.h"
+#include "eventloop.h"
+#include "peer.h"
+#include "websocket_peer.h"
+
+#define SEC_WEB_SOCKET_KEY_LENGTH 24
+#define SEC_WEB_SOCKET_GUID_LENGTH 36
+
+enum header_field {
+	HEADER_UNKNOWN,
+	HEADER_SEC_WEBSOCKET_KEY,
+	HEADER_SEC_WEBSOCKET_VERSION,
+	HEADER_SEC_WEBSOCKET_PROTOCOL,
+	HEADER_UPGRADE,
+	HEADER_CONNECTION_UPGRADE,
+};
+
+struct http_connection {
+	struct buffered_socket *bs;
+	http_parser parser;
+	http_parser_settings parser_settings;
+
+	// TODO:Websocket specific stuff, should be factored out
+	struct {
+		unsigned int header_upgrade: 1;
+		unsigned int connection_upgrade: 1;
+	} flags;
+	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
+	enum header_field current_header_field;
+};
+
+struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd);
+
+#endif
