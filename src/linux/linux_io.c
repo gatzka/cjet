@@ -54,9 +54,9 @@
 #include "util.h"
 #include "websocket_peer.h"
 
-struct server {
-	struct io_event ev;
-};
+#ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
 
 static int go_ahead = 1;
 
@@ -126,35 +126,35 @@ static int prepare_peer_socket(int fd)
 	return 0;
 }
 
-static void handle_new_jet_connection(const struct eventloop *loop, int fd)
+static void handle_new_jet_connection(struct io_event *ev, int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
 
-	struct socket_peer *peer = alloc_jet_peer(loop, fd);
+	struct socket_peer *peer = alloc_jet_peer(ev->loop, fd);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
 	}
 }
 
-static void handle_http(const struct eventloop *loop ,int fd)
+static void handle_http(struct io_event *ev ,int fd)
 {
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct http_connection *connection = alloc_http_connection(loop, fd);
+	struct http_connection *connection = alloc_http_connection(ev, fd);
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
 		close(fd);
 	}
 }
 
-static enum callback_return accept_common(const struct eventloop *loop, union io_context *io,  void (*peer_function)(const struct eventloop*, int fd))
+static enum callback_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd))
 {
 	while (1) {
-		int peer_fd = accept(io->fd, NULL, NULL);
+		int peer_fd = accept(ev->context.fd, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return CONTINUE_LOOP;
@@ -163,7 +163,7 @@ static enum callback_return accept_common(const struct eventloop *loop, union io
 			}
 		} else {
 			if (likely(peer_function != NULL)) {
-				peer_function(loop, peer_fd);
+				peer_function(ev, peer_fd);
 			}
 		}
 	/* coverity[leaked_handle] */
@@ -173,7 +173,7 @@ static enum callback_return accept_common(const struct eventloop *loop, union io
 static enum callback_return accept_jet(union io_context *io)
 {
 	struct io_event *ev = container_of(io, struct io_event, context);
-	return accept_common(ev->loop, io, handle_new_jet_connection);
+	return accept_common(ev, handle_new_jet_connection);
 }
 
 static enum callback_return accept_jet_error(union io_context *io)
@@ -185,7 +185,7 @@ static enum callback_return accept_jet_error(union io_context *io)
 static enum callback_return accept_http(union io_context *io)
 {
 	struct io_event *ev = container_of(io, struct io_event, context);
-	return accept_common(ev->loop, io, handle_http);
+	return accept_common(ev, handle_http);
 }
 
 static enum callback_return accept_http_error(union io_context *io)
@@ -341,14 +341,25 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto stop_jet_server;
 	}
 	
-	struct http_server h_server = {
+	const struct url_handler handler[] = {
+		{
+			.request_target = "bla"
+		},
+		{
+			.request_target = "fasel"
+		}
+	};
+
+	 struct http_server h_server = {
 		.ev = {
 			.read_function = accept_http,
 			.write_function = NULL,
 			.error_function = accept_http_error,
 			.loop = loop,
-			.context.fd = http_fd
-		}
+			.context.fd = http_fd,
+		},
+		.handler = handler,
+		.num_handlers = ARRAY_SIZE(handler),
 	};
 	
 	ret = start_server(&h_server.ev);

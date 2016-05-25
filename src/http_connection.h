@@ -29,6 +29,7 @@
 
 #include "buffered_socket.h"
 #include "eventloop.h"
+#include "http_server.h"
 #include "peer.h"
 #include "websocket_peer.h"
 
@@ -48,6 +49,7 @@ struct http_connection {
 	struct buffered_socket *bs;
 	http_parser parser;
 	http_parser_settings parser_settings;
+	struct http_server *server;
 
 	// TODO:Websocket specific stuff, should be factored out
 	struct {
@@ -58,6 +60,6 @@ struct http_connection {
 	enum header_field current_header_field;
 };
 
-struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd);
+struct http_connection *alloc_http_connection(struct io_event *ev, int fd);
 
 #endif

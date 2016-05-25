@@ -36,6 +36,7 @@
 #include "jet_endian.h"
 #include "jet_string.h"
 #include "http_connection.h"
+#include "http_server.h"
 #include "http-parser/http_parser.h"
 #include "eventloop.h"
 #include "log.h"
@@ -338,8 +339,10 @@ static void read_start_line(void *context, char *buf, ssize_t len)
 	}
 }
 
-static void init_http_connection(struct http_connection *connection, const struct eventloop *loop, int fd)
+static void init_http_connection(struct http_connection *connection, struct io_event *ev, int fd)
 {
+	struct http_server *server = container_of(ev, struct http_server, ev);
+	connection->server = server;
 	http_parser_settings_init(&connection->parser_settings);
 	connection->parser_settings.on_headers_complete = on_headers_complete;
 	connection->parser_settings.on_header_field = on_header_field;
@@ -347,11 +350,11 @@ static void init_http_connection(struct http_connection *connection, const struc
 	connection->parser_settings.on_url = on_url;
 
 	http_parser_init(&connection->parser, HTTP_REQUEST);
-	buffered_socket_init(connection->bs, fd, loop, free_connection_on_error, connection);
+	buffered_socket_init(connection->bs, fd, ev->loop, free_connection_on_error, connection);
 	buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd)
+struct http_connection *alloc_http_connection(struct io_event *ev, int fd)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {
@@ -362,6 +365,6 @@ struct http_connection *alloc_http_connection(const struct eventloop *loop, int 
 		free(connection);
 		return NULL;
 	}
-	init_http_connection(connection, loop, fd);
+	init_http_connection(connection, ev, fd);
 	return connection;
 }
