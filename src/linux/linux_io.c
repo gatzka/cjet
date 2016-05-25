@@ -42,6 +42,8 @@
 #include "jet_endian.h"
 #include "eventloop.h"
 #include "http_connection.h"
+#include "http_server.h"
+#include "jet_server.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "linux/peer_testing.h"
@@ -142,9 +144,9 @@ static void handle_http(const struct eventloop *loop ,int fd)
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct http_connection *server = alloc_http_connection(loop, fd);
-	if (unlikely(server == NULL)) {
-		log_err("Could not allocate http server!\n");
+	struct http_connection *connection = alloc_http_connection(loop, fd);
+	if (unlikely(connection == NULL)) {
+		log_err("Could not allocate http connection!\n");
 		close(fd);
 	}
 }
@@ -192,28 +194,21 @@ static enum callback_return accept_http_error(union io_context *io)
 	return ABORT_LOOP;
 }
 
-static struct server *alloc_server(const struct eventloop *loop, int fd, eventloop_function read_function, eventloop_function error_function)
+static int start_server(struct io_event *ev)
 {
-	struct server *s = malloc(sizeof(*s));
-	if (unlikely(s == NULL)) {
-		return NULL;
+	if (ev->loop->add(ev) == ABORT_LOOP) {
+		return -1;
+	} else {
+		if (ev->read_function(&ev->context) == CONTINUE_LOOP) {
+			return 0;
+		} else {
+			ev->loop->remove(ev);
+			return -1;
+		}
 	}
-
-	s->ev.loop = loop;
-	s->ev.context.fd = fd;
-	s->ev.read_function = read_function;
-	s->ev.write_function = NULL;
-	s->ev.error_function = error_function;
-
-	if (loop->add(&s->ev) == ABORT_LOOP) {
-		free(s);
-		return NULL;
-	}
-
-	return s;
 }
 
-static struct server *create_server(const struct eventloop *loop, int server_port, eventloop_function read_function, eventloop_function error_function)
+static int create_server_socket(int server_port)
 {
 	int listen_fd;
 	struct sockaddr_in6 serveraddr;
@@ -222,17 +217,17 @@ static struct server *create_server(const struct eventloop *loop, int server_por
 	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (listen_fd < 0) {
 		log_err("Could not create listen socket!\n");
-		return NULL;
+		return -1;
 	}
 
 	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 			sizeof(reuse_on)) < 0) {
 		log_err("Could not set %s!\n", "SO_REUSEADDR");
-		goto so_reuse_failed;
+		return -1;
 	}
 
 	if (set_fd_non_blocking(listen_fd) < 0) {
-		goto nonblock_failed;
+		return -1;
 	}
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
@@ -242,34 +237,20 @@ static struct server *create_server(const struct eventloop *loop, int server_por
 	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
 		sizeof(serveraddr)) < 0) {
 		log_err("bind failed!\n");
-		goto bind_failed;
+		return -1;
 	}
 
 	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
 		log_err("listen failed!\n");
-		goto listen_failed;
+		return -1;
 	}
-
-	struct server *server = alloc_server(loop, listen_fd, read_function, error_function);
-	if (server == NULL) {
-		goto alloc_server_wait_failed;
-	}
-
-	return server;
-
-alloc_server_wait_failed:
-listen_failed:
-bind_failed:
-nonblock_failed:
-so_reuse_failed:
-	close(listen_fd);
-	return NULL;
+	return listen_fd;
 }
 
-static void delete_server(struct server *server)
+static void stop_server(struct io_event *ev)
 {
-	close(server->ev.context.fd);
-	free(server);
+	ev->loop->remove(ev);
+	close(ev->context.fd);
 }
 
 static void sighandler(int signum)
@@ -334,34 +315,62 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto unregister_signal_handler;
 	}
 
-	struct server *jet_server = create_server(loop, CONFIG_JET_PORT, accept_jet, accept_jet_error);
-	if (jet_server == NULL) {
-		go_ahead = 0;
-		ret = -1;
+	int jet_fd = create_server_socket(CONFIG_JET_PORT);
+	if (jet_fd < 0) {
 		goto eventloop_destroy;
 	}
 
-	struct server *http_server = create_server(loop, CONFIG_JETWS_PORT, accept_http, accept_http_error);
-	if (http_server == NULL) {
-		go_ahead = 0;
-		ret = -1;
-		goto delete_jet_server;
+	struct jet_server jet_server = {
+		.ev = {
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.context.fd = jet_fd
+		}
+	};
+
+	ret = start_server(&jet_server.ev);
+	if (ret  < 0) {
+		close(jet_fd);
+		goto eventloop_destroy;
+	}
+
+	int http_fd = create_server_socket(CONFIG_JETWS_PORT);
+	if (http_fd < 0) {
+		goto stop_jet_server;
+	}
+	
+	struct http_server h_server = {
+		.ev = {
+			.read_function = accept_http,
+			.write_function = NULL,
+			.error_function = accept_http_error,
+			.loop = loop,
+			.context.fd = http_fd
+		}
+	};
+	
+	ret = start_server(&h_server.ev);
+	if (ret  < 0) {
+		close(http_fd);
+		goto stop_jet_server;
 	}
 
 	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
-		goto delete_http_server;
+		goto stop_http_server;
 	}
 
 	ret = loop->run(&go_ahead);
 
 	destroy_all_peers();
 
-delete_http_server:
-	delete_server(http_server);
-delete_jet_server:
-	delete_server(jet_server);
+stop_http_server:
+	stop_server(&h_server.ev);
+stop_jet_server:
+	stop_server(&jet_server.ev);
 eventloop_destroy:
 	loop->destroy();
 unregister_signal_handler:

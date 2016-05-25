@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2015> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,9 +24,13 @@
  * SOFTWARE.
  */
 
-#include "log.h"
+#ifndef CJET_HTTP_SERVER_H
+#define CJET_HTTP_SERVER_H
 
-void test_log(const char *format, ...)
-{
-	(void)format;
-}
+#include "eventloop.h"
+
+struct http_server {
+	struct io_event ev;
+};
+
+#endif
