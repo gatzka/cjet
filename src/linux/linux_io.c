@@ -142,7 +142,7 @@ static void handle_http(const struct eventloop *loop ,int fd)
 	if (prepare_peer_socket(fd) < 0) {
 		return;
 	}
-	struct http_connection *server = alloc_http_server(loop, fd);
+	struct http_connection *server = alloc_http_connection(loop, fd);
 	if (unlikely(server == NULL)) {
 		log_err("Could not allocate http server!\n");
 		close(fd);

@@ -58,6 +58,6 @@ struct http_connection {
 	enum header_field current_header_field;
 };
 
-struct http_connection *alloc_http_server(const struct eventloop *loop, int fd);
+struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd);
 
 #endif

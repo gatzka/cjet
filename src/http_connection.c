@@ -99,11 +99,11 @@ static int on_headers_complete(http_parser *parser)
 		return -1;
 	}
 
-	struct http_connection *server = container_of(parser, struct http_connection, parser);
-	if ((server->flags.header_upgrade == 0) || (server->flags.connection_upgrade == 0)) {
+	struct http_connection *connection = container_of(parser, struct http_connection, parser);
+	if ((connection->flags.header_upgrade == 0) || (connection->flags.connection_upgrade == 0)) {
 		return -1;
 	}
-	return send_upgrade_response(server);
+	return send_upgrade_response(connection);
 }
 
 static int save_websocket_key(uint8_t *dest, const char *at, size_t length)
@@ -176,35 +176,35 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 
 static int on_header_field(http_parser *p, const char *at, size_t length)
 {
-	struct http_connection *server = container_of(p, struct http_connection, parser);
+	struct http_connection *connection = container_of(p, struct http_connection, parser);
 
 	static const char sec_key[] = "Sec-WebSocket-Key";
 	if ((sizeof(sec_key) - 1  == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
-		server->current_header_field = HEADER_SEC_WEBSOCKET_KEY;
+		connection->current_header_field = HEADER_SEC_WEBSOCKET_KEY;
 		return 0;
 	}
 
 	static const char ws_version[] = "Sec-WebSocket-Version";
 	if ((sizeof(ws_version) - 1  == length) && (jet_strncasecmp(at, ws_version, length) == 0)) {
-		server->current_header_field = HEADER_SEC_WEBSOCKET_VERSION;
+		connection->current_header_field = HEADER_SEC_WEBSOCKET_VERSION;
 		return 0;
 	}
 
 	static const char ws_protocol[] = "Sec-WebSocket-Protocol";
 	if ((sizeof(ws_protocol) - 1  == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
-		server->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
+		connection->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
 		return 0;
 	}
 
 	static const char header_upgrade[] = "Upgrade";
 	if ((sizeof(header_upgrade) - 1  == length) && (jet_strncasecmp(at, header_upgrade, length) == 0)) {
-		server->current_header_field = HEADER_UPGRADE;
+		connection->current_header_field = HEADER_UPGRADE;
 		return 0;
 	}
 
 	static const char conn_upgrade[] = "Connection";
 	if ((sizeof(conn_upgrade) - 1  == length) && (jet_strncasecmp(at, conn_upgrade, length) == 0)) {
-		server->current_header_field = HEADER_CONNECTION_UPGRADE;
+		connection->current_header_field = HEADER_CONNECTION_UPGRADE;
 		return 0;
 	}
 
@@ -215,11 +215,11 @@ static int on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
 
-	struct http_connection *server = container_of(p, struct http_connection, parser);
+	struct http_connection *connection = container_of(p, struct http_connection, parser);
 
-	switch(server->current_header_field) {
+	switch(connection->current_header_field) {
 	case HEADER_SEC_WEBSOCKET_KEY:
-		ret = save_websocket_key(server->sec_web_socket_key, at, length);
+		ret = save_websocket_key(connection->sec_web_socket_key, at, length);
 		break;
 
 	case HEADER_SEC_WEBSOCKET_VERSION:
@@ -233,14 +233,14 @@ static int on_header_value(http_parser *p, const char *at, size_t length)
 	case HEADER_UPGRADE:
 		ret = check_upgrade(at, length);
 		if (ret == 0) {
-			server->flags.header_upgrade = 1;
+			connection->flags.header_upgrade = 1;
 		}
 		break;
 
 	case HEADER_CONNECTION_UPGRADE:
 		ret = check_connection_upgrade(at, length);
 		if (ret == 0) {
-			server->flags.connection_upgrade = 1;
+			connection->flags.connection_upgrade = 1;
 		}
 		break;
 
@@ -249,7 +249,7 @@ static int on_header_value(http_parser *p, const char *at, size_t length)
 		break;
 	}
 
-	server->current_header_field = HEADER_UNKNOWN;
+	connection->current_header_field = HEADER_UNKNOWN;
 	return ret;
 }
 
@@ -264,104 +264,104 @@ static const char *get_response(unsigned int status_code)
 	}
 }
 
-static void free_server(struct http_connection *server)
+static void free_connection(struct http_connection *connection)
 {
-	if (server->bs) {
-		buffered_socket_close(server->bs);
+	if (connection->bs) {
+		buffered_socket_close(connection->bs);
 	}
-	free(server);
+	free(connection);
 }
 
-static void free_server_on_error(void *context)
+static void free_connection_on_error(void *context)
 {
-	struct http_connection *server = (struct http_connection *)context;
-	free_server(server);
+	struct http_connection *connection = (struct http_connection *)context;
+	free_connection(connection);
 }
 
-static int send_http_error_response(struct http_connection *server, unsigned int status_code)
+static int send_http_error_response(struct http_connection *connection, unsigned int status_code)
 {
 	const char *response = get_response(status_code);
 	struct buffered_socket_io_vector iov;
 	iov.iov_base = response;
 	iov.iov_len = strlen(response);
-	return buffered_socket_writev(server->bs, &iov, 1);
+	return buffered_socket_writev(connection->bs, &iov, 1);
 }
 
 static void read_header_line(void *context, char *buf, ssize_t len)
 {
-	struct http_connection *server = (struct http_connection *)context;
+	struct http_connection *connection = (struct http_connection *)context;
 
 	if (likely(len > 0)) {
-		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
+		size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
 
 		if (nparsed != (size_t)len) {
-			send_http_error_response(server, 400);
-			free_server(server);
-		} else if (server->parser.upgrade) {
-			struct websocket_peer *ws_peer = alloc_websocket_peer(server->bs);
+			send_http_error_response(connection, 400);
+			free_connection(connection);
+		} else if (connection->parser.upgrade) {
+			struct websocket_peer *ws_peer = alloc_websocket_peer(connection->bs);
 			if(ws_peer == NULL) {
-				send_http_error_response(server, 500);
+				send_http_error_response(connection, 500);
 				log_err("Could not allocate websocket peer!\n");
 			} else {
-				server->bs = NULL;
+				connection->bs = NULL;
 			}
-			free_server(server);
+			free_connection(connection);
 		} else {
-			buffered_socket_read_until(server->bs, CRLF, read_header_line, server);
+			buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
 		}
 	} else {
 		if (len < 0) {
 			log_err("Error while reading header line!\n");
 		}
-		free_server(server);
+		free_connection(connection);
 	}
 }
 
 static void read_start_line(void *context, char *buf, ssize_t len)
 {
-	struct http_connection *server = (struct http_connection *)context;
+	struct http_connection *connection = (struct http_connection *)context;
 
 	if (likely(len > 0)) {
-		size_t nparsed = http_parser_execute(&server->parser, &server->parser_settings, buf, len);
+		size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
 		
 		if (nparsed != (size_t)len) {
-			send_http_error_response(server, 400);
-			free_server(server);
+			send_http_error_response(connection, 400);
+			free_connection(connection);
 		}
 
-		buffered_socket_read_until(server->bs, CRLF, read_header_line, server);
+		buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
 	} else {
 		if (len < 0) {
 			log_err("Error while reading start line!\n");
 		}
-		free_server(server);
+		free_connection(connection);
 	}
 }
 
-static void init_http_server(struct http_connection *server, const struct eventloop *loop, int fd)
+static void init_http_connection(struct http_connection *connection, const struct eventloop *loop, int fd)
 {
-	http_parser_settings_init(&server->parser_settings);
-	server->parser_settings.on_headers_complete = on_headers_complete;
-	server->parser_settings.on_header_field = on_header_field;
-	server->parser_settings.on_header_value = on_header_value;
-	server->parser_settings.on_url = on_url;
+	http_parser_settings_init(&connection->parser_settings);
+	connection->parser_settings.on_headers_complete = on_headers_complete;
+	connection->parser_settings.on_header_field = on_header_field;
+	connection->parser_settings.on_header_value = on_header_value;
+	connection->parser_settings.on_url = on_url;
 
-	http_parser_init(&server->parser, HTTP_REQUEST);
-	buffered_socket_init(server->bs, fd, loop, free_server_on_error, server);
-	buffered_socket_read_until(server->bs, CRLF, read_start_line, server);
+	http_parser_init(&connection->parser, HTTP_REQUEST);
+	buffered_socket_init(connection->bs, fd, loop, free_connection_on_error, connection);
+	buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_server(const struct eventloop *loop, int fd)
+struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd)
 {
-	struct http_connection *server = malloc(sizeof(*server));
-	if (unlikely(server == NULL)) {
+	struct http_connection *connection = malloc(sizeof(*connection));
+	if (unlikely(connection == NULL)) {
 		return NULL;
 	}
-	server->bs = malloc(sizeof(*(server->bs)));
-	if (unlikely(server->bs == NULL)) {
-		free(server);
+	connection->bs = malloc(sizeof(*(connection->bs)));
+	if (unlikely(connection->bs == NULL)) {
+		free(connection);
 		return NULL;
 	}
-	init_http_server(server, loop, fd);
-	return server;
+	init_http_connection(connection, loop, fd);
+	return connection;
 }
