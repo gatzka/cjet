@@ -61,40 +61,47 @@ static void close_jet_peer(struct peer *p)
 	free_jet_peer(s_peer);
 }
 
-static void read_msg_length(void *context, char *buf, ssize_t len);
+static enum bs_read_callback_return read_msg_length(void *context, char *buf, ssize_t len);
 
-static void read_msg(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_msg(void *context, char *buf, ssize_t len)
 {
 	struct socket_peer *p = (struct socket_peer *)context;
-	if (likely(len > 0)) {
-		int ret = parse_message(buf, len, &p->peer);
-		if (likely(ret >= 0)) {
-			buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
-		} else {
-			free_jet_peer(p);
-		}
-	} else {
+
+	if (unlikely(len <= 0)) {
 		if (len < 0) {
 			log_peer_err(&p->peer, "Error while reading message!\n");
 		}
 		free_jet_peer(p);
+		return BS_CLOSED;
 	}
+
+	int ret = parse_message(buf, len, &p->peer);
+	if (unlikely(ret < 0)) {
+		free_jet_peer(p);
+		return BS_CLOSED;
+	}
+
+	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
+	return BS_OK;
 }
 
-static void read_msg_length(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_msg_length(void *context, char *buf, ssize_t len)
 {
 	struct socket_peer *p = (struct socket_peer *)context;
-	if (likely(len > 0)) {
-		uint32_t message_length;
-		memcpy(&message_length, buf, len);
-		message_length = ntohl(message_length);
-		buffered_socket_read_exactly(&p->bs, message_length, read_msg, p);
-	} else {
+
+	if (unlikely(len <= 0)) {
 		if (len < 0) {
 			log_peer_err(&p->peer, "Error while reading message length!\n");
 		}
 		free_jet_peer(p);
+		return BS_CLOSED;
 	}
+
+	uint32_t message_length;
+	memcpy(&message_length, buf, len);
+	message_length = ntohl(message_length);
+	buffered_socket_read_exactly(&p->bs, message_length, read_msg, p);
+	return BS_OK;
 }
 
 static int send_message(struct peer *p, const char *rendered, size_t len)

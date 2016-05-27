@@ -36,6 +36,7 @@
 #include "jet_endian.h"
 #include "jet_string.h"
 #include "http_connection.h"
+#include "http_server.h"
 #include "http-parser/http_parser.h"
 #include "eventloop.h"
 #include "log.h"
@@ -162,14 +163,20 @@ static int check_connection_upgrade(const char *at, size_t length)
 
 static int on_url(http_parser *parser, const char *at, size_t length)
 {
-	(void)parser;
-	(void)at;
-	(void)length;
-
+	int is_connect;
+	if (parser->method == HTTP_CONNECT) {
+		is_connect = 1;
+	} else {
+		is_connect = 0;
+	}
 	struct http_parser_url u;
 	http_parser_url_init(&u);
-	int ret = http_parser_parse_url(at, length, 0, &u);
-	(void)ret;
+	int ret = http_parser_parse_url(at, length, is_connect, &u);
+	if (ret != 0) {
+		return -1;
+	}
+	struct http_connection *connection = container_of(parser, struct http_connection, parser);
+	(void)connection;
 
 	return 0;
 }
@@ -268,6 +275,7 @@ static void free_connection(struct http_connection *connection)
 {
 	if (connection->bs) {
 		buffered_socket_close(connection->bs);
+		free(connection->bs);
 	}
 	free(connection);
 }
@@ -287,71 +295,85 @@ static int send_http_error_response(struct http_connection *connection, unsigned
 	return buffered_socket_writev(connection->bs, &iov, 1);
 }
 
-static void read_header_line(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_header_line(void *context, char *buf, ssize_t len)
 {
 	struct http_connection *connection = (struct http_connection *)context;
 
-	if (likely(len > 0)) {
-		size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
-
-		if (nparsed != (size_t)len) {
-			send_http_error_response(connection, 400);
-			free_connection(connection);
-		} else if (connection->parser.upgrade) {
-			struct websocket_peer *ws_peer = alloc_websocket_peer(connection->bs);
-			if(ws_peer == NULL) {
-				send_http_error_response(connection, 500);
-				log_err("Could not allocate websocket peer!\n");
-			} else {
-				connection->bs = NULL;
-			}
-			free_connection(connection);
-		} else {
-			buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
-		}
-	} else {
+	if (unlikely(len <= 0)) {
 		if (len < 0) {
 			log_err("Error while reading header line!\n");
 		}
 		free_connection(connection);
+		return BS_CLOSED;
 	}
+
+	size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
+	if (unlikely(nparsed != (size_t)len)) {
+		send_http_error_response(connection, 400);
+		free_connection(connection);
+		return BS_CLOSED;
+	}
+	if (connection->parser.upgrade) {
+		struct websocket_peer *ws_peer = alloc_websocket_peer(connection->bs);
+		if (ws_peer == NULL) {
+			send_http_error_response(connection, 500);
+			log_err("Could not allocate websocket peer!\n");
+			free_connection(connection);
+			return BS_CLOSED;
+		}
+		/*
+		 * Transfer ownership of buffered socket to websocket peer.
+		 */
+		connection->bs = NULL;
+		free_connection(connection);
+		return BS_OK;
+	}
+
+	buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
+	return BS_OK;
 }
 
-static void read_start_line(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_start_line(void *context, char *buf, ssize_t len)
 {
 	struct http_connection *connection = (struct http_connection *)context;
 
-	if (likely(len > 0)) {
-		size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
-		
-		if (nparsed != (size_t)len) {
-			send_http_error_response(connection, 400);
-			free_connection(connection);
-		}
-
-		buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
-	} else {
+	if (unlikely(len <= 0)) {
 		if (len < 0) {
 			log_err("Error while reading start line!\n");
 		}
 		free_connection(connection);
+		return BS_CLOSED;
+	}
+
+	size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
+
+	if (unlikely(nparsed != (size_t)len)) {
+		send_http_error_response(connection, 400);
+		free_connection(connection);
+		return BS_CLOSED;
+	} else {
+		buffered_socket_read_until(connection->bs, CRLF, read_header_line, connection);
+		return BS_OK;
 	}
 }
 
-static void init_http_connection(struct http_connection *connection, const struct eventloop *loop, int fd)
+static void init_http_connection(struct http_connection *connection, struct io_event *ev, int fd)
 {
+	struct http_server *server = container_of(ev, struct http_server, ev);
+	connection->server = server;
 	http_parser_settings_init(&connection->parser_settings);
 	connection->parser_settings.on_headers_complete = on_headers_complete;
 	connection->parser_settings.on_header_field = on_header_field;
 	connection->parser_settings.on_header_value = on_header_value;
 	connection->parser_settings.on_url = on_url;
+	connection->current_header_field = HEADER_UNKNOWN;
 
 	http_parser_init(&connection->parser, HTTP_REQUEST);
-	buffered_socket_init(connection->bs, fd, loop, free_connection_on_error, connection);
+	buffered_socket_init(connection->bs, fd, ev->loop, free_connection_on_error, connection);
 	buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(const struct eventloop *loop, int fd)
+struct http_connection *alloc_http_connection(struct io_event *ev, int fd)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {
@@ -362,6 +384,6 @@ struct http_connection *alloc_http_connection(const struct eventloop *loop, int 
 		free(connection);
 		return NULL;
 	}
-	init_http_connection(connection, loop, fd);
+	init_http_connection(connection, ev, fd);
 	return connection;
 }

@@ -27,10 +27,15 @@
 #ifndef CJET_HTTP_SERVER_H
 #define CJET_HTTP_SERVER_H
 
+#include <stddef.h>
+
 #include "eventloop.h"
+#include "url_handler.h"
 
 struct http_server {
 	struct io_event ev;
+	const struct url_handler *handler;
+	size_t num_handlers;
 };
 
 #endif

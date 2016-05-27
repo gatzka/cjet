@@ -66,11 +66,11 @@ static int go_reading(struct buffered_socket *bs)
 	while (1) {
 		char *buffer;
 		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
-		if (len < 0) {
+		if (unlikely(len < 0)) {
 			return len;
 		} else {
-			bs->read_callback(bs->read_callback_context, buffer, len);
-			if (unlikely(len == 0)) {
+			int ret = bs->read_callback(bs->read_callback_context, buffer, len);
+			if (unlikely((len == 0) || (ret == BS_CLOSED))) {
 				return 0;
 			}
 		}
@@ -318,7 +318,7 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
-int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
@@ -342,7 +342,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, void (*
 	}
 }
 
-int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, void (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);

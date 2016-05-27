@@ -369,7 +369,7 @@ struct F {
 		f->error_func_called = true;
 	}
 
-	static void read_callback(void *context, char *buf, ssize_t len)
+	static enum bs_read_callback_return read_callback(void *context, char *buf, ssize_t len)
 	{
 		struct F *f = (struct F *)context;
 		memcpy(f->read_buffer, buf, len);
@@ -380,6 +380,7 @@ struct F {
 		} else if (f->bs.ev.context.fd == READ_UNTIL_IN_CALLBACK) {
 			buffered_socket_read_until(&f->bs, "\n\r", read_callback, f);
 		}
+		return BS_OK;
 	}
 
 	~F()
