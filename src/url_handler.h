@@ -40,8 +40,7 @@ struct http_connection;
 struct url_handler {
 	const char *request_target;
 
-	int (*on_message_begin)(struct http_connection *connection);
-	int (*on_status)(struct http_connection *connection, const char *at, size_t length);
+	int (*create)(struct http_connection *connection);
 	int (*on_header_field)(struct http_connection *connection, const char *at, size_t length);
 	int (*on_header_value)(struct http_connection *connection, const char *at, size_t length);
 	int (*on_headers_complete)(struct http_connection *connection);
