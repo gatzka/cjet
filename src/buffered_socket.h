@@ -28,6 +28,7 @@
 #define CJET_BUFFERED_SOCKET_H
 
 #include <stddef.h>
+#include <sys/types.h>
 
 #include "eventloop.h"
 #include "generated/cjet_config.h"
