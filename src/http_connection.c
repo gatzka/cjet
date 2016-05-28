@@ -175,8 +175,12 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 	if (ret != 0) {
 		return -1;
 	}
-	struct http_connection *connection = container_of(parser, struct http_connection, parser);
-	(void)connection;
+	if ((u.field_set & (1 << UF_PATH)) == (1 << UF_PATH)) {
+		struct http_connection *connection = container_of(parser, struct http_connection, parser);
+		const struct url_handler *handler = find_url_handler(connection->server, at + u.field_data[UF_PATH].off, u.field_data[UF_PATH].len);
+		(void)handler;
+	}
+
 
 	return 0;
 }
