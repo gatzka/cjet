@@ -343,10 +343,10 @@ int run_io(const struct eventloop *loop, const char *user_name)
 	
 	const struct url_handler handler[] = {
 		{
-			.request_target = "bla"
+			.request_target = "/foobar/"
 		},
 		{
-			.request_target = "fasel"
+			.request_target = "/"
 		}
 	};
 

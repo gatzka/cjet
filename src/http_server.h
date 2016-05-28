@@ -32,10 +32,20 @@
 #include "eventloop.h"
 #include "url_handler.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct http_server {
 	struct io_event ev;
 	const struct url_handler *handler;
 	size_t num_handlers;
 };
+
+const struct url_handler *find_url_handler(struct http_server *server, const char *url, size_t url_length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
