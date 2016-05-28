@@ -59,6 +59,7 @@ SET(CJET_FILES
         fetch.c
         http-parser/http_parser.c
         http_connection.c
+        http_server.c
         info.c
         json/cJSON.c
         parse.c
