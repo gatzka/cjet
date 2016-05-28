@@ -361,7 +361,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		.handler = handler,
 		.num_handlers = ARRAY_SIZE(handler),
 	};
-	
+
 	ret = start_server(&h_server.ev);
 	if (ret  < 0) {
 		close(http_fd);
