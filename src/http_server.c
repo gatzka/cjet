@@ -36,7 +36,7 @@ const struct url_handler *find_url_handler(struct http_server *server, const cha
 		size_t length = strlen(server->handler[i].request_target);
 		if (length <= url_length) {
 			if (strncmp(server->handler[i].request_target, url, length) == 0) {
-				return server->handler;
+				return &server->handler[i];
 			}
 		}
 	}

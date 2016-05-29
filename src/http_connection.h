@@ -30,41 +30,21 @@
 #include "buffered_socket.h"
 #include "eventloop.h"
 #include "http_server.h"
-#include "peer.h"
-#include "websocket_peer.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define SEC_WEB_SOCKET_KEY_LENGTH 24
-#define SEC_WEB_SOCKET_GUID_LENGTH 36
-
-enum header_field {
-	HEADER_UNKNOWN,
-	HEADER_SEC_WEBSOCKET_KEY,
-	HEADER_SEC_WEBSOCKET_VERSION,
-	HEADER_SEC_WEBSOCKET_PROTOCOL,
-	HEADER_UPGRADE,
-	HEADER_CONNECTION_UPGRADE,
-};
 
 struct http_connection {
 	struct buffered_socket *bs;
 	http_parser parser;
 	http_parser_settings parser_settings;
 	struct http_server *server;
-
-	// TODO:Websocket specific stuff, should be factored out
-	struct {
-		unsigned int header_upgrade: 1;
-		unsigned int connection_upgrade: 1;
-	} flags;
-	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
-	enum header_field current_header_field;
 };
 
 struct http_connection *alloc_http_connection(struct io_event *ev, int fd);
+void free_connection(struct http_connection *connection);
+int send_http_error_response(struct http_connection *connection, unsigned int status_code);
 
 #ifdef __cplusplus
 }
