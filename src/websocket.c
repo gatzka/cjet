@@ -36,7 +36,6 @@
 #include "parse.h"
 #include "sha1/sha1.h"
 #include "websocket.h"
-#include "websocket_peer.h" // TODO: take that out and register an erro callback in struct websocket.
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
@@ -61,12 +60,8 @@ static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
 	}
 }
 
-static int ws_handle_frame(struct websocket *s, char *msg, unsigned int length)
+static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 {
-	//TODO:_ work with callbacks
-	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-
-	int ret;
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
 		log_err("Fragmented websocket frame not supported!\n");
@@ -74,11 +69,9 @@ static int ws_handle_frame(struct websocket *s, char *msg, unsigned int length)
 
 	case WS_BINARY_FRAME:
 	case WS_TEXT_FRAME:
-		ret = parse_message(msg, length, &ws_peer->peer);
-		if (unlikely(ret == -1)) {
-			return -1;
+		if (s->on_text_frame != NULL) {
+			return s->on_text_frame(s, msg, length);
 		}
-		break;
 
 	case WS_PING_FRAME:
 

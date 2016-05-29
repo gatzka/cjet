@@ -65,6 +65,7 @@ struct websocket {
 	uint64_t length;
 	uint8_t mask[4];
 	void (*on_error)(struct websocket *s);
+	int (*on_text_frame)(struct websocket *s, char *msg, size_t length);
 };
 
 void websocket_init(struct websocket *ws, struct http_connection *connection);
