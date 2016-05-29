@@ -70,6 +70,7 @@ SET(CJET_FILES
         socket_peer.c
         state.c
         table.c
+        websocket.c
         websocket_peer.c
 )
 
