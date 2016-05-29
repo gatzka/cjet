@@ -29,6 +29,7 @@
 
 #include <stdint.h>
 
+#include "http_connection.h"
 #include "peer.h"
 #include "websocket.h"
 
