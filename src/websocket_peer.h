@@ -29,48 +29,15 @@
 
 #include <stdint.h>
 
-#include "buffered_socket.h"
-#include "http_connection.h"
 #include "peer.h"
-
-#define SEC_WEB_SOCKET_KEY_LENGTH 24
-#define SEC_WEB_SOCKET_GUID_LENGTH 36
-
-enum header_field {
-	HEADER_UNKNOWN,
-	HEADER_SEC_WEBSOCKET_KEY,
-	HEADER_SEC_WEBSOCKET_VERSION,
-	HEADER_SEC_WEBSOCKET_PROTOCOL,
-	HEADER_UPGRADE,
-	HEADER_CONNECTION_UPGRADE,
-};
+#include "websocket.h"
 
 struct websocket_peer {
 	struct peer peer;
-	struct http_connection *connection;
-	struct buffered_socket *bs;
-
-	struct {
-		unsigned int header_upgrade: 1;
-		unsigned int connection_upgrade: 1;
-	} flags;
-	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
-	enum header_field current_header_field;
-
-	struct {
-		unsigned int fin: 1;
-		unsigned int opcode: 4;
-		unsigned int mask: 1;
-	} ws_flags;
-	uint64_t length;
-	uint8_t mask[4];
+	struct websocket websocket;
 };
 
-
 int alloc_websocket_peer(struct http_connection *connection);
-
-int ws_upgrade_on_header_field(http_parser *p, const char *at, size_t length);
-int ws_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
-int ws_upgrade_on_headers_complete(http_parser *parser);
+void free_websocket_peer(struct websocket_peer *p);
 
 #endif

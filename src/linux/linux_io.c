@@ -52,6 +52,7 @@
 #include "peer.h"
 #include "socket_peer.h"
 #include "util.h"
+#include "websocket.h"
 #include "websocket_peer.h"
 
 #ifndef ARRAY_SIZE
@@ -345,9 +346,9 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		{
 			.request_target = "/",
 			.create = alloc_websocket_peer,
-			.on_header_field = ws_upgrade_on_header_field,
-			.on_header_value = ws_upgrade_on_header_value,
-			.on_headers_complete = ws_upgrade_on_headers_complete,
+			.on_header_field = websocket_upgrade_on_header_field,
+			.on_header_value = websocket_upgrade_on_header_value,
+			.on_headers_complete = websocket_upgrade_on_headers_complete,
 			.on_body = NULL,
 			.on_message_complete = NULL,
 		},
