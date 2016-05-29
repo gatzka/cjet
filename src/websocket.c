@@ -68,9 +68,13 @@ static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 		return -1;
 
 	case WS_BINARY_FRAME:
+		if (s->binary_message_received != NULL) {
+			return s->binary_message_received(s, msg, length);
+		}
+
 	case WS_TEXT_FRAME:
-		if (s->on_text_frame != NULL) {
-			return s->on_text_frame(s, msg, length);
+		if (s->text_message_received != NULL) {
+			return s->text_message_received(s, msg, length);
 		}
 
 	case WS_PING_FRAME:
@@ -82,7 +86,9 @@ static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 		break;
 
 	case WS_CLOSE_FRAME:
-
+		if (s->close_received != NULL) {
+			return s->close_received(s, msg, length);
+		}
 		break;
 
 	default:
@@ -490,13 +496,13 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	return send_upgrade_response(connection);
 }
 
-int websocket_send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+static int send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length, unsigned int type)
 {
 	char ws_header[14];
 	uint8_t first_len;
 	size_t header_index = 2;
 
-	ws_header[0] = (uint8_t)(WS_TEXT_FRAME | WS_HEADER_FIN);
+	ws_header[0] = (uint8_t)(type | WS_HEADER_FIN);
 	if (length < 126) {
 		first_len = (uint8_t)length;
 	} else if (length < 65536) {
@@ -524,6 +530,16 @@ int websocket_send_frame(struct websocket *s, bool shall_mask, uint32_t mask, co
 	iov[1].iov_base = payload;
 	iov[1].iov_len = length;
 	return buffered_socket_writev(s->bs, iov, ARRAY_SIZE(iov));
+}
+
+int websocket_send_binary_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+{
+	return send_frame(s, shall_mask, mask, payload, length, WS_BINARY_FRAME);
+}
+
+int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+{
+	return send_frame(s, shall_mask, mask, payload, length, WS_TEXT_FRAME);
 }
 
 void websocket_init(struct websocket *ws, struct http_connection *connection)

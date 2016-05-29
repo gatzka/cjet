@@ -65,7 +65,11 @@ struct websocket {
 	uint64_t length;
 	uint8_t mask[4];
 	void (*on_error)(struct websocket *s);
-	int (*on_text_frame)(struct websocket *s, char *msg, size_t length);
+	int (*text_message_received)(struct websocket *s, char *msg, size_t length);
+	int (*text_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
+	int (*binary_message_received)(struct websocket *s, char *msg, size_t length);
+	int (*binary_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
+	int (*close_received)(struct websocket *s, char *msg, size_t length);
 };
 
 void websocket_init(struct websocket *ws, struct http_connection *connection);
@@ -74,6 +78,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length);
 int websocket_upgrade_on_headers_complete(http_parser *parser);
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
-int websocket_send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length);
+int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length);
+int websocket_send_binary_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length);
 
 #endif
