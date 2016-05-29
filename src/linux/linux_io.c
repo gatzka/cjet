@@ -343,10 +343,22 @@ int run_io(const struct eventloop *loop, const char *user_name)
 	
 	const struct url_handler handler[] = {
 		{
-			.request_target = "/foobar/"
+			.request_target = "/foobar/",
+			.create = NULL,
+			.on_header_field = NULL,
+			.on_header_value = NULL,
+			.on_headers_complete = NULL,
+			.on_body = NULL,
+			.on_message_complete = NULL
 		},
 		{
-			.request_target = "/"
+			.request_target = "/",
+			.create = alloc_websocket_peer,
+			.on_header_field = ws_upgrade_on_header_field,
+			.on_header_value = ws_upgrade_on_header_value,
+			.on_headers_complete = ws_upgrade_on_headers_complete,
+			.on_body = NULL,
+			.on_message_complete = NULL
 		}
 	};
 
@@ -361,7 +373,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		.handler = handler,
 		.num_handlers = ARRAY_SIZE(handler),
 	};
-	
+
 	ret = start_server(&h_server.ev);
 	if (ret  < 0) {
 		close(http_fd);

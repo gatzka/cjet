@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -26,18 +26,25 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <sys/types.h>
 #include <unistd.h>
 
+#include "base64.h"
 #include "compiler.h"
 #include "http_connection.h"
 #include "jet_endian.h"
+#include "jet_string.h"
+#include "log.h"
 #include "parse.h"
 #include "peer.h"
+#include "sha1/sha1.h"
 #include "websocket_peer.h"
 
 #ifndef ARRAY_SIZE
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
+
+#define CRLF "\r\n"
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
@@ -305,23 +312,255 @@ static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssiz
 	return BS_OK;
 }
 
-static void init_websocket_peer(struct websocket_peer *ws_peer, struct buffered_socket *bs)
+static enum bs_read_callback_return read_header_line(void *context, char *buf, ssize_t len)
+{
+	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+
+	if (unlikely(len <= 0)) {
+		if (len < 0) {
+			log_err("Error while reading header line!\n");
+		}
+		free_connection(ws_peer->connection);
+		return BS_CLOSED;
+	}
+
+	size_t nparsed = http_parser_execute(&ws_peer->connection->parser, &ws_peer->connection->parser_settings, buf, len);
+	if (unlikely(nparsed != (size_t)len)) {
+		send_http_error_response(ws_peer->connection, 400);
+		free_connection(ws_peer->connection);
+		return BS_CLOSED;
+	}
+	if (ws_peer->connection->parser.upgrade) {
+		/*
+		 * Transfer ownership of buffered socket to websocket peer.
+		 */
+		ws_peer->bs = ws_peer->connection->bs;
+		ws_peer->connection->bs = NULL;
+		free_connection(ws_peer->connection);
+		ws_peer->connection = NULL;
+		buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_header, ws_peer);
+		return BS_OK;
+	}
+
+	buffered_socket_read_until(ws_peer->connection->bs, CRLF, read_header_line, ws_peer);
+	return BS_OK;
+}
+
+static int save_websocket_key(uint8_t *dest, const char *at, size_t length)
+{
+	static const char ws_guid[SEC_WEB_SOCKET_GUID_LENGTH] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+
+	if (length == SEC_WEB_SOCKET_KEY_LENGTH) {
+		memcpy(dest, at, length);
+		memcpy(&dest[length], ws_guid, sizeof(ws_guid));
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static int check_websocket_version(const char *at, size_t length)
+{
+	static const char version[] = "13";
+	if ((length == sizeof(version) - 1) && (memcmp(at, version, length) == 0)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static int check_websocket_protocol(const char *at, size_t length)
+{
+	static const char proto[] ="jet";
+	//TODO: There might be more protocols than just jet. We habe to parse the list and look if jet is in the list.
+	if ((length == sizeof(proto) - 1) && (memcmp(at, proto, length) == 0)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static int check_upgrade(const char *at, size_t length)
+{
+	static const char upgrade[] ="websocket";
+	if ((length == sizeof(upgrade) - 1) && (jet_strncasecmp(at, upgrade, length) == 0)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static int check_connection_upgrade(const char *at, size_t length)
+{
+	static const char upgrade[] ="Upgrade";
+	if ((length == sizeof(upgrade) - 1) && (jet_strncasecmp(at, upgrade, length) == 0)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+int ws_upgrade_on_header_field(http_parser *p, const char *at, size_t length)
+{
+	struct http_connection *connection = container_of(p, struct http_connection, parser);
+	struct websocket_peer *ws_peer = connection->parser.data;
+
+	static const char sec_key[] = "Sec-WebSocket-Key";
+	if ((sizeof(sec_key) - 1  == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
+		ws_peer->current_header_field = HEADER_SEC_WEBSOCKET_KEY;
+		return 0;
+	}
+
+	static const char ws_version[] = "Sec-WebSocket-Version";
+	if ((sizeof(ws_version) - 1  == length) && (jet_strncasecmp(at, ws_version, length) == 0)) {
+		ws_peer->current_header_field = HEADER_SEC_WEBSOCKET_VERSION;
+		return 0;
+	}
+
+	static const char ws_protocol[] = "Sec-WebSocket-Protocol";
+	if ((sizeof(ws_protocol) - 1  == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
+		ws_peer->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
+		return 0;
+	}
+
+	static const char header_upgrade[] = "Upgrade";
+	if ((sizeof(header_upgrade) - 1  == length) && (jet_strncasecmp(at, header_upgrade, length) == 0)) {
+		ws_peer->current_header_field = HEADER_UPGRADE;
+		return 0;
+	}
+
+	static const char conn_upgrade[] = "Connection";
+	if ((sizeof(conn_upgrade) - 1  == length) && (jet_strncasecmp(at, conn_upgrade, length) == 0)) {
+		ws_peer->current_header_field = HEADER_CONNECTION_UPGRADE;
+		return 0;
+	}
+
+	return 0;
+}
+
+int ws_upgrade_on_header_value(http_parser *p, const char *at, size_t length)
+{
+	int ret = 0;
+
+	struct http_connection *connection = container_of(p, struct http_connection, parser);
+	struct websocket_peer *ws_peer = connection->parser.data;
+
+	switch(ws_peer->current_header_field) {
+	case HEADER_SEC_WEBSOCKET_KEY:
+		ret = save_websocket_key(ws_peer->sec_web_socket_key, at, length);
+		break;
+
+	case HEADER_SEC_WEBSOCKET_VERSION:
+		ret = check_websocket_version(at, length);
+		break;
+
+	case HEADER_SEC_WEBSOCKET_PROTOCOL:
+		ret = check_websocket_protocol(at, length);
+		break;
+
+	case HEADER_UPGRADE:
+		ret = check_upgrade(at, length);
+		if (ret == 0) {
+			ws_peer->flags.header_upgrade = 1;
+		}
+		break;
+
+	case HEADER_CONNECTION_UPGRADE:
+		ret = check_connection_upgrade(at, length);
+		if (ret == 0) {
+			ws_peer->flags.connection_upgrade = 1;
+		}
+		break;
+
+	case HEADER_UNKNOWN:
+	default:
+		break;
+	}
+
+	ws_peer->current_header_field = HEADER_UNKNOWN;
+	return ret;
+}
+
+static int check_http_version(const struct http_parser *parser)
+{
+	if (parser->http_major > 1) {
+		return 0;
+	}
+	if ((parser->http_major == 1) && (parser->http_minor >= 1)) {
+		return 0;
+	} else {
+		return -1;
+	}
+}
+
+static int send_upgrade_response(struct http_connection *connection)
+{
+	struct websocket_peer *ws_peer = connection->parser.data;
+
+	char accept_value[28];
+	struct SHA1Context context;
+	uint8_t sha1_buffer[SHA1HashSize];
+
+	SHA1Reset(&context);
+	SHA1Input(&context, ws_peer->sec_web_socket_key, SEC_WEB_SOCKET_GUID_LENGTH + SEC_WEB_SOCKET_KEY_LENGTH);
+	SHA1Result(&context, sha1_buffer);
+	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
+
+	static const char switch_response[] =
+		"HTTP/1.1 101 Switching Protocols" CRLF
+		"Upgrade: websocket" CRLF
+		"Connection: Upgrade" CRLF
+		"Sec-Websocket-Protocol: jet" CRLF
+		"Sec-WebSocket-Accept: ";
+	static const char switch_response_end[] = CRLF CRLF;
+
+	struct buffered_socket_io_vector iov[3];
+	iov[0].iov_base = switch_response;
+	iov[0].iov_len = sizeof(switch_response ) - 1;
+	iov[1].iov_base = accept_value;
+	iov[1].iov_len = sizeof(accept_value);
+	iov[2].iov_base = switch_response_end;
+	iov[2].iov_len = sizeof(switch_response_end) - 1;
+	return buffered_socket_writev(connection->bs, iov, ARRAY_SIZE(iov));
+}
+
+int ws_upgrade_on_headers_complete(http_parser *parser)
+{
+	if (check_http_version(parser) < 0) {
+		return -1;
+	}
+	if (parser->method != HTTP_GET) {
+		return -1;
+	}
+
+	struct http_connection *connection = container_of(parser, struct http_connection, parser);
+	struct websocket_peer *ws_peer = connection->parser.data;
+	if ((ws_peer->flags.header_upgrade == 0) || (ws_peer->flags.connection_upgrade == 0)) {
+		return -1;
+	}
+	return send_upgrade_response(connection);
+}
+
+static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection)
 {
 	init_peer(&ws_peer->peer);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
-	ws_peer->bs = bs;
-	buffered_socket_set_error(bs, free_websocket_peer_on_error, ws_peer);
-	buffered_socket_read_exactly(ws_peer->bs, 1, ws_get_header, ws_peer);
+	ws_peer->connection = connection;
+	ws_peer->current_header_field = HEADER_UNKNOWN;
+	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
+
+	buffered_socket_read_until(connection->bs, CRLF, read_header_line, ws_peer);
 }
 
-struct websocket_peer *alloc_websocket_peer(struct buffered_socket *bs)
+int alloc_websocket_peer(struct http_connection *connection)
 {
 	struct websocket_peer *ws_peer = calloc(1, sizeof(*ws_peer));
 	if (ws_peer == NULL) {
-		return NULL;
+		return -1;
 	}
 
-	init_websocket_peer(ws_peer, bs);
-	return ws_peer;
+	connection->parser.data = ws_peer;
+	init_websocket_peer(ws_peer, connection);
+	return 0;
 }
