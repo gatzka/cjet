@@ -64,6 +64,7 @@ struct websocket {
 	} ws_flags;
 	uint64_t length;
 	uint8_t mask[4];
+	void (*on_error)(struct websocket *s);
 };
 
 void websocket_init(struct websocket *ws, struct http_connection *connection);

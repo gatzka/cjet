@@ -39,6 +39,5 @@ struct websocket_peer {
 };
 
 int alloc_websocket_peer(struct http_connection *connection);
-void free_websocket_peer(struct websocket_peer *p);
 
 #endif

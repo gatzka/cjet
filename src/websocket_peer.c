@@ -60,11 +60,18 @@ static int ws_send_message(struct peer *p, const char *rendered, size_t len)
 	return websocket_send_frame(&ws_peer->websocket, false, 0x00, rendered, len);
 }
 
-void free_websocket_peer(struct websocket_peer *p)
+static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
-	free_peer_resources(&p->peer);
-	websocket_free(&p->websocket);
-	free(p);
+	free_peer_resources(&ws_peer->peer);
+	websocket_free(&ws_peer->websocket);
+	free(ws_peer);
+}
+
+
+static void free_websocket_peer_callback(struct websocket *s)
+{
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	free_websocket_peer(ws_peer);
 }
 
 static void free_websocket_peer_on_error(void *context)
@@ -86,6 +93,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_conn
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
 	websocket_init(&ws_peer->websocket, connection);
+	ws_peer->websocket.on_error = free_websocket_peer_callback;
 
 	buffered_socket_read_until(connection->bs, CRLF, websocket_read_header_line, &ws_peer->websocket);
 }

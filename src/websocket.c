@@ -110,9 +110,9 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 		if (len < 0) {
 			log_err("Error while reading websocket payload!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 	if (s->ws_flags.mask == 1) {
@@ -122,9 +122,9 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 			buffered_socket_read_exactly(s->bs, 1, ws_get_header, s);
 			return BS_OK;
 		} else {
-			// TODO: call registered error callback
-			struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-			free_websocket_peer(ws_peer);
+			if (s->on_error != NULL) {
+				s->on_error(s);
+			}
 			return BS_CLOSED;
 		}
 	} // TODO: what if no mask set
@@ -139,9 +139,9 @@ static enum bs_read_callback_return ws_get_mask(void *context, char *buf, ssize_
 		if (len < 0) {
 			log_err("Error while reading websocket mask!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
@@ -167,9 +167,9 @@ static enum bs_read_callback_return ws_get_length16(void *context, char *buf, ss
 		if (len < 0) {
 			log_err("Error while reading websocket 16 bit length!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
@@ -189,9 +189,9 @@ static enum bs_read_callback_return ws_get_length64(void *context, char *buf, ss
 		if (len < 0) {
 			log_err("Error while reading websocket 64 bit length!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
@@ -211,9 +211,9 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 		if (len < 0) {
 			log_err("Error while reading websocket first length!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
@@ -244,9 +244,9 @@ static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssiz
 		if (len < 0) {
 			log_err("Error while reading websocket header!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
@@ -273,18 +273,18 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 		if (len < 0) {
 			log_err("Error while reading header line!\n");
 		}
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 
 	size_t nparsed = http_parser_execute(&s->connection->parser, &s->connection->parser_settings, buf, len);
 	if (unlikely(nparsed != (size_t)len)) {
 		send_http_error_response(s->connection, 400);
-		// TODO: call registered error callback
-		struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-		free_websocket_peer(ws_peer);
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
 		return BS_CLOSED;
 	}
 	if (s->connection->parser.upgrade) {
@@ -538,6 +538,7 @@ void websocket_init(struct websocket *ws, struct http_connection *connection)
 	ws->bs = NULL;
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
+	ws->on_error = NULL;
 }
 
 void websocket_free(struct websocket *ws)
