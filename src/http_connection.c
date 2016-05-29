@@ -181,6 +181,12 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 		if (handler->create != NULL) {
 			(handler->create(connection));
 		}
+
+		connection->parser_settings.on_header_field = handler->on_header_field;
+		connection->parser_settings.on_header_value = handler->on_header_value;
+		connection->parser_settings.on_headers_complete = handler->on_headers_complete;
+		connection->parser_settings.on_body = handler->on_body;
+		connection->parser_settings.on_message_complete = handler->on_message_complete;
 	}
 
 	return 0;

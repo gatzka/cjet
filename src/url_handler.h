@@ -29,6 +29,7 @@
 
 #include <stddef.h>
 
+#include "http-parser/http_parser.h"
 #include "http_connection.h"
 
 #ifdef __cplusplus
@@ -41,11 +42,11 @@ struct url_handler {
 	const char *request_target;
 
 	int (*create)(struct http_connection *connection);
-	int (*on_header_field)(struct http_connection *connection, const char *at, size_t length);
-	int (*on_header_value)(struct http_connection *connection, const char *at, size_t length);
-	int (*on_headers_complete)(struct http_connection *connection);
-	int (*on_body)(struct http_connection *connection, const char *at, size_t length);
-	int (*on_message_complete)(struct http_connection *connection);
+	int (*on_header_field)(http_parser *parser, const char *at, size_t length);
+	int (*on_header_value)(http_parser *parser, const char *at, size_t length);
+	int (*on_headers_complete)(http_parser *parser);
+	int (*on_body)(http_parser *parser, const char *at, size_t length);
+	int (*on_message_complete)(http_parser *parser);
 };
 
 #ifdef __cplusplus
