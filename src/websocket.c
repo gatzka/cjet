@@ -552,6 +552,11 @@ void websocket_init(struct websocket *ws, struct http_connection *connection)
 
 void websocket_free(struct websocket *ws)
 {
-	buffered_socket_close(ws->bs);
-	free(ws->bs);
+	if (ws->connection != NULL) {
+		free_connection(ws->connection);
+	}
+	if (ws->bs != NULL) {
+		buffered_socket_close(ws->bs);
+		free(ws->bs);
+	}
 }
