@@ -354,7 +354,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		},
 	};
 
-	 struct http_server h_server = {
+	 struct http_server http_server = {
 		.ev = {
 			.read_function = accept_http,
 			.write_function = NULL,
@@ -366,7 +366,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		.num_handlers = ARRAY_SIZE(handler),
 	};
 
-	ret = start_server(&h_server.ev);
+	ret = start_server(&http_server.ev);
 	if (ret  < 0) {
 		close(http_fd);
 		goto stop_jet_server;
@@ -383,7 +383,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 	destroy_all_peers();
 
 stop_http_server:
-	stop_server(&h_server.ev);
+	stop_server(&http_server.ev);
 stop_jet_server:
 	stop_server(&jet_server.ev);
 eventloop_destroy:
