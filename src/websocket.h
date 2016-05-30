@@ -42,18 +42,12 @@ enum header_field {
 	HEADER_SEC_WEBSOCKET_KEY,
 	HEADER_SEC_WEBSOCKET_VERSION,
 	HEADER_SEC_WEBSOCKET_PROTOCOL,
-	HEADER_UPGRADE,
-	HEADER_CONNECTION_UPGRADE,
 };
 
 struct websocket {
 	struct http_connection *connection;
 	struct buffered_socket *bs;
 
-	struct {
-		unsigned int header_upgrade: 1;
-		unsigned int connection_upgrade: 1;
-	} flags;
 	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
 	enum header_field current_header_field;
 

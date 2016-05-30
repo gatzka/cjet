@@ -368,18 +368,6 @@ int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t len
 		return 0;
 	}
 
-	static const char header_upgrade[] = "Upgrade";
-	if ((sizeof(header_upgrade) - 1  == length) && (jet_strncasecmp(at, header_upgrade, length) == 0)) {
-		s->current_header_field = HEADER_UPGRADE;
-		return 0;
-	}
-
-	static const char conn_upgrade[] = "Connection";
-	if ((sizeof(conn_upgrade) - 1  == length) && (jet_strncasecmp(at, conn_upgrade, length) == 0)) {
-		s->current_header_field = HEADER_CONNECTION_UPGRADE;
-		return 0;
-	}
-
 	return 0;
 }
 
@@ -417,26 +405,6 @@ static int check_websocket_protocol(const char *at, size_t length)
 	}
 }
 
-static int check_upgrade(const char *at, size_t length)
-{
-	static const char upgrade[] ="websocket";
-	if ((length == sizeof(upgrade) - 1) && (jet_strncasecmp(at, upgrade, length) == 0)) {
-		return 0;
-	} else {
-		return -1;
-	}
-}
-
-static int check_connection_upgrade(const char *at, size_t length)
-{
-	static const char upgrade[] ="Upgrade";
-	if ((length == sizeof(upgrade) - 1) && (jet_strncasecmp(at, upgrade, length) == 0)) {
-		return 0;
-	} else {
-		return -1;
-	}
-}
-
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
@@ -457,20 +425,6 @@ int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t len
 		ret = check_websocket_protocol(at, length);
 		break;
 
-	case HEADER_UPGRADE:
-		ret = check_upgrade(at, length);
-		if (ret == 0) {
-			s->flags.header_upgrade = 1;
-		}
-		break;
-
-	case HEADER_CONNECTION_UPGRADE:
-		ret = check_connection_upgrade(at, length);
-		if (ret == 0) {
-			s->flags.connection_upgrade = 1;
-		}
-		break;
-
 	case HEADER_UNKNOWN:
 	default:
 		break;
@@ -489,11 +443,18 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	}
 
 	struct http_connection *connection = container_of(parser, struct http_connection, parser);
-	struct websocket *s = connection->parser.data;
-	if ((s->flags.header_upgrade == 0) || (s->flags.connection_upgrade == 0)) {
+	if (!parser->upgrade) {
 		return -1;
 	}
-	return send_upgrade_response(connection);
+	int ret = send_upgrade_response(connection);
+	if (ret < 0) {
+		return -1;
+	} else {
+		/*
+		 * Returning "1" tells the http parser to skip the body of a message if there is one.
+		 */
+		return 1;
+	}
 }
 
 static int send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length, unsigned int type)
