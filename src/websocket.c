@@ -92,7 +92,14 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 
 	case WS_CLOSE_FRAME:
 		if (s->close_received != NULL) {
-			return s->close_received(s, msg, length);
+			uint16_t status_code = 0;
+			if (length >= 2) {
+				memcpy(&status_code, msg, sizeof(status_code));
+				status_code = jet_be16toh(status_code);
+				msg += sizeof(status_code);
+				length -= sizeof(status_code);
+			}
+			return s->close_received(s, status_code, msg, length);
 		}
 		break;
 
@@ -522,6 +529,8 @@ int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mas
 {
 	return send_frame(s, shall_mask, mask, payload, length, WS_TEXT_FRAME);
 }
+
+//int websocket_sent_close_frame(struct websocket *s, bool shal)
 
 void websocket_init(struct websocket *ws, struct http_connection *connection)
 {

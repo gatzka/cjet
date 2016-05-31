@@ -26,6 +26,7 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -94,14 +95,12 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 	}
 }
 
-static enum websocket_callback_return close_callback(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return close_callback(struct websocket *s, uint16_t status_code,  char *msg, size_t length)
 {
-	char buffer[50];
-	size_t len = MIN(sizeof(buffer) - 1, length);
-	strncpy(buffer, msg, len);
-	buffer[len] = '\0'; 
+	(void)msg;
+	(void)length;
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-	log_peer_info(&ws_peer->peer, "Websocket peer closed connection: %s\n", buffer);
+	log_peer_info(&ws_peer->peer, "Websocket peer closed connection: %d\n", status_code);
 	free_websocket_peer(ws_peer);
 	return WS_CLOSED;
 }
