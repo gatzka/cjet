@@ -139,3 +139,18 @@ void log_peer_err(const struct peer *p, const char *fmt, ...)
 	va_end(ap);
 	log_err("%s", buffer);
 }
+
+__attribute__((format(printf, 2, 3)))
+void log_peer_info(const struct peer *p, const char *fmt, ...)
+{
+	int written;
+	char buffer[LOG_BUFFER_SIZE];
+	buffer[0] = '\0';
+	written = snprintf(buffer, LOG_BUFFER_SIZE, "%s: ", get_peer_name(p));
+	char *ptr = &buffer[written];
+	va_list ap;
+	va_start(ap, fmt);
+	vsnprintf(ptr, LOG_BUFFER_SIZE - written, fmt, ap);
+	va_end(ap);
+	log_info("%s", buffer);
+}

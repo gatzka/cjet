@@ -58,6 +58,7 @@ struct list_head *get_peer_list(void);
 void set_peer_name(struct peer *peer, const char *name);
 const char *get_peer_name(const struct peer *p);
 int get_number_of_peers(void);
+void log_peer_info(const struct peer *p, const char *fmt, ...);
 void log_peer_err(const struct peer *p, const char *fmt, ...);
 void destroy_all_peers(void);
 
