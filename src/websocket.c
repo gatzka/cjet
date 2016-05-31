@@ -71,11 +71,13 @@ static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 		if (s->binary_message_received != NULL) {
 			return s->binary_message_received(s, msg, length);
 		}
+		break;
 
 	case WS_TEXT_FRAME:
 		if (s->text_message_received != NULL) {
 			return s->text_message_received(s, msg, length);
 		}
+		break;
 
 	case WS_PING_FRAME:
 
@@ -108,11 +110,20 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 	if (unlikely(len <= 0)) {
 		if (len < 0) {
 			log_err("Error while reading websocket payload!\n");
+			if (s->on_error != NULL) {
+				s->on_error(s);
+			}
+			return BS_CLOSED;
 		}
-		if (s->on_error != NULL) {
-			s->on_error(s);
+		if (s->length != 0) {
+			/*
+			 * Other side closed the socket
+			 */
+			if (s->on_error != NULL) {
+				s->on_error(s);
+			}
+			return BS_CLOSED;
 		}
-		return BS_CLOSED;
 	}
 	if (s->ws_flags.mask == 1) {
 		unmask_payload(buf, s->mask, len);
