@@ -530,7 +530,14 @@ int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mas
 	return send_frame(s, shall_mask, mask, payload, length, WS_TEXT_FRAME);
 }
 
-//int websocket_sent_close_frame(struct websocket *s, bool shal)
+int websocket_sent_close_frame(struct websocket *s, bool shall_mask, uint32_t mask, uint16_t status_code, const char *payload, size_t length)
+{
+	char buffer[length + sizeof(status_code)];
+	status_code = jet_htobe16(status_code);
+	memcpy(buffer, &status_code, sizeof(status_code));
+	memcpy(buffer + sizeof(status_code), payload, length);
+	return send_frame(s, shall_mask, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
+}
 
 void websocket_init(struct websocket *ws, struct http_connection *connection)
 {
@@ -552,6 +559,7 @@ void websocket_free(struct websocket *ws)
 		free_connection(ws->connection);
 	}
 	if (ws->bs != NULL) {
+		websocket_sent_close_frame(ws, false, 0, 1001, NULL, 0);
 		buffered_socket_close(ws->bs);
 		free(ws->bs);
 	}

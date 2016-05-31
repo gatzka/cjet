@@ -81,5 +81,6 @@ int websocket_upgrade_on_headers_complete(http_parser *parser);
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
 int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length);
 int websocket_send_binary_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length);
+int websocket_sent_close_frame(struct websocket *s, bool shall_mask, uint32_t mask, uint16_t status_code, const char *payload, size_t length);
 
 #endif
