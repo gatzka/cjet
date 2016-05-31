@@ -60,12 +60,12 @@ static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
 	}
 }
 
-static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return ws_handle_frame(struct websocket *s, char *msg, size_t length)
 {
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
 		log_err("Fragmented websocket frame not supported!\n");
-		return -1;
+		return WS_ERROR;
 
 	case WS_BINARY_FRAME:
 		if (s->binary_message_received != NULL) {
@@ -84,6 +84,9 @@ static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 		break;
 
 	case WS_PONG_FRAME:
+		if (s->pong_received != NULL) {
+			return s->pong_received(s, msg, length);
+		}
 
 		break;
 
@@ -95,10 +98,10 @@ static int ws_handle_frame(struct websocket *s, char *msg, size_t length)
 
 	default:
 		log_err("Unsupported websocket frame!\n");
-		return -1;
+		return WS_ERROR;
 	}
 
-	return 0;
+	return WS_OK;
 }
 
 static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssize_t len);
@@ -127,16 +130,22 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 	}
 	if (s->ws_flags.mask == 1) {
 		unmask_payload(buf, s->mask, len);
-		int ret = ws_handle_frame(s, buf, len);
-		if (likely(ret == 0)) {
+		enum websocket_callback_return ret = ws_handle_frame(s, buf, len);
+		switch (ret) {
+		case WS_OK:
 			buffered_socket_read_exactly(s->bs, 1, ws_get_header, s);
 			return BS_OK;
-		} else {
+
+		case WS_CLOSED:
+			return BS_CLOSED;
+
+		case WS_ERROR:
 			if (s->on_error != NULL) {
 				s->on_error(s);
 			}
 			return BS_CLOSED;
 		}
+
 	} // TODO: what if no mask set
 	return BS_OK;
 }
@@ -519,6 +528,12 @@ void websocket_init(struct websocket *ws, struct http_connection *connection)
 	ws->bs = NULL;
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
+	ws->text_message_received = NULL;
+	ws->text_frame_received = NULL;
+	ws->binary_message_received = NULL;
+	ws->binary_frame_received = NULL;
+	ws->pong_received = NULL;
+	ws->close_received = NULL;
 	ws->on_error = NULL;
 }
 

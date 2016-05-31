@@ -45,6 +45,10 @@
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+#ifndef MIN
+# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#endif
+
 #define CRLF "\r\n"
 
 #define WS_CONTINUATION_FRAME 0x0
@@ -79,10 +83,27 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
-static int text_frame_callback(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return text_frame_callback(struct websocket *s, char *msg, size_t length)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-	return parse_message(msg, length, &ws_peer->peer);
+	int ret = parse_message(msg, length, &ws_peer->peer);
+	if (unlikely(ret < 0)) {
+		return WS_ERROR;
+	} else {
+		return WS_OK;
+	}
+}
+
+static enum websocket_callback_return close_callback(struct websocket *s, char *msg, size_t length)
+{
+	char buffer[50];
+	size_t len = MIN(sizeof(buffer) - 1, length);
+	strncpy(buffer, msg, len);
+	buffer[len] = '\0'; 
+	log_info("Websocket peer closed connection: %s\n", buffer);
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	free_websocket_peer(ws_peer);
+	return WS_CLOSED;
 }
 
 static void close_websocket_peer(struct peer *p)
@@ -100,6 +121,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_conn
 	websocket_init(&ws_peer->websocket, connection);
 	ws_peer->websocket.on_error = free_websocket_peer_callback;
 	ws_peer->websocket.text_message_received = text_frame_callback;
+	ws_peer->websocket.close_received = close_callback;
 
 	buffered_socket_read_until(connection->bs, CRLF, websocket_read_header_line, &ws_peer->websocket);
 }

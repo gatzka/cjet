@@ -44,6 +44,12 @@ enum header_field {
 	HEADER_SEC_WEBSOCKET_PROTOCOL,
 };
 
+enum websocket_callback_return {
+	WS_CLOSED,
+	WS_ERROR,
+	WS_OK
+};
+
 struct websocket {
 	struct http_connection *connection;
 	struct buffered_socket *bs;
@@ -59,11 +65,12 @@ struct websocket {
 	uint64_t length;
 	uint8_t mask[4];
 	void (*on_error)(struct websocket *s);
-	int (*text_message_received)(struct websocket *s, char *msg, size_t length);
-	int (*text_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
-	int (*binary_message_received)(struct websocket *s, char *msg, size_t length);
-	int (*binary_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
-	int (*close_received)(struct websocket *s, char *msg, size_t length);
+	enum websocket_callback_return (*text_message_received)(struct websocket *s, char *msg, size_t length);
+	enum websocket_callback_return (*text_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
+	enum websocket_callback_return (*binary_message_received)(struct websocket *s, char *msg, size_t length);
+	enum websocket_callback_return (*binary_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
+	enum websocket_callback_return (*pong_received)(struct websocket *s, char *msg, size_t length);
+	enum websocket_callback_return (*close_received)(struct websocket *s, char *msg, size_t length);
 };
 
 void websocket_init(struct websocket *ws, struct http_connection *connection);
