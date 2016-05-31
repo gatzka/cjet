@@ -81,7 +81,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 
 	case WS_PING_FRAME:
 	{
-		int ret = websocket_send_pong_frame(s, false, 0, msg, length);
+		int ret = websocket_send_pong_frame(s, 0, msg, length);
 		if (ret < 0) {
 			return WS_ERROR;
 		}
@@ -140,7 +140,12 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 			return BS_CLOSED;
 		}
 	}
-	if (s->ws_flags.mask == 1) {
+	if (unlikely(s->is_server && (s->ws_flags.mask == 0))) {
+		if (s->on_error != NULL) {
+			s->on_error(s);
+		}
+		return BS_CLOSED;
+	} else {
 		unmask_payload(buf, s->mask, len);
 		enum websocket_callback_return ret = ws_handle_frame(s, buf, len);
 		switch (ret) {
@@ -158,7 +163,7 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 			return BS_CLOSED;
 		}
 
-	} // TODO: what if no mask set
+	}
 	return BS_OK;
 }
 
@@ -489,7 +494,7 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	}
 }
 
-static int send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length, unsigned int type)
+static int send_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length, unsigned int type)
 {
 	char ws_header[14];
 	uint8_t first_len;
@@ -510,7 +515,7 @@ static int send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const
 		first_len = 127;
 	}
 
-	if (shall_mask) {
+	if (s->is_server == false) {
 		first_len |= WS_MASK_SET;
 		memcpy(&ws_header[header_index], &mask, sizeof(mask));
 		header_index += sizeof(mask);
@@ -525,36 +530,36 @@ static int send_frame(struct websocket *s, bool shall_mask, uint32_t mask, const
 	return buffered_socket_writev(s->bs, iov, ARRAY_SIZE(iov));
 }
 
-int websocket_send_binary_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
 {
-	return send_frame(s, shall_mask, mask, payload, length, WS_BINARY_FRAME);
+	return send_frame(s, mask, payload, length, WS_BINARY_FRAME);
 }
 
-int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+int websocket_send_text_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
 {
-	return send_frame(s, shall_mask, mask, payload, length, WS_TEXT_FRAME);
+	return send_frame(s, mask, payload, length, WS_TEXT_FRAME);
 }
 
-int websocket_send_ping_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
 {
-	return send_frame(s, shall_mask, mask, payload, length, WS_PING_FRAME);
+	return send_frame(s, mask, payload, length, WS_PING_FRAME);
 }
 
-int websocket_send_pong_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
 {
-	return send_frame(s, shall_mask, mask, payload, length, WS_PONG_FRAME);
+	return send_frame(s, mask, payload, length, WS_PONG_FRAME);
 }
 
-int websocket_sent_close_frame(struct websocket *s, bool shall_mask, uint32_t mask, uint16_t status_code, const char *payload, size_t length)
+int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t status_code, const char *payload, size_t length)
 {
 	char buffer[length + sizeof(status_code)];
 	status_code = jet_htobe16(status_code);
 	memcpy(buffer, &status_code, sizeof(status_code));
 	memcpy(buffer + sizeof(status_code), payload, length);
-	return send_frame(s, shall_mask, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
+	return send_frame(s, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
 }
 
-void websocket_init(struct websocket *ws, struct http_connection *connection)
+void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server)
 {
 	ws->bs = NULL;
 	ws->connection = connection;
@@ -566,6 +571,7 @@ void websocket_init(struct websocket *ws, struct http_connection *connection)
 	ws->pong_received = NULL;
 	ws->close_received = NULL;
 	ws->on_error = NULL;
+	ws->is_server = is_server;
 }
 
 void websocket_free(struct websocket *ws)
@@ -574,7 +580,7 @@ void websocket_free(struct websocket *ws)
 		free_connection(ws->connection);
 	}
 	if (ws->bs != NULL) {
-		websocket_sent_close_frame(ws, false, 0, 1001, NULL, 0);
+		websocket_sent_close_frame(ws, 0, 1001, NULL, 0);
 		buffered_socket_close(ws->bs);
 		free(ws->bs);
 	}

@@ -62,7 +62,7 @@
 static int ws_send_message(struct peer *p, const char *rendered, size_t len)
 {
 	struct websocket_peer *ws_peer = container_of(p, struct websocket_peer, peer);
-	return websocket_send_text_frame(&ws_peer->websocket, false, 0x00, rendered, len);
+	return websocket_send_text_frame(&ws_peer->websocket, 0x00, rendered, len);
 }
 
 static void free_websocket_peer(struct websocket_peer *ws_peer)
@@ -128,7 +128,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_conn
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
-	websocket_init(&ws_peer->websocket, connection);
+	websocket_init(&ws_peer->websocket, connection, true);
 	ws_peer->websocket.on_error = free_websocket_peer_callback;
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
