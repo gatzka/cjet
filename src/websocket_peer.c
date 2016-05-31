@@ -100,10 +100,21 @@ static enum websocket_callback_return close_callback(struct websocket *s, char *
 	size_t len = MIN(sizeof(buffer) - 1, length);
 	strncpy(buffer, msg, len);
 	buffer[len] = '\0'; 
-	log_info("Websocket peer closed connection: %s\n", buffer);
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	log_peer_info(&ws_peer->peer, "Websocket peer closed connection: %s\n", buffer);
 	free_websocket_peer(ws_peer);
 	return WS_CLOSED;
+}
+
+static enum websocket_callback_return pong_received(struct websocket *s, char *msg, size_t length)
+{
+	char buffer[50];
+	size_t len = MIN(sizeof(buffer) - 1, length);
+	strncpy(buffer, msg, len);
+	buffer[len] = '\0'; 
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	log_peer_info(&ws_peer->peer, "PONG received: %s\n", buffer);
+	return WS_OK;
 }
 
 static void close_websocket_peer(struct peer *p)
@@ -122,6 +133,7 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_conn
 	ws_peer->websocket.on_error = free_websocket_peer_callback;
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
+	ws_peer->websocket.pong_received = pong_received;
 
 	buffered_socket_read_until(connection->bs, CRLF, websocket_read_header_line, &ws_peer->websocket);
 }
