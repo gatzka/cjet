@@ -80,8 +80,13 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 		break;
 
 	case WS_PING_FRAME:
-
+	{
+		int ret = websocket_send_pong_frame(s, false, 0, msg, length);
+		if (ret < 0) {
+			return WS_ERROR;
+		}
 		break;
+	}
 
 	case WS_PONG_FRAME:
 		if (s->pong_received != NULL) {
@@ -528,6 +533,16 @@ int websocket_send_binary_frame(struct websocket *s, bool shall_mask, uint32_t m
 int websocket_send_text_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
 {
 	return send_frame(s, shall_mask, mask, payload, length, WS_TEXT_FRAME);
+}
+
+int websocket_send_ping_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+{
+	return send_frame(s, shall_mask, mask, payload, length, WS_PING_FRAME);
+}
+
+int websocket_send_pong_frame(struct websocket *s, bool shall_mask, uint32_t mask, const char *payload, size_t length)
+{
+	return send_frame(s, shall_mask, mask, payload, length, WS_PONG_FRAME);
 }
 
 int websocket_sent_close_frame(struct websocket *s, bool shall_mask, uint32_t mask, uint16_t status_code, const char *payload, size_t length)
