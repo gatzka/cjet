@@ -372,6 +372,7 @@ struct F {
 		called_from_eventloop = false;
 		readbuffer_ptr = readbuffer;
 		read_called = 0;
+		read_len = 0;
 		readcallback_called = 0;
 		error_func_called = false;
 	}
