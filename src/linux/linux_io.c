@@ -226,7 +226,8 @@ static int create_server_socket(int server_port)
 	}
 
 	if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
-		return -1;
+		log_err("Could not set %s!\n", "O_NONBLOCK");
+		goto error;
 	}
 
 	memset(&serveraddr, 0, sizeof(serveraddr));
