@@ -27,15 +27,11 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <string.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/uio.h>
 
 #include "buffered_socket.h"
 #include "compiler.h"
 #include "eventloop.h"
 #include "jet_string.h"
-#include "linux/peer_testing.h"
 #include "log.h"
 #include "util.h"
 
@@ -43,8 +39,7 @@ static int send_buffer(struct buffered_socket *bs)
 {
 	char *write_buffer_ptr = bs->write_buffer;
 	while (bs->to_write != 0) {
-		ssize_t written =
-			SEND(bs->ev.context.fd, write_buffer_ptr, bs->to_write, MSG_NOSIGNAL);
+		ssize_t written = socket_send(bs->ev.sock, write_buffer_ptr, bs->to_write);
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {
@@ -77,21 +72,19 @@ static int go_reading(struct buffered_socket *bs)
 	}
 }
 
-static enum callback_return error_function(union io_context *context)
+static enum callback_return error_function(struct io_event *ev)
 {
-	struct io_event *ev = container_of(context, struct io_event, context);
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	bs->error(bs->error_context);
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return read_function(union io_context *context)
+static enum callback_return read_function(struct io_event *ev)
 {
-	struct io_event *ev = container_of(context, struct io_event, context);
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	int ret = go_reading(bs);
 	if (unlikely((ret < 0) && (ret != IO_WOULD_BLOCK))) {
-		error_function(context);
+		error_function(ev);
 	}
 	if (ret == 0) {
 		return IO_REMOVED;
@@ -100,14 +93,13 @@ static enum callback_return read_function(union io_context *context)
 	}
 }
 
-static enum callback_return write_function(union io_context *context)
+static enum callback_return write_function(struct io_event *ev)
 {
-	struct io_event *ev = container_of(context, struct io_event, context);
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 
 	int ret = send_buffer(bs);
 	if (unlikely(ret < 0)) {
-		error_function(context);
+		error_function(ev);
 	}
 	return CONTINUE_LOOP;
 }
@@ -174,7 +166,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 			return IO_TOOMUCHDATA;
 		}
 	}
-	ssize_t read_length = READ(bs->ev.context.fd, bs->write_ptr, free_space(bs));
+	ssize_t read_length = socket_read(bs->ev.sock, bs->write_ptr, free_space(bs));
 	if (unlikely(read_length == 0)) {
 		return 0;
 	}
@@ -233,9 +225,9 @@ void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *e
 	bs->error_context = error_context;
 }
 
-void buffered_socket_init(struct buffered_socket *bs, int fd, const struct eventloop *loop, void (*error)(void *error_context), void *error_context)
+void buffered_socket_init(struct buffered_socket *bs, socket_type sock, const struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
-	bs->ev.context.fd = fd;
+	bs->ev.sock= sock;
 	bs->ev.error_function = error_function;
 	bs->ev.read_function = read_function;
 	bs->ev.write_function = write_function;
@@ -253,31 +245,13 @@ void buffered_socket_init(struct buffered_socket *bs, int fd, const struct event
 int buffered_socket_close(struct buffered_socket *bs)
 {
 	bs->ev.loop->remove(&bs->ev);
-	return CLOSE(bs->ev.context.fd);
+	return socket_close(bs->ev.sock);
 }
 
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
-	struct iovec iov[count + 1];
-	size_t to_write = bs->to_write;
-
-	iov[0].iov_base = bs->write_buffer;
-	iov[0].iov_len = bs->to_write;
-/*
- * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the parameter io_vec const. Therefore I
- * selectively disabled the cast-qual warning.
- */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	for (unsigned int i = 0; i < count; i++) {
-		iov[i + 1].iov_base = (void *)io_vec[i].iov_base;
-		iov[i + 1].iov_len = io_vec[i].iov_len;
-		to_write += io_vec[i].iov_len;
-	}
-#pragma GCC diagnostic pop
-
-	ssize_t sent = WRITEV(bs->ev.context.fd, iov, sizeof(iov) / sizeof(struct iovec));
+	size_t to_write;
+	ssize_t sent = socket_writev(bs, io_vec, count, &to_write);
 	if (likely(sent == (ssize_t)to_write)) {
 		return 0;
 	}

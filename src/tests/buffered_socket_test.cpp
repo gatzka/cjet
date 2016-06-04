@@ -73,12 +73,27 @@ static const char *readbuffer_ptr;
 static size_t readbuffer_length;
 
 extern "C" {
-	int fake_writev(int fd, const struct iovec *iov, int iovcnt)
+
+	ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count, size_t *to_write)
 	{
-		switch (fd) {
+		size_t write_amount = bs->to_write;
+
+		buffered_socket_io_vector iov[count + 1];
+
+		iov[0].iov_base = bs->write_buffer;
+		iov[0].iov_len = bs->to_write;
+
+		for (unsigned int i = 0; i < count; i++) {
+			iov[i + 1].iov_base = io_vec[i].iov_base;
+			iov[i + 1].iov_len = io_vec[i].iov_len;
+			write_amount += io_vec[i].iov_len;
+		}
+		*to_write = write_amount;
+
+		switch (bs->ev.sock) {
 		case WRITEV_COMPLETE_WRITE: {
 			size_t complete_length = 0;
-			for (int i = 0; i < iovcnt; i++) {
+			for (unsigned int i = 0; i <= count; i++) {
 				memcpy(write_buffer_ptr, iov[i].iov_base, iov[i].iov_len);
 				complete_length += iov[i].iov_len;
 				write_buffer_ptr += iov[i].iov_len;
@@ -101,12 +116,12 @@ extern "C" {
 		{
 			size_t complete_length = 0;
 			size_t parts_cnt = writev_parts_cnt;
-			for (int i = 0; i < iovcnt; i++) {
-				int to_write = MIN(iov[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, iov[i].iov_base, to_write);
-				complete_length += to_write;
-				write_buffer_ptr += to_write;
-				parts_cnt -= to_write;
+			for (unsigned int i = 0; i <= count; i++) {
+				int will_write = MIN(iov[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, iov[i].iov_base, will_write);
+				complete_length += will_write;
+				write_buffer_ptr += will_write;
+				parts_cnt -= will_write;
 				if (parts_cnt == 0) {
 					return complete_length;
 				}
@@ -124,13 +139,11 @@ extern "C" {
 		}
 	}
 
-	int fake_send(int fd, void *buf, size_t count, int flags)
+	ssize_t socket_send(socket_type sock, const void *buf, size_t len)
 	{
-		(void)flags;
-		(void)buf;
-		(void)count;
+		(void)len;
 
-		switch (fd) {
+		switch (sock) {
 		case WRITEV_PART_SEND_BLOCKS:
 		{
 			errno = EWOULDBLOCK;
@@ -205,9 +218,9 @@ extern "C" {
 		}
 	}
 
-	int fake_read(int fd, void *buf, size_t count)
+	ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
-		switch (fd) {
+		switch (sock) {
 		case READ_UNTIL_IN_CALLBACK:
 		case READ_COMPLETE_BUFFER:
 		{
@@ -317,9 +330,9 @@ extern "C" {
 		}
 	}
 	
-	int fake_close(int fd)
+	int socket_close(socket_type sock)
 	{
-		(void)fd;
+		(void)sock;
 		return 0;
 	}
 }
@@ -375,9 +388,9 @@ struct F {
 		memcpy(f->read_buffer, buf, len);
 		f->read_len = len;
 		f->readcallback_called++;
-		if (f->bs.ev.context.fd == READ_EXACTLY_IN_CALLBACK) {
+		if (f->bs.ev.sock == READ_EXACTLY_IN_CALLBACK) {
 			buffered_socket_read_exactly(&f->bs, 2, read_callback, f);
-		} else if (f->bs.ev.context.fd == READ_UNTIL_IN_CALLBACK) {
+		} else if (f->bs.ev.sock == READ_UNTIL_IN_CALLBACK) {
 			buffered_socket_read_until(&f->bs, "\n\r", read_callback, f);
 		}
 		return BS_OK;
@@ -587,7 +600,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
 
 	called_from_eventloop = true;
-	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev.context);
+	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(::memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
 }
@@ -612,7 +625,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
 
 	called_from_eventloop = true;
-	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev.context);
+	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.error_func_called);
 }
@@ -756,7 +769,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
@@ -770,7 +783,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close_from_eventloop)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == IO_REMOVED);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
@@ -784,7 +797,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(!f.error_func_called);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev.context);
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(f.error_func_called);

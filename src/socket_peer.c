@@ -32,7 +32,6 @@
 #include "buffered_socket.h"
 #include "eventloop.h"
 #include "jet_endian.h"
-#include "linux/peer_testing.h"
 #include "log.h"
 #include "parse.h"
 #include "router.h"
