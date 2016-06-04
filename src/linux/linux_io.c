@@ -46,7 +46,6 @@
 #include "jet_server.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
-#include "linux/peer_testing.h"
 #include "log.h"
 #include "parse.h"
 #include "peer.h"
