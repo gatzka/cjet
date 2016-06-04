@@ -50,13 +50,13 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 		struct io_event *ev = events[i].data.ptr;
 
 		if (unlikely((events[i].events & ~(EPOLLIN | EPOLLOUT)) != 0)) {
-			if (ev->error_function(&ev->context) == ABORT_LOOP) {
+			if (ev->error_function(ev) == ABORT_LOOP) {
 				return ABORT_LOOP;
 			}
 		} else {
 			if (events[i].events & EPOLLIN) {
 				if (likely(ev->read_function != NULL)) {
-					enum callback_return ret = ev->read_function(&ev->context);
+					enum callback_return ret = ev->read_function(ev);
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
@@ -67,7 +67,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 			}
 			if (events[i].events & EPOLLOUT) {
 				if (likely(ev->write_function != NULL)) {
-					enum callback_return ret = ev->write_function(&ev->context);
+					enum callback_return ret = ev->write_function(ev);
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
@@ -118,7 +118,7 @@ enum callback_return eventloop_epoll_add(struct io_event *ev)
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
 	epoll_ev.data.ptr = ev;
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->context.fd, &epoll_ev) < 0)) {
+	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
 		return ABORT_LOOP;
 	}
@@ -127,6 +127,6 @@ enum callback_return eventloop_epoll_add(struct io_event *ev)
 
 void eventloop_epoll_remove(struct io_event *ev)
 {
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ev->context.fd, NULL);
+	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
 }
 

@@ -32,6 +32,7 @@
 
 #include "eventloop.h"
 #include "generated/cjet_config.h"
+#include "generated/os_config.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -46,6 +47,11 @@ enum bs_read_callback_return {BS_OK, BS_CLOSED};
 union buffered_socket_reader_context {
 	const char *ptr;
 	size_t num;
+};
+
+struct buffered_socket_io_vector {
+	const void *iov_base;
+	size_t iov_len;
 };
 
 struct buffered_socket {
@@ -64,18 +70,22 @@ struct buffered_socket {
 	void *error_context;
 };
 
-struct buffered_socket_io_vector {
-	const void *iov_base;
-	size_t iov_len;
-};
-
-void buffered_socket_init(struct buffered_socket *bs, int fd, const struct eventloop *loop, void (*error)(void *error_context), void *error_context);
+void buffered_socket_init(struct buffered_socket *bs, socket_type sock, const struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(struct buffered_socket *bs);
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count);
 void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *error_context), void *error_context);
 
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context);
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context);
+
+/*
+ * Platform independent prototypes for socket operations.
+ * This functions must be implemented in an OS specific way.
+ */
+ssize_t socket_read(socket_type sock, void *buf, size_t count);
+ssize_t socket_send(socket_type sock, const void *buf, size_t len);
+ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count, size_t *to_write);
+int socket_close(socket_type sock);
 
 #ifdef __cplusplus
 }

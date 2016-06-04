@@ -31,4 +31,6 @@
 
 enum {CONFIG_MAX_EPOLL_EVENTS = ${CONFIG_MAX_EPOLL_EVENTS}};
 
+typedef int socket_type;
+
 #endif

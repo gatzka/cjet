@@ -33,21 +33,17 @@ extern "C" {
 
 #include <stdint.h>
 
+#include "generated/os_config.h"
+
 enum callback_return {ABORT_LOOP, CONTINUE_LOOP, IO_REMOVED};
 
-union io_context {
-	void *ptr;
-	int fd;
-	uint32_t u32;
-	uint64_t u64;
-};
-
 struct eventloop;
+struct io_event;
 
-typedef enum callback_return (*eventloop_function)(union io_context *context);
+typedef enum callback_return (*eventloop_function)(struct io_event *ev);
 
 struct io_event {
-	union io_context context;
+	socket_type sock;
 	eventloop_function read_function;
 	eventloop_function write_function;
 	eventloop_function error_function;

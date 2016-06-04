@@ -155,7 +155,7 @@ static void handle_http(struct io_event *ev ,int fd)
 static enum callback_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd))
 {
 	while (1) {
-		int peer_fd = accept(ev->context.fd, NULL, NULL);
+		int peer_fd = accept(ev->sock, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return CONTINUE_LOOP;
@@ -171,27 +171,25 @@ static enum callback_return accept_common(struct io_event *ev, void (*peer_funct
 	}
 }
 
-static enum callback_return accept_jet(union io_context *io)
+static enum callback_return accept_jet(struct io_event *ev)
 {
-	struct io_event *ev = container_of(io, struct io_event, context);
 	return accept_common(ev, handle_new_jet_connection);
 }
 
-static enum callback_return accept_jet_error(union io_context *io)
+static enum callback_return accept_jet_error(struct io_event *ev)
 {
-	(void)io;
+	(void)ev;
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_http(union io_context *io)
+static enum callback_return accept_http(struct io_event *ev)
 {
-	struct io_event *ev = container_of(io, struct io_event, context);
 	return accept_common(ev, handle_http);
 }
 
-static enum callback_return accept_http_error(union io_context *io)
+static enum callback_return accept_http_error(struct io_event *ev)
 {
-	(void)io;
+	(void)ev;
 	return ABORT_LOOP;
 }
 
@@ -200,7 +198,7 @@ static int start_server(struct io_event *ev)
 	if (ev->loop->add(ev) == ABORT_LOOP) {
 		return -1;
 	} else {
-		if (ev->read_function(&ev->context) == CONTINUE_LOOP) {
+		if (ev->read_function(ev) == CONTINUE_LOOP) {
 			return 0;
 		} else {
 			ev->loop->remove(ev);
@@ -251,7 +249,7 @@ static int create_server_socket(int server_port)
 static void stop_server(struct io_event *ev)
 {
 	ev->loop->remove(ev);
-	close(ev->context.fd);
+	close(ev->sock);
 }
 
 static void sighandler(int signum)
@@ -327,7 +325,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 			.write_function = NULL,
 			.error_function = accept_jet_error,
 			.loop = loop,
-			.context.fd = jet_fd
+			.sock = jet_fd
 		}
 	};
 
@@ -360,7 +358,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 			.write_function = NULL,
 			.error_function = accept_http_error,
 			.loop = loop,
-			.context.fd = http_fd,
+			.sock = http_fd,
 		},
 		.handler = handler,
 		.num_handlers = ARRAY_SIZE(handler),
