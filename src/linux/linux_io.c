@@ -213,18 +213,18 @@ static int create_server_socket(int server_port)
 	static const int reuse_on = 1;
 
 	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
-	if (listen_fd < 0) {
+	if (unlikely(listen_fd < 0)) {
 		log_err("Could not create listen socket!\n");
 		return -1;
 	}
 
-	if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-			sizeof(reuse_on)) < 0) {
+	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+			sizeof(reuse_on)) < 0)) {
 		log_err("Could not set %s!\n", "SO_REUSEADDR");
-		return -1;
+		goto error;
 	}
 
-	if (set_fd_non_blocking(listen_fd) < 0) {
+	if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
 		return -1;
 	}
 
@@ -232,17 +232,20 @@ static int create_server_socket(int server_port)
 	serveraddr.sin6_family = AF_INET6;
 	serveraddr.sin6_port = htons(server_port);
 	serveraddr.sin6_addr = in6addr_any;
-	if (bind(listen_fd, (struct sockaddr *)&serveraddr,
-		sizeof(serveraddr)) < 0) {
+	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
 		log_err("bind failed!\n");
-		return -1;
+		goto error;
 	}
 
-	if (listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0) {
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
 		log_err("listen failed!\n");
-		return -1;
+		goto error;
 	}
 	return listen_fd;
+
+error:
+	close(listen_fd);
+	return -1;
 }
 
 static void stop_server(struct io_event *ev)
