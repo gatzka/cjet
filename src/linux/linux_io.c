@@ -128,7 +128,8 @@ static int prepare_peer_socket(int fd)
 
 static void handle_new_jet_connection(struct io_event *ev, int fd)
 {
-	if (prepare_peer_socket(fd) < 0) {
+	if (unlikely(prepare_peer_socket(fd) < 0)) {
+		close(fd);
 		return;
 	}
 
@@ -141,7 +142,8 @@ static void handle_new_jet_connection(struct io_event *ev, int fd)
 
 static void handle_http(struct io_event *ev ,int fd)
 {
-	if (prepare_peer_socket(fd) < 0) {
+	if (unlikely(prepare_peer_socket(fd) < 0)) {
+		close(fd);
 		return;
 	}
 	struct http_connection *connection = alloc_http_connection(ev, fd);
