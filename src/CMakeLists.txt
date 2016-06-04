@@ -80,6 +80,7 @@ SET(CJET_LINUX_FILES
         linux/jet_string.c
         linux/linux_io.c
         linux/main.c
+        linux/socket.c
         linux/timer.c
         linux/uuid.c
 )
