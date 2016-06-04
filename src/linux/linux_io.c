@@ -164,9 +164,10 @@ static enum callback_return accept_common(struct io_event *ev, void (*peer_funct
 		} else {
 			if (likely(peer_function != NULL)) {
 				peer_function(ev, peer_fd);
+			} else {
+				close(peer_fd);
 			}
 		}
-	/* coverity[leaked_handle] */
 	}
 }
 
