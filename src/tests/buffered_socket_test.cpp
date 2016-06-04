@@ -367,6 +367,9 @@ struct F {
 		}
 		loop.remove = eventloop_fake_remove;
 		buffered_socket_init(&bs, fd, &loop, error_func, this);
+		bs.write_buffer_ptr = NULL;
+		bs.read_callback = NULL;
+		bs.read_callback_context = NULL;
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
