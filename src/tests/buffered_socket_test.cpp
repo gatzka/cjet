@@ -378,12 +378,19 @@ struct F {
 		read_len = 0;
 		readcallback_called = 0;
 		error_func_called = false;
+		error_func_alt_called = false;
 	}
 
 	static void error_func(void *context)
 	{
 		struct F *f = (struct F *)context;
 		f->error_func_called = true;
+	}
+
+	static void error_func_alt(void *context)
+	{
+		struct F *f = (struct F *)context;
+		f->error_func_alt_called = true;
 	}
 
 	static enum bs_read_callback_return read_callback(void *context, char *buf, ssize_t len)
@@ -406,6 +413,7 @@ struct F {
 
 	size_t readcallback_called;
 	bool error_func_called;
+	bool error_func_alt_called;
 	struct eventloop loop;
 	struct buffered_socket bs;
 
@@ -805,6 +813,22 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(f.error_func_called);
+}
+
+BOOST_AUTO_TEST_CASE(test_set_alternate_error_function)
+{
+	F f(READ_FROM_EVENTLOOP_FAIL);
+	size_t read_size = 4;
+	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(f.readcallback_called == 0);
+	BOOST_CHECK(!f.error_func_called && !f.error_func_alt_called);
+
+	buffered_socket_set_error(&f.bs, f.error_func_alt, &f);
+	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
+	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
+	BOOST_CHECK(f.readcallback_called == 0);
+	BOOST_CHECK(f.error_func_alt_called && !f.error_func_called);
 }
 
 BOOST_AUTO_TEST_CASE(test_read_until)
