@@ -84,7 +84,7 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, en
  */
 ssize_t socket_read(socket_type sock, void *buf, size_t count);
 ssize_t socket_send(socket_type sock, const void *buf, size_t len);
-ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count, size_t *to_write);
+ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count);
 int socket_close(socket_type sock);
 
 #ifdef __cplusplus

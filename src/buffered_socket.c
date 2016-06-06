@@ -250,8 +250,18 @@ int buffered_socket_close(struct buffered_socket *bs)
 
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
-	size_t to_write;
-	ssize_t sent = socket_writev(bs, io_vec, count, &to_write);
+	struct buffered_socket_io_vector iov[count + 1];
+	size_t to_write = bs->to_write;
+	iov[0].iov_base = bs->write_buffer;
+	iov[0].iov_len = bs->to_write;
+
+	for (unsigned int i = 0; i < count; i++) {
+		iov[i + 1].iov_base = io_vec[i].iov_base;
+		iov[i + 1].iov_len = io_vec[i].iov_len;
+		to_write += io_vec[i].iov_len;
+	}
+
+	ssize_t sent = socket_writev(bs->ev.sock, iov, count + 1);
 	if (likely(sent == (ssize_t)to_write)) {
 		return 0;
 	}

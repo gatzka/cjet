@@ -34,6 +34,7 @@
 
 #include "buffered_socket.h"
 #include "eventloop.h"
+#include "generated/os_config.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
@@ -74,29 +75,15 @@ static size_t readbuffer_length;
 
 extern "C" {
 
-	ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count, size_t *to_write)
+	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
 	{
-		size_t write_amount = bs->to_write;
-
-		buffered_socket_io_vector iov[count + 1];
-
-		iov[0].iov_base = bs->write_buffer;
-		iov[0].iov_len = bs->to_write;
-
-		for (unsigned int i = 0; i < count; i++) {
-			iov[i + 1].iov_base = io_vec[i].iov_base;
-			iov[i + 1].iov_len = io_vec[i].iov_len;
-			write_amount += io_vec[i].iov_len;
-		}
-		*to_write = write_amount;
-
-		switch (bs->ev.sock) {
+		switch (sock) {
 		case WRITEV_COMPLETE_WRITE: {
 			size_t complete_length = 0;
-			for (unsigned int i = 0; i <= count; i++) {
-				memcpy(write_buffer_ptr, iov[i].iov_base, iov[i].iov_len);
-				complete_length += iov[i].iov_len;
-				write_buffer_ptr += iov[i].iov_len;
+			for (unsigned int i = 0; i < count; i++) {
+				memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
+				complete_length += io_vec[i].iov_len;
+				write_buffer_ptr += io_vec[i].iov_len;
 			}
 			return complete_length;
 		}
@@ -116,9 +103,9 @@ extern "C" {
 		{
 			size_t complete_length = 0;
 			size_t parts_cnt = writev_parts_cnt;
-			for (unsigned int i = 0; i <= count; i++) {
-				int will_write = MIN(iov[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, iov[i].iov_base, will_write);
+			for (unsigned int i = 0; i < count; i++) {
+				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
 				complete_length += will_write;
 				write_buffer_ptr += will_write;
 				parts_cnt -= will_write;

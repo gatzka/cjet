@@ -36,13 +36,10 @@ ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	return read(sock, buf, count);
 }
 
-ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count, size_t *to_write)
+ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
-	struct iovec iov[count + 1];
-	size_t write_amount = bs->to_write;
+	struct iovec iov[count];
 
-	iov[0].iov_base = bs->write_buffer;
-	iov[0].iov_len = bs->to_write;
 /*
  * This pragma is used because iov_base is not declared const.
  * Nevertheless, I want to have the parameter io_vec const. Therefore I
@@ -51,13 +48,11 @@ ssize_t socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vect
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	for (unsigned int i = 0; i < count; i++) {
-		iov[i + 1].iov_base = (void *)io_vec[i].iov_base;
-		iov[i + 1].iov_len = io_vec[i].iov_len;
-		write_amount += io_vec[i].iov_len;
+		iov[i].iov_base = (void *)io_vec[i].iov_base;
+		iov[i].iov_len = io_vec[i].iov_len;
 	}
 #pragma GCC diagnostic pop
-	*to_write = write_amount;
-	return writev(bs->ev.sock, iov, sizeof(iov) / sizeof(struct iovec));
+	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
 }
 
 ssize_t socket_send(socket_type sock, const void *buf, size_t len)
