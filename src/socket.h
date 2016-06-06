@@ -24,44 +24,30 @@
  * SOFTWARE.
  */
 
-#include <unistd.h>
-#include <sys/socket.h>
+
+#ifndef CJET_SOCKET_H
+#define CJET_SOCKET_H
+
+#include <stddef.h>
 #include <sys/types.h>
-#include <sys/uio.h>
 
-#include "buffered_socket.h"
-#include "socket.h"
+#include "generated/os_config.h"
 
-ssize_t socket_read(socket_type sock, void *buf, size_t count)
-{
-	return read(sock, buf, count);
-}
-
-ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
-{
-	struct iovec iov[count];
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
- * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the parameter io_vec const. Therefore I
- * selectively disabled the cast-qual warning.
+ * Platform independent prototypes for socket operations.
+ * This functions must be implemented in an OS specific way.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-	for (unsigned int i = 0; i < count; i++) {
-		iov[i].iov_base = (void *)io_vec[i].iov_base;
-		iov[i].iov_len = io_vec[i].iov_len;
-	}
-#pragma GCC diagnostic pop
-	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
-}
+ssize_t socket_read(socket_type sock, void *buf, size_t count);
+ssize_t socket_send(socket_type sock, const void *buf, size_t len);
+ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count);
+int socket_close(socket_type sock);
 
-ssize_t socket_send(socket_type sock, const void *buf, size_t len)
-{
-	return send(sock, buf, len, MSG_NOSIGNAL);
+#ifdef __cplusplus
 }
+#endif
 
-int socket_close(socket_type sock)
-{
-	return close(sock);
-}
+#endif

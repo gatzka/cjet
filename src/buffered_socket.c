@@ -33,6 +33,7 @@
 #include "eventloop.h"
 #include "jet_string.h"
 #include "log.h"
+#include "socket.h"
 #include "util.h"
 
 static int send_buffer(struct buffered_socket *bs)
