@@ -33,6 +33,7 @@
 
 #include "buffered_socket.h"
 #include "compiler.h"
+#include "eventloop.h"
 #include "http_connection.h"
 #include "http_server.h"
 #include "http-parser/http_parser.h"
@@ -130,19 +131,18 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, ss
 	return BS_OK;
 }
 
-static void init_http_connection(struct http_connection *connection, struct io_event *ev, int fd)
+static void init_http_connection(struct http_connection *connection, struct http_server *server, const struct eventloop *loop, int fd)
 {
-	struct http_server *server = container_of(ev, struct http_server, ev);
 	connection->server = server;
 	http_parser_settings_init(&connection->parser_settings);
 	connection->parser_settings.on_url = on_url;
 
 	http_parser_init(&connection->parser, HTTP_REQUEST);
-	buffered_socket_init(connection->bs, fd, ev->loop, free_connection_on_error, connection);
+	buffered_socket_init(connection->bs, fd, loop, free_connection_on_error, connection);
 	buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(struct io_event *ev, int fd)
+struct http_connection *alloc_http_connection(struct http_server *server, const struct eventloop *loop, int fd)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {
@@ -153,6 +153,6 @@ struct http_connection *alloc_http_connection(struct io_event *ev, int fd)
 		free(connection);
 		return NULL;
 	}
-	init_http_connection(connection, ev, fd);
+	init_http_connection(connection, server, loop, fd);
 	return connection;
 }

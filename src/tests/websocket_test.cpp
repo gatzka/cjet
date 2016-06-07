@@ -88,8 +88,6 @@ struct F {
 		loop.run = NULL;
 		loop.add = eventloop_fake_add;
 		loop.remove = eventloop_fake_remove;
-
-		ev.loop = &loop;
 	}
 
 	~F()
@@ -97,15 +95,13 @@ struct F {
 	}
 
 	struct eventloop loop;
-	struct io_event ev;
-
 };
 
 
 BOOST_AUTO_TEST_CASE(test_websocket_alloc)
 {
 	F f;
-	struct http_connection *connection = alloc_http_connection(&f.ev, 1);
+	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, 1);
 	BOOST_CHECK(connection != NULL);
 	
 	free_connection(connection);

@@ -42,7 +42,7 @@ struct http_connection {
 	struct http_server *server;
 };
 
-struct http_connection *alloc_http_connection(struct io_event *ev, int fd);
+struct http_connection *alloc_http_connection(struct http_server *server, const struct eventloop *loop, int fd);
 void free_connection(struct http_connection *connection);
 int send_http_error_response(struct http_connection *connection, unsigned int status_code);
 

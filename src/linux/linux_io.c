@@ -146,7 +146,8 @@ static void handle_http(struct io_event *ev ,int fd)
 		close(fd);
 		return;
 	}
-	struct http_connection *connection = alloc_http_connection(ev, fd);
+	struct http_server *server = container_of(ev, struct http_server, ev);
+	struct http_connection *connection = alloc_http_connection(server, ev->loop, fd);
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
 		close(fd);
