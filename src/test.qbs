@@ -211,7 +211,7 @@ Project {
   }
   
   CppApplication {
-    name: "websocket_test"
+    name: "http_connection_test"
     type: ["application", "unittest"]
     consoleApplication: true
 
@@ -220,15 +220,11 @@ Project {
     }
 
     files: [
-          "base64.c",
           "buffered_socket.c",
           "http-parser/http_parser.c",
           "http_connection.c",
           "http_server.c",
-          "linux/jet_endian.c",
-          "sha1/sha1.c",
-          "websocket.c",
-          "tests/websocket_test.cpp",
+          "tests/http_connection_test.cpp",
           "tests/log.cpp",
       ]
   }
