@@ -36,6 +36,8 @@
 #include "http_connection.h"
 #include "socket.h"
 
+static bool close_called = false;
+
 extern "C" {
 	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
 	{
@@ -65,6 +67,7 @@ extern "C" {
 	int socket_close(socket_type sock)
 	{
 		(void)sock;
+		close_called = true;
 		return 0;
 	}
 }
@@ -83,6 +86,8 @@ static void eventloop_fake_remove(struct io_event *ev)
 struct F {
 	F()
 	{
+		close_called = false;
+
 		loop.create = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
@@ -102,7 +107,22 @@ BOOST_AUTO_TEST_CASE(test_websocket_alloc)
 {
 	F f;
 	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, 1);
-	BOOST_CHECK(connection != NULL);
+	BOOST_CHECK_MESSAGE(connection != NULL, "Connection allocation failed!");
 	
 	free_connection(connection);
+}
+
+BOOST_AUTO_TEST_CASE(test_buffered_socket_migration)
+{
+	F f;
+	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, 1);
+	BOOST_CHECK(connection != NULL);
+
+	struct buffered_socket *bs = connection->bs;
+	connection->bs = NULL;
+	free_connection(connection);
+	BOOST_CHECK_MESSAGE(!close_called, "Close was called after buffered_socket migration!");
+	buffered_socket_close(bs);
+	free(bs);
+	BOOST_CHECK_MESSAGE(close_called, "Close was not called after buffered_socket_close!");
 }
