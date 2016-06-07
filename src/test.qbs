@@ -207,6 +207,29 @@ Project {
         "tests/log.cpp"
     ]
   }
+  
+  CppApplication {
+    name: "websocket_test"
+    type: ["application", "unittest"]
+    consoleApplication: true
+
+    Depends {
+      name: "unittestSettings"
+    }
+
+    files: [
+          "base64.c",
+          "buffered_socket.c",
+          "http-parser/http_parser.c",
+          "http_connection.c",
+          "http_server.c",
+          "linux/jet_endian.c",
+          "sha1/sha1.c",
+          "websocket.c",
+          "tests/websocket_test.cpp",
+          "tests/log.cpp",
+      ]
+  }
 
   CppApplication {
     name: "http_parse_test"
