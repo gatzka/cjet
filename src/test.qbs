@@ -33,6 +33,8 @@ Project {
   qbsSearchPaths: "../qbs/"
   references: "../qbs/unittestSettings.qbs"
 
+  property bool buildHttpParserTest: true
+
   CppApplication {
     name: "info_test"
     type: ["application", "unittest"]
@@ -235,6 +237,8 @@ Project {
     name: "http_parse_test"
     type: ["application", "unittest"]
     consoleApplication: true
+
+    condition: buildHttpParserTest
 
     Depends {
       name: "unittestSettings"
