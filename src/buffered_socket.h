@@ -37,9 +37,10 @@
 extern "C" {
 #endif
 
-#define IO_WOULD_BLOCK -1
-#define IO_ERROR -2
-#define IO_TOOMUCHDATA -3
+#define BS_PEER_CLOSED 0
+#define BS_IO_WOULD_BLOCK -1
+#define BS_IO_ERROR -2
+#define BS_IO_TOOMUCHDATA -3
 
 enum bs_read_callback_return {BS_OK, BS_CLOSED};
 

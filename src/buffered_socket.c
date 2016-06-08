@@ -84,7 +84,7 @@ static enum callback_return read_function(struct io_event *ev)
 {
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	int ret = go_reading(bs);
-	if (unlikely((ret < 0) && (ret != IO_WOULD_BLOCK))) {
+	if (unlikely((ret < 0) && (ret != BS_IO_WOULD_BLOCK))) {
 		error_function(ev);
 	}
 	if (ret == 0) {
@@ -164,24 +164,48 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 		reorganize_read_buffer(bs);
 		if (unlikely(free_space(bs) < count)) {
 			log_err("read buffer too small to fulfill request!\n");
-			return IO_TOOMUCHDATA;
+			return BS_IO_TOOMUCHDATA;
 		}
 	}
 	ssize_t read_length = socket_read(bs->ev.sock, bs->write_ptr, free_space(bs));
 	if (unlikely(read_length == 0)) {
-		return 0;
+		return BS_PEER_CLOSED;
 	}
 	if (read_length == -1) {
 		if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
 			log_err("unexpected %s error: %s!\n", "read", strerror(errno));
-			return IO_ERROR;
+			return BS_IO_ERROR;
 		}
-		return IO_WOULD_BLOCK;
+		return BS_IO_WOULD_BLOCK;
 	}
 	bs->write_ptr += read_length;
 	return read_length;
 }
 
+/**
+ * @brief Special reader function to read exactly n (ctx.num) bytes.
+ * 
+ * This function immediately returns if the internal read buffer contains enough data
+ * to fullfil the request. Otherwise, it tries to fill the internal read buffer. If
+ * the latter is not able to fill the read buffer enough, the function returns with
+ * IO_WOULD_BLOCK.
+ * 
+ * @param bs The buffered_socket to operate on
+ * @param ctx ctx.num must contain the number of bytes this function call shall read.
+ * @param read_ptr This parameter should be considered a return value (out parameter)
+ * and is set to the position where the n bytes can be read from if the function returns
+ * successfully.
+ * 
+ * @return A value greater then zero signals success. The number of requested bytes is
+ * returned.
+ * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * eventloop shall try filling the buffer later on if data is available.
+ * BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
+ * size of the internal read buffer.
+ * BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
+ * and no more data is can be expected to read.
+ */ 
 static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
 {
 	size_t count = ctx.num;
@@ -320,7 +344,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 		return -1;
 	} else {
 		int ret = go_reading(bs);
-		if (ret == IO_WOULD_BLOCK) {
+		if (ret == BS_IO_WOULD_BLOCK) {
 			ret = 0;
 		}
 		return ret;
@@ -344,7 +368,7 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, en
 		return -1;
 	} else {
 		int ret = go_reading(bs);
-		if (ret == IO_WOULD_BLOCK) {
+		if (ret == BS_IO_WOULD_BLOCK) {
 			ret = 0;
 		}
 		return ret;
