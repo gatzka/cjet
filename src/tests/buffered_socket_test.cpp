@@ -719,7 +719,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_more_than_buffer)
 	F f(READ_FULL);
 	size_t read_size = CONFIG_MAX_MESSAGE_SIZE + 1;
 	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
-	BOOST_CHECK(ret == BS_IO_TOOMUCHDATA);
+	BOOST_CHECK(ret == -1);
 }
 
 BOOST_AUTO_TEST_CASE(test_read_exactly_read_close)
@@ -727,7 +727,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close)
 	F f(READ_CLOSE);
 	size_t read_size = 4;
 	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
-	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(ret == -1);
 	BOOST_CHECK(f.readcallback_called == 1);
 	BOOST_CHECK(f.read_len == 0);
 }
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_error)
 	F f(READ_ERROR);
 	size_t read_size = 4;
 	int ret = buffered_socket_read_exactly(&f.bs, read_size, f.read_callback, &f);
-	BOOST_CHECK(ret == BS_IO_ERROR);
+	BOOST_CHECK(ret == -1);
 	BOOST_CHECK(f.readcallback_called == 0);
 }
 
@@ -877,7 +877,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_more_than_buffer)
 	readbuffer_length = sizeof(buffer);
 	F f(READ_COMPLETE_BUFFER);
 	int ret = buffered_socket_read_until(&f.bs, "\r\n", f.read_callback, &f);
-	BOOST_CHECK(ret == BS_IO_TOOMUCHDATA);
+	BOOST_CHECK(ret == -1);
 }
 
 BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)

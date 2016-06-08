@@ -57,6 +57,16 @@ static int send_buffer(struct buffered_socket *bs)
 	return 0;
 }
 
+/**
+ * @brief go_reading reads until thre reader()-function returns an error or the read_callback() closes the buffered_socket.
+ * @param bs The buffered_socket to operate on.
+ * @return 0 if the buffered_socket was closed either by the peer or in the read callback of the buffered_socket.
+ * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * eventloop shall try filling the buffer later on if data is available.
+ * BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
+ * size of the internal read buffer.
+ */
 static int go_reading(struct buffered_socket *bs)
 {
 	while (1) {
@@ -351,6 +361,13 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
+/**
+ * @brief buffered_socket_read_exactly
+ * @param bs
+ * @param num
+ * @param context
+ * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
+ */
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .num = num };
@@ -368,13 +385,24 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 		return -1;
 	} else {
 		int ret = go_reading(bs);
-		if (ret == BS_IO_WOULD_BLOCK) {
-			ret = 0;
+		if (likely(ret == BS_IO_WOULD_BLOCK)) {
+			return 0;
+		} else if (ret < 0) {
+			error_function(&bs->ev);
+			return -1;
+		} else {
+			return -1;
 		}
-		return ret;
 	}
 }
 
+/**
+ * @brief buffered_socket_read_until
+ * @param bs
+ * @param delim
+ * @param context
+ * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
+ */
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .ptr = delim };
@@ -392,9 +420,13 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, en
 		return -1;
 	} else {
 		int ret = go_reading(bs);
-		if (ret == BS_IO_WOULD_BLOCK) {
-			ret = 0;
+		if (likely(ret == BS_IO_WOULD_BLOCK)) {
+			return 0;
+		} else if (ret < 0) {
+			error_function(&bs->ev);
+			return -1;
+		} else {
+			return -1;
 		}
-		return ret;
 	}
 }
