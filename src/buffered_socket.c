@@ -222,6 +222,30 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
 	}
 }
 
+/**
+ * @brief Special reader function to until a delimiter sequence string is found.
+ * 
+ * This function immediately returns if the internal read buffer contains the 
+ * sequence string specified in ctx.ptr. Otherwise, it tries to fill the internal
+ * read buffer. If the latter is not able to fill the read buffer enough,
+ * the function returns with IO_WOULD_BLOCK.
+ * 
+ * @param bs The buffered_socket to operate on.
+ * @param ctx ctx.ptr must point to a zero terminated sequence string.
+ * @param read_ptr This parameter should be considered a return value (out parameter)
+ * and is set to the position where the string including the delimiter stringcan be
+ * read from if the function returns successfully.
+ * 
+ * @return A value greater then zero signals success. The number of bytes including
+ * the delimiter string is returned.
+ * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * eventloop shall try filling the buffer later on if data is available.
+ * BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * BS_IO_TOOMUCHDATA is returned if the delimiter is not found in the completly 
+ * filled internal read buffer.
+ * BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
+ * and no more data is can be expected to read.
+ */ 
 static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
 {
 	const char *haystack = bs->read_ptr;
