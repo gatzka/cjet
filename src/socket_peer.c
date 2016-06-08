@@ -60,16 +60,13 @@ static void close_jet_peer(struct peer *p)
 	free_jet_peer(s_peer);
 }
 
-static enum bs_read_callback_return read_msg_length(void *context, char *buf, ssize_t len);
+static enum bs_read_callback_return read_msg_length(void *context, char *buf, size_t len);
 
-static enum bs_read_callback_return read_msg(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_msg(void *context, char *buf, size_t len)
 {
 	struct socket_peer *p = (struct socket_peer *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_peer_err(&p->peer, "Error while reading message!\n");
-		}
+	if (unlikely(len == 0)) {
 		free_jet_peer(p);
 		return BS_CLOSED;
 	}
@@ -84,14 +81,11 @@ static enum bs_read_callback_return read_msg(void *context, char *buf, ssize_t l
 	return BS_OK;
 }
 
-static enum bs_read_callback_return read_msg_length(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_msg_length(void *context, char *buf, size_t len)
 {
 	struct socket_peer *p = (struct socket_peer *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_peer_err(&p->peer, "Error while reading message length!\n");
-		}
+	if (unlikely(len == 0)) {
 		free_jet_peer(p);
 		return BS_CLOSED;
 	}

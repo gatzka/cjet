@@ -109,7 +109,7 @@ int send_http_error_response(struct http_connection *connection, unsigned int st
 	return buffered_socket_writev(connection->bs, &iov, 1);
 }
 
-static enum bs_read_callback_return read_start_line(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return read_start_line(void *context, char *buf, size_t len)
 {
 	struct http_connection *connection = (struct http_connection *)context;
 

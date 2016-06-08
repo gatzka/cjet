@@ -380,7 +380,7 @@ struct F {
 		f->error_func_alt_called = true;
 	}
 
-	static enum bs_read_callback_return read_callback(void *context, char *buf, ssize_t len)
+	static enum bs_read_callback_return read_callback(void *context, char *buf, size_t len)
 	{
 		struct F *f = (struct F *)context;
 		memcpy(f->read_buffer, buf, len);
@@ -405,7 +405,7 @@ struct F {
 	struct buffered_socket bs;
 
 	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	ssize_t read_len;
+	size_t read_len;
 };
 
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)

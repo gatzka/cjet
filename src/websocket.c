@@ -116,29 +116,20 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 	return WS_OK;
 }
 
-static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssize_t len);
+static enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len);
 
-static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_payload(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket payload!\n");
-			if (s->on_error != NULL) {
-				s->on_error(s);
-			}
-			return BS_CLOSED;
+	if (unlikely((len == 0) && (s->length != 0))) {
+		/*
+		 * Other side closed the socket
+		 */
+		if (s->on_error != NULL) {
+			s->on_error(s);
 		}
-		if (s->length != 0) {
-			/*
-			 * Other side closed the socket
-			 */
-			if (s->on_error != NULL) {
-				s->on_error(s);
-			}
-			return BS_CLOSED;
-		}
+		return BS_CLOSED;
 	}
 	if (unlikely(s->is_server && (s->ws_flags.mask == 0))) {
 		if (s->on_error != NULL) {
@@ -167,14 +158,11 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, ssi
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_mask(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_mask(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket mask!\n");
-		}
+	if (unlikely(len == 0)) {
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -195,14 +183,11 @@ static void read_mask_or_payload(struct websocket *s)
 	}
 }
 
-static enum bs_read_callback_return ws_get_length16(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_length16(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket 16 bit length!\n");
-		}
+	if (unlikely(len == 0)) {
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -217,14 +202,11 @@ static enum bs_read_callback_return ws_get_length16(void *context, char *buf, ss
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_length64(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_length64(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket 64 bit length!\n");
-		}
+	if (unlikely(len == 0)) {
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -239,14 +221,11 @@ static enum bs_read_callback_return ws_get_length64(void *context, char *buf, ss
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_first_length(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_first_length(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket first length!\n");
-		}
+	if (unlikely(len == 0)) {
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -272,14 +251,11 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssize_t len)
+static enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading websocket header!\n");
-		}
+	if (unlikely(len == 0)) {
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -301,14 +277,11 @@ static enum bs_read_callback_return ws_get_header(void *context, char *buf, ssiz
 	return BS_OK;
 }
 
-enum bs_read_callback_return websocket_read_header_line(void *context, char *buf, ssize_t len)
+enum bs_read_callback_return websocket_read_header_line(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading header line!\n");
-		}
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
@@ -570,7 +543,6 @@ void websocket_init(struct websocket *ws, struct http_connection *connection, bo
 	ws->binary_frame_received = NULL;
 	ws->pong_received = NULL;
 	ws->close_received = NULL;
-	ws->on_error = NULL;
 	ws->is_server = is_server;
 }
 

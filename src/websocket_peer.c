@@ -72,12 +72,6 @@ static void free_websocket_peer(struct websocket_peer *ws_peer)
 	free(ws_peer);
 }
 
-static void free_websocket_peer_callback(struct websocket *s)
-{
-	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-	free_websocket_peer(ws_peer);
-}
-
 static void free_websocket_peer_on_error(void *context)
 {
 	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
@@ -129,7 +123,6 @@ static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_conn
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
 	websocket_init(&ws_peer->websocket, connection, true);
-	ws_peer->websocket.on_error = free_websocket_peer_callback;
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;

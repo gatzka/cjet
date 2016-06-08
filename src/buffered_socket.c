@@ -368,7 +368,7 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
  * @param context
  * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
  */
-int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
@@ -403,7 +403,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
  * @param context
  * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
  */
-int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, ssize_t len), void *context)
+int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);
