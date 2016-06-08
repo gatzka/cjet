@@ -164,16 +164,11 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_migration)
 	BOOST_CHECK_MESSAGE(close_called, "Close was not called after buffered_socket_close!");
 }
 
-#if 0
-BOOST_AUTO_TEST_CASE(test_read_correct_startline)
+BOOST_AUTO_TEST_CASE(test_read_invalid_startline)
 {
 	readbuffer = "aaaa\r\n";
 	readbuffer_length = ::strlen(readbuffer);
 	F f;
 	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, FD_COMPLETE_STARTLINE);
-	BOOST_CHECK(connection != NULL);
-
-	free_connection(connection);
+	BOOST_CHECK(connection == NULL);
 }
-
-#endif
