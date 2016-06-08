@@ -113,10 +113,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, ss
 {
 	struct http_connection *connection = (struct http_connection *)context;
 
-	if (unlikely(len <= 0)) {
-		if (len < 0) {
-			log_err("Error while reading start line!\n");
-		}
+	if (unlikely(len == 0)) {
 		free_connection(connection);
 		return BS_CLOSED;
 	}

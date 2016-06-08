@@ -46,6 +46,8 @@ static size_t readbuffer_length;
 
 static const int FD_WOULDBLOCK = 1;
 static const int FD_COMPLETE_STARTLINE = 2;
+static const int FD_CLOSE = 3;
+static const int FD_ERROR = 4;
 
 extern "C" {
 	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
@@ -93,6 +95,13 @@ extern "C" {
 			}
 			break;
 		
+		case FD_CLOSE:
+			return 0;
+
+		case FD_ERROR:
+			errno = EINVAL;
+			return -1;
+
 		case FD_WOULDBLOCK:
 		default:
 			errno = EWOULDBLOCK;
@@ -170,5 +179,23 @@ BOOST_AUTO_TEST_CASE(test_read_invalid_startline)
 	readbuffer_length = ::strlen(readbuffer);
 	F f;
 	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, FD_COMPLETE_STARTLINE);
+	BOOST_CHECK(connection == NULL);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_close)
+{
+	readbuffer = "aaaa\r\n";
+	readbuffer_length = ::strlen(readbuffer);
+	F f;
+	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, FD_CLOSE);
+	BOOST_CHECK(connection == NULL);
+}
+
+BOOST_AUTO_TEST_CASE(test_read_error)
+{
+	readbuffer = "aaaa\r\n";
+	readbuffer_length = ::strlen(readbuffer);
+	F f;
+	struct http_connection *connection = alloc_http_connection(NULL, &f.loop, FD_ERROR);
 	BOOST_CHECK(connection == NULL);
 }
