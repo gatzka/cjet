@@ -290,7 +290,8 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 
 	size_t nparsed = http_parser_execute(&s->connection->parser, &s->connection->parser_settings, buf, len);
 	if (unlikely(nparsed != (size_t)len)) {
-		send_http_error_response(s->connection, 400);
+		s->connection->status_code = HTTP_BAD_REQUEST;
+		send_http_error_response(s->connection);
 		if (s->on_error != NULL) {
 			s->on_error(s);
 		}
