@@ -134,6 +134,21 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(HTTP_CONNECTION_TEST
+    ../buffered_socket.c
+    ../http-parser/http_parser.c
+    ../http_connection.c
+    ../http_server.c
+	../linux/jet_string.c
+    http_connection_test.cpp
+    log.cpp
+)
+ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
+TARGET_LINK_LIBRARIES(
+	http_connection_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(CONFIG_TEST
 	config_test.cpp
 	log.cpp

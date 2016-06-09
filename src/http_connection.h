@@ -40,11 +40,17 @@ struct http_connection {
 	http_parser parser;
 	http_parser_settings parser_settings;
 	struct http_server *server;
+	unsigned int status_code;
 };
 
 struct http_connection *alloc_http_connection(struct http_server *server, const struct eventloop *loop, int fd);
 void free_connection(struct http_connection *connection);
-int send_http_error_response(struct http_connection *connection, unsigned int status_code);
+int send_http_error_response(struct http_connection *connection);
+
+#define HTTP_OK 200
+#define HTTP_BAD_REQUEST 400
+#define HTTP_NOT_FOUND 404
+#define HTTP_INTERNAL_SERVER_ERROR 500
 
 #ifdef __cplusplus
 }

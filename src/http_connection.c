@@ -45,8 +45,10 @@
 
 static int on_url(http_parser *parser, const char *at, size_t length)
 {
+	struct http_connection *connection = container_of(parser, struct http_connection, parser);
+	
 	int is_connect;
-	if (parser->method == HTTP_CONNECT) {
+	if (unlikely(parser->method == HTTP_CONNECT)) {
 		is_connect = 1;
 	} else {
 		is_connect = 0;
@@ -54,12 +56,16 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 	struct http_parser_url u;
 	http_parser_url_init(&u);
 	int ret = http_parser_parse_url(at, length, is_connect, &u);
-	if (ret != 0) {
+	if (unlikely(ret != 0)) {
+		connection->status_code = HTTP_BAD_REQUEST;
 		return -1;
 	}
-	if ((u.field_set & (1 << UF_PATH)) == (1 << UF_PATH)) {
-		struct http_connection *connection = container_of(parser, struct http_connection, parser);
+	if (likely((u.field_set & (1 << UF_PATH)) == (1 << UF_PATH))) {
 		const struct url_handler *handler = find_url_handler(connection->server, at + u.field_data[UF_PATH].off, u.field_data[UF_PATH].len);
+		if (handler == NULL) {
+			connection->status_code = HTTP_NOT_FOUND;
+			return -1;
+		}
 		if (handler->create != NULL) {
 			(handler->create(connection));
 		}
@@ -69,6 +75,9 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 		connection->parser_settings.on_headers_complete = handler->on_headers_complete;
 		connection->parser_settings.on_body = handler->on_body;
 		connection->parser_settings.on_message_complete = handler->on_message_complete;
+	} else {
+		connection->status_code = HTTP_BAD_REQUEST;
+		return -1;
 	}
 
 	return 0;
@@ -77,9 +86,12 @@ static int on_url(http_parser *parser, const char *at, size_t length)
 static const char *get_response(unsigned int status_code)
 {
 	switch (status_code) {
-	case 400:
+	case HTTP_BAD_REQUEST:
 		return "HTTP/1.0 400 Bad Request" CRLF CRLF;
+	case HTTP_NOT_FOUND:
+		return "HTTP/1.0 404 Not Found" CRLF CRLF;
 
+	case HTTP_INTERNAL_SERVER_ERROR:
 	default:
 		return "HTTP/1.0 500 Internal Server Error" CRLF CRLF;
 	}
@@ -100,9 +112,9 @@ static void free_connection_on_error(void *context)
 	free_connection(connection);
 }
 
-int send_http_error_response(struct http_connection *connection, unsigned int status_code)
+int send_http_error_response(struct http_connection *connection)
 {
-	const char *response = get_response(status_code);
+	const char *response = get_response(connection->status_code);
 	struct buffered_socket_io_vector iov;
 	iov.iov_base = response;
 	iov.iov_len = strlen(response);
@@ -121,7 +133,10 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 	size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
 
 	if (unlikely(nparsed != (size_t)len)) {
-		send_http_error_response(connection, 400);
+		if (connection->status_code == 0) {
+			connection->status_code = HTTP_BAD_REQUEST;
+		}
+		send_http_error_response(connection);
 		free_connection(connection);
 		return BS_CLOSED;
 	}
@@ -130,6 +145,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 
 static int init_http_connection(struct http_connection *connection, struct http_server *server, const struct eventloop *loop, int fd)
 {
+	connection->status_code = 0;
 	connection->server = server;
 	http_parser_settings_init(&connection->parser_settings);
 	connection->parser_settings.on_url = on_url;
