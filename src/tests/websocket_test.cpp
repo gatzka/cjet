@@ -32,6 +32,7 @@
 #include <errno.h>
 
 #include "socket.h"
+#include "websocket.h"
 
 extern "C" {
 	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
@@ -75,4 +76,12 @@ extern "C" {
 		(void)sock;
 		return 0;
 	}
+}
+
+
+BOOST_AUTO_TEST_CASE(test_websocket_init)
+{
+	struct websocket ws;
+	websocket_init(&ws, NULL, true, NULL);
+	websocket_free(&ws);
 }
