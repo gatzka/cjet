@@ -26,7 +26,7 @@
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE websocket_tests
+#define BOOST_TEST_MODULE http_connection_tests
 
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
@@ -173,6 +173,17 @@ struct F {
 
 		http_parser_settings_init(&parser_settings);
 		http_parser_init(&parser, HTTP_RESPONSE);
+
+		handler[0].request_target = "/";
+		handler[0].create = NULL;
+		handler[0].on_header_field = NULL;
+		handler[0].on_header_value = NULL;
+		handler[0].on_headers_complete = NULL;
+		handler[0].on_body = NULL;
+		handler[0].on_message_complete = NULL;
+
+		http_server.handler = handler;
+		http_server.num_handlers = ARRAY_SIZE(handler);
 	}
 
 	~F()
@@ -182,6 +193,8 @@ struct F {
 	struct eventloop loop;
 	http_parser parser;
 	http_parser_settings parser_settings;
+	struct url_handler handler[1];
+	struct http_server http_server;
 };
 
 BOOST_FIXTURE_TEST_CASE(test_websocket_alloc, F)
@@ -235,22 +248,6 @@ BOOST_FIXTURE_TEST_CASE(test_read_error, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match, F)
 {
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/",
-			.create = NULL,
-			.on_header_field = NULL,
-			.on_header_value = NULL,
-			.on_headers_complete = NULL,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
-
-	struct http_server http_server;
-	http_server.handler = handler;
-	http_server.num_handlers = ARRAY_SIZE(handler),
-	
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
@@ -262,22 +259,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match_create_called, F)
 {
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/",
-			.create = on_create,
-			.on_header_field = NULL,
-			.on_header_value = NULL,
-			.on_headers_complete = NULL,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
-
-	struct http_server http_server;
-	http_server.handler = handler;
-	http_server.num_handlers = ARRAY_SIZE(handler),
-	
+	handler[0].create = on_create;
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
@@ -290,22 +272,8 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match_create_called, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_no_match, F)
 {
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/foobar/",
-			.create = NULL,
-			.on_header_field = NULL,
-			.on_header_value = NULL,
-			.on_headers_complete = NULL,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
+	handler[0].request_target = "/foobar/";
 
-	struct http_server http_server;
-	http_server.handler = handler;
-	http_server.num_handlers = ARRAY_SIZE(handler),
-	
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
@@ -319,27 +287,8 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_no_match, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_invalid_url, F)
 {
-	http_parser_settings parser_settings;
-	http_parser_settings_init(&parser_settings);
-	http_parser parser;
-	http_parser_init(&parser, HTTP_RESPONSE);
-	
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/foobar/",
-			.create = NULL,
-			.on_header_field = NULL,
-			.on_header_value = NULL,
-			.on_headers_complete = NULL,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
+	handler[0].request_target = "/foobar/";
 
-	struct http_server http_server;
-	http_server.handler = handler;
-	http_server.num_handlers = ARRAY_SIZE(handler),
-	
 	readbuffer = "GET http://ww%.google.de/ HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
@@ -353,28 +302,12 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_invalid_url, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_connect_request_url_match, F)
 {
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/",
-			.create = NULL,
-			.on_header_field = NULL,
-			.on_header_value = NULL,
-			.on_headers_complete = NULL,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
-
-	struct http_server http_server;
-	http_server.handler = handler;
-	http_server.num_handlers = ARRAY_SIZE(handler),
-	
 	readbuffer = "CONNECT www.example.com:443 HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
 	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
 	BOOST_CHECK(connection == NULL);
-	
+
 	size_t nparsed = http_parser_execute(&parser, &parser_settings, write_buffer, write_buffer_written);
 	BOOST_CHECK(nparsed == write_buffer_written);
 	BOOST_CHECK(parser.status_code == 400);
