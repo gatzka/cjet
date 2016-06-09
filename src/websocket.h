@@ -34,6 +34,10 @@
 #include "http_connection.h"
 #include "http-parser/http_parser.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SEC_WEB_SOCKET_KEY_LENGTH 24
 #define SEC_WEB_SOCKET_GUID_LENGTH 36
 
@@ -85,5 +89,9 @@ int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const char *
 int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t status_code, const char *payload, size_t length);
 int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length);
 int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
