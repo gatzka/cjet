@@ -34,6 +34,10 @@
 #include "http_connection.h"
 #include "http-parser/http_parser.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define SEC_WEB_SOCKET_KEY_LENGTH 24
 #define SEC_WEB_SOCKET_GUID_LENGTH 36
 
@@ -74,7 +78,7 @@ struct websocket {
 	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code, char *msg, size_t length);
 };
 
-void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server);
+void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s));
 void websocket_free(struct websocket *ws);
 enum bs_read_callback_return websocket_read_header_line(void *context, char *buf, size_t len);
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length);
@@ -85,5 +89,9 @@ int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const char *
 int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t status_code, const char *payload, size_t length);
 int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length);
 int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

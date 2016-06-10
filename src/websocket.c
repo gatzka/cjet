@@ -126,15 +126,11 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, siz
 		/*
 		 * Other side closed the socket
 		 */
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 	if (unlikely(s->is_server && (s->ws_flags.mask == 0))) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	} else {
 		unmask_payload(buf, s->mask, len);
@@ -148,9 +144,7 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, siz
 			return BS_CLOSED;
 
 		case WS_ERROR:
-			if (s->on_error != NULL) {
-				s->on_error(s);
-			}
+			s->on_error(s);
 			return BS_CLOSED;
 		}
 
@@ -163,9 +157,7 @@ static enum bs_read_callback_return ws_get_mask(void *context, char *buf, size_t
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -188,9 +180,7 @@ static enum bs_read_callback_return ws_get_length16(void *context, char *buf, si
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -207,9 +197,7 @@ static enum bs_read_callback_return ws_get_length64(void *context, char *buf, si
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -226,9 +214,7 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -256,9 +242,7 @@ static enum bs_read_callback_return ws_get_header(void *context, char *buf, size
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -282,9 +266,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len <= 0)) {
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 
@@ -292,9 +274,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 	if (unlikely(nparsed != (size_t)len)) {
 		s->connection->status_code = HTTP_BAD_REQUEST;
 		send_http_error_response(s->connection);
-		if (s->on_error != NULL) {
-			s->on_error(s);
-		}
+		s->on_error(s);
 		return BS_CLOSED;
 	}
 	if (s->connection->parser.upgrade) {
@@ -338,6 +318,7 @@ static int send_upgrade_response(struct http_connection *connection)
 	SHA1Result(&context, sha1_buffer);
 	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
 
+	//TODO: The supported protocol(s) (jet is just an example) must be set in websocket_init and used here.
 	static const char switch_response[] =
 		"HTTP/1.1 101 Switching Protocols" CRLF
 		"Upgrade: websocket" CRLF
@@ -444,6 +425,7 @@ int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t len
 	s->current_header_field = HEADER_UNKNOWN;
 	return ret;
 }
+
 int websocket_upgrade_on_headers_complete(http_parser *parser)
 {
 	if (check_http_version(parser) < 0) {
@@ -533,9 +515,10 @@ int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t stat
 	return send_frame(s, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
 }
 
-void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server)
+void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s))
 {
 	ws->bs = NULL;
+	ws->on_error = on_error;
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
 	ws->text_message_received = NULL;
