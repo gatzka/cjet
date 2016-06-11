@@ -111,12 +111,15 @@ int eventloop_epoll_run(int *go_ahead)
 	return 0;
 }
 
-enum callback_return eventloop_epoll_add(struct io_event *ev)
+enum callback_return eventloop_epoll_add(const struct io_event *ev)
 {
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
-	epoll_ev.data.ptr = ev;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	epoll_ev.data.ptr = (void *)ev;
+#pragma GCC diagnostic pop
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");

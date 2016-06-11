@@ -36,7 +36,7 @@ extern "C" {
 int eventloop_epoll_create(void);
 void eventloop_epoll_destroy(void);
 int eventloop_epoll_run(int *go_ahead);
-enum callback_return eventloop_epoll_add(struct io_event *ev);
+enum callback_return eventloop_epoll_add(const struct io_event *ev);
 void eventloop_epoll_remove(struct io_event *ev);
 
 #ifdef __cplusplus
