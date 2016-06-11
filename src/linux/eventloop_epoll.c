@@ -89,15 +89,15 @@ int eventloop_epoll_init(void *this_ptr)
 	return 0;
 }
 
-void eventloop_epoll_destroy(void *this_ptr)
+void eventloop_epoll_destroy(const void *this_ptr)
 {
-	struct eventloop_epoll *loop = this_ptr;
+	const struct eventloop_epoll *loop = this_ptr;
 	close(loop->epoll_fd);
 }
 
-int eventloop_epoll_run(void *this_ptr, int *go_ahead)
+int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 {
-	struct eventloop_epoll *loop = this_ptr;
+	const struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
 	while (likely(*go_ahead)) {
@@ -112,9 +112,9 @@ int eventloop_epoll_run(void *this_ptr, int *go_ahead)
 	return 0;
 }
 
-enum callback_return eventloop_epoll_add(void *this_ptr, const struct io_event *ev)
+enum callback_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev)
 {
-	struct eventloop_epoll *loop = this_ptr;
+	const struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
@@ -130,8 +130,8 @@ enum callback_return eventloop_epoll_add(void *this_ptr, const struct io_event *
 	return CONTINUE_LOOP;
 }
 
-void eventloop_epoll_remove(void *this_ptr, struct io_event *ev)
+void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)
 {
-	struct eventloop_epoll *loop = this_ptr;
+	const struct eventloop_epoll *loop = this_ptr;
 	epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
 }

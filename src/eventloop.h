@@ -61,10 +61,10 @@ struct io_event {
 struct eventloop {
 	void *this_ptr;
 	int (*init)(void *this_ptr);
-	void (*destroy)(void *this_ptr);
-	int (*run)(void *this_ptr, int *go_ahead);
-	enum callback_return (*add)(void *this_ptr, const struct io_event *ev);
-	void (*remove)(void *this_ptr, struct io_event *ev);
+	void (*destroy)(const void *this_ptr);
+	int (*run)(const void *this_ptr, const int *go_ahead);
+	enum callback_return (*add)(const void *this_ptr, const struct io_event *ev);
+	void (*remove)(const void *this_ptr, const struct io_event *ev);
 };
 
 #ifdef __cplusplus
