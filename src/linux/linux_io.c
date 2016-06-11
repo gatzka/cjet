@@ -315,7 +315,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		return -1;
 	}
 
-	if (loop->create() < 0) {
+	if (loop->init() < 0) {
 		go_ahead = 0;
 		ret = -1;
 		goto unregister_signal_handler;

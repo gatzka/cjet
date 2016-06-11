@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 	}
 	
 	static const struct eventloop loop = {
-		.create = eventloop_epoll_create,
+		.init = eventloop_epoll_create,
 		.destroy = eventloop_epoll_destroy,
 		.run = eventloop_epoll_run,
 		.add = eventloop_epoll_add,

@@ -59,7 +59,8 @@ struct io_event {
 };
 
 struct eventloop {
-	int (*create)(void);
+	void *this_ptr;
+	int (*init)(void);
 	void (*destroy)(void);
 	int (*run)(int *go_ahead);
 	enum callback_return (*add)(const struct io_event *ev);

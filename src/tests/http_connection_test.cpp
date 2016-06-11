@@ -137,7 +137,7 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(struct io_event *ev)
+static enum callback_return eventloop_fake_add(const struct io_event *ev)
 {
 	(void)ev;
 	return CONTINUE_LOOP;
@@ -161,7 +161,7 @@ struct F {
 		close_called = false;
 		create_called = false;
 
-		loop.create = NULL;
+		loop.init = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
 		loop.add = eventloop_fake_add;

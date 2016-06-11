@@ -324,13 +324,13 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(struct io_event *ev)
+static enum callback_return eventloop_fake_add(const struct io_event *ev)
 {
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return eventloop_fake_failing_add(struct io_event *ev)
+static enum callback_return eventloop_fake_failing_add(const struct io_event *ev)
 {
 	(void)ev;
 	return ABORT_LOOP;
@@ -344,7 +344,7 @@ static void eventloop_fake_remove(struct io_event *ev)
 struct F {
 	F(int fd)
 	{
-		loop.create = NULL;
+		loop.init = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
 		if (fd == READ_FAILING_EV_ADD) {
