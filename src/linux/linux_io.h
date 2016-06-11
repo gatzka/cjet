@@ -33,7 +33,7 @@
 extern "C" {
 #endif
 
-int run_io(const struct eventloop *loop, const char *user_name);
+int run_io(struct eventloop *loop, const char *user_name);
 
 #ifdef __cplusplus
 }

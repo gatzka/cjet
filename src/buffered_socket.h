@@ -70,7 +70,7 @@ struct buffered_socket {
 	void *error_context;
 };
 
-void buffered_socket_init(struct buffered_socket *bs, socket_type sock, const struct eventloop *loop, void (*error)(void *error_context), void *error_context);
+void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(struct buffered_socket *bs);
 int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count);
 void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *error_context), void *error_context);

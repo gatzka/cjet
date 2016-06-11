@@ -36,6 +36,6 @@ struct socket_peer {
 	struct buffered_socket bs;
 };
 
-struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd);
+struct socket_peer *alloc_jet_peer(struct eventloop *loop, int fd);
 
 #endif

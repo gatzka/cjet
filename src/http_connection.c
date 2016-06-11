@@ -143,7 +143,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 	return BS_OK;
 }
 
-static int init_http_connection(struct http_connection *connection, struct http_server *server, const struct eventloop *loop, int fd)
+static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, int fd)
 {
 	connection->status_code = 0;
 	connection->server = server;
@@ -155,7 +155,7 @@ static int init_http_connection(struct http_connection *connection, struct http_
 	return buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(struct http_server *server, const struct eventloop *loop, int fd)
+struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {

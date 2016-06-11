@@ -198,13 +198,13 @@ static enum callback_return accept_http_error(struct io_event *ev)
 
 static int start_server(struct io_event *ev)
 {
-	if (ev->loop->add(ev) == ABORT_LOOP) {
+	if (ev->loop->add(ev->loop->this_ptr, ev) == ABORT_LOOP) {
 		return -1;
 	} else {
 		if (ev->read_function(ev) == CONTINUE_LOOP) {
 			return 0;
 		} else {
-			ev->loop->remove(ev);
+			ev->loop->remove(ev->loop->this_ptr, ev);
 			return -1;
 		}
 	}
@@ -255,7 +255,7 @@ error:
 
 static void stop_server(struct io_event *ev)
 {
-	ev->loop->remove(ev);
+	ev->loop->remove(ev->loop->this_ptr, ev);
 	close(ev->sock);
 }
 
@@ -307,7 +307,7 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-int run_io(const struct eventloop *loop, const char *user_name)
+int run_io(struct eventloop *loop, const char *user_name)
 {
 	int ret = 0;
 
@@ -315,7 +315,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		return -1;
 	}
 
-	if (loop->init() < 0) {
+	if (loop->init(loop->this_ptr) < 0) {
 		go_ahead = 0;
 		ret = -1;
 		goto unregister_signal_handler;
@@ -383,7 +383,7 @@ int run_io(const struct eventloop *loop, const char *user_name)
 		goto stop_http_server;
 	}
 
-	ret = loop->run(&go_ahead);
+	ret = loop->run(loop->this_ptr, &go_ahead);
 
 	destroy_all_peers();
 
@@ -392,7 +392,7 @@ stop_http_server:
 stop_jet_server:
 	stop_server(&jet_server.ev);
 eventloop_destroy:
-	loop->destroy();
+	loop->destroy(loop->this_ptr);
 unregister_signal_handler:
 	unregister_signal_handler();
 	return ret;

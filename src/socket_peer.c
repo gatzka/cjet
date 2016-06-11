@@ -110,7 +110,7 @@ static int send_message(struct peer *p, const char *rendered, size_t len)
 	return buffered_socket_writev(&s_peer->bs, iov, ARRAY_SIZE(iov));
 }
 
-static void init_socket_peer(const struct eventloop *loop, struct socket_peer *p, int fd)
+static void init_socket_peer(struct eventloop *loop, struct socket_peer *p, int fd)
 {
 	init_peer(&p->peer);
 	p->peer.send_message = send_message;
@@ -119,7 +119,7 @@ static void init_socket_peer(const struct eventloop *loop, struct socket_peer *p
 	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
 }
 
-struct socket_peer *alloc_jet_peer(const struct eventloop *loop, int fd)
+struct socket_peer *alloc_jet_peer(struct eventloop *loop, int fd)
 {
 	struct socket_peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {

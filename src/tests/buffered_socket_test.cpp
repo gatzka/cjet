@@ -324,20 +324,23 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(const struct io_event *ev)
+static enum callback_return eventloop_fake_add(void *this_ptr, const struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return eventloop_fake_failing_add(const struct io_event *ev)
+static enum callback_return eventloop_fake_failing_add(void *this_ptr, const struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 	return ABORT_LOOP;
 }
 
-static void eventloop_fake_remove(struct io_event *ev)
+static void eventloop_fake_remove(void *this_ptr, struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 }
 

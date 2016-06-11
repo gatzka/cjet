@@ -35,8 +35,6 @@
 #include "linux/eventloop_epoll.h"
 #include "log.h"
 
-static int epoll_fd;
-
 static enum callback_return handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
@@ -81,27 +79,30 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 	return CONTINUE_LOOP;
 }
 
-int eventloop_epoll_init(void)
+int eventloop_epoll_init(void *this_ptr)
 {
-	epoll_fd = epoll_create(1);
-	if (epoll_fd < 0) {
+	struct eventloop_epoll *loop = this_ptr;
+	loop->epoll_fd = epoll_create(1);
+	if (loop->epoll_fd < 0) {
 		return -1;
 	}
 	return 0;
 }
 
-void eventloop_epoll_destroy(void)
+void eventloop_epoll_destroy(void *this_ptr)
 {
-	close(epoll_fd);
+	struct eventloop_epoll *loop = this_ptr;
+	close(loop->epoll_fd);
 }
 
-int eventloop_epoll_run(int *go_ahead)
+int eventloop_epoll_run(void *this_ptr, int *go_ahead)
 {
+	struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
 	while (likely(*go_ahead)) {
 		int num_events =
-			epoll_wait(epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
+			epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
 		if (unlikely(handle_events(num_events, events) == ABORT_LOOP)) {
 			return -1;
@@ -111,8 +112,9 @@ int eventloop_epoll_run(int *go_ahead)
 	return 0;
 }
 
-enum callback_return eventloop_epoll_add(const struct io_event *ev)
+enum callback_return eventloop_epoll_add(void *this_ptr, const struct io_event *ev)
 {
+	struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
@@ -121,15 +123,15 @@ enum callback_return eventloop_epoll_add(const struct io_event *ev)
 	epoll_ev.data.ptr = (void *)ev;
 #pragma GCC diagnostic pop
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
-	if (unlikely(epoll_ctl(epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
+	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
 		return ABORT_LOOP;
 	}
 	return CONTINUE_LOOP;
 }
 
-void eventloop_epoll_remove(struct io_event *ev)
+void eventloop_epoll_remove(void *this_ptr, struct io_event *ev)
 {
-	epoll_ctl(epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
+	struct eventloop_epoll *loop = this_ptr;
+	epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
 }
-

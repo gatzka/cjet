@@ -55,16 +55,16 @@ struct io_event {
 	eventloop_function read_function;
 	eventloop_function write_function;
 	eventloop_function error_function;
-	const struct eventloop *loop;
+	struct eventloop *loop;
 };
 
 struct eventloop {
 	void *this_ptr;
-	int (*init)(void);
-	void (*destroy)(void);
-	int (*run)(int *go_ahead);
-	enum callback_return (*add)(const struct io_event *ev);
-	void (*remove)(struct io_event *ev);
+	int (*init)(void *this_ptr);
+	void (*destroy)(void *this_ptr);
+	int (*run)(void *this_ptr, int *go_ahead);
+	enum callback_return (*add)(void *this_ptr, const struct io_event *ev);
+	void (*remove)(void *this_ptr, struct io_event *ev);
 };
 
 #ifdef __cplusplus
