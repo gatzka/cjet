@@ -41,8 +41,8 @@ extern "C" {
 enum callback_return {
 	ABORT_LOOP, /**< The eventloop will be aborted. */
 	CONTINUE_LOOP, /**< The eventloop will continue to run. */
-	EVENT_REMOVED, /** < The event was removed from the eventloop in the callback.
-	                     The eventloop will continue but will not process further events on the signaled event. */
+	EVENT_REMOVED, /**< The event was removed from the eventloop in the callback.
+	                    The eventloop will continue but will not process further events on the signaled event. */
 };
 
 struct eventloop;
