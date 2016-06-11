@@ -28,6 +28,8 @@ import qbs 1.0
 import qbs.TextFile
 import qbs.Process
 
+import '../../patchVersions.js' as Patch
+
 Module {
   Rule {
     id: version_generator
@@ -39,61 +41,6 @@ Module {
       fileTags: ["hpp"]
     }
 
-    prepare: {
-      var cmd = new JavaScriptCommand();
-      cmd.description = "Processing '" + input.fileName + "'";
-      cmd.highlight = "codegen";
-      cmd.sourceCode = function() {
-        var gitRevParse = new Process();
-        gitRevParse.setWorkingDirectory(product.sourceDirectory);
-        gitRevParse.exec("git", ["rev-parse","--verify","HEAD"], true);
-        var hash = gitRevParse.readLine();
-        gitRevParse.close();
-
-        var gitDirty = new Process();
-        gitDirty.setWorkingDirectory(product.sourceDirectory);
-        ret = gitDirty.exec("git", ["diff","--shortstat"], false);
-        var out = gitDirty.readLine();
-        var isDirty = true;
-        if (out === null || out === "") {
-          isDirty = false;
-        }
-        var dirty;
-        if (isDirty) {
-          dirty = "+dirty";
-        } else {
-          dirty = "";
-        }
-        gitDirty.close();
-
-        var gitDescribe = new Process();
-        gitDescribe.setWorkingDirectory(product.sourceDirectory);
-        var ret = gitDescribe.exec("git", ["describe","--exact-match","--tags", "HEAD"], false);
-        gitDescribe.close();
-        var isTag = (ret === 0  && (isDirty === false));
-        var last;
-        if (isTag) {
-          last = "";
-        } else {
-          last = "-";
-          var gitCount = new Process();
-          gitCount.setWorkingDirectory(product.sourceDirectory);
-          gitCount.exec("git", ["rev-list","HEAD","--count"], true)
-          last = last + gitCount.readLine();
-          gitCount.close();
-        }
-
-        var file = new TextFile(input.filePath);
-        var content = file.readAll();
-        file.close()
-        content = content.replace(/\${CJET_LAST}/g, last+dirty);
-        content = content.replace(/\${PROJECT_NAME}/g, product.name);
-        file = new TextFile(output.filePath,  TextFile.WriteOnly);
-        file.truncate();
-        file.write(content);
-        file.close();
-      }
-      return  cmd;
-    }
+    prepare: Patch.patchVersion(input, output, product)
   }
 }
