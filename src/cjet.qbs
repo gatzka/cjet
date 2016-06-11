@@ -113,9 +113,17 @@ Project {
     }
 
     Group {
-      name: "version file"
+      name: "version header"
       files: [
         "version.h.in"
+      ]
+      fileTags: ["version_header_tag"]
+    }
+
+    Group {
+      name: "version file"
+      files: [
+        "version"
       ]
       fileTags: ["version_tag"]
     }
