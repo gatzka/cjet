@@ -39,10 +39,10 @@ struct eventloop_epoll {
 };
 
 int eventloop_epoll_init(void *this_ptr);
-void eventloop_epoll_destroy(void *this_ptr);
-int eventloop_epoll_run(void *this_ptr, int *go_ahead);
-enum callback_return eventloop_epoll_add(void *this_ptr, const struct io_event *ev);
-void eventloop_epoll_remove(void *this_ptr, struct io_event *ev);
+void eventloop_epoll_destroy(const void *this_ptr);
+int eventloop_epoll_run(const void *this_ptr, const int *go_ahead);
+enum callback_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev);
+void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev);
 
 #ifdef __cplusplus
 }
