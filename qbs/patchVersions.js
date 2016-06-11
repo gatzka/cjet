@@ -80,6 +80,5 @@ function patchVersion(input, output, product)
     file.close();
   }
   return  cmd;
-
 }
 

@@ -25,6 +25,8 @@
  */
 
 import qbs 1.0
+import qbs.Process
+import qbs.TextFile
 import '../qbs/versions.js' as Versions
 
 Project {
@@ -156,6 +158,56 @@ Project {
     Properties {
       condition: Versions.versionIsAtLeast(qbs.version, "1.5.0") >= 0;
       cpp.enableReproducibleBuilds: true;
+    }
+  }
+
+  Product {
+
+    Depends { name: "patchDoxyfile" }
+
+    name: "cjet-docs";
+    type: "docs";
+
+    Group {
+      name: "Doxygen config"
+      files: [
+        "Doxyfile.in"
+      ]
+      fileTags: ["doxy_input"]
+    }
+
+    Group {
+      name: "Doxygen C inputs";
+      files: ["*.h", "*.c"];
+      fileTags: "source";
+    }
+
+    Rule {
+        inputs: ["doxy_src_patched", "source"];
+        multiplex: "true";
+        prepare: {
+            var cmd = new JavaScriptCommand();
+            cmd.description = "generating documentation from doxygen config";
+            cmd.highlight = "doxygen";
+            cmd.sourceCode = function() {
+                for (var idx = 0; idx < inputs["doxy_src_patched"].length; idx++) {
+                    var file = inputs["doxy_src_patched"][idx].filePath;
+                    var proc = new Process();
+                    proc.setWorkingDirectory(product.sourceDirectory);
+                    print(file)
+                    print(product.sourceDirectory)
+                    proc.exec("doxygen", [file], true);
+                    proc.close();
+                } 
+            }
+            return cmd;
+        }
+
+        Artifact {
+            fileTags: ["docs"];
+            filePath: "force.doc";
+            alwaysUpdated: true;
+        }
     }
   }
 }
