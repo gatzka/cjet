@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -28,19 +28,33 @@ import qbs 1.0
 import qbs.TextFile
 import qbs.Process
 
-import '../../patchVersions.js' as Patch
-
 Module {
   Rule {
-    id: version_generator
-    inputs:  ["version_tag"]
-
-    Artifact {
-      alwaysUpdated: false
-      filePath: "generated/version.h"
-      fileTags: ["hpp"]
+    inputs: ["doxy_src_patched", "source"];
+    multiplex: "true";
+    prepare: {
+      var cmd = new JavaScriptCommand();
+      cmd.description = "generating documentation from doxygen config";
+      cmd.highlight = "doxygen";
+      cmd.sourceCode = function() {
+        for (var idx = 0; idx < inputs["doxy_src_patched"].length; idx++) {
+          var file = inputs["doxy_src_patched"][idx].filePath;
+          var proc = new Process();
+          proc.setWorkingDirectory(product.sourceDirectory);
+          print(file)
+          print(product.sourceDirectory)
+          proc.exec("doxygen", [file], true);
+          proc.close();
+        } 
+      }
+      return cmd;
     }
 
-    prepare: Patch.patchVersion(input, output, product)
+    Artifact {
+        fileTags: ["docs"];
+        filePath: "force.doc";
+        alwaysUpdated: true;
+    }
   }
 }
+

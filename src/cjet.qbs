@@ -158,4 +158,28 @@ Project {
       cpp.enableReproducibleBuilds: true;
     }
   }
+
+  Product {
+
+    Depends { name: "patchDoxyfile" }
+    Depends { name: "generateDoxygen" }
+
+    name: "cjet-docs";
+    type: "docs";
+
+    Group {
+      name: "Doxygen config"
+      files: [
+        "Doxyfile.in"
+      ]
+      fileTags: ["doxy_input"]
+    }
+
+    Group {
+      name: "Doxygen C inputs";
+      files: ["*.h", "*.c"];
+      fileTags: "source";
+    }
+
+  }
 }

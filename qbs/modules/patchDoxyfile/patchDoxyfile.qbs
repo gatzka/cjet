@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -28,19 +28,33 @@ import qbs 1.0
 import qbs.TextFile
 import qbs.Process
 
-import '../../patchVersions.js' as Patch
-
 Module {
   Rule {
-    id: version_generator
-    inputs:  ["version_tag"]
+    id: doxy_src_patcher
+    inputs:  ["doxy_input"]
 
     Artifact {
       alwaysUpdated: false
-      filePath: "generated/version.h"
-      fileTags: ["hpp"]
+      filePath: "generated/Doxyfile.src.in"
+      fileTags: ["doxy_src_patched"]
     }
 
-    prepare: Patch.patchVersion(input, output, product)
+    prepare: {
+  	  var cmd = new JavaScriptCommand();
+  	  cmd.description = "Processing '" + input.fileName + "'";
+  	  cmd.highlight = "codegen";
+  	  cmd.sourceCode = function() {
+  	    var file = new TextFile(input.filePath);
+  	    var content = file.readAll();
+  	    file.close()
+  	    content = content.replace(/\${CJET_BUILD_DIR}/g, product.buildDirectory);
+  	    file = new TextFile(output.filePath,  TextFile.WriteOnly);
+  	    file.truncate();
+  	    file.write(content);
+  	    file.close();
+  	  }
+  	  return  cmd;
+	}
   }
 }
+
