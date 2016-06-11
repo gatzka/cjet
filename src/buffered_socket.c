@@ -61,10 +61,10 @@ static int send_buffer(struct buffered_socket *bs)
  * @brief go_reading reads until thre reader()-function returns an error or the read_callback() closes the buffered_socket.
  * @param bs The buffered_socket to operate on.
  * @return 0 if the buffered_socket was closed either by the peer or in the read callback of the buffered_socket.
- * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * @return BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
  * eventloop shall try filling the buffer later on if data is available.
- * BS_IO_ERROR is return if something illegal happened on the underlying socket.
- * BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
+ * @return BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * @return BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
  * size of the internal read buffer.
  */
 static int go_reading(struct buffered_socket *bs)
@@ -208,12 +208,12 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
  * 
  * @return A value greater then zero signals success. The number of requested bytes is
  * returned.
- * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * @return BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
  * eventloop shall try filling the buffer later on if data is available.
- * BS_IO_ERROR is return if something illegal happened on the underlying socket.
- * BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
+ * @return BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * @return BS_IO_TOOMUCHDATA is returned if more data is requested in ctx.num than the
  * size of the internal read buffer.
- * BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
+ * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */ 
 static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
@@ -248,12 +248,12 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
  * 
  * @return A value greater then zero signals success. The number of bytes including
  * the delimiter string is returned.
- * BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
+ * @return BS_IO_WOULD_BLOCK is returned if the internal buffer could not be filled but the
  * eventloop shall try filling the buffer later on if data is available.
- * BS_IO_ERROR is return if something illegal happened on the underlying socket.
- * BS_IO_TOOMUCHDATA is returned if the delimiter is not found in the completly 
+ * @return BS_IO_ERROR is return if something illegal happened on the underlying socket.
+ * @return BS_IO_TOOMUCHDATA is returned if the delimiter is not found in the completly 
  * filled internal read buffer.
- * BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
+ * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */ 
 static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
@@ -361,13 +361,6 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
-/**
- * @brief buffered_socket_read_exactly
- * @param bs
- * @param num
- * @param context
- * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
- */
 int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .num = num };
@@ -396,13 +389,6 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 	}
 }
 
-/**
- * @brief buffered_socket_read_until
- * @param bs
- * @param delim
- * @param context
- * @return 0 if everything is fine, -1 if an error occured or the underlying socket connection was closed either by the peer or insized the read_callback() function.
- */
 int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
 {
 	union buffered_socket_reader_context ctx = { .ptr = delim };
