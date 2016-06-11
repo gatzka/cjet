@@ -60,7 +60,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
-					if (unlikely(ret == IO_REMOVED)) {
+					if (unlikely(ret == EVENT_REMOVED)) {
 						continue;
 					}
 				}
@@ -71,7 +71,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
-					if (unlikely(ret == IO_REMOVED)) {
+					if (unlikely(ret == EVENT_REMOVED)) {
 						continue;
 					}
 				}

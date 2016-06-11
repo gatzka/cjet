@@ -98,7 +98,7 @@ static enum callback_return read_function(struct io_event *ev)
 		error_function(ev);
 	}
 	if (ret == 0) {
-		return IO_REMOVED;
+		return EVENT_REMOVED;
 	} else {
 		return CONTINUE_LOOP;
 	}

@@ -783,7 +783,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close_from_eventloop)
 	BOOST_CHECK(f.readcallback_called == 0);
 
 	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
-	BOOST_CHECK(cb_ret == IO_REMOVED);
+	BOOST_CHECK(cb_ret == EVENT_REMOVED);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
 
