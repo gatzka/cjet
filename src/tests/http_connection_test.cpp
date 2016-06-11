@@ -137,14 +137,16 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(struct io_event *ev)
+static enum callback_return eventloop_fake_add(void *this_ptr, const struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-static void eventloop_fake_remove(struct io_event *ev)
+static void eventloop_fake_remove(void *this_ptr, struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 }
 
@@ -161,7 +163,7 @@ struct F {
 		close_called = false;
 		create_called = false;
 
-		loop.create = NULL;
+		loop.init = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
 		loop.add = eventloop_fake_add;

@@ -324,27 +324,30 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(struct io_event *ev)
+static enum callback_return eventloop_fake_add(void *this_ptr, const struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return eventloop_fake_failing_add(struct io_event *ev)
+static enum callback_return eventloop_fake_failing_add(void *this_ptr, const struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 	return ABORT_LOOP;
 }
 
-static void eventloop_fake_remove(struct io_event *ev)
+static void eventloop_fake_remove(void *this_ptr, struct io_event *ev)
 {
+	(void)this_ptr;
 	(void)ev;
 }
 
 struct F {
 	F(int fd)
 	{
-		loop.create = NULL;
+		loop.init = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
 		if (fd == READ_FAILING_EV_ADD) {
@@ -783,7 +786,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close_from_eventloop)
 	BOOST_CHECK(f.readcallback_called == 0);
 
 	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
-	BOOST_CHECK(cb_ret == IO_REMOVED);
+	BOOST_CHECK(cb_ret == EVENT_REMOVED);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
 

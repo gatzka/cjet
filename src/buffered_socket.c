@@ -98,7 +98,7 @@ static enum callback_return read_function(struct io_event *ev)
 		error_function(ev);
 	}
 	if (ret == 0) {
-		return IO_REMOVED;
+		return EVENT_REMOVED;
 	} else {
 		return CONTINUE_LOOP;
 	}
@@ -284,7 +284,7 @@ void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *e
 	bs->error_context = error_context;
 }
 
-void buffered_socket_init(struct buffered_socket *bs, socket_type sock, const struct eventloop *loop, void (*error)(void *error_context), void *error_context)
+void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
 	bs->ev.sock= sock;
 	bs->ev.error_function = error_function;
@@ -303,7 +303,7 @@ void buffered_socket_init(struct buffered_socket *bs, socket_type sock, const st
 
 int buffered_socket_close(struct buffered_socket *bs)
 {
-	bs->ev.loop->remove(&bs->ev);
+	bs->ev.loop->remove(&bs->ev.loop->this_ptr, &bs->ev);
 	return socket_close(bs->ev.sock);
 }
 
@@ -381,7 +381,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 		return 0;
 	}
 
-	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
+	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == ABORT_LOOP) {
 		return -1;
 	} else {
 		int ret = go_reading(bs);
@@ -416,7 +416,7 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, en
 		return 0;
 	}
 
-	if (bs->ev.loop->add(&bs->ev) == ABORT_LOOP) {
+	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == ABORT_LOOP) {
 		return -1;
 	} else {
 		int ret = go_reading(bs);

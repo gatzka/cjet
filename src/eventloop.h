@@ -35,7 +35,15 @@ extern "C" {
 
 #include "generated/os_config.h"
 
-enum callback_return {ABORT_LOOP, CONTINUE_LOOP, IO_REMOVED};
+/**
+ * @brief The callback_return enum defines the allowed return values of callback functions.
+ */
+enum callback_return {
+	ABORT_LOOP, /**< The eventloop will be aborted. */
+	CONTINUE_LOOP, /**< The eventloop will continue to run. */
+	EVENT_REMOVED, /**< The event was removed from the eventloop in the callback.
+	                    The eventloop will continue but will not process further events on the signaled event. */
+};
 
 struct eventloop;
 struct io_event;
@@ -47,15 +55,16 @@ struct io_event {
 	eventloop_function read_function;
 	eventloop_function write_function;
 	eventloop_function error_function;
-	const struct eventloop *loop;
+	struct eventloop *loop;
 };
 
 struct eventloop {
-	int (*create)(void);
-	void (*destroy)(void);
-	int (*run)(int *go_ahead);
-	enum callback_return (*add)(struct io_event *ev);
-	void (*remove)(struct io_event *ev);
+	void *this_ptr;
+	int (*init)(void *this_ptr);
+	void (*destroy)(void *this_ptr);
+	int (*run)(void *this_ptr, int *go_ahead);
+	enum callback_return (*add)(void *this_ptr, const struct io_event *ev);
+	void (*remove)(void *this_ptr, struct io_event *ev);
 };
 
 #ifdef __cplusplus
