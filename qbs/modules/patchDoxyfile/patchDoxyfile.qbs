@@ -34,7 +34,6 @@ Module {
     inputs:  ["doxy_input"]
 
     Artifact {
-      alwaysUpdated: false
       filePath: "generated/Doxyfile.src.in"
       fileTags: ["doxy_src_patched"]
     }
@@ -54,7 +53,7 @@ Module {
   	    file.close();
   	  }
   	  return  cmd;
-	}
+	  }
   }
 }
 

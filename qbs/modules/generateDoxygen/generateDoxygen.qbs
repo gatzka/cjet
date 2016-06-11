@@ -53,7 +53,6 @@ Module {
     Artifact {
         fileTags: ["docs"];
         filePath: "force.doc";
-        alwaysUpdated: true;
     }
   }
 }
