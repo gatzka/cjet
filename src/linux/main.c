@@ -67,17 +67,21 @@ int main(int argc, char **argv)
 		log_err("Cannot allocate hashtable for states!\n");
 		return EXIT_FAILURE;
 	}
-	
-	static const struct eventloop loop = {
-		.init = eventloop_epoll_create,
-		.destroy = eventloop_epoll_destroy,
-		.run = eventloop_epoll_run,
-		.add = eventloop_epoll_add,
-		.remove = eventloop_epoll_remove
+
+	struct eventloop_epoll eloop = {
+		.epoll_fd = 0,
+		.loop = {
+			.this_ptr = &eloop,
+			.init = eventloop_epoll_init,
+			.destroy = eventloop_epoll_destroy,
+			.run = eventloop_epoll_run,
+			.add = eventloop_epoll_add,
+			.remove = eventloop_epoll_remove,
+		},
 	};
-	
+
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&loop, user_name) < 0) {
+	if (run_io(&eloop.loop, user_name) < 0) {
 		goto run_io_failed;
 	}
 	log_info("%s stopped", CJET_NAME);

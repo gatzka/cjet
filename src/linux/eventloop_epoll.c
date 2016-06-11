@@ -81,7 +81,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 	return CONTINUE_LOOP;
 }
 
-int eventloop_epoll_create(void)
+int eventloop_epoll_init(void)
 {
 	epoll_fd = epoll_create(1);
 	if (epoll_fd < 0) {

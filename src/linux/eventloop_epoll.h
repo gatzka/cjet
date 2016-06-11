@@ -33,7 +33,12 @@ extern "C" {
 
 #include "eventloop.h"
 
-int eventloop_epoll_create(void);
+struct eventloop_epoll {
+	int epoll_fd;
+	struct eventloop loop;
+};
+
+int eventloop_epoll_init(void);
 void eventloop_epoll_destroy(void);
 int eventloop_epoll_run(int *go_ahead);
 enum callback_return eventloop_epoll_add(const struct io_event *ev);
