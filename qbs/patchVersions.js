@@ -24,10 +24,11 @@
  * SOFTWARE.
  */
 
-function patchVersion(input, output, product)
+function patchVersion(inputs, output, product)
 {
   var cmd = new JavaScriptCommand();
-  cmd.description = "Processing '" + input.fileName + "'";
+  cmd.description = "Processing '" + inputs["version_header_tag"][0].fileName;
+  //cmd.description = "Processing '" + inputs["version_header_tag"].fileName + "'";
   cmd.highlight = "codegen";
   cmd.sourceCode = function() {
     var gitRevParse = new Process();
@@ -69,9 +70,14 @@ function patchVersion(input, output, product)
       gitCount.close();
     }
 
-    var file = new TextFile(input.filePath);
+    var versionFile = new TextFile(inputs["version_tag"][0].filePath);
+    var versionString = versionFile.readAll().trim();
+    versionFile.close()
+
+    var file = new TextFile(inputs["version_header_tag"][0].filePath);
     var content = file.readAll();
     file.close()
+    content = content.replace(/\${CJET_VERSION}/g, versionString);
     content = content.replace(/\${CJET_LAST}/g, last+dirty);
     content = content.replace(/\${PROJECT_NAME}/g, product.name);
     file = new TextFile(output.filePath,  TextFile.WriteOnly);

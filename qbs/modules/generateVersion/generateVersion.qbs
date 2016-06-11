@@ -32,8 +32,8 @@ import '../../patchVersions.js' as Patch
 
 Module {
   Rule {
-    id: version_generator
-    inputs:  ["version_tag"]
+    multiplex: "true";
+    inputs:  ["version_tag", "version_header_tag"]
 
     Artifact {
       alwaysUpdated: false
@@ -41,6 +41,6 @@ Module {
       fileTags: ["hpp"]
     }
 
-    prepare: Patch.patchVersion(input, output, product)
+    prepare: Patch.patchVersion(inputs, output, product)
   }
 }
