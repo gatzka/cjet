@@ -177,9 +177,9 @@ Project {
 
     Group {
       name: "Doxygen C inputs";
+      prefix: "**/"
       files: ["*.h", "*.c"];
       fileTags: "source";
     }
-
   }
 }
