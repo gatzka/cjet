@@ -30,15 +30,15 @@ import qbs.Process
 
 Module {
   Rule {
-    inputs: ["doxy_src_patched", "source"];
+    inputs: ["doxy_version_patched", "source"];
     multiplex: "true";
     prepare: {
       var cmd = new JavaScriptCommand();
       cmd.description = "generating documentation from doxygen config";
       cmd.highlight = "doxygen";
       cmd.sourceCode = function() {
-        for (var idx = 0; idx < inputs["doxy_src_patched"].length; idx++) {
-          var file = inputs["doxy_src_patched"][idx].filePath;
+        for (var idx = 0; idx < inputs["doxy_version_patched"].length; idx++) {
+          var file = inputs["doxy_version_patched"][idx].filePath;
           var proc = new Process();
           proc.setWorkingDirectory(product.sourceDirectory);
           print(file)

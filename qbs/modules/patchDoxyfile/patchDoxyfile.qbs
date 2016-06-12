@@ -27,15 +27,16 @@
 import qbs 1.0
 import qbs.TextFile
 import qbs.Process
+import '../../patchVersions.js' as Patch
 
 Module {
   Rule {
-    id: doxy_src_patcher
+    id: doxy_outpath_patcher
     inputs:  ["doxy_input"]
 
     Artifact {
       filePath: "generated/Doxyfile.src.in"
-      fileTags: ["doxy_src_patched"]
+      fileTags: ["version_header_tag"]
     }
 
     prepare: {
@@ -54,6 +55,19 @@ Module {
   	  }
   	  return  cmd;
 	  }
+  }
+
+  Rule {
+    id: doxy_version_patcher
+    multiplex: "true";
+    inputs:  ["version_tag", "version_header_tag"]
+
+    Artifact {
+      filePath: "generated/Doxyfile"
+      fileTags: ["doxy_version_patched"]
+    }
+
+    prepare: Patch.patchVersion(inputs, output, product)
   }
 }
 

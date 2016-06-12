@@ -168,12 +168,11 @@ Project {
   }
 
   Product {
+    name: "cjet-docs";
+    type: "docs";
 
     Depends { name: "patchDoxyfile" }
     Depends { name: "generateDoxygen" }
-
-    name: "cjet-docs";
-    type: "docs";
 
     Group {
       name: "Doxygen config"
@@ -181,6 +180,14 @@ Project {
         "Doxyfile.in"
       ]
       fileTags: ["doxy_input"]
+    }
+
+    Group {
+      name: "version file"
+      files: [
+        "version"
+      ]
+      fileTags: ["version_tag"]
     }
 
     Group {
