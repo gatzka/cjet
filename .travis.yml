@@ -45,7 +45,6 @@ addons:
   apt:
     sources:
     - ubuntu-toolchain-r-test
-    - doxygen-updates-precise
     packages:
     - gcc-4.9
     - g++-4.9
