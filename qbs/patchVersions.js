@@ -27,8 +27,7 @@
 function patchVersion(inputs, output, product)
 {
   var cmd = new JavaScriptCommand();
-  cmd.description = "Processing '" + inputs["version_header_tag"][0].fileName;
-  //cmd.description = "Processing '" + inputs["version_header_tag"].fileName + "'";
+  cmd.description = "Processing '" + inputs["version_file_patched"][0].fileName + "'";
   cmd.highlight = "codegen";
   cmd.sourceCode = function() {
     var gitRevParse = new Process();
@@ -70,11 +69,11 @@ function patchVersion(inputs, output, product)
       gitCount.close();
     }
 
-    var versionFile = new TextFile(inputs["version_tag"][0].filePath);
+    var versionFile = new TextFile(inputs["version_file"][0].filePath);
     var versionString = versionFile.readAll().trim();
     versionFile.close()
 
-    var file = new TextFile(inputs["version_header_tag"][0].filePath);
+    var file = new TextFile(inputs["version_file_patched"][0].filePath);
     var content = file.readAll();
     file.close()
     content = content.replace(/\${CJET_VERSION}/g, versionString);
