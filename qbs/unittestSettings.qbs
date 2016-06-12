@@ -61,10 +61,19 @@ StaticLibrary {
   }
 
   Group {
-    name: "version file"
+    name: "version header"
     prefix: "../src/"
     files: [
       "version.h.in"
+    ]
+    fileTags: ["version_file_patched"]
+  }
+
+  Group {
+    name: "version file"
+    prefix: "../src/"
+    files: [
+      "version"
     ]
     fileTags: ["version_file"]
   }
