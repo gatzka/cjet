@@ -27,8 +27,7 @@
 function patchVersion(inputs, output, product)
 {
   var cmd = new JavaScriptCommand();
-  cmd.description = "Processing '" + inputs["version_header_tag"][0].fileName;
-  //cmd.description = "Processing '" + inputs["version_header_tag"].fileName + "'";
+  cmd.description = "Processing '" + inputs["version_header_tag"][0].fileName + "'";
   cmd.highlight = "codegen";
   cmd.sourceCode = function() {
     var gitRevParse = new Process();
