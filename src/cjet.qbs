@@ -171,7 +171,6 @@ Project {
     name: "cjet-docs";
     type: "docs";
 
-    Depends { name: "patchDoxyfile" }
     Depends { name: "generateDoxygen" }
 
     Group {

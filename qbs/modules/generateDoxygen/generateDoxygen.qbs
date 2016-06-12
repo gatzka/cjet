@@ -27,6 +27,7 @@
 import qbs 1.0
 import qbs.TextFile
 import qbs.Process
+import '../../patchVersions.js' as Patch
 
 Module {
   Rule {
@@ -54,6 +55,46 @@ Module {
         fileTags: ["docs"];
         filePath: "force.doc";
     }
+  }
+
+  Rule {
+    id: doxy_outpath_patcher
+    inputs:  ["doxy_input"]
+
+    Artifact {
+      filePath: "generated/Doxyfile.src.in"
+      fileTags: ["version_file_patched"]
+    }
+
+    prepare: {
+  	  var cmd = new JavaScriptCommand();
+  	  cmd.description = "Processing '" + input.fileName + "'";
+  	  cmd.highlight = "codegen";
+  	  cmd.sourceCode = function() {
+  	    var file = new TextFile(input.filePath);
+  	    var content = file.readAll();
+  	    file.close()
+  	    content = content.replace(/\${CJET_BUILD_DIR}/g, product.buildDirectory);
+  	    file = new TextFile(output.filePath,  TextFile.WriteOnly);
+  	    file.truncate();
+  	    file.write(content);
+  	    file.close();
+  	  }
+  	  return  cmd;
+	  }
+  }
+
+  Rule {
+    id: doxy_version_patcher
+    multiplex: "true";
+    inputs:  ["version_file", "version_file_patched"]
+
+    Artifact {
+      filePath: "generated/Doxyfile"
+      fileTags: ["doxy_version_patched"]
+    }
+
+    prepare: Patch.patchVersion(inputs, output, product)
   }
 }
 
