@@ -50,6 +50,7 @@ addons:
     - g++-4.9
     - clang
     - cmake
+    - doxygen
     - valgrind
     - libboost-dev
     - libboost-test-dev
