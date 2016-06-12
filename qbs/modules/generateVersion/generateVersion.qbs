@@ -33,7 +33,7 @@ import '../../patchVersions.js' as Patch
 Module {
   Rule {
     multiplex: "true";
-    inputs:  ["version_tag", "version_header_tag"]
+    inputs:  ["version_file", "version_file_patched"]
 
     Artifact {
       alwaysUpdated: false

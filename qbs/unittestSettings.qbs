@@ -66,7 +66,7 @@ StaticLibrary {
     files: [
       "version.h.in"
     ]
-    fileTags: ["version_tag"]
+    fileTags: ["version_file"]
   }
 
   Group {

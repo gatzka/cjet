@@ -117,7 +117,7 @@ Project {
       files: [
         "version.h.in"
       ]
-      fileTags: ["version_header_tag"]
+      fileTags: ["version_file_patched"]
     }
 
     Group {
@@ -125,7 +125,7 @@ Project {
       files: [
         "version"
       ]
-      fileTags: ["version_tag"]
+      fileTags: ["version_file"]
     }
 
     Group {
@@ -187,7 +187,7 @@ Project {
       files: [
         "version"
       ]
-      fileTags: ["version_tag"]
+      fileTags: ["version_file"]
     }
 
     Group {

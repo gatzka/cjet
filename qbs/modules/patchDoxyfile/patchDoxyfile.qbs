@@ -36,7 +36,7 @@ Module {
 
     Artifact {
       filePath: "generated/Doxyfile.src.in"
-      fileTags: ["version_header_tag"]
+      fileTags: ["version_file_patched"]
     }
 
     prepare: {
@@ -60,7 +60,7 @@ Module {
   Rule {
     id: doxy_version_patcher
     multiplex: "true";
-    inputs:  ["version_tag", "version_header_tag"]
+    inputs:  ["version_file", "version_file_patched"]
 
     Artifact {
       filePath: "generated/Doxyfile"
