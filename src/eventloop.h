@@ -31,8 +31,6 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-
 #include "generated/os_config.h"
 
 /**
