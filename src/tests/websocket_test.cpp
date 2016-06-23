@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
 
+#include "jet_string.h"
 #include "socket.h"
 #include "websocket.h"
 
@@ -136,6 +137,13 @@ static int on_headers_complete(http_parser *parser)
 }
 
 struct F {
+	
+	enum response_on_header_field {
+		HEADER_UNKNOWN,
+		HEADER_UPGRADE,
+		HEADER_CONNECTION,
+	};
+
 	F()
 	{
 		loop.init = NULL;
@@ -153,6 +161,9 @@ struct F {
 
 		http_parser_settings_init(&response_parser_settings);
 		http_parser_init(&response_parser, HTTP_RESPONSE);
+		response_parser.data = this;
+		response_parser_settings.on_header_field = response_on_header_field;
+		response_parser_settings.on_header_value = response_on_header_value;
 		response_parser_settings.on_headers_complete = on_headers_complete;
 
 		handler[0].request_target = "/";
@@ -168,10 +179,55 @@ struct F {
 		http_server.num_handlers = ARRAY_SIZE(handler);
 
 		ws_error = false;
+		got_upgrade_response = false;
+		got_connection_upgrade = false;
+		current_header_field = HEADER_UNKNOWN;
 	}
 
 	~F()
 	{
+	}
+
+	static int response_on_header_field(http_parser *p, const char *at, size_t length)
+	{
+		struct F *f = (struct F *)p->data;
+
+		static const char upgrade_key[] = "Upgrade";
+		if ((sizeof(upgrade_key) - 1  == length) && (jet_strncasecmp(at, upgrade_key, length) == 0)) {
+			f->current_header_field = HEADER_UPGRADE;
+			return 0;
+		}
+
+		static const char connection_key[] = "Connection";
+		if ((sizeof(connection_key) - 1  == length) && (jet_strncasecmp(at, connection_key, length) == 0)) {
+			f->current_header_field = HEADER_CONNECTION;
+			return 0;
+		}
+		return 0;
+	}
+	
+	static int response_on_header_value(http_parser *p, const char *at, size_t length)
+	{
+		int ret = 0;
+		struct F *f = (struct F *)p->data;
+		switch(f->current_header_field) {
+		case HEADER_UPGRADE:
+			f->got_upgrade_response = true;
+			break;
+
+		case HEADER_CONNECTION:
+			if (jet_strncasecmp(at, "Upgrade", length) == 0) {
+				f->got_connection_upgrade = true;
+			}
+			break;
+
+		case HEADER_UNKNOWN:
+		default:
+			break;
+		}
+
+		f->current_header_field = HEADER_UNKNOWN;
+		return ret;
 	}
 
 	struct eventloop loop;
@@ -179,6 +235,10 @@ struct F {
 	http_parser_settings parser_settings;
 	struct url_handler handler[1];
 	struct http_server http_server;
+	
+	bool got_upgrade_response;
+	bool got_connection_upgrade;
+	enum response_on_header_field current_header_field;
 };
 
 BOOST_AUTO_TEST_CASE(test_websocket_init)
@@ -212,9 +272,9 @@ BOOST_FIXTURE_TEST_CASE(test_http_upgrade, F)
 	BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
 	BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
 	BOOST_CHECK_MESSAGE(response_parse_error == false, "Invalid upgrade response!");
+	BOOST_CHECK_MESSAGE(got_upgrade_response == true, "Upgrade header field missing!");
+	BOOST_CHECK_MESSAGE(got_connection_upgrade == true, "Connection header field missing!");
 	
-	// TODO: Check for An |Upgrade| header field with value "websocket" as per RFC 2616 [RFC2616].
-	// TODO: Check for A |Connection| header field with value "Upgrade".
 	// TODO: Check for A |Sec-WebSocket-Accept| header field with "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
 	// TODO: Check that close frame was sent
 }
