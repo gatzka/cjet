@@ -142,6 +142,7 @@ struct F {
 		HEADER_UNKNOWN,
 		HEADER_UPGRADE,
 		HEADER_CONNECTION,
+		HEADER_ACCEPT,
 	};
 
 	F()
@@ -178,6 +179,8 @@ struct F {
 		http_server.handler = handler;
 		http_server.num_handlers = ARRAY_SIZE(handler);
 
+		::memset(websocket_accept_key, 0, sizeof(websocket_accept_key));
+
 		ws_error = false;
 		got_upgrade_response = false;
 		got_connection_upgrade = false;
@@ -203,9 +206,15 @@ struct F {
 			f->current_header_field = HEADER_CONNECTION;
 			return 0;
 		}
+
+		static const char accept_key[] = "Sec-WebSocket-Accept";
+		if ((sizeof(accept_key) - 1  == length) && (jet_strncasecmp(at, accept_key, length) == 0)) {
+			f->current_header_field = HEADER_ACCEPT;
+			return 0;
+		}
 		return 0;
 	}
-	
+
 	static int response_on_header_value(http_parser *p, const char *at, size_t length)
 	{
 		int ret = 0;
@@ -221,6 +230,12 @@ struct F {
 			}
 			break;
 
+		case HEADER_ACCEPT: {
+			size_t len = std::min(length, sizeof(websocket_accept_key));
+			memcpy(f->websocket_accept_key, at, len);
+			break;
+		}
+
 		case HEADER_UNKNOWN:
 		default:
 			break;
@@ -235,10 +250,11 @@ struct F {
 	http_parser_settings parser_settings;
 	struct url_handler handler[1];
 	struct http_server http_server;
-	
+
 	bool got_upgrade_response;
 	bool got_connection_upgrade;
 	enum response_on_header_field current_header_field;
+	uint8_t websocket_accept_key[28];
 };
 
 BOOST_AUTO_TEST_CASE(test_websocket_init)
@@ -267,14 +283,14 @@ BOOST_FIXTURE_TEST_CASE(test_http_upgrade, F)
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return BS_OK");
 	BOOST_CHECK_MESSAGE(ws_error == false, "Error while parsing the http upgrade request");
 	websocket_free(&ws);
-	
+
 	BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
 	BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
 	BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
 	BOOST_CHECK_MESSAGE(response_parse_error == false, "Invalid upgrade response!");
 	BOOST_CHECK_MESSAGE(got_upgrade_response == true, "Upgrade header field missing!");
 	BOOST_CHECK_MESSAGE(got_connection_upgrade == true, "Connection header field missing!");
-	
-	// TODO: Check for A |Sec-WebSocket-Accept| header field with "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+	BOOST_CHECK_MESSAGE(::memcmp(websocket_accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", sizeof(websocket_accept_key)) == 0, "Got illegal websocket accept key!");
+
 	// TODO: Check that close frame was sent
 }
