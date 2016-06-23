@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
 
+#include "jet_endian.h"
 #include "jet_string.h"
 #include "socket.h"
 #include "websocket.h"
@@ -46,6 +47,9 @@ static bool ws_error = false;
 
 static const char *readbuffer;
 static const char *readbuffer_ptr;
+
+static char write_buffer[5000];
+static char *write_buffer_ptr;
 
 static http_parser response_parser;
 static http_parser_settings response_parser_settings;
@@ -67,7 +71,8 @@ extern "C" {
 						return -1;
 					}
 				} else {
-					
+					memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
+					write_buffer_ptr += io_vec[i].iov_len;
 				}
 				complete_length += io_vec[i].iov_len;
 			}
@@ -181,6 +186,8 @@ struct F {
 
 		::memset(websocket_accept_key, 0, sizeof(websocket_accept_key));
 
+		write_buffer_ptr = write_buffer;
+
 		ws_error = false;
 		got_upgrade_response = false;
 		got_connection_upgrade = false;
@@ -257,6 +264,40 @@ struct F {
 	uint8_t websocket_accept_key[28];
 };
 
+static const uint8_t WS_HEADER_FIN = 0x80;
+static const uint8_t WS_CLOSE_FRAME = 0x08;
+static const uint8_t WS_MASK_BIT = 0x80;
+static const uint8_t WS_PAYLOAD_LENGTH = 0x7f;
+
+static bool is_close_frame()
+{
+	if ((write_buffer[0] & WS_HEADER_FIN) == 0) {
+		return false;
+	}
+
+	if ((write_buffer[0] & WS_CLOSE_FRAME) == 0) {
+		return false;
+	}
+
+	if ((write_buffer[1] & WS_MASK_BIT) != 0) {
+		return false;
+	}
+
+	size_t len = write_buffer[1] & WS_PAYLOAD_LENGTH;
+	if (len < 2) {
+		return false;
+	}
+
+	uint16_t status_code;
+	::memcpy(&status_code, &write_buffer[2], sizeof(status_code));
+	status_code = jet_be16toh(status_code);
+	if (status_code != 1001) {
+		return false;
+	}
+
+	return true;
+}
+
 BOOST_AUTO_TEST_CASE(test_websocket_init)
 {
 	struct websocket ws;
@@ -291,6 +332,5 @@ BOOST_FIXTURE_TEST_CASE(test_http_upgrade, F)
 	BOOST_CHECK_MESSAGE(got_upgrade_response == true, "Upgrade header field missing!");
 	BOOST_CHECK_MESSAGE(got_connection_upgrade == true, "Connection header field missing!");
 	BOOST_CHECK_MESSAGE(::memcmp(websocket_accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", sizeof(websocket_accept_key)) == 0, "Got illegal websocket accept key!");
-
-	// TODO: Check that close frame was sent
+	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent!");
 }
