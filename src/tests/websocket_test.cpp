@@ -313,19 +313,21 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 	};
 
 	struct entry table[] = {
-		{.version = "0.1", .expected_return = BS_CLOSED},
-		{.version = "1.0", .expected_return = BS_CLOSED},
-		{.version = "1.1", .expected_return = BS_OK},
-		{.version = "1.2", .expected_return = BS_OK},
-		{.version = "2.0", .expected_return = BS_OK},
-		{.version = "2.1", .expected_return = BS_OK},
+		{.version = "", .expected_return = BS_CLOSED},
+		{.version = "HTTP/0.1", .expected_return = BS_CLOSED},
+		{.version = "HTTP/0.9", .expected_return = BS_CLOSED},
+		{.version = "HTTP/1.0", .expected_return = BS_CLOSED},
+		{.version = "HTTP/1.1", .expected_return = BS_OK},
+		{.version = "HTTP/1.2", .expected_return = BS_OK},
+		{.version = "HTTP/2.0", .expected_return = BS_OK},
+		{.version = "HTTP/2.1", .expected_return = BS_OK},
 	};
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
 		F f;
 		
 		std::string request;
-		request.append("GET / HTTP/");
+		request.append("GET / ");
 		request.append(table[i].version);
 		request.append(CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
