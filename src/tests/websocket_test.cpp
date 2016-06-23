@@ -372,11 +372,52 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
 		F f;
-		
+
 		std::string request;
 		request.append("GET / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: ");
 		request.append(table[i].version);
 		request.append(CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
+		std::vector<char> data(request.begin(), request.end());
+
+		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
+
+		struct websocket ws;
+		websocket_init(&ws, connection, true, ws_on_error);
+		connection->parser.data = &ws;
+
+		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
+		websocket_free(&ws);
+		if (ret == BS_OK) {
+			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
+
+		} else {
+			BOOST_CHECK_MESSAGE(ws_error == true, "Wrong websocket version accepted!");
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
+{
+	struct entry {
+		const char *method;
+		bs_read_callback_return expected_return;
+	};
+
+	struct entry table[] = {
+		{.method = "GET", .expected_return = BS_OK},
+		{.method = "GETT", .expected_return = BS_CLOSED},
+		{.method = "POST", .expected_return = BS_CLOSED},
+		{.method = "PUT", .expected_return = BS_CLOSED},
+	};
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
+		F f;
+		
+		std::string request;
+		request.append(table[i].method);
+		request.append(" / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 		
 		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
@@ -393,7 +434,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
 			
 		} else {
-			BOOST_CHECK_MESSAGE(ws_error == true, "Wrong websocket version accepted!");
+			BOOST_CHECK_MESSAGE(ws_error == true, "Illegal http method accepted!");
 		}
 	}
 }
