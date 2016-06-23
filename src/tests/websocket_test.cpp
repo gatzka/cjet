@@ -305,32 +305,54 @@ BOOST_AUTO_TEST_CASE(test_websocket_init)
 	websocket_free(&ws);
 }
 
-BOOST_FIXTURE_TEST_CASE(test_http_upgrade, F)
+BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 {
-	char request[] = "GET / HTTP/1.1" CRLF
-	                 "Connection: Upgrade" CRLF \
-	                 "Upgrade: websocket" CRLF \
-	                 "Sec-WebSocket-Version: 13" CRLF\
-	                 "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF;
+	struct entry {
+		const char *version;
+		bs_read_callback_return expected_return;
+	};
 
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_CORRECT_UPGRADE);
-	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
+	struct entry table[] = {
+		{.version = "0.1", .expected_return = BS_CLOSED},
+		{.version = "1.0", .expected_return = BS_CLOSED},
+		{.version = "1.1", .expected_return = BS_OK},
+		{.version = "1.2", .expected_return = BS_OK},
+		{.version = "2.0", .expected_return = BS_OK},
+		{.version = "2.1", .expected_return = BS_OK},
+	};
 
-	struct websocket ws;
-	websocket_init(&ws, connection, true, ws_on_error);
-	connection->parser.data = &ws;
+	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
+		F f;
+		
+		std::string request;
+		request.append("GET / HTTP/");
+		request.append(table[i].version);
+		request.append(CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
+		std::vector<char> data(request.begin(), request.end());
+		
+		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
-	bs_read_callback_return ret = websocket_read_header_line(&ws, request, ::strlen(request));
-	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return BS_OK");
-	BOOST_CHECK_MESSAGE(ws_error == false, "Error while parsing the http upgrade request");
-	websocket_free(&ws);
-
-	BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
-	BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
-	BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
-	BOOST_CHECK_MESSAGE(response_parse_error == false, "Invalid upgrade response!");
-	BOOST_CHECK_MESSAGE(got_upgrade_response == true, "Upgrade header field missing!");
-	BOOST_CHECK_MESSAGE(got_connection_upgrade == true, "Connection header field missing!");
-	BOOST_CHECK_MESSAGE(::memcmp(websocket_accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", sizeof(websocket_accept_key)) == 0, "Got illegal websocket accept key!");
-	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent!");
+		struct websocket ws;
+		websocket_init(&ws, connection, true, ws_on_error);
+		connection->parser.data = &ws;
+		
+		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
+		websocket_free(&ws);
+		if (ret == BS_OK) {
+			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
+			
+			BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
+			BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
+			BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
+			BOOST_CHECK_MESSAGE(response_parse_error == false, "Invalid upgrade response!");
+			BOOST_CHECK_MESSAGE(f.got_upgrade_response == true, "Upgrade header field missing!");
+			BOOST_CHECK_MESSAGE(f.got_connection_upgrade == true, "Connection header field missing!");
+			BOOST_CHECK_MESSAGE(::memcmp(f.websocket_accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", sizeof(f.websocket_accept_key)) == 0, "Got illegal websocket accept key!");
+			BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent!");
+		} else {
+			BOOST_CHECK_MESSAGE(ws_error == true, "Wrong HTTP minor version accepted!");
+		}
+	}
 }
