@@ -42,11 +42,17 @@
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-static const int FD_CORRECT_UPGRADE = 1;
+enum fds {
+	FD_CORRECT_UPGRADE,
+	FD_CLOSE_WHILE_READING,
+};
+
 static bool ws_error = false;
 
 static const char *readbuffer;
 static const char *readbuffer_ptr;
+
+static int read_called = 0;
 
 static char write_buffer[5000];
 static char *write_buffer_ptr;
@@ -102,6 +108,14 @@ extern "C" {
 		(void)count;
 
 		switch (sock) {
+		case FD_CLOSE_WHILE_READING:
+			if (read_called == 0) {
+				errno = EWOULDBLOCK;
+				read_called++;
+				return -1;
+			}
+			return 0;
+
 		default:
 			errno = EWOULDBLOCK;
 			return -1;
@@ -157,7 +171,7 @@ struct F {
 		loop.run = NULL;
 		loop.add = eventloop_fake_add;
 		loop.remove = eventloop_fake_remove;
-		
+
 		readbuffer_ptr = readbuffer;
 		got_complete_response_header = false;
 		response_parse_error = false;
@@ -192,6 +206,8 @@ struct F {
 		got_upgrade_response = false;
 		got_connection_upgrade = false;
 		current_header_field = HEADER_UNKNOWN;
+
+		read_called = 0;
 	}
 
 	~F()
@@ -439,4 +455,24 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 			BOOST_CHECK_MESSAGE(ws_error == true, "Illegal http method accepted!");
 		}
 	}
+}
+
+BOOST_AUTO_TEST_CASE(test_http_close_while_reading)
+{
+	F f;
+
+	std::string request;
+	request.append("GET / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF);
+	std::vector<char> data(request.begin(), request.end());
+
+	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CLOSE_WHILE_READING);
+	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
+
+	struct websocket ws;
+	websocket_init(&ws, connection, true, ws_on_error);
+	connection->parser.data = &ws;
+
+	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
+	websocket_free(&ws);
 }
