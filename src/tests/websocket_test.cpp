@@ -129,7 +129,7 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
+static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;

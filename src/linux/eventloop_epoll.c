@@ -35,7 +35,7 @@
 #include "linux/eventloop_epoll.h"
 #include "log.h"
 
-static enum callback_return handle_events(int num_events, struct epoll_event *events)
+static enum eventloop_return handle_events(int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
@@ -54,7 +54,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 		} else {
 			if (events[i].events & EPOLLIN) {
 				if (likely(ev->read_function != NULL)) {
-					enum callback_return ret = ev->read_function(ev);
+					enum eventloop_return ret = ev->read_function(ev);
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
@@ -65,7 +65,7 @@ static enum callback_return handle_events(int num_events, struct epoll_event *ev
 			}
 			if (events[i].events & EPOLLOUT) {
 				if (likely(ev->write_function != NULL)) {
-					enum callback_return ret = ev->write_function(ev);
+					enum eventloop_return ret = ev->write_function(ev);
 					if (unlikely(ret == ABORT_LOOP)) {
 						return ABORT_LOOP;
 					}
@@ -112,7 +112,7 @@ int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 	return 0;
 }
 
-enum callback_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev)
+enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev)
 {
 	const struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event epoll_ev;

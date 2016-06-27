@@ -324,14 +324,14 @@ extern "C" {
 	}
 }
 
-static enum callback_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
+static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return eventloop_fake_failing_add(const void *this_ptr, const struct io_event *ev)
+static enum eventloop_return eventloop_fake_failing_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;
@@ -602,7 +602,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
 
 	called_from_eventloop = true;
-	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(::memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
 }
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_parts_send_parts_eventloop_send
 	BOOST_CHECK(::memcmp(f.bs.write_buffer, send_buffer + writev_parts_cnt + send_parts_cnt, strlen(send_buffer) - writev_parts_cnt - send_parts_cnt) == 0);
 
 	called_from_eventloop = true;
-	enum callback_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.write_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.error_func_called);
 }
@@ -771,7 +771,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
@@ -785,7 +785,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_close_from_eventloop)
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(f.readcallback_called == 0);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == EVENT_REMOVED);
 	BOOST_CHECK(f.readcallback_called == 1);
 }
@@ -799,7 +799,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_read_from_eventloop_fail)
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(!f.error_func_called);
 
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(f.error_func_called);
@@ -815,7 +815,7 @@ BOOST_AUTO_TEST_CASE(test_set_alternate_error_function)
 	BOOST_CHECK(!f.error_func_called && !f.error_func_alt_called);
 
 	buffered_socket_set_error(&f.bs, f.error_func_alt, &f);
-	enum callback_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
+	enum eventloop_return cb_ret = f.bs.ev.read_function(&f.bs.ev);
 	BOOST_CHECK(cb_ret == CONTINUE_LOOP);
 	BOOST_CHECK(f.readcallback_called == 0);
 	BOOST_CHECK(f.error_func_alt_called && !f.error_func_called);

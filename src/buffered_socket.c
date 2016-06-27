@@ -83,14 +83,14 @@ static int go_reading(struct buffered_socket *bs)
 	}
 }
 
-static enum callback_return error_function(struct io_event *ev)
+static enum eventloop_return error_function(struct io_event *ev)
 {
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	bs->error(bs->error_context);
 	return CONTINUE_LOOP;
 }
 
-static enum callback_return read_function(struct io_event *ev)
+static enum eventloop_return read_function(struct io_event *ev)
 {
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	int ret = go_reading(bs);
@@ -104,7 +104,7 @@ static enum callback_return read_function(struct io_event *ev)
 	}
 }
 
-static enum callback_return write_function(struct io_event *ev)
+static enum eventloop_return write_function(struct io_event *ev)
 {
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 

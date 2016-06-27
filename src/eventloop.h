@@ -34,19 +34,19 @@ extern "C" {
 #include "generated/os_config.h"
 
 /**
- * @brief The callback_return enum defines the allowed return values of callback functions.
+ * @brief The eventloop_return enum defines the allowed return values of evetnloop callback functions.
  */
-enum callback_return {
+enum eventloop_return {
 	ABORT_LOOP, /**< The eventloop will be aborted. */
 	CONTINUE_LOOP, /**< The eventloop will continue to run. */
 	EVENT_REMOVED, /**< The event was removed from the eventloop in the callback.
-	                    The eventloop will continue but will not process further events on the signaled event. */
+	                    The eventloop will continue but will not process further events on the signaled IO channel. */
 };
 
 struct eventloop;
 struct io_event;
 
-typedef enum callback_return (*eventloop_function)(struct io_event *ev);
+typedef enum eventloop_return (*eventloop_function)(struct io_event *ev);
 
 struct io_event {
 	socket_type sock;
@@ -61,7 +61,7 @@ struct eventloop {
 	int (*init)(void *this_ptr);
 	void (*destroy)(const void *this_ptr);
 	int (*run)(const void *this_ptr, const int *go_ahead);
-	enum callback_return (*add)(const void *this_ptr, const struct io_event *ev);
+	enum eventloop_return (*add)(const void *this_ptr, const struct io_event *ev);
 	void (*remove)(const void *this_ptr, const struct io_event *ev);
 };
 

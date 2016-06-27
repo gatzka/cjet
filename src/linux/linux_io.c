@@ -154,7 +154,7 @@ static void handle_http(struct io_event *ev ,int fd)
 	}
 }
 
-static enum callback_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd))
+static enum eventloop_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd))
 {
 	while (1) {
 		int peer_fd = accept(ev->sock, NULL, NULL);
@@ -174,23 +174,23 @@ static enum callback_return accept_common(struct io_event *ev, void (*peer_funct
 	}
 }
 
-static enum callback_return accept_jet(struct io_event *ev)
+static enum eventloop_return accept_jet(struct io_event *ev)
 {
 	return accept_common(ev, handle_new_jet_connection);
 }
 
-static enum callback_return accept_jet_error(struct io_event *ev)
+static enum eventloop_return accept_jet_error(struct io_event *ev)
 {
 	(void)ev;
 	return ABORT_LOOP;
 }
 
-static enum callback_return accept_http(struct io_event *ev)
+static enum eventloop_return accept_http(struct io_event *ev)
 {
 	return accept_common(ev, handle_http);
 }
 
-static enum callback_return accept_http_error(struct io_event *ev)
+static enum eventloop_return accept_http_error(struct io_event *ev)
 {
 	(void)ev;
 	return ABORT_LOOP;
