@@ -37,9 +37,9 @@ extern "C" {
  * @brief The eventloop_return enum defines the allowed return values of evetnloop callback functions.
  */
 enum eventloop_return {
-	ABORT_LOOP, /**< The eventloop will be aborted. */
-	CONTINUE_LOOP, /**< The eventloop will continue to run. */
-	EVENT_REMOVED, /**< The event was removed from the eventloop in the callback.
+	EL_ABORT_LOOP, /**< The eventloop will be aborted. */
+	EL_CONTINUE_LOOP, /**< The eventloop will continue to run. */
+	EL_EVENT_REMOVED, /**< The event was removed from the eventloop in the callback.
 	                    The eventloop will continue but will not process further events on the signaled IO channel. */
 };
 

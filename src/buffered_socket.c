@@ -87,7 +87,7 @@ static enum eventloop_return error_function(struct io_event *ev)
 {
 	struct buffered_socket *bs = container_of(ev, struct buffered_socket, ev);
 	bs->error(bs->error_context);
-	return CONTINUE_LOOP;
+	return EL_CONTINUE_LOOP;
 }
 
 static enum eventloop_return read_function(struct io_event *ev)
@@ -98,9 +98,9 @@ static enum eventloop_return read_function(struct io_event *ev)
 		error_function(ev);
 	}
 	if (ret == 0) {
-		return EVENT_REMOVED;
+		return EL_EVENT_REMOVED;
 	} else {
-		return CONTINUE_LOOP;
+		return EL_CONTINUE_LOOP;
 	}
 }
 
@@ -112,7 +112,7 @@ static enum eventloop_return write_function(struct io_event *ev)
 	if (unlikely(ret < 0)) {
 		error_function(ev);
 	}
-	return CONTINUE_LOOP;
+	return EL_CONTINUE_LOOP;
 }
 
 static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_t to_copy)
@@ -374,7 +374,7 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 		return 0;
 	}
 
-	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == ABORT_LOOP) {
+	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == EL_ABORT_LOOP) {
 		return -1;
 	} else {
 		int ret = go_reading(bs);
@@ -402,7 +402,7 @@ int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, en
 		return 0;
 	}
 
-	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == ABORT_LOOP) {
+	if (bs->ev.loop->add(bs->ev.loop->this_ptr, &bs->ev) == EL_ABORT_LOOP) {
 		return -1;
 	} else {
 		int ret = go_reading(bs);

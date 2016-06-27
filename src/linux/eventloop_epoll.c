@@ -39,26 +39,26 @@ static enum eventloop_return handle_events(int num_events, struct epoll_event *e
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
-			return CONTINUE_LOOP;
+			return EL_CONTINUE_LOOP;
 		} else {
-			return ABORT_LOOP;
+			return EL_ABORT_LOOP;
 		}
 	}
 	for (int i = 0; i < num_events; ++i) {
 		struct io_event *ev = events[i].data.ptr;
 
 		if (unlikely((events[i].events & ~(EPOLLIN | EPOLLOUT)) != 0)) {
-			if (ev->error_function(ev) == ABORT_LOOP) {
-				return ABORT_LOOP;
+			if (ev->error_function(ev) == EL_ABORT_LOOP) {
+				return EL_ABORT_LOOP;
 			}
 		} else {
 			if (events[i].events & EPOLLIN) {
 				if (likely(ev->read_function != NULL)) {
 					enum eventloop_return ret = ev->read_function(ev);
-					if (unlikely(ret == ABORT_LOOP)) {
-						return ABORT_LOOP;
+					if (unlikely(ret == EL_ABORT_LOOP)) {
+						return EL_ABORT_LOOP;
 					}
-					if (unlikely(ret == EVENT_REMOVED)) {
+					if (unlikely(ret == EL_EVENT_REMOVED)) {
 						continue;
 					}
 				}
@@ -66,17 +66,17 @@ static enum eventloop_return handle_events(int num_events, struct epoll_event *e
 			if (events[i].events & EPOLLOUT) {
 				if (likely(ev->write_function != NULL)) {
 					enum eventloop_return ret = ev->write_function(ev);
-					if (unlikely(ret == ABORT_LOOP)) {
-						return ABORT_LOOP;
+					if (unlikely(ret == EL_ABORT_LOOP)) {
+						return EL_ABORT_LOOP;
 					}
-					if (unlikely(ret == EVENT_REMOVED)) {
+					if (unlikely(ret == EL_EVENT_REMOVED)) {
 						continue;
 					}
 				}
 			}
 		}
 	}
-	return CONTINUE_LOOP;
+	return EL_CONTINUE_LOOP;
 }
 
 int eventloop_epoll_init(void *this_ptr)
@@ -104,7 +104,7 @@ int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 		int num_events =
 			epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
-		if (unlikely(handle_events(num_events, events) == ABORT_LOOP)) {
+		if (unlikely(handle_events(num_events, events) == EL_ABORT_LOOP)) {
 			return -1;
 			break;
 		}
@@ -125,9 +125,9 @@ enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
-		return ABORT_LOOP;
+		return EL_ABORT_LOOP;
 	}
-	return CONTINUE_LOOP;
+	return EL_CONTINUE_LOOP;
 }
 
 void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)

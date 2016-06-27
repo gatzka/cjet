@@ -160,9 +160,9 @@ static enum eventloop_return accept_common(struct io_event *ev, void (*peer_func
 		int peer_fd = accept(ev->sock, NULL, NULL);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
-				return CONTINUE_LOOP;
+				return EL_CONTINUE_LOOP;
 			} else {
-				return ABORT_LOOP;
+				return EL_ABORT_LOOP;
 			}
 		} else {
 			if (likely(peer_function != NULL)) {
@@ -182,7 +182,7 @@ static enum eventloop_return accept_jet(struct io_event *ev)
 static enum eventloop_return accept_jet_error(struct io_event *ev)
 {
 	(void)ev;
-	return ABORT_LOOP;
+	return EL_ABORT_LOOP;
 }
 
 static enum eventloop_return accept_http(struct io_event *ev)
@@ -193,15 +193,15 @@ static enum eventloop_return accept_http(struct io_event *ev)
 static enum eventloop_return accept_http_error(struct io_event *ev)
 {
 	(void)ev;
-	return ABORT_LOOP;
+	return EL_ABORT_LOOP;
 }
 
 static int start_server(struct io_event *ev)
 {
-	if (ev->loop->add(ev->loop->this_ptr, ev) == ABORT_LOOP) {
+	if (ev->loop->add(ev->loop->this_ptr, ev) == EL_ABORT_LOOP) {
 		return -1;
 	} else {
-		if (ev->read_function(ev) == CONTINUE_LOOP) {
+		if (ev->read_function(ev) == EL_CONTINUE_LOOP) {
 			return 0;
 		} else {
 			ev->loop->remove(ev->loop->this_ptr, ev);
