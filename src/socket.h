@@ -42,7 +42,6 @@ extern "C" {
  * This functions must be implemented in an OS specific way.
  */
 ssize_t socket_read(socket_type sock, void *buf, size_t count);
-ssize_t socket_send(socket_type sock, const void *buf, size_t len);
 ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count);
 int socket_close(socket_type sock);
 

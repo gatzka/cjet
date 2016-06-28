@@ -56,11 +56,6 @@ ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec
 	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
 }
 
-ssize_t socket_send(socket_type sock, const void *buf, size_t len)
-{
-	return send(sock, buf, len, MSG_NOSIGNAL);
-}
-
 int socket_close(socket_type sock)
 {
 	return close(sock);

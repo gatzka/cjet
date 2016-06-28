@@ -90,18 +90,6 @@ extern "C" {
 		}
 	}
 
-	ssize_t socket_send(socket_type sock, const void *buf, size_t len)
-	{
-		(void)buf;
-		(void)len;
-
-		switch (sock) {
-		default:
-			errno = EWOULDBLOCK;
-			return -1;
-		}
-	}
-
 	ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)buf;
