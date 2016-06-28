@@ -40,7 +40,11 @@ static int send_buffer(struct buffered_socket *bs)
 {
 	char *write_buffer_ptr = bs->write_buffer;
 	while (bs->to_write != 0) {
-		ssize_t written = socket_send(bs->ev.sock, write_buffer_ptr, bs->to_write);
+		struct buffered_socket_io_vector iov;
+		iov.iov_base = write_buffer_ptr;
+		iov.iov_len = bs->to_write;
+		ssize_t written = socket_writev(bs->ev.sock, &iov, 1);
+
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
 				(errno != EWOULDBLOCK))) {

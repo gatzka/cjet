@@ -67,6 +67,7 @@ static size_t writev_parts_cnt;
 static int send_parts_cnt;
 static int send_parts_counter;
 static bool called_from_eventloop;
+static bool first_writev;
 
 static int read_called;
 static const char *readbuffer;
@@ -94,15 +95,130 @@ extern "C" {
 			return -1;
 		}
 
-		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS:
-		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST:
-		case WRITEV_PART_SEND_FAILS:
-		case WRITEV_PART_SEND_PARTS:
 		case WRITEV_PART_SEND_SINGLE_BYTES:
 		case WRITEV_PART_SEND_BLOCKS:
 		{
 			size_t complete_length = 0;
 			size_t parts_cnt = writev_parts_cnt;
+			for (unsigned int i = 0; i < count; i++) {
+				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
+				complete_length += will_write;
+				write_buffer_ptr += will_write;
+				parts_cnt -= will_write;
+				if (parts_cnt == 0) {
+					return complete_length;
+				}
+			}
+			return complete_length;
+		}
+
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS:
+		{
+			size_t complete_length = 0;
+			size_t parts_cnt;
+			if (first_writev) {
+				parts_cnt = writev_parts_cnt;
+				first_writev = false;
+			} else {
+				if (!called_from_eventloop) {
+					if (send_parts_counter < send_parts_cnt) {
+						parts_cnt = 1;
+						send_parts_counter++;
+					} else {
+						errno = EWOULDBLOCK;
+						return -1;
+					}
+				} else {
+					errno = EINVAL;
+					return -1;
+				}
+			}
+			for (unsigned int i = 0; i < count; i++) {
+				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
+				complete_length += will_write;
+				write_buffer_ptr += will_write;
+				parts_cnt -= will_write;
+				if (parts_cnt == 0) {
+					return complete_length;
+				}
+			}
+			return complete_length;
+		}
+
+		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST:
+		{
+			size_t complete_length = 0;
+			size_t parts_cnt;
+			if (first_writev) {
+				parts_cnt = writev_parts_cnt;
+				first_writev = false;
+			} else {
+				if (!called_from_eventloop) {
+					if (send_parts_counter < send_parts_cnt) {
+						parts_cnt = 1;
+						send_parts_counter++;
+					} else {
+						errno = EWOULDBLOCK;
+						return -1;
+					}
+				} else {
+					parts_cnt = 1;
+				}
+			}
+			for (unsigned int i = 0; i < count; i++) {
+				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
+				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
+				complete_length += will_write;
+				write_buffer_ptr += will_write;
+				parts_cnt -= will_write;
+				if (parts_cnt == 0) {
+					return complete_length;
+				}
+			}
+			return complete_length;
+		}
+
+		case WRITEV_PART_SEND_FAILS:
+		{
+			if (first_writev) {
+				first_writev = false;
+				size_t complete_length = 0;
+				size_t parts_cnt = writev_parts_cnt;
+				for (unsigned int i = 0; i < count; i++) {
+					int will_write = MIN(io_vec[i].iov_len, parts_cnt);
+					memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
+					complete_length += will_write;
+					write_buffer_ptr += will_write;
+					parts_cnt -= will_write;
+					if (parts_cnt == 0) {
+						return complete_length;
+					}
+				}
+				return complete_length;
+			} else {
+				errno = EINVAL;
+				return -1;
+			}
+		}
+
+		case WRITEV_PART_SEND_PARTS:
+		{
+			size_t complete_length = 0;
+			size_t parts_cnt;
+			if (first_writev) {
+				parts_cnt = writev_parts_cnt;
+				first_writev = false;
+			} else {
+				if (send_parts_counter < send_parts_cnt) {
+					parts_cnt = 1;
+					send_parts_counter++;
+				} else {
+					errno = EWOULDBLOCK;
+					return -1;
+				}
+			}
 			for (unsigned int i = 0; i < count; i++) {
 				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
 				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
@@ -364,6 +480,7 @@ struct F {
 		send_parts_counter = 0;
 		called_from_eventloop = false;
 		readbuffer_ptr = readbuffer;
+		first_writev = true;
 		read_called = 0;
 		read_len = 0;
 		readcallback_called = 0;
