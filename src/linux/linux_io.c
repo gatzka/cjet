@@ -307,7 +307,7 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-int run_io(struct eventloop *loop, const char *user_name)
+int run_io(struct eventloop *loop, const char *user_name, int run_foreground)
 {
 	int ret = 0;
 
@@ -346,7 +346,7 @@ int run_io(struct eventloop *loop, const char *user_name)
 	if (http_fd < 0) {
 		goto stop_jet_server;
 	}
-	
+
 	const struct url_handler handler[] = {
 		{
 			.request_target = "/",
@@ -383,6 +383,11 @@ int run_io(struct eventloop *loop, const char *user_name)
 		goto stop_http_server;
 	}
 
+	if (!run_foreground) {
+		if (daemon(0, 0) != 0) {
+			log_err("Can't daemonize cjet!\n");
+		}
+	}
 	ret = loop->run(loop->this_ptr, &go_ahead);
 
 	destroy_all_peers();

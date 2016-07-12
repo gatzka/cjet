@@ -56,11 +56,6 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
-	if (!run_foreground) {
-		if (daemon(0, 0) != 0) {
-			log_err("Can't daemonize cjet!\n");
-		}
-	}
 	signal(SIGPIPE, SIG_IGN);
 
 	if ((state_hashtable_create()) == -1) {
@@ -81,7 +76,7 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&eloop.loop, user_name) < 0) {
+	if (run_io(&eloop.loop, user_name, run_foreground) < 0) {
 		goto run_io_failed;
 	}
 	log_info("%s stopped", CJET_NAME);
