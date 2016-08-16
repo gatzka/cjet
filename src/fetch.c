@@ -358,7 +358,7 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 		return NULL;
 	}
 	if (unlikely(number_of_matchers > CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH)) {
-		*error = create_internal_error(p, "reason", "Too many mathers in path object");
+		*error = create_internal_error(p, "reason", "too many matchers in path object");
 		return NULL;
 	}
 
