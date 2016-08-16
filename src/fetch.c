@@ -337,14 +337,14 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, unsigned int n
 	return f;
 }
 
-static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *params)
+static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *params, cJSON **error)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
 		return alloc_fetch(p, id, 1);
 	}
 	if (unlikely(path->type != cJSON_Object)) {
-		log_peer_err(p, "Fetch path is not an object!\n");
+		*error = create_internal_error(p, "reason", "fetch path is not an object");
 		return NULL;
 	}
 
@@ -354,21 +354,22 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 		number_of_matchers--;
 	}
 	if (unlikely(number_of_matchers == 0)) {
-		log_peer_err(p, "No matcher in path object\n");
+		*error = create_internal_error(p, "reason", "no matcher in path object");
 		return NULL;
 	}
 	if (unlikely(number_of_matchers > CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH)) {
-		log_peer_err(p, "Too many matchers in path object\n");
+		*error = create_internal_error(p, "reason", "Too many mathers in path object");
 		return NULL;
 	}
 
 	struct fetch *f = alloc_fetch(p, id, number_of_matchers);
 	if (unlikely(f == NULL)) {
+		*error = create_internal_error(p, "reason", "not enough memory available");
 		return NULL;
 	}
 
 	if (unlikely(add_matchers(f, path, ignore_case) < 0)) {
-		log_peer_err(p, "Could not add matchers to fetch!\n");
+		*error = create_internal_error(p, "reason", "could not add matchers to fetch");
 		cJSON_Delete(f->fetch_id);
 		free(f);
 		return NULL;
@@ -658,9 +659,8 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 		return error;
 	}
 
-	f = create_fetch(p, id, params);
+	f = create_fetch(p, id, params, &error);
 	if (unlikely(f == NULL)) {
-		error = create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
 
