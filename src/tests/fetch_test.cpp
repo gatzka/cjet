@@ -759,5 +759,5 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 	BOOST_CHECK(ret == 0);
 	free(routed_id);
 
-	BOOST_CHECK(fetch_events.size() == 1);
+	BOOST_CHECK(fetch_events.size() == 0);
 }
