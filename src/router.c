@@ -34,7 +34,7 @@
 #include "response.h"
 #include "router.h"
 
-DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 5)
+DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 3)
 
 int add_routing_table(struct peer *p)
 {
@@ -101,7 +101,7 @@ error:
 }
 
 int setup_routing_information(struct state_or_method *s,
-	struct peer *origin_peer, const cJSON *origin_request_id, char *id, cJSON *value)
+	struct peer *origin_peer, const cJSON *origin_request_id, char *id)
 {
 	cJSON *id_copy;
 	if (origin_request_id != NULL) {
@@ -117,8 +117,6 @@ int setup_routing_information(struct state_or_method *s,
 	val.vals[0] = origin_peer;
 	val.vals[1] = id_copy;
 	val.vals[2] = id;
-	val.vals[3] = s;
-	val.vals[4] = value;
 	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
 		log_peer_err(origin_peer, "Routing table full!\n");
@@ -172,11 +170,6 @@ static int send_routing_response(struct peer *p,
 	return 0;
 }
 
-static bool is_set_response(const cJSON *value)
-{
-	return value != NULL;
-}
-
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p)
 {
@@ -195,20 +188,9 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		struct peer *origin_peer = val.vals[0];
 		cJSON *origin_request_id = val.vals[1];
 		char *routed_id = val.vals[2];
-		struct state_or_method *s = val.vals[3];
 		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
 		free(routed_id);
-
-		cJSON *value_copy = val.vals[4];
-		if (is_set_response(value_copy)) {
-			cJSON_Delete(s->value);
-			s->value = value_copy;
-			if (unlikely(notify_fetchers(s, "change") != 0)) {
-				log_peer_err(p, "Can't notify fetching peer!\n");
-				ret = -1;
-			}
-		}
 	}
 	return ret;
 }
@@ -240,8 +222,6 @@ static void clear_routing_entry(struct value_route_table *val)
 
 	cJSON *origin_request_id = val->vals[1];
 	char *id = val->vals[2];
-	cJSON *value_copy = val->vals[4];
-	cJSON_Delete(value_copy);
 
 	send_shutdown_response(origin_peer, origin_request_id);
 	cJSON_Delete(origin_request_id);
