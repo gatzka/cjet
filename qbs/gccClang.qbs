@@ -64,18 +64,18 @@ Product {
     cpp.linkerFlags: {
       var toolchain = qbs.toolchain[0];
       var flags = [];
-      if (toolchain === "gcc" || toolchain === "clang") {
-        flags.push("-Wl,--hash-style=gnu,--as-needed");
-        if (qbs.buildVariant === "release") {
-          flags.push("-Wl,-O2,--gc-sections,-s");
+      // if (toolchain === "gcc" || toolchain === "clang") {
+      //   flags.push("-Wl,--hash-style=gnu,--as-needed");
+      //   if (qbs.buildVariant === "release") {
+      //     flags.push("-Wl,-O2,--gc-sections,-s");
 
-          var toolchain = qbs.toolchain[0];
-          var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
-          if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "5.0"))) {
-            flags.push("-flto");
-          }
-        }
-      }
+      //     var toolchain = qbs.toolchain[0];
+      //     var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+      //     if ((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "5.0"))) {
+      //       flags.push("-flto");
+      //     }
+      //   }
+      // }
       return flags;
     }
   }

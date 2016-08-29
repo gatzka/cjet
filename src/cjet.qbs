@@ -32,7 +32,7 @@ Project {
   property bool runAnalyzer: false
 
   name: "cjet"
-  minimumQbsVersion: "1.4.0"
+  minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"
 
@@ -68,6 +68,7 @@ Project {
     cpp.visibility: "hidden"
     cpp.useRPaths: false
     cpp.cLanguageVersion: "c99"
+    cpp.dynamicLibraries: ["m"]
 
     Group {
       name: "installation files"
