@@ -52,10 +52,10 @@ Product {
         var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
         if (((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "4.9"))) ||
             ((toolchain === "clang") && (Versions.versionIsAtLeast(compilerVersion, "3.5")))) {
-          flags.push("-fstack-protector-strong", "-fpie");
+          //flags.push("-fstack-protector-strong", "-fpie");
         }
         if (toolchain === "gcc") {
-          flags.push("-pie");
+          //flags.push("-pie");
         }
       }
       return flags;
@@ -63,17 +63,20 @@ Product {
     
     cpp.linkerFlags: {
       var flags = [];
-      // if (product.enableHardening) {
-      //   var toolchain = qbs.toolchain[0];
-      //   var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
-      //   if (((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "4.9"))) ||
-      //       ((toolchain === "clang") && (Versions.versionIsAtLeast(compilerVersion, "3.5")))) {
-      //     flags.push("-Wl,-z,relro,-z,now", "-fpie","-pie");
+      if (product.enableHardening) {
+        var toolchain = qbs.toolchain[0];
+        var compilerVersion = cpp.compilerVersionMajor + "." + cpp.compilerVersionMinor + "." + cpp.compilerVersionPatch;
+        if (((toolchain === "gcc") && (Versions.versionIsAtLeast(compilerVersion, "4.9"))) ||
+            ((toolchain === "clang") && (Versions.versionIsAtLeast(compilerVersion, "3.5")))) {
+          flags.push("-z relro now");
+          //flags.push("-pie");
+          //flags.push("-fpie","-pie");
+          //flags.push("-fpie","-pie");
       //     if (qbs.buildVariant.contains("release")) {
       //       flags.push("-D_FORTIFY_SOURCE=2");
-      //     }
-      //   }
-      // }
+      //    }
+        }
+      }
       return flags;
     }
   }
