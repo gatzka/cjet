@@ -32,7 +32,7 @@
 struct itimerspec convert_timeout_to_itimerspec(double timeout)
 {
 	struct itimerspec ts;
-	time_t seconds = floor(timeout);
+	time_t seconds = (time_t)floor(timeout);
 	long nanos = (long)((timeout - floor(timeout)) * 1000000000);
 
 	ts.it_interval.tv_sec = 0;
