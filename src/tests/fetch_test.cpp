@@ -254,6 +254,18 @@ static struct state_or_method *get_state(const char *path)
 	return (struct state_or_method *)state_table_get(path);
 }
 
+static cJSON *create_fetch_with_illegal_fetchid()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON *fetch_id_object = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "id", fetch_id_object);
+	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
+	cJSON_AddItemToObject(root, "path", path);
+	return root;
+}
+
 static cJSON *create_fetch_params(const char *path_equals_string, const char *path_startsWith_string, const char *path_endsWith_string, const char *path_contains, int ignore_case)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -310,6 +322,16 @@ static cJSON *create_unfetch_params()
 	cJSON *root = cJSON_CreateObject();
 	BOOST_REQUIRE(root != NULL);
 	cJSON_AddStringToObject(root, "id", "fetch_id_1");
+
+	return root;
+}
+
+static cJSON *create_illegal_unfetch_params()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON *id = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "id", id);
 
 	return root;
 }
@@ -640,6 +662,25 @@ BOOST_FIXTURE_TEST_CASE(too_many_matcher, F)
 	struct fetch *f = NULL;
 	cJSON *params = create_fetch_with_multiple_matchers("bla", CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH + 1);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(fetch_illegal_fetchid, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_with_illegal_fetchid();
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(unfetch_illegal_fetchid, F)
+{
+	cJSON *params = create_illegal_unfetch_params();
+	cJSON *error = remove_fetch_from_peer(fetch_peer_1, params);
 	BOOST_REQUIRE(error != NULL);
 	cJSON_Delete(params);
 	cJSON_Delete(error);
