@@ -44,6 +44,13 @@
 
 static const char case_insensitive[] = "caseInsensitive";
 
+static const char *EQUALS = "equals";
+static const char *CONTAINS = "contains";
+static const char *STARTS_WITH = "startsWith";
+static const char *ENDS_WITH = "endsWith";
+static const char *EQUALS_NOT = "equalsNot";
+static const char *CONTAINS_ALL_OF = "containsAllOf";
+
 static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSON **err)
 {
 	const cJSON *id = cJSON_GetObjectItem(params, "id");
@@ -61,14 +68,9 @@ static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSO
 	return id;
 }
 
-static int is_case_insensitive(const cJSON *path)
+static const cJSON *get_case_insensitive(const cJSON *path)
 {
-	const cJSON *match_ignore_case = cJSON_GetObjectItem(path, case_insensitive);
-	if ((match_ignore_case != NULL) && (match_ignore_case->type == cJSON_True)) {
-		return 1;
-	} else {
-		return 0;
-	}
+	return cJSON_GetObjectItem(path, case_insensitive);
 }
 
 static int equals_match(const struct path_matcher *pm, const char *state_path)
@@ -209,42 +211,42 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int ma
 	unsigned int number_of_path_elements;
 	match_func match_function = NULL;
 	
-	if (strcmp(matcher->string, "equals") == 0) {
+	if (strcmp(matcher->string, EQUALS) == 0) {
 		if (ignore_case) {
 			match_function = equals_match_ignore_case;
 		} else {
 			match_function = equals_match;
 		}
 		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, "contains") == 0) {
+	} else if (strcmp(matcher->string, CONTAINS) == 0) {
 		if (ignore_case) {
 			match_function = contains_match_ignore_case;
 		} else {
 			match_function = contains_match;
 		}
 		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, "startsWith") == 0) {
+	} else if (strcmp(matcher->string, STARTS_WITH) == 0) {
 		if (ignore_case) {
 			match_function = startswith_match_ignore_case;
 		} else {
 			match_function = startswith_match;
 		}
 		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, "endsWith") == 0) {
+	} else if (strcmp(matcher->string, ENDS_WITH) == 0) {
 		if (ignore_case) {
 			match_function = endswith_match_ignore_case;
 		} else {
 			match_function = endswith_match;
 		}
 		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, "equalsNot") == 0) {
+	} else if (strcmp(matcher->string, EQUALS_NOT) == 0) {
 		if (ignore_case) {
 			match_function = equalsnot_match_ignore_case;
 		} else {
 			match_function = equalsnot_match;
 		}
 		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, "containsAllOf") == 0) {
+	} else if (strcmp(matcher->string, CONTAINS_ALL_OF) == 0) {
 		if (ignore_case) {
 			match_function = containsallof_match_ignore_case;
 		} else {
@@ -349,10 +351,20 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	}
 
 	unsigned int number_of_matchers = cJSON_GetArraySize(path);
-	int ignore_case = is_case_insensitive(path);
-	if (ignore_case) {
+
+	int ignore_case;
+	const cJSON *match_ignore_case = get_case_insensitive(path);
+	if (match_ignore_case != NULL) {
 		number_of_matchers--;
+		if (match_ignore_case->type == cJSON_True) {
+			ignore_case = 1;
+		} else {
+			ignore_case = 0;
+		}
+	} else {
+		ignore_case = 0;
 	}
+
 	if (unlikely(number_of_matchers == 0)) {
 		*error = create_internal_error(p, "reason", "no matcher in path object");
 		return NULL;
