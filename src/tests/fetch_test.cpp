@@ -276,7 +276,13 @@ static cJSON *create_fetch_with_no_fetchid()
 	return root;
 }
 
-static cJSON *create_fetch_params(const char *path_equals_string, const char *path_startsWith_string, const char *path_endsWith_string, const char *path_contains, int ignore_case)
+static cJSON *create_fetch_params(
+	const char *path_equals_string,
+	const char *path_equalsnot_string,
+	const char *path_startsWith_string,
+	const char *path_endsWith_string,
+	const char *path_contains,
+	int ignore_case)
 {
 	cJSON *root = cJSON_CreateObject();
 	BOOST_REQUIRE(root != NULL);
@@ -286,6 +292,10 @@ static cJSON *create_fetch_params(const char *path_equals_string, const char *pa
 	cJSON_AddItemToObject(root, "path", path);
 	if (strlen(path_equals_string)) {
 		cJSON_AddStringToObject(path, "equals", path_equals_string);
+	}
+	
+	if (strlen(path_equalsnot_string)) {
+		cJSON_AddStringToObject(path, "equalsNot", path_equals_string);
 	}
 
 	if (strlen(path_startsWith_string)) {
@@ -386,7 +396,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		/// is to fail because fetch is case sensitive
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path_upper, "", "", "", 0);
+		cJSON *params = create_fetch_params(path_upper, "", "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -399,7 +409,25 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path, "", "", "", 0);
+		cJSON *params = create_fetch_params(path, "", "", "", "", 0);
+		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+		BOOST_REQUIRE(error == NULL);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
+
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
+		event event = get_event_from_json(json);
+		BOOST_CHECK(event == ADD_EVENT);
+		cJSON_Delete(json);
+		remove_all_fetchers_from_peer(fetch_peer_1);
+		cJSON_Delete(params);
+	}
+	
+	{
+		struct fetch *f = NULL;
+		cJSON *params = create_fetch_params("", path_upper, "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -417,7 +445,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", path_startsWith, "", "", 0);
+		cJSON *params = create_fetch_params("", "", path_startsWith, "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -435,7 +463,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", "", path_endsWith, "", 0);
+		cJSON *params = create_fetch_params("", "", "", path_endsWith, "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -453,7 +481,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", "", "", path_contains, 0);
+		cJSON *params = create_fetch_params("", "", "", "", path_contains, 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -493,7 +521,25 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path_upper, "", "", "", 1);
+		cJSON *params = create_fetch_params(path_upper, "", "", "", "", 1);
+		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+		BOOST_REQUIRE(error == NULL);
+		error = add_fetch_to_states(f);
+		BOOST_REQUIRE(error == NULL);
+
+		BOOST_CHECK(fetch_events.size() == 1);
+		cJSON *json = fetch_events.front();
+		fetch_events.pop_front();
+		event event = get_event_from_json(json);
+		BOOST_CHECK(event == ADD_EVENT);
+		cJSON_Delete(json);
+		remove_all_fetchers_from_peer(fetch_peer_1);
+		cJSON_Delete(params);
+	}
+	
+	{
+		struct fetch *f = NULL;
+		cJSON *params = create_fetch_params("", "xxx", "", "", "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -511,7 +557,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", path_startsWith, "", "", 1);
+		cJSON *params = create_fetch_params("", "", path_startsWith, "", "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -529,7 +575,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", "", path_endsWith, "", 1);
+		cJSON *params = create_fetch_params("", "", "", path_endsWith, "", 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -547,7 +593,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params("", "", "", path_contains, 1);
+		cJSON *params = create_fetch_params("", "", "", "", path_contains, 1);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -573,7 +619,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		/// does not fetch anything because nothing does match
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path, "", "", "", 0);
+		cJSON *params = create_fetch_params(path, "", "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -599,7 +645,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 
 	{
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path, "", "", "", 0);
+		cJSON *params = create_fetch_params(path, "", "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -632,7 +678,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		/// fetch removal of state
 		struct fetch *f = NULL;
-		cJSON *params = create_fetch_params(path, "", "", "", 0);
+		cJSON *params = create_fetch_params(path, "", "", "", "", 0);
 		cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 		BOOST_REQUIRE(error == NULL);
 		error = add_fetch_to_states(f);
@@ -660,7 +706,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 BOOST_FIXTURE_TEST_CASE(fetch_of_path_without_elements, F)
 {
 	struct fetch *f = NULL;
-	cJSON *params = create_fetch_params("", "", "", "", 0);
+	cJSON *params = create_fetch_params("", "", "", "", "", 0);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error != NULL);
 	cJSON_Delete(params);
@@ -712,7 +758,7 @@ BOOST_FIXTURE_TEST_CASE(unfetch_illegal_fetchid, F)
 BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 {
 	struct fetch *f = NULL;
-	cJSON *params = create_fetch_params("bla", "", "", "", 0);
+	cJSON *params = create_fetch_params("bla", "", "", "", "", 0);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error == NULL);
 	cJSON_Delete(params);
@@ -726,7 +772,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 BOOST_FIXTURE_TEST_CASE(double_fetch, F)
 {
 	struct fetch *f = NULL;
-	cJSON *params = create_fetch_params("bla", "", "", "", 0);
+	cJSON *params = create_fetch_params("bla", "", "", "", "", 0);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error == NULL);
 
