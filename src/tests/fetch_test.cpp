@@ -266,6 +266,16 @@ static cJSON *create_fetch_with_illegal_fetchid()
 	return root;
 }
 
+static cJSON *create_fetch_with_no_fetchid()
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
+	cJSON_AddItemToObject(root, "path", path);
+	return root;
+}
+
 static cJSON *create_fetch_params(const char *path_equals_string, const char *path_startsWith_string, const char *path_endsWith_string, const char *path_contains, int ignore_case)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -663,6 +673,17 @@ BOOST_FIXTURE_TEST_CASE(too_many_matcher, F)
 	cJSON *params = create_fetch_with_multiple_matchers("bla", CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH + 1);
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(fetch_null_fetchid, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_with_no_fetchid();
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
 	cJSON_Delete(params);
 	cJSON_Delete(error);
 }
