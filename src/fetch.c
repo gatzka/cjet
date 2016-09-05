@@ -220,51 +220,50 @@ error:
 
 static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int match_index, bool ignore_case)
 {
-	bool has_multiple_path_elements;
-	unsigned int number_of_path_elements;
-	match_func match_function = NULL;
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(matchers); i++) {
 		if (strcmp(matcher->string, matchers[i].matcher_name) == 0) {
+			match_func match_function;
 			if (ignore_case) {
 				match_function = matchers[i].case_insensitive;
 			} else {
 				match_function = matchers[i].case_sensitive;
 			}
-			has_multiple_path_elements = matchers[i].has_multiple_path_elements;
-			break;
-		}
-	}
+			bool has_multiple_path_elements = matchers[i].has_multiple_path_elements;
 
-	if (has_multiple_path_elements) {
-		if (matcher->type != cJSON_Array) {
-			log_err("No multiple path elements!\n");
-			return -1;
-		}
-		number_of_path_elements = cJSON_GetArraySize(matcher);
-	} else {
-		if (matcher->type != cJSON_String) {
-			log_err("Single path element is not a string!\n");
-			return -1;
-		}
-		number_of_path_elements = 1;
-	}
+			unsigned int number_of_path_elements;
+			if (has_multiple_path_elements) {
+				if (matcher->type != cJSON_Array) {
+					log_err("No multiple path elements!\n");
+					return -1;
+				}
+				number_of_path_elements = cJSON_GetArraySize(matcher);
+			} else {
+				if (matcher->type != cJSON_String) {
+					log_err("Single path element is not a string!\n");
+					return -1;
+				}
+				number_of_path_elements = 1;
+			}
 
-	if (unlikely(match_function == NULL)) {
-		log_err("No suitable matcher found!\n");
-		return -1;
+			if (unlikely(match_function == NULL)) {
+				log_err("No suitable matcher found!\n");
+				return -1;
+			}
+			struct path_matcher *pm = create_path_matcher(number_of_path_elements);
+			if (unlikely(pm == NULL)) {
+				return -1;
+			}
+			if (unlikely(fill_path_elements(pm, matcher, has_multiple_path_elements, number_of_path_elements))) {
+				free(pm);
+				return -1;
+			}
+			pm->match_function = match_function;
+			f->matcher[match_index] = pm;
+			return 0;
+		}
 	}
-	struct path_matcher *pm = create_path_matcher(number_of_path_elements);
-	if (unlikely(pm == NULL)) {
-		return -1;
-	}
-	if (unlikely(fill_path_elements(pm, matcher, has_multiple_path_elements, number_of_path_elements))) {
-		free(pm);
-		return -1;
-	}
-	pm->match_function = match_function;
-	f->matcher[match_index] = pm;
-	return 0;
+	return -1;
 }
 
 static void free_matcher(struct fetch *f)
