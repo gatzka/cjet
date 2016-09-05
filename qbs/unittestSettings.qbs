@@ -38,10 +38,10 @@ StaticLibrary {
   cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
   cpp.treatWarningsAsErrors: true
   cpp.cFlags: [
-    "--coverage",
     "-fprofile-arcs",
     "-ftest-coverage"
   ]
+  cpp.driverFlags: ["--coverage"]
 
   Export {
     Depends { name: 'cpp' }
@@ -52,12 +52,11 @@ StaticLibrary {
     cpp.defines: ["_GNU_SOURCE", "BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
     cpp.cLanguageVersion: "c99"
+    cpp.driverFlags: ["--coverage"]
   	cpp.cFlags: [
-  	  "--coverage",
   	  "-fprofile-arcs",
   	  "-ftest-coverage"
   	]
-    cpp.linkerFlags: ["--coverage"]
   }
 
   Group {

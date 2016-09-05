@@ -28,7 +28,7 @@ import qbs 1.0
 
 Project {
   name: "cjet_unit_tests"
-  minimumQbsVersion: "1.4.0"
+  minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"
   references: "../qbs/unittestSettings.qbs"
