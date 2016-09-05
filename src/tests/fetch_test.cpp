@@ -673,6 +673,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_illegal_fetchid, F)
 	cJSON *params = create_fetch_with_illegal_fetchid();
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
 	cJSON_Delete(params);
 	cJSON_Delete(error);
 }
@@ -682,6 +683,7 @@ BOOST_FIXTURE_TEST_CASE(unfetch_illegal_fetchid, F)
 	cJSON *params = create_illegal_unfetch_params();
 	cJSON *error = remove_fetch_from_peer(fetch_peer_1, params);
 	BOOST_REQUIRE(error != NULL);
+	check_invalid_params(error);
 	cJSON_Delete(params);
 	cJSON_Delete(error);
 }
