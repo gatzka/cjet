@@ -535,7 +535,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 		remove_all_fetchers_from_peer(fetch_peer_1);
 		cJSON_Delete(params);
 	}
-	
+
 	{
 		struct fetch *f = NULL;
 		cJSON *params = cJSON_CreateObject();

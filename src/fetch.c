@@ -42,14 +42,18 @@
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
+#ifndef ARRAY_SIZE
+# define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 static const char case_insensitive[] = "caseInsensitive";
 
-static const char *EQUALS = "equals";
-static const char *CONTAINS = "contains";
-static const char *STARTS_WITH = "startsWith";
-static const char *ENDS_WITH = "endsWith";
-static const char *EQUALS_NOT = "equalsNot";
-static const char *CONTAINS_ALL_OF = "containsAllOf";
+struct supported_matcher {
+	const char *matcher_name;
+	match_func case_sensitive;
+	match_func case_insensitive;
+	bool has_multiple_path_elements;
+};
 
 static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSON **err)
 {
@@ -157,6 +161,15 @@ static int containsallof_match_ignore_case(const struct path_matcher *pm, const 
 	return 1;
 }
 
+static const struct supported_matcher matchers[] = {
+	{.matcher_name = "equals", .case_sensitive = equals_match, .case_insensitive = equals_match_ignore_case, .has_multiple_path_elements = false},
+	{.matcher_name = "contains", .case_sensitive = contains_match, .case_insensitive = contains_match_ignore_case, .has_multiple_path_elements = false},
+	{.matcher_name = "startsWith", .case_sensitive = startswith_match, .case_insensitive = startswith_match_ignore_case, .has_multiple_path_elements = false},
+	{.matcher_name = "endsWith", .case_sensitive = endswith_match, .case_insensitive = endswith_match_ignore_case,.has_multiple_path_elements = false},
+	{.matcher_name = "equalsNot", .case_sensitive = equalsnot_match, .case_insensitive = equalsnot_match_ignore_case,.has_multiple_path_elements = false},
+	{.matcher_name = "containsAllOf", .case_sensitive = containsallof_match, .case_insensitive = containsallof_match_ignore_case, .has_multiple_path_elements = true}
+};
+
 static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
 	struct path_matcher *pm = calloc(1, sizeof(*pm) + (sizeof(pm->path_elements) * (number_of_path_elements - 1)));
@@ -210,51 +223,17 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int ma
 	bool has_multiple_path_elements;
 	unsigned int number_of_path_elements;
 	match_func match_function = NULL;
-	
-	if (strcmp(matcher->string, EQUALS) == 0) {
-		if (ignore_case) {
-			match_function = equals_match_ignore_case;
-		} else {
-			match_function = equals_match;
+
+	for (unsigned int i = 0; i < ARRAY_SIZE(matchers); i++) {
+		if (strcmp(matcher->string, matchers[i].matcher_name) == 0) {
+			if (ignore_case) {
+				match_function = matchers[i].case_insensitive;
+			} else {
+				match_function = matchers[i].case_sensitive;
+			}
+			has_multiple_path_elements = matchers[i].has_multiple_path_elements;
+			break;
 		}
-		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, CONTAINS) == 0) {
-		if (ignore_case) {
-			match_function = contains_match_ignore_case;
-		} else {
-			match_function = contains_match;
-		}
-		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, STARTS_WITH) == 0) {
-		if (ignore_case) {
-			match_function = startswith_match_ignore_case;
-		} else {
-			match_function = startswith_match;
-		}
-		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, ENDS_WITH) == 0) {
-		if (ignore_case) {
-			match_function = endswith_match_ignore_case;
-		} else {
-			match_function = endswith_match;
-		}
-		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, EQUALS_NOT) == 0) {
-		if (ignore_case) {
-			match_function = equalsnot_match_ignore_case;
-		} else {
-			match_function = equalsnot_match;
-		}
-		has_multiple_path_elements = false;
-	} else if (strcmp(matcher->string, CONTAINS_ALL_OF) == 0) {
-		if (ignore_case) {
-			match_function = containsallof_match_ignore_case;
-		} else {
-			match_function = containsallof_match;
-		}
-		has_multiple_path_elements = true;
-	} else {
-		return -1;
 	}
 
 	if (has_multiple_path_elements) {
