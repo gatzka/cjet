@@ -123,6 +123,21 @@ static cJSON *create_correct_fetch(const char *path, int id)
 	return root;
 }
 
+static cJSON *create_fetch_with_unknown_match(const char *path)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "id", "fetch_id_1");
+
+	cJSON *json_path = cJSON_CreateObject();
+	BOOST_REQUIRE(json_path != NULL);
+	cJSON_AddItemToObject(root, "path", json_path);
+	cJSON_AddStringToObject(json_path, "contains", path);
+	cJSON_AddStringToObject(json_path, "bestMatchInTown", path);
+
+	return root;
+}
+
 static void check_response(cJSON *json, int id)
 {
 	cJSON *response_id = cJSON_GetObjectItem(json, "id");
@@ -173,6 +188,25 @@ static void check_no_error(int id)
 		BOOST_CHECK(json_id->valueint == id);
 	}
 	cJSON_Delete(response);
+}
+
+static void check_internal_error(const cJSON *error)
+{
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	if (code != NULL) {
+		BOOST_CHECK(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == -32603);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	if (message != NULL) {
+		BOOST_CHECK(message->type == cJSON_String);
+		BOOST_CHECK(strcmp(message->valuestring, "Internal error") == 0);
+	} else {
+		BOOST_FAIL("No message object!");
+	}
 }
 
 static void check_invalid_params(const cJSON *error)
@@ -376,6 +410,18 @@ BOOST_FIXTURE_TEST_CASE(deprecated_match, F)
 	struct fetch *f = NULL;
 	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
 	BOOST_REQUIRE(error != NULL);
+	cJSON_Delete(params);
+	cJSON_Delete(error);
+}
+
+BOOST_FIXTURE_TEST_CASE(fetch_with_unknown_match, F)
+{
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_with_unknown_match("foobar");
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error != NULL);
+
+	check_internal_error(error);
 	cJSON_Delete(params);
 	cJSON_Delete(error);
 }
