@@ -76,8 +76,10 @@ struct websocket {
 	enum websocket_callback_return (*binary_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
 	enum websocket_callback_return (*pong_received)(struct websocket *s, char *msg, size_t length);
 	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code, char *msg, size_t length);
-
-	const char *sub_protocols[4];
+	struct {
+		const char *name;
+		bool found;
+	} sub_protocols[4];
 };
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocols[], unsigned int number_of_sub_protocols);

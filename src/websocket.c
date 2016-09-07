@@ -527,7 +527,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 		return -1;
 	}
 	for (unsigned int i = 0; i < number_of_sub_protocols; i++) {
-		ws->sub_protocols[i] = sub_protocols[i];
+		ws->sub_protocols[i].name = sub_protocols[i];
 	}
 	return 0;
 }
