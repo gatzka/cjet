@@ -130,7 +130,10 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
-	websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
+	int ret = websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
+	if (ret < 0) {
+		return -1;
+	}
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;

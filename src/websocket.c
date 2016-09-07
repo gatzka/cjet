@@ -311,6 +311,10 @@ static int send_upgrade_response(struct http_connection *connection)
 {
 	struct websocket *s = connection->parser.data;
 
+	if (s->protocol_requested && !s->sub_protocol.found) {
+		return -1;
+	}
+
 	char accept_value[28];
 	struct SHA1Context context;
 	uint8_t sha1_buffer[SHA1HashSize];
@@ -320,22 +324,28 @@ static int send_upgrade_response(struct http_connection *connection)
 	SHA1Result(&context, sha1_buffer);
 	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
 
-	//TODO: The supported protocol(s) (jet is just an example) must be set in websocket_init and used here.
 	static const char switch_response[] =
 		"HTTP/1.1 101 Switching Protocols" CRLF
 		"Upgrade: websocket" CRLF
 		"Connection: Upgrade" CRLF
-		"Sec-Websocket-Protocol: jet" CRLF
 		"Sec-WebSocket-Accept: ";
+
+	static const char ws_protocol[] = 
+		CRLF "Sec-Websocket-Protocol: ";
+
 	static const char switch_response_end[] = CRLF CRLF;
 
-	struct buffered_socket_io_vector iov[3];
+	struct buffered_socket_io_vector iov[5];
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response ) - 1;
 	iov[1].iov_base = accept_value;
 	iov[1].iov_len = sizeof(accept_value);
-	iov[2].iov_base = switch_response_end;
-	iov[2].iov_len = sizeof(switch_response_end) - 1;
+	iov[2].iov_base = ws_protocol;
+	iov[2].iov_len = sizeof(ws_protocol) - 1;
+	iov[3].iov_base = s->sub_protocol.name;
+	iov[3].iov_len = strlen(s->sub_protocol.name);
+	iov[4].iov_base = switch_response_end;
+	iov[4].iov_len = sizeof(switch_response_end) - 1;
 	return buffered_socket_writev(connection->bs, iov, ARRAY_SIZE(iov));
 }
 
@@ -549,8 +559,17 @@ int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t stat
 	return send_frame(s, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
 }
 
-void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
+int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
 {
+	if (unlikely(sub_protocol == NULL)) {
+		log_err("You must specify a sub-protocol");
+		return -1;
+	}
+	if (unlikely(on_error == NULL)) {
+		log_err("You must specify an error routine");
+		return -1;
+	}
+
 	memset(ws, 0, sizeof(*ws));
 	ws->on_error = on_error;
 	ws->connection = connection;
@@ -558,6 +577,7 @@ void websocket_init(struct websocket *ws, struct http_connection *connection, bo
 	ws->is_server = is_server;
 
 	ws->sub_protocol.name = sub_protocol;
+	return 0;
 }
 
 void websocket_free(struct websocket *ws)

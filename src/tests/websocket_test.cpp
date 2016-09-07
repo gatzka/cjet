@@ -305,7 +305,8 @@ static bool is_close_frame()
 BOOST_AUTO_TEST_CASE(test_websocket_init)
 {
 	struct websocket ws;
-	websocket_init(&ws, NULL, true, NULL, NULL);
+	int ret = websocket_init(&ws, NULL, true, ws_on_error, "soap");
+	BOOST_CHECK_MESSAGE(ret == 0, "Initializaton of websocket failed!");
 	websocket_free(&ws);
 }
 
@@ -336,7 +337,7 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 	struct websocket ws;
-	websocket_init(&ws, connection, true, ws_on_error, "jet");
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -386,7 +387,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error, NULL);
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "chat") == 0, "Websocket initialization failed!");
 		connection->parser.data = &ws;
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -435,7 +436,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error, NULL);
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "soap") == 0, "Websocket initialization failed!");
 		connection->parser.data = &ws;
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -476,7 +477,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error, NULL);
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "json") == 0, "Websocket initialization failed!");
 		connection->parser.data = &ws;
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -503,7 +504,7 @@ BOOST_AUTO_TEST_CASE(test_http_close_while_reading)
 	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 	struct websocket ws;
-	websocket_init(&ws, connection, true, ws_on_error, NULL);
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "wamp") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
