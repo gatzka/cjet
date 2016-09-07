@@ -124,15 +124,13 @@ static void close_websocket_peer(struct peer *p)
 
 static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection)
 {
-	static const char *sub_protocols[1] = {"jet"};
+	static const char *sub_protocol = "jet";
 
 	init_peer(&ws_peer->peer);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
-	if (websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocols, ARRAY_SIZE(sub_protocols)) < 0) {
-		return -1;
-	}
+	websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
