@@ -24,8 +24,10 @@
  * SOFTWARE.
  */
 
-#include "stdlib.h"
+#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
 
 #include "base64.h"
 #include "compiler.h"
@@ -309,6 +311,10 @@ static int send_upgrade_response(struct http_connection *connection)
 {
 	struct websocket *s = connection->parser.data;
 
+	if (s->protocol_requested && !s->sub_protocol.found) {
+		return -1;
+	}
+
 	char accept_value[28];
 	struct SHA1Context context;
 	uint8_t sha1_buffer[SHA1HashSize];
@@ -318,22 +324,28 @@ static int send_upgrade_response(struct http_connection *connection)
 	SHA1Result(&context, sha1_buffer);
 	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
 
-	//TODO: The supported protocol(s) (jet is just an example) must be set in websocket_init and used here.
 	static const char switch_response[] =
 		"HTTP/1.1 101 Switching Protocols" CRLF
 		"Upgrade: websocket" CRLF
 		"Connection: Upgrade" CRLF
-		"Sec-Websocket-Protocol: jet" CRLF
 		"Sec-WebSocket-Accept: ";
+
+	static const char ws_protocol[] = 
+		CRLF "Sec-Websocket-Protocol: ";
+
 	static const char switch_response_end[] = CRLF CRLF;
 
-	struct buffered_socket_io_vector iov[3];
+	struct buffered_socket_io_vector iov[5];
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response ) - 1;
 	iov[1].iov_base = accept_value;
 	iov[1].iov_len = sizeof(accept_value);
-	iov[2].iov_base = switch_response_end;
-	iov[2].iov_len = sizeof(switch_response_end) - 1;
+	iov[2].iov_base = ws_protocol;
+	iov[2].iov_len = sizeof(ws_protocol) - 1;
+	iov[3].iov_base = s->sub_protocol.name;
+	iov[3].iov_len = strlen(s->sub_protocol.name);
+	iov[4].iov_base = switch_response_end;
+	iov[4].iov_len = sizeof(switch_response_end) - 1;
 	return buffered_socket_writev(connection->bs, iov, ARRAY_SIZE(iov));
 }
 
@@ -386,14 +398,45 @@ static int check_websocket_version(const char *at, size_t length)
 	}
 }
 
-static int check_websocket_protocol(const char *at, size_t length)
+static void fill_requested_sub_protocol(struct websocket *s, const char *name, size_t length)
 {
-	static const char proto[] ="jet";
-	//TODO: There might be more protocols than just jet. We habe to parse the list and look if jet is in the list.
-	if ((length == sizeof(proto) - 1) && (memcmp(at, proto, length) == 0)) {
-		return 0;
-	} else {
-		return -1;
+	if (s->sub_protocol.name == NULL) {
+		return;
+	}
+
+	size_t name_length = strlen(s->sub_protocol.name);
+	if (name_length == length) {
+		if (memcmp(s->sub_protocol.name, name, length) == 0) {
+			s->sub_protocol.found = true;
+			return;
+		}
+	}
+}
+
+static void check_websocket_protocol(struct websocket *s, const char *at, size_t length)
+{
+	const char *start = at;
+	while (length > 0) {
+		if (!isspace(*start) && (*start != ',')) {
+			const char *end = start;
+			while (length > 0) {
+				if (*end == ',') {
+					ptrdiff_t len  = end - start;
+					fill_requested_sub_protocol(s, start, len);
+					start = end;
+					break;
+				}
+				end++;
+				length--;
+			}
+			if (length == 0) {
+				ptrdiff_t len  = end - start;
+				fill_requested_sub_protocol(s, start, len);
+			}
+		} else {
+			 start++;
+			 length--;
+		}
 	}
 }
 
@@ -414,7 +457,8 @@ int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t len
 		break;
 
 	case HEADER_SEC_WEBSOCKET_PROTOCOL:
-		ret = check_websocket_protocol(at, length);
+		s->protocol_requested = true;
+		check_websocket_protocol(s, at, length);
 		break;
 
 	case HEADER_UNKNOWN:
@@ -515,19 +559,25 @@ int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t stat
 	return send_frame(s, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
 }
 
-void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s))
+int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
 {
-	ws->bs = NULL;
+	if (unlikely(sub_protocol == NULL)) {
+		log_err("You must specify a sub-protocol");
+		return -1;
+	}
+	if (unlikely(on_error == NULL)) {
+		log_err("You must specify an error routine");
+		return -1;
+	}
+
+	memset(ws, 0, sizeof(*ws));
 	ws->on_error = on_error;
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
-	ws->text_message_received = NULL;
-	ws->text_frame_received = NULL;
-	ws->binary_message_received = NULL;
-	ws->binary_frame_received = NULL;
-	ws->pong_received = NULL;
-	ws->close_received = NULL;
 	ws->is_server = is_server;
+
+	ws->sub_protocol.name = sub_protocol;
+	return 0;
 }
 
 void websocket_free(struct websocket *ws)

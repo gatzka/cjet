@@ -122,18 +122,24 @@ static void close_websocket_peer(struct peer *p)
 	free_websocket_peer(ws_peer);
 }
 
-static void init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection)
+static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection)
 {
+	static const char *sub_protocol = "jet";
+
 	init_peer(&ws_peer->peer);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
-	websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback);
+	int ret = websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
+	if (ret < 0) {
+		return -1;
+	}
 	ws_peer->websocket.text_message_received = text_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
 	buffered_socket_read_until(connection->bs, CRLF, websocket_read_header_line, &ws_peer->websocket);
+	return 0;
 }
 
 int alloc_websocket_peer(struct http_connection *connection)
@@ -144,6 +150,5 @@ int alloc_websocket_peer(struct http_connection *connection)
 	}
 
 	connection->parser.data = &ws_peer->websocket;
-	init_websocket_peer(ws_peer, connection);
-	return 0;
+	return init_websocket_peer(ws_peer, connection);
 }
