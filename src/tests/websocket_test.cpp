@@ -305,10 +305,48 @@ static bool is_close_frame()
 BOOST_AUTO_TEST_CASE(test_websocket_init)
 {
 	struct websocket ws;
-	websocket_init(&ws, NULL, true, NULL);
+	int ret = websocket_init(&ws, NULL, true, NULL, NULL, 0);
+	BOOST_CHECK_EQUAL(0, ret);
 	websocket_free(&ws);
 }
 
+#if 0
+BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
+{
+	F f;
+
+	std::string request(
+				"GET / HTTP/1.1" CRLF
+				"Connection: Upgrade" CRLF
+				"Upgrade: websocket" CRLF
+				"Sec-WebSocket-Protocol: jet, chat" CRLF
+				"Sec-WebSocket-Version: 13" CRLF
+				"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
+	std::vector<char> data(request.begin(), request.end());
+
+	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
+
+	struct websocket ws;
+	websocket_init(&ws, connection, true, ws_on_error);
+	connection->parser.data = &ws;
+
+	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
+	websocket_free(&ws);
+	if (ret == BS_OK) {
+		BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
+		BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
+		BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
+		BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
+		BOOST_CHECK_MESSAGE(response_parse_error == false, "Invalid upgrade response!");
+		BOOST_CHECK_MESSAGE(f.got_upgrade_response == true, "Upgrade header field missing!");
+		BOOST_CHECK_MESSAGE(f.got_connection_upgrade == true, "Connection header field missing!");
+		BOOST_CHECK_MESSAGE(::memcmp(f.websocket_accept_key, "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=", sizeof(f.websocket_accept_key)) == 0, "Got illegal websocket accept key!");
+		BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent!");
+	}
+}
+#endif
 BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 {
 	struct entry {
@@ -340,7 +378,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error);
+		websocket_init(&ws, connection, true, ws_on_error, NULL, 0);
 		connection->parser.data = &ws;
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -389,7 +427,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error);
+		websocket_init(&ws, connection, true, ws_on_error, NULL, 0);
 		connection->parser.data = &ws;
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -430,7 +468,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
-		websocket_init(&ws, connection, true, ws_on_error);
+		websocket_init(&ws, connection, true, ws_on_error, NULL, 0);
 		connection->parser.data = &ws;
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
@@ -457,7 +495,7 @@ BOOST_AUTO_TEST_CASE(test_http_close_while_reading)
 	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 	struct websocket ws;
-	websocket_init(&ws, connection, true, ws_on_error);
+	websocket_init(&ws, connection, true, ws_on_error, NULL, 0);
 	connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());

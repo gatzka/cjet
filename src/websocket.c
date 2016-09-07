@@ -515,19 +515,21 @@ int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t stat
 	return send_frame(s, mask, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
 }
 
-void websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s))
+int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocols[], unsigned int number_of_sub_protocols)
 {
-	ws->bs = NULL;
+	memset(ws, 0, sizeof(*ws));
 	ws->on_error = on_error;
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
-	ws->text_message_received = NULL;
-	ws->text_frame_received = NULL;
-	ws->binary_message_received = NULL;
-	ws->binary_frame_received = NULL;
-	ws->pong_received = NULL;
-	ws->close_received = NULL;
 	ws->is_server = is_server;
+
+	if (number_of_sub_protocols > ARRAY_SIZE(ws->sub_protocols)) {
+		return -1;
+	}
+	for (unsigned int i = 0; i < number_of_sub_protocols; i++) {
+		ws->sub_protocols[i] = sub_protocols[i];
+	}
+	return 0;
 }
 
 void websocket_free(struct websocket *ws)
