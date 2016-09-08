@@ -150,6 +150,7 @@ struct F {
 		close_called = false;
 		create_called = false;
 
+		loop.this_ptr = NULL;
 		loop.init = NULL;
 		loop.destroy = NULL;
 		loop.run = NULL;
@@ -190,7 +191,6 @@ BOOST_FIXTURE_TEST_CASE(test_websocket_alloc, F)
 {
 	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_WOULDBLOCK, false);
 	BOOST_CHECK_MESSAGE(connection != NULL, "Connection allocation failed!");
-	
 	free_connection(connection);
 }
 
