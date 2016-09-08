@@ -126,38 +126,67 @@ static int prepare_peer_socket(int fd)
 	return 0;
 }
 
-static void handle_new_jet_connection(struct io_event *ev, int fd)
+static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local_connection)
 {
 	if (unlikely(prepare_peer_socket(fd) < 0)) {
 		close(fd);
 		return;
 	}
 
-	struct socket_peer *peer = alloc_jet_peer(ev->loop, fd);
+	struct socket_peer *peer = alloc_jet_peer(ev->loop, fd, is_local_connection);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
 	}
 }
 
-static void handle_http(struct io_event *ev ,int fd)
+static void handle_http(struct io_event *ev ,int fd, bool is_local_connection)
 {
 	if (unlikely(prepare_peer_socket(fd) < 0)) {
 		close(fd);
 		return;
 	}
 	struct http_server *server = container_of(ev, struct http_server, ev);
-	struct http_connection *connection = alloc_http_connection(server, ev->loop, fd);
+	struct http_connection *connection = alloc_http_connection(server, ev->loop, fd, is_local_connection);
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
 		close(fd);
 	}
 }
 
-static enum eventloop_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd))
+static bool is_localhost(const struct sockaddr_storage *addr)
+{
+	if (addr->ss_family == AF_INET) {
+		static const uint8_t ipv4_localhost_bytes[] =
+			{0x7f, 0, 0, 1 };
+		const struct sockaddr_in *s = (const struct sockaddr_in *)addr;
+		if (memcmp(ipv4_localhost_bytes, &s->sin_addr.s_addr, sizeof(ipv4_localhost_bytes)) == 0) {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		static const uint8_t mapped_ipv4_localhost_bytes[] =
+			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1 };
+		static const uint8_t localhost_bytes[] =
+			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+
+		const struct sockaddr_in6 *s = (const struct sockaddr_in6 *)addr;
+		if ((memcmp(mapped_ipv4_localhost_bytes, s->sin6_addr.s6_addr, sizeof(mapped_ipv4_localhost_bytes)) == 0) ||
+		    (memcmp(localhost_bytes, s->sin6_addr.s6_addr, sizeof(localhost_bytes)) == 0)) {
+			return true;
+		} else {
+			return false;
+		}
+	}
+}
+
+static enum eventloop_return accept_common(struct io_event *ev, void (*peer_function)(struct io_event *ev, int fd, bool is_local_connection))
 {
 	while (1) {
-		int peer_fd = accept(ev->sock, NULL, NULL);
+		struct sockaddr_storage addr;
+		socklen_t addrlen = sizeof(addr);
+		int peer_fd = accept(ev->sock, (struct sockaddr *)&addr, &addrlen);
 		if (peer_fd == -1) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return EL_CONTINUE_LOOP;
@@ -166,7 +195,8 @@ static enum eventloop_return accept_common(struct io_event *ev, void (*peer_func
 			}
 		} else {
 			if (likely(peer_function != NULL)) {
-				peer_function(ev, peer_fd);
+				bool is_local = is_localhost(&addr);
+				peer_function(ev, peer_fd, is_local);
 			} else {
 				close(peer_fd);
 			}

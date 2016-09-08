@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
 	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 	struct websocket ws;
@@ -383,7 +383,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		request.append(CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 		
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 		request.append(CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
@@ -473,7 +473,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 		request.append(" / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 		
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE);
+		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
 		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 		struct websocket ws;
@@ -500,7 +500,7 @@ BOOST_AUTO_TEST_CASE(test_http_close_while_reading)
 	request.append("GET / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CLOSE_WHILE_READING);
+	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CLOSE_WHILE_READING, false);
 	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
 
 	struct websocket ws;

@@ -109,11 +109,11 @@ struct F {
 	F()
 	{
 		state_hashtable_create();
-		init_peer(&p);
+		init_peer(&p, false);
 		p.send_message = send_message;
-		init_peer(&owner_peer);
+		init_peer(&owner_peer, false);
 		owner_peer.send_message = send_message;
-		init_peer(&set_peer);
+		init_peer(&set_peer, false);
 		set_peer.send_message = send_message;
 	}
 	~F()

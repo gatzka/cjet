@@ -27,6 +27,7 @@
 #ifndef CJET_PEER_H
 #define CJET_PEER_H
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -50,9 +51,10 @@ struct peer {
 	char *name;
 	int (*send_message)(struct peer *p, const char *rendered, size_t len);
 	void (*close)(struct peer *p);
+	bool is_local_connection;
 };
 
-int init_peer(struct peer *p);
+int init_peer(struct peer *p, bool is_local_connection);
 void free_peer_resources(struct peer *p);
 struct list_head *get_peer_list(void);
 void set_peer_name(struct peer *peer, const char *name);

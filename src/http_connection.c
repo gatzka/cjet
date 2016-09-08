@@ -143,8 +143,9 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 	return BS_OK;
 }
 
-static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, int fd)
+static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection)
 {
+	connection->is_local_connection = is_local_connection;
 	connection->status_code = 0;
 	connection->server = server;
 	http_parser_settings_init(&connection->parser_settings);
@@ -155,7 +156,7 @@ static int init_http_connection(struct http_connection *connection, struct http_
 	return buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd)
+struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {
@@ -166,7 +167,7 @@ struct http_connection *alloc_http_connection(struct http_server *server, struct
 		free(connection);
 		return NULL;
 	}
-	int ret = init_http_connection(connection, server, loop, fd);
+	int ret = init_http_connection(connection, server, loop, fd, is_local_connection);
 	if (ret == 0) {
 		return connection;
 	} else {
