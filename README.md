@@ -44,7 +44,7 @@ qbs has the ability to make parallel builds for multiple profiles. So
 if you want to build with clang, gcc, arm-gcc, ppc-gcc (these are the names
 of your qbs profiles), just run:
 ```
-qbs -f <path/to/cjet-sources>/src/cjet.qbs debug profile:gcc release profile:gcc debug profile:clang release profile:clang debug profile:arm-gcc release profile:arm-gcc debug profile:ppc-gcc release profile:ppc-gcc
+qbs -f <path/to/cjet-sources>/src/cjet.qbs debug-clang profile:clang qbs.buildVariant:debug release-clang profile:clang qbs.buildVariant:release debug-gcc profile:gcc qbs.buildVariant:debug release-gcc profile:gcc qbs.buildVariant:release
 ```
 
 You can also configure cjet at compile time via qbs. You will find the
