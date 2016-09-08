@@ -30,6 +30,7 @@
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
+#include "compiler.h"
 #include "socket.h"
 
 ssize_t socket_read(socket_type sock, void *buf, size_t count)
@@ -40,6 +41,10 @@ ssize_t socket_read(socket_type sock, void *buf, size_t count)
 ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
 	struct iovec iov[count];
+
+	if (unlikely(count == 0)) {
+		return 0;
+	}
 
 /*
  * This pragma is used because iov_base is not declared const.
