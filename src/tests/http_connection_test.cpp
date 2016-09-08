@@ -174,6 +174,12 @@ struct F {
 
 		http_server.handler = handler;
 		http_server.num_handlers = ARRAY_SIZE(handler);
+
+		http_server.ev.read_function = NULL;
+		http_server.ev.write_function = NULL;
+		http_server.ev.error_function = NULL;
+		http_server.ev.loop = NULL;
+		http_server.ev.sock = 0;
 	}
 
 	~F()
