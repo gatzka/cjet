@@ -187,6 +187,14 @@ static int process_call(const cJSON *json_rpc, struct peer *p)
 
 static int process_add(const cJSON *json_rpc, struct peer *p)
 {
+	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
+		if (!p->is_local_connection) {
+			cJSON *error =
+				create_invalid_request_error(p, "reason", "add only allowed from localhost");
+			return possibly_send_response(json_rpc, error, p);
+		}
+	}
+
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error =
