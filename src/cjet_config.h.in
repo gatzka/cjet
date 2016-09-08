@@ -27,6 +27,8 @@
 #ifndef CJET_CONFIG_H
 #define CJET_CONFIG_H
 
+#include <stdbool.h>
+
 enum {CONFIG_JET_PORT = ${CONFIG_JET_PORT}};
 enum {CONFIG_JETWS_PORT = ${CONFIG_JETWS_PORT}};
 enum {CONFIG_LISTEN_BACKLOG = ${CONFIG_LISTEN_BACKLOG}};
@@ -63,5 +65,10 @@ static const double CONFIG_ROUTED_MESSAGES_TIMEOUT = ${CONFIG_ROUTED_MESSAGES_TI
  * This parameter configures how many matchers are allowed in a single fetch expression.
  */
 enum {CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH = ${CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH}};
+
+/*
+ * This parameter configures if "add" of states or methods is only allowed from localhost peers.
+ */
+static const bool CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST = ${CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST};
 
 #endif

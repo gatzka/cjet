@@ -38,6 +38,8 @@ Module {
   property string routingTableOrder
   property string initialFetchTableSize
   property string routedMessagesTimeout
+  property string maxMatchersInFetch
+  property string addOnlyFromLocalhost
 
   Rule {
     id: config_generator
@@ -67,6 +69,7 @@ Module {
         content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, product.moduleProperty("generateCjetConfig", "initialFetchTableSize") || "4");
         content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, product.moduleProperty("generateCjetConfig", "routedMessagesTimeout") || "5.0");
         content = content.replace(/\${CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH}/g, product.moduleProperty("generateCjetConfig", "maxMatchersInFetch") || "12");
+        content = content.replace(/\${CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST}/g, product.moduleProperty("generateCjetConfig", "addOnlyFromLocalhost") || false);
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
