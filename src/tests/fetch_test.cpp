@@ -244,7 +244,7 @@ int send_message(struct peer *p, const char *rendered, size_t len)
 struct peer *alloc_peer()
 {
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));
-	init_peer(p);
+	init_peer(p, false);
 	p->send_message = send_message;
 	return p;
 }

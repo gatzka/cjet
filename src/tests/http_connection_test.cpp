@@ -188,7 +188,7 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE(test_websocket_alloc, F)
 {
-	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_WOULDBLOCK);
+	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_WOULDBLOCK, false);
 	BOOST_CHECK_MESSAGE(connection != NULL, "Connection allocation failed!");
 	
 	free_connection(connection);
@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(test_websocket_alloc, F)
 
 BOOST_FIXTURE_TEST_CASE(test_buffered_socket_migration, F)
 {
-	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_WOULDBLOCK);
+	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_WOULDBLOCK, false);
 	BOOST_CHECK(connection != NULL);
 
 	struct buffered_socket *bs = connection->bs;
@@ -213,7 +213,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_invalid_startline, F)
 	readbuffer = "aaaa\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection == NULL);
 }
 
@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_close, F)
 	readbuffer = "aaaa\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_CLOSE);
+	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_CLOSE, false);
 	BOOST_CHECK(connection == NULL);
 }
 
@@ -231,7 +231,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_error, F)
 	readbuffer = "aaaa\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_ERROR);
+	struct http_connection *connection = alloc_http_connection(NULL, &loop, FD_ERROR, false);
 	BOOST_CHECK(connection == NULL);
 }
 
@@ -240,7 +240,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match, F)
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection != NULL);
 
 	free_connection(connection);
@@ -252,7 +252,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match_create_called, F)
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection != NULL);
 	BOOST_CHECK_MESSAGE(create_called, "Create callback was not called!");
 
@@ -266,7 +266,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_no_match, F)
 	readbuffer = "GET /infotext.html HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection == NULL);
 	
 	size_t nparsed = http_parser_execute(&parser, &parser_settings, write_buffer, write_buffer_written);
@@ -281,7 +281,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_invalid_url, F)
 	readbuffer = "GET http://ww%.google.de/ HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection == NULL);
 
 	size_t nparsed = http_parser_execute(&parser, &parser_settings, write_buffer, write_buffer_written);
@@ -294,7 +294,7 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_connect_request_url_match, F)
 	readbuffer = "CONNECT www.example.com:443 HTTP/1.1\r\n";
 	readbuffer_ptr = readbuffer;
 	readbuffer_length = ::strlen(readbuffer);
-	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE);
+	struct http_connection *connection = alloc_http_connection(&http_server, &loop, FD_COMPLETE_STARTLINE, false);
 	BOOST_CHECK(connection == NULL);
 
 	size_t nparsed = http_parser_execute(&parser, &parser_settings, write_buffer, write_buffer_written);

@@ -122,11 +122,11 @@ static void close_websocket_peer(struct peer *p)
 	free_websocket_peer(ws_peer);
 }
 
-static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection)
+static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection, bool is_local_connection)
 {
 	static const char *sub_protocol = "jet";
 
-	init_peer(&ws_peer->peer);
+	init_peer(&ws_peer->peer, is_local_connection);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
@@ -150,5 +150,5 @@ int alloc_websocket_peer(struct http_connection *connection)
 	}
 
 	connection->parser.data = &ws_peer->websocket;
-	return init_websocket_peer(ws_peer, connection);
+	return init_websocket_peer(ws_peer, connection, connection->is_local_connection);
 }

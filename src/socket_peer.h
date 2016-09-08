@@ -27,6 +27,8 @@
 #ifndef CJET_SOCKET_PEER_H
 #define CJET_SOCKET_PEER_H
 
+#include <stdbool.h>
+
 #include "buffered_socket.h"
 #include "eventloop.h"
 #include "peer.h"
@@ -36,6 +38,6 @@ struct socket_peer {
 	struct buffered_socket bs;
 };
 
-struct socket_peer *alloc_jet_peer(struct eventloop *loop, int fd);
+struct socket_peer *alloc_jet_peer(struct eventloop *loop, int fd, bool is_local_connection);
 
 #endif

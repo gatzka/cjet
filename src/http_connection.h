@@ -27,6 +27,8 @@
 #ifndef CJET_HTTP_CONNECTION_H
 #define CJET_HTTP_CONNECTION_H
 
+#include <stdbool.h>
+
 #include "buffered_socket.h"
 #include "eventloop.h"
 #include "http_server.h"
@@ -41,9 +43,10 @@ struct http_connection {
 	http_parser_settings parser_settings;
 	struct http_server *server;
 	unsigned int status_code;
+	bool is_local_connection;
 };
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd);
+struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection);
 void free_connection(struct http_connection *connection);
 int send_http_error_response(struct http_connection *connection);
 

@@ -51,7 +51,7 @@ extern "C" {
 	struct peer *alloc_peer()
 	{
 		struct peer *p = (struct peer *)::malloc(sizeof(*p));
-		init_peer(p);
+		init_peer(p, false);
 		return p;
 	}
 
