@@ -400,10 +400,6 @@ static int check_websocket_version(const char *at, size_t length)
 
 static void fill_requested_sub_protocol(struct websocket *s, const char *name, size_t length)
 {
-	if (s->sub_protocol.name == NULL) {
-		return;
-	}
-
 	size_t name_length = strlen(s->sub_protocol.name);
 	if (name_length == length) {
 		if (memcmp(s->sub_protocol.name, name, length) == 0) {
