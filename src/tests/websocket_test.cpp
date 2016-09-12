@@ -42,6 +42,8 @@
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+static const size_t websocket_accept_key_length = 28;
+
 enum fds {
 	FD_CORRECT_UPGRADE,
 	FD_CLOSE_WHILE_READING,
@@ -242,7 +244,7 @@ struct F {
 			break;
 
 		case HEADER_ACCEPT: {
-			size_t len = std::min(length, sizeof(websocket_accept_key));
+			size_t len = std::min(length, websocket_accept_key_length);
 			memcpy(f->websocket_accept_key, at, len);
 			break;
 		}
@@ -265,7 +267,7 @@ struct F {
 	bool got_upgrade_response;
 	bool got_connection_upgrade;
 	enum response_on_header_field current_header_field;
-	uint8_t websocket_accept_key[28];
+	uint8_t websocket_accept_key[websocket_accept_key_length];
 };
 
 static const uint8_t WS_HEADER_FIN = 0x80;
