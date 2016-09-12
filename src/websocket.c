@@ -118,8 +118,6 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 	return WS_OK;
 }
 
-static enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len);
-
 static enum bs_read_callback_return ws_get_payload(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
@@ -239,7 +237,7 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
+enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
