@@ -264,3 +264,22 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(WEBSOCKET_FRAME_TEST
+    ../base64.c
+    ../buffered_socket.c
+    ../http-parser/http_parser.c
+    ../http_connection.c
+    ../http_server.c
+    ../linux/jet_endian.c
+    ../sha1/sha1.c
+    ../tests/websocket_frame_test.cpp
+    ../tests/log.cpp
+    ../websocket.c
+)
+ADD_EXECUTABLE(websocket_frame_test.bin ${WEBSOCKET_FRAME_TEST})
+TARGET_LINK_LIBRARIES(
+	websocket_frame_test.bin
+	jet
+	${Boost_LIBRARIES}
+)
+
