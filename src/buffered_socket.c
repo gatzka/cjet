@@ -133,7 +133,8 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 	return 0;
 }
 
-static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct buffered_socket_io_vector *io_vec, unsigned int count, size_t iovec_written)
+static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct buffered_socket_io_vector *io_vec,
+                                      unsigned int count, size_t iovec_written)
 {
 	for (unsigned int i = 0; i < count; i++) {
 		if (iovec_written < io_vec[i].iov_len) {
@@ -288,7 +289,8 @@ void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *e
 	bs->error_context = error_context;
 }
 
-void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
+void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop,
+                          void (*error)(void *error_context), void *error_context)
 {
 	bs->ev.sock = sock;
 	bs->ev.error_function = error_function;
@@ -365,7 +367,9 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
-int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
+int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, 
+                                 enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
+                                 void *context)
 {
 	union buffered_socket_reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
@@ -393,7 +397,9 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, enum bs
 	}
 }
 
-int buffered_socket_read_until(struct buffered_socket *bs, const char *delim, enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context)
+int buffered_socket_read_until(struct buffered_socket *bs, const char *delim,
+                               enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
+                               void *context)
 {
 	union buffered_socket_reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);
