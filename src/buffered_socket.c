@@ -290,7 +290,7 @@ void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *e
 
 void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context)
 {
-	bs->ev.sock= sock;
+	bs->ev.sock = sock;
 	bs->ev.error_function = error_function;
 	bs->ev.read_function = read_function;
 	bs->ev.write_function = write_function;
