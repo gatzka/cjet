@@ -367,7 +367,7 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
-int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num, 
+int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num,
                                  enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
                                  void *context)
 {
