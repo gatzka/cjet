@@ -310,6 +310,20 @@ BOOST_AUTO_TEST_CASE(test_websocket_init)
 	websocket_free(&ws);
 }
 
+BOOST_AUTO_TEST_CASE(test_websocket_init_without_error_callback)
+{
+	struct websocket ws;
+	int ret = websocket_init(&ws, NULL, true, NULL, "soap");
+	BOOST_CHECK_MESSAGE(ret == -1, "Initializaton of websocket did not failed when called without error function!");
+}
+
+BOOST_AUTO_TEST_CASE(test_websocket_init_without_subprotocols)
+{
+	struct websocket ws;
+	int ret = websocket_init(&ws, NULL, true, ws_on_error, NULL);
+	BOOST_CHECK_MESSAGE(ret == -1, "Initializaton of websocket did not failed when called without supported sub-protocol!");
+}
+
 BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 {
 	F f;
