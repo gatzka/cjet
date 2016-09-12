@@ -32,6 +32,7 @@
 
 #include "eventloop.h"
 #include "generated/cjet_config.h"
+#include "generated/os_config.h"
 
 #ifdef __cplusplus
 extern "C" {
