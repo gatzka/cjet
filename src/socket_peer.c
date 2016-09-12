@@ -111,21 +111,21 @@ static int send_message(struct peer *p, const char *rendered, size_t len)
 	return buffered_socket_writev(&s_peer->bs, iov, ARRAY_SIZE(iov));
 }
 
-static void init_socket_peer(struct eventloop *loop, struct socket_peer *p, socket_type socket, bool is_local_connection)
+static void init_socket_peer(struct eventloop *loop, struct socket_peer *p, socket_type sock, bool is_local_connection)
 {
 	init_peer(&p->peer, is_local_connection);
 	p->peer.send_message = send_message;
 	p->peer.close = close_jet_peer;
-	buffered_socket_init(&p->bs, socket, loop, free_peer_on_error, p);
+	buffered_socket_init(&p->bs, sock, loop, free_peer_on_error, p);
 	buffered_socket_read_exactly(&p->bs, 4, read_msg_length, p);
 }
 
-struct socket_peer *alloc_jet_peer(struct eventloop *loop, socket_type socket, bool is_local_connection)
+struct socket_peer *alloc_jet_peer(struct eventloop *loop, socket_type sock, bool is_local_connection)
 {
 	struct socket_peer *p = malloc(sizeof(*p));
 	if (unlikely(p == NULL)) {
 		return NULL;
 	}
-	init_socket_peer(loop, p, socket, is_local_connection);
+	init_socket_peer(loop, p, sock, is_local_connection);
 	return p;
 }
