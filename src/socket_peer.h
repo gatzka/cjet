@@ -31,6 +31,7 @@
 
 #include "buffered_socket.h"
 #include "eventloop.h"
+#include "generated/os_config.h"
 #include "peer.h"
 
 struct socket_peer {
@@ -38,6 +39,6 @@ struct socket_peer {
 	struct buffered_socket bs;
 };
 
-struct socket_peer *alloc_jet_peer(struct eventloop *loop, int fd, bool is_local_connection);
+struct socket_peer *alloc_jet_peer(struct eventloop *loop, socket_type socket, bool is_local_connection);
 
 #endif

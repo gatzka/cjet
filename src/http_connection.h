@@ -46,7 +46,7 @@ struct http_connection {
 	bool is_local_connection;
 };
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection);
+struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection);
 void free_connection(struct http_connection *connection);
 int send_http_error_response(struct http_connection *connection);
 

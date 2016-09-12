@@ -34,10 +34,10 @@
 #include "buffered_socket.h"
 #include "compiler.h"
 #include "eventloop.h"
+#include "generated/os_config.h"
+#include "http-parser/http_parser.h"
 #include "http_connection.h"
 #include "http_server.h"
-#include "http-parser/http_parser.h"
-#include "eventloop.h"
 #include "log.h"
 #include "util.h"
 
@@ -143,7 +143,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 	return BS_OK;
 }
 
-static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection)
+static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection)
 {
 	connection->is_local_connection = is_local_connection;
 	connection->status_code = 0;
@@ -152,11 +152,11 @@ static int init_http_connection(struct http_connection *connection, struct http_
 	connection->parser_settings.on_url = on_url;
 
 	http_parser_init(&connection->parser, HTTP_REQUEST);
-	buffered_socket_init(connection->bs, fd, loop, free_connection_on_error, connection);
+	buffered_socket_init(connection->bs, socket, loop, free_connection_on_error, connection);
 	return buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, int fd, bool is_local_connection)
+struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection)
 {
 	struct http_connection *connection = malloc(sizeof(*connection));
 	if (unlikely(connection == NULL)) {
@@ -167,7 +167,7 @@ struct http_connection *alloc_http_connection(struct http_server *server, struct
 		free(connection);
 		return NULL;
 	}
-	int ret = init_http_connection(connection, server, loop, fd, is_local_connection);
+	int ret = init_http_connection(connection, server, loop, socket, is_local_connection);
 	if (ret == 0) {
 		return connection;
 	} else {

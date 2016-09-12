@@ -41,6 +41,7 @@
 #include "compiler.h"
 #include "jet_endian.h"
 #include "eventloop.h"
+#include "generated/os_config.h"
 #include "http_connection.h"
 #include "http_server.h"
 #include "jet_server.h"
@@ -133,21 +134,21 @@ static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local
 		return;
 	}
 
-	struct socket_peer *peer = alloc_jet_peer(ev->loop, fd, is_local_connection);
+	struct socket_peer *peer = alloc_jet_peer(ev->loop, (socket_type)fd, is_local_connection);
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
 		close(fd);
 	}
 }
 
-static void handle_http(struct io_event *ev ,int fd, bool is_local_connection)
+static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 {
 	if (unlikely(prepare_peer_socket(fd) < 0)) {
 		close(fd);
 		return;
 	}
 	struct http_server *server = container_of(ev, struct http_server, ev);
-	struct http_connection *connection = alloc_http_connection(server, ev->loop, fd, is_local_connection);
+	struct http_connection *connection = alloc_http_connection(server, ev->loop, (socket_type)fd, is_local_connection);
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
 		close(fd);
