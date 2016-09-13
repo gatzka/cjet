@@ -1,0 +1,22 @@
+Rework buffered_socket
+
+- Shouldn't be buffered_socket but buffered_reader operating on generic
+  io_channel
+- buffered_read_until and buffered_read_exactly should have exaclty the
+  same semantics if read_function was called from the event loop, so no
+  return value but calling of error callback routines.
+
+An io_channel should have:
+- a writev() and a read() function
+- a context for read() and writev() to operate on
+- maybe a read callback routine, a write callback routine and a error
+  callback routine that might be set from outside (see last paragraph).
+
+Clarify ALL return values of all buffered_reader functions (internal and
+external)
+
+
+What about connecting only io_channels with the eventloop wo that the
+whole buffered_reader stuff does not need to know anything about the
+event_loop?
+
