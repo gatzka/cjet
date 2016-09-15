@@ -32,11 +32,15 @@
 #include "buffered_socket.h"
 
 typedef enum bs_read_callback_return (*read_handler)(void *context, char *buf, size_t len);
+typedef void (*error_handler)(void *error_context);
 
 struct buffered_reader {
 	void *this_ptr;
 	int (*read_exactly)(void *this_ptr, size_t num, read_handler handler, void *handler_context);
-	int (*read_until)(void *this_ptr, const char *delim, size_t num, read_handler handler, void *handler_context);
+	int (*read_until)(void *this_ptr, const char *delim, read_handler handler, void *handler_context);
+	int (*writev)(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
+	int (*close)(void *this_ptr);
+	void(*set_error_handler)(void *this_ptr, error_handler hanlder, void *error_context);
 };
 
 #endif

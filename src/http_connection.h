@@ -29,8 +29,7 @@
 
 #include <stdbool.h>
 
-#include "buffered_socket.h"
-#include "eventloop.h"
+#include "buffered_reader.h"
 #include "http_server.h"
 
 #ifdef __cplusplus
@@ -38,7 +37,7 @@ extern "C" {
 #endif
 
 struct http_connection {
-	struct buffered_socket *bs;
+	struct buffered_reader br;
 	http_parser parser;
 	http_parser_settings parser_settings;
 	struct http_server *server;
@@ -46,8 +45,9 @@ struct http_connection {
 	bool is_local_connection;
 };
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection);
-void free_connection(struct http_connection *connection);
+struct http_connection *alloc_http_connection(void);
+int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
+void free_connection(void *context);
 int send_http_error_response(struct http_connection *connection);
 
 #define HTTP_OK 200

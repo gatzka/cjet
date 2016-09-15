@@ -30,7 +30,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "buffered_socket.h"
 #include "http_connection.h"
 #include "http-parser/http_parser.h"
 
@@ -56,8 +55,8 @@ enum websocket_callback_return {
 
 struct websocket {
 	struct http_connection *connection;
-	struct buffered_socket *bs;
 	bool is_server;
+	bool upgrade_complete;
 
 	uint8_t sec_web_socket_key[SEC_WEB_SOCKET_KEY_LENGTH + SEC_WEB_SOCKET_GUID_LENGTH];
 	enum header_field current_header_field;

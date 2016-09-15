@@ -129,7 +129,10 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	init_peer(&ws_peer->peer, is_local_connection);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
-	buffered_socket_set_error(connection->bs, free_websocket_peer_on_error, ws_peer);
+
+	struct buffered_reader *br = &connection->br;
+	br->set_error_handler(br->this_ptr, free_websocket_peer_on_error, ws_peer);
+	
 	int ret = websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
 	if (ret < 0) {
 		return -1;
@@ -138,7 +141,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
-	buffered_socket_read_until(connection->bs, CRLF, websocket_read_header_line, &ws_peer->websocket);
+	br->read_until(br->this_ptr, CRLF, websocket_read_header_line, &ws_peer->websocket);
 	return 0;
 }
 

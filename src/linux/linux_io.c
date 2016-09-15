@@ -38,6 +38,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "buffered_reader.h"
 #include "compiler.h"
 #include "jet_endian.h"
 #include "eventloop.h"
@@ -134,11 +135,34 @@ static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local
 		return;
 	}
 
-	struct socket_peer *peer = alloc_jet_peer(ev->loop, (socket_type)fd, is_local_connection);
+	struct socket_peer *peer = alloc_jet_peer();
 	if (unlikely(peer == NULL)) {
 		log_err("Could not allocate jet peer!\n");
-		close(fd);
+		goto alloc_peer_failed;
 	}
+
+	struct buffered_socket *bs = malloc(sizeof(*bs));
+	if (unlikely(bs == NULL)) {
+		log_err("Could not allocate buffered_socket");
+		goto alloc_bs_failed;
+	}
+	buffered_socket_init(bs, (socket_type)fd, ev->loop, free_peer_on_error, peer);
+
+	struct buffered_reader br;
+	br.this_ptr = bs;
+	br.close = buffered_socket_close;
+	br.read_exactly = buffered_socket_read_exactly;
+	br.read_until = buffered_socket_read_until;
+	br.set_error_handler = buffered_socket_set_error;
+	br.writev = buffered_socket_writev;
+	
+	init_socket_peer(peer, &br, is_local_connection);
+	return;
+
+alloc_bs_failed:
+	free(peer);
+alloc_peer_failed:
+	close(fd);
 }
 
 static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
@@ -148,11 +172,40 @@ static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 		return;
 	}
 	struct http_server *server = container_of(ev, struct http_server, ev);
-	struct http_connection *connection = alloc_http_connection(server, ev->loop, (socket_type)fd, is_local_connection);
+	struct http_connection *connection = alloc_http_connection();
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
-		close(fd);
+		goto alloc_failed;
 	}
+
+	struct buffered_socket *bs = malloc(sizeof(*bs));
+	if (unlikely(bs == NULL)) {
+		log_err("Could not allocate buffered_socket");
+		goto alloc_bs_failed;
+	}
+	buffered_socket_init(bs, (socket_type)fd, ev->loop, free_connection, connection);
+
+	struct buffered_reader br;
+	br.this_ptr = bs;
+	br.close = buffered_socket_close;
+	br.read_exactly = buffered_socket_read_exactly;
+	br.read_until = buffered_socket_read_until;
+	br.set_error_handler = buffered_socket_set_error;
+	br.writev = buffered_socket_writev;
+
+	int ret = init_http_connection(connection, server, &br, is_local_connection);
+	if (unlikely(ret < 0)) {
+		log_err("Could not initialize http connection!\n");
+		goto init_failed;
+	}
+	return;
+
+init_failed:
+	free(bs);
+alloc_bs_failed:
+	free(connection);
+alloc_failed:
+	close(fd);
 }
 
 static bool is_localhost(const struct sockaddr_storage *addr)

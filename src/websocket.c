@@ -129,6 +129,8 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, siz
 		s->on_error(s);
 		return BS_CLOSED;
 	}
+
+	struct buffered_reader *br = &s->connection->br;
 	if (unlikely(s->is_server && (s->ws_flags.mask == 0))) {
 		s->on_error(s);
 		return BS_CLOSED;
@@ -137,7 +139,7 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, siz
 		enum websocket_callback_return ret = ws_handle_frame(s, buf, len);
 		switch (ret) {
 		case WS_OK:
-			buffered_socket_read_exactly(s->bs, 1, ws_get_header, s);
+			br->read_exactly(br->this_ptr, 1, ws_get_header, s);
 			return BS_OK;
 
 		case WS_CLOSED:
@@ -162,16 +164,18 @@ static enum bs_read_callback_return ws_get_mask(void *context, char *buf, size_t
 	}
 
 	memcpy(s->mask, buf, sizeof(s->mask));
-	buffered_socket_read_exactly(s->bs, s->length, ws_get_payload, s);
+	struct buffered_reader *br = &s->connection->br;
+	br->read_exactly(br->this_ptr, s->length, ws_get_payload, s);
 	return BS_OK;
 }
 
 static void read_mask_or_payload(struct websocket *s)
 {
+	struct buffered_reader *br = &s->connection->br;
 	if (s->ws_flags.mask == 1) {
-		buffered_socket_read_exactly(s->bs, sizeof(s->mask), ws_get_mask, s);
+		br->read_exactly(br->this_ptr, sizeof(s->mask), ws_get_mask, s);
 	} else {
-		buffered_socket_read_exactly(s->bs, s->length, ws_get_payload, s);
+		br->read_exactly(br->this_ptr, s->length, ws_get_payload, s);
 	}
 }
 
@@ -225,14 +229,16 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 	} else {
 		s->ws_flags.mask = 0;
 	}
+
+	struct buffered_reader *br = &s->connection->br;
 	field = field & ~WS_MASK_SET;
 	if (field < 126) {
 		s->length = field;
 		read_mask_or_payload(s);
 	} else if (field == 126) {
-		buffered_socket_read_exactly(s->bs, 2, ws_get_length16, s);
+		br->read_exactly(br->this_ptr, 2, ws_get_length16, s);
 	} else {
-		buffered_socket_read_exactly(s->bs, 8, ws_get_length64, s);
+		br->read_exactly(br->this_ptr, 8, ws_get_length64, s);
 	}
 	return BS_OK;
 }
@@ -257,7 +263,8 @@ enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
 	static const uint8_t OPCODE_MASK = 0x0f;
 	field = field & OPCODE_MASK;
 	s->ws_flags.opcode = field;
-	buffered_socket_read_exactly(s->bs, 1, ws_get_first_length, s);
+	struct buffered_reader *br = &s->connection->br;
+	br->read_exactly(br->this_ptr, 1, ws_get_first_length, s);
 	return BS_OK;
 }
 
@@ -277,19 +284,16 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 		s->on_error(s);
 		return BS_CLOSED;
 	}
+
+	struct buffered_reader *br = &s->connection->br;
+
 	if (s->connection->parser.upgrade) {
-		/*
-		 * Transfer ownership of buffered socket to websocket peer.
-		 */
-		s->bs = s->connection->bs;
-		s->connection->bs = NULL;
-		free_connection(s->connection);
-		s->connection = NULL;
-		buffered_socket_read_exactly(s->bs, 1, ws_get_header, s);
+		s->upgrade_complete = true;
+		br->read_exactly(br->this_ptr, 1, ws_get_header, s);
 		return BS_OK;
 	}
 
-	buffered_socket_read_until(s->connection->bs, CRLF, websocket_read_header_line, s);
+	br->read_until(br->this_ptr, CRLF, websocket_read_header_line, s);
 	return BS_OK;
 }
 
@@ -344,7 +348,9 @@ static int send_upgrade_response(struct http_connection *connection)
 	iov[3].iov_len = strlen(s->sub_protocol.name);
 	iov[4].iov_base = switch_response_end;
 	iov[4].iov_len = sizeof(switch_response_end) - 1;
-	return buffered_socket_writev(connection->bs, iov, ARRAY_SIZE(iov));
+
+	struct buffered_reader *br = &connection->br;
+	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length)
@@ -521,7 +527,9 @@ static int send_frame(struct websocket *s, uint32_t mask, const char *payload, s
 	iov[0].iov_len = header_index;
 	iov[1].iov_base = payload;
 	iov[1].iov_len = length;
-	return buffered_socket_writev(s->bs, iov, ARRAY_SIZE(iov));
+
+	struct buffered_reader *br = &s->connection->br;
+	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
 int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
@@ -569,6 +577,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	ws->connection = connection;
 	ws->current_header_field = HEADER_UNKNOWN;
 	ws->is_server = is_server;
+	ws->upgrade_complete = false;
 
 	ws->sub_protocol.name = sub_protocol;
 	return 0;
@@ -576,12 +585,9 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 
 void websocket_free(struct websocket *ws)
 {
-	if (ws->connection != NULL) {
-		free_connection(ws->connection);
-	}
-	if (ws->bs != NULL) {
+	if (ws->upgrade_complete) {
 		websocket_sent_close_frame(ws, 0, 1001, NULL, 0);
-		buffered_socket_close(ws->bs);
-		free(ws->bs);
 	}
+
+	free_connection(ws->connection);
 }

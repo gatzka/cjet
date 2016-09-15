@@ -31,10 +31,8 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "buffered_socket.h"
+#include "buffered_reader.h"
 #include "compiler.h"
-#include "eventloop.h"
-#include "generated/os_config.h"
 #include "http-parser/http_parser.h"
 #include "http_connection.h"
 #include "http_server.h"
@@ -46,7 +44,7 @@
 static int on_url(http_parser *parser, const char *at, size_t length)
 {
 	struct http_connection *connection = container_of(parser, struct http_connection, parser);
-	
+
 	int is_connect;
 	if (unlikely(parser->method == HTTP_CONNECT)) {
 		is_connect = 1;
@@ -97,19 +95,14 @@ static const char *get_response(unsigned int status_code)
 	}
 }
 
-void free_connection(struct http_connection *connection)
-{
-	if (connection->bs) {
-		buffered_socket_close(connection->bs);
-		free(connection->bs);
-	}
-	free(connection);
-}
-
-static void free_connection_on_error(void *context)
+void free_connection(void *context)
 {
 	struct http_connection *connection = (struct http_connection *)context;
-	free_connection(connection);
+
+	struct buffered_reader *br = &connection->br;
+	br->close(br->this_ptr);
+
+	free(connection);
 }
 
 int send_http_error_response(struct http_connection *connection)
@@ -118,7 +111,9 @@ int send_http_error_response(struct http_connection *connection)
 	struct buffered_socket_io_vector iov;
 	iov.iov_base = response;
 	iov.iov_len = strlen(response);
-	return buffered_socket_writev(connection->bs, &iov, 1);
+
+	struct buffered_reader *br = &connection->br;
+	return br->writev(br->this_ptr, &iov, 1);
 }
 
 static enum bs_read_callback_return read_start_line(void *context, char *buf, size_t len)
@@ -143,7 +138,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 	return BS_OK;
 }
 
-static int init_http_connection(struct http_connection *connection, struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection)
+int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection)
 {
 	connection->is_local_connection = is_local_connection;
 	connection->status_code = 0;
@@ -152,25 +147,19 @@ static int init_http_connection(struct http_connection *connection, struct http_
 	connection->parser_settings.on_url = on_url;
 
 	http_parser_init(&connection->parser, HTTP_REQUEST);
-	buffered_socket_init(connection->bs, socket, loop, free_connection_on_error, connection);
-	return buffered_socket_read_until(connection->bs, CRLF, read_start_line, connection);
+
+	struct buffered_reader *br = &connection->br;
+	br->this_ptr = reader->this_ptr;
+	br->close = reader->close;
+	br->read_exactly = reader->read_exactly;
+	br->read_until = reader->read_until;
+	br->writev = reader->writev;
+	br->set_error_handler = reader->set_error_handler;
+
+	return br->read_until(br->this_ptr, CRLF, read_start_line, connection);
 }
 
-struct http_connection *alloc_http_connection(struct http_server *server, struct eventloop *loop, socket_type socket, bool is_local_connection)
+struct http_connection *alloc_http_connection(void)
 {
-	struct http_connection *connection = malloc(sizeof(*connection));
-	if (unlikely(connection == NULL)) {
-		return NULL;
-	}
-	connection->bs = malloc(sizeof(*(connection->bs)));
-	if (unlikely(connection->bs == NULL)) {
-		free(connection);
-		return NULL;
-	}
-	int ret = init_http_connection(connection, server, loop, socket, is_local_connection);
-	if (ret == 0) {
-		return connection;
-	} else {
-		return NULL;
-	}
+	return malloc(sizeof(struct http_connection));
 }

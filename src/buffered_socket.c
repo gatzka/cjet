@@ -26,6 +26,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "buffered_socket.h"
@@ -283,8 +284,9 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_so
 	}
 }
 
-void buffered_socket_set_error(struct buffered_socket *bs, void (*error)(void *error_context), void *error_context)
+void buffered_socket_set_error(void *this_ptr, void (*error)(void *error_context), void *error_context)
 {
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
 	bs->error = error;
 	bs->error_context = error_context;
 }
@@ -307,14 +309,18 @@ void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct e
 	bs->error_context = error_context;
 }
 
-int buffered_socket_close(struct buffered_socket *bs)
+int buffered_socket_close(void *context)
 {
+	struct buffered_socket *bs = (struct buffered_socket *)context;
 	bs->ev.loop->remove(&bs->ev.loop->this_ptr, &bs->ev);
-	return socket_close(bs->ev.sock);
+	int ret = socket_close(bs->ev.sock);
+	free(bs);
+	return ret;
 }
 
-int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io_vector *io_vec, unsigned int count)
+int buffered_socket_writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
 	struct buffered_socket_io_vector iov[count + 1];
 	size_t to_write = bs->to_write;
 	iov[0].iov_base = bs->write_buffer;
@@ -367,16 +373,17 @@ int buffered_socket_writev(struct buffered_socket *bs, struct buffered_socket_io
 	return send_buffer(bs);
 }
 
-int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num,
+int buffered_socket_read_exactly(void *this_ptr, size_t num,
                                  enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
-                                 void *context)
+                                 void *callback_context)
 {
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
 	union buffered_socket_reader_context ctx = { .num = num };
 	bool first_run =  (bs->reader == NULL);
 	bs->reader = get_read_ptr;
 	bs->reader_context = ctx;
 	bs->read_callback = read_callback;
-	bs->read_callback_context = context;
+	bs->read_callback_context = callback_context;
 
 	if (likely(!first_run)) {
 		return 0;
@@ -397,16 +404,17 @@ int buffered_socket_read_exactly(struct buffered_socket *bs, size_t num,
 	}
 }
 
-int buffered_socket_read_until(struct buffered_socket *bs, const char *delim,
+int buffered_socket_read_until(void *this_ptr, const char *delim,
                                enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
-                               void *context)
+                               void *callback_context)
 {
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
 	union buffered_socket_reader_context ctx = { .ptr = delim };
 	bool first_run =  (bs->reader == NULL);
 	bs->reader = internal_read_until;
 	bs->reader_context = ctx;
 	bs->read_callback = read_callback;
-	bs->read_callback_context = context;
+	bs->read_callback_context = callback_context;
 
 	if (likely(!first_run)) {
 		return 0;
