@@ -29,194 +29,194 @@ import qbs 1.0
 Project {
     name: "cjet_unit_tests"
     minimumQbsVersion: "1.6.0"
-  
+
     qbsSearchPaths: "../qbs/"
     references: "../qbs/unittestSettings.qbs"
-  
+
     property bool buildHttpParserTest: true
-  
+
     CppApplication {
         name: "info_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/info_test.cpp",
             "tests/log.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "response_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/response_test.cpp",
             "tests/log.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "router_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/router_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "string_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/string_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "config_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/config_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "peer_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/peer_test.cpp",
             "tests/log.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "parse_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/parse_test.cpp",
             "tests/log.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "state_test"
         type: ["application", "unittest"]
         consoleApplication: true
   
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/state_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "method_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/method_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "combined_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/combined_test.cpp",
         ] 
     }
-  
+
     CppApplication {
         name: "fetch_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
-  
+
         files: [
             "tests/log.cpp",
             "tests/fetch_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "base64_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "base64.c",
             "tests/base64_test.cpp",
         ]
     }
-  
+
     CppApplication {
         name: "buffered_socket_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "buffered_socket.c",
             "tests/buffered_socket_test.cpp",
             "tests/log.cpp"
         ]
     }
-    
+
     CppApplication {
         name: "http_connection_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "http-parser/http_parser.c",
             "http_connection.c",
@@ -224,16 +224,16 @@ Project {
             "tests/http_connection_test.cpp",
         ]
     }
-    
+
     CppApplication {
         name: "websocket_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "base64.c",
             "buffered_socket.c",
@@ -247,16 +247,16 @@ Project {
             "websocket.c",
         ]
     }
-  
+
     CppApplication {
         name: "websocket_frame_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "base64.c",
             "buffered_socket.c",
@@ -270,18 +270,18 @@ Project {
             "websocket.c",
         ]
     }
-  
+
     CppApplication {
         name: "http_parse_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         condition: buildHttpParserTest
   
         Depends {
           name: "unittestSettings"
         }
-  
+
         files: [
             "http-parser/http_parser.c",
             "http-parser/test.c",
