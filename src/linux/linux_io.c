@@ -178,7 +178,7 @@ static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 		goto alloc_failed;
 	}
 
-	struct buffered_socket *bs = malloc(sizeof(*bs));
+	struct buffered_socket *bs = (struct buffered_socket *)malloc(sizeof(*bs));
 	if (unlikely(bs == NULL)) {
 		log_err("Could not allocate buffered_socket");
 		goto alloc_bs_failed;
