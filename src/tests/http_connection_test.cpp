@@ -65,18 +65,23 @@ static int read_until(void *this_ptr, const char *delim,
                       enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
                       void *callback_context)
 {
+	(void)this_ptr;
+	(void)delim;
+	
 	read_callback(callback_context, readbuffer_ptr, readbuffer_length);
 	return 0;
 }
 
 static int close(void *context)
 {
+	(void)context;
 	close_called = true;
 	return 0;
 }
 
 static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
+	(void)this_ptr;
 	size_t complete_length = 0;
 	for (unsigned int i = 0; i < count; i++) {
 		memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
