@@ -236,7 +236,6 @@ Project {
 
         files: [
             "base64.c",
-            "buffered_socket.c",
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
@@ -259,7 +258,6 @@ Project {
 
         files: [
             "base64.c",
-            "buffered_socket.c",
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
