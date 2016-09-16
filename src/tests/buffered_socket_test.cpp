@@ -76,6 +76,12 @@ static size_t readbuffer_length;
 
 extern "C" {
 
+	void buffered_socket_release(void *this_ptr)
+	{
+		(void)this_ptr;
+		return;
+	}
+
 	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
 	{
 		switch (sock) {

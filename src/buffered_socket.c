@@ -26,7 +26,7 @@
 
 #include <errno.h>
 #include <stdbool.h>
-#include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 #include "buffered_socket.h"
@@ -314,7 +314,7 @@ int buffered_socket_close(void *context)
 	struct buffered_socket *bs = (struct buffered_socket *)context;
 	bs->ev.loop->remove(&bs->ev.loop->this_ptr, &bs->ev);
 	int ret = socket_close(bs->ev.sock);
-	free(bs);
+	buffered_socket_release(bs);
 	return ret;
 }
 

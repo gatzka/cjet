@@ -71,6 +71,9 @@ struct buffered_socket {
 	void *error_context;
 };
 
+struct buffered_socket *buffered_socket_acquire(void);
+void buffered_socket_release(void *this_ptr);
+
 void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(void *context);
 int buffered_socket_writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
