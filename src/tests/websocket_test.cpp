@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
 
+#include "buffered_socket.h"
 #include "jet_endian.h"
 #include "jet_string.h"
 #include "socket.h"
@@ -154,7 +155,7 @@ struct F {
 		HEADER_ACCEPT,
 	};
 
-	F()
+	F(int fd)
 	{
 		loop.init = NULL;
 		loop.destroy = NULL;
@@ -198,6 +199,18 @@ struct F {
 		current_header_field = HEADER_UNKNOWN;
 
 		read_called = 0;
+
+		connection = alloc_http_connection();
+		bs = buffered_socket_acquire();
+		buffered_socket_init(bs, fd, &loop, NULL, NULL);
+		br.this_ptr = bs;
+		br.close = buffered_socket_close;
+		br.read_exactly = buffered_socket_read_exactly;
+		br.read_until = buffered_socket_read_until;
+		br.set_error_handler = buffered_socket_set_error;
+		br.writev = buffered_socket_writev;
+		init_http_connection(connection, &http_server, &br,false);
+
 	}
 
 	~F()
@@ -268,6 +281,10 @@ struct F {
 	bool got_connection_upgrade;
 	enum response_on_header_field current_header_field;
 	uint8_t websocket_accept_key[websocket_accept_key_length];
+
+	struct http_connection *connection;
+	struct buffered_socket *bs;
+	struct buffered_reader br;
 };
 
 static const uint8_t WS_HEADER_FIN = 0x80;
@@ -306,8 +323,10 @@ static bool is_close_frame()
 
 BOOST_AUTO_TEST_CASE(test_websocket_init)
 {
+	F f(FD_CORRECT_UPGRADE);
+
 	struct websocket ws;
-	int ret = websocket_init(&ws, NULL, true, ws_on_error, "soap");
+	int ret = websocket_init(&ws, f.connection, true, ws_on_error, "soap");
 	BOOST_CHECK_MESSAGE(ret == 0, "Initializaton of websocket failed!");
 	websocket_free(&ws);
 }
@@ -328,7 +347,7 @@ BOOST_AUTO_TEST_CASE(test_websocket_init_without_subprotocols)
 
 BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 {
-	F f;
+	F f(FD_CORRECT_UPGRADE);
 
 	const char *sub_protocols[2] = {"jet", "chat"};
 
@@ -349,12 +368,9 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 	struct websocket ws;
-	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
-	connection->parser.data = &ws;
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
+	f.connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
@@ -374,7 +390,7 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_websocket_protocol)
 
 BOOST_AUTO_TEST_CASE(http_upgrade_with_illegal_websocket_key)
 {
-	F f;
+	F f(FD_CORRECT_UPGRADE);
 
 	const char *sub_protocols[2] = {"jet", "chat"};
 
@@ -395,12 +411,9 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_illegal_websocket_key)
 		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub2" CRLF CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 	struct websocket ws;
-	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
-	connection->parser.data = &ws;
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
+	f.connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when illegal WebSocketKey was provided!");
@@ -409,7 +422,7 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_illegal_websocket_key)
 
 BOOST_AUTO_TEST_CASE(http_upgrade_with_unsupported_websocket_protocol)
 {
-	F f;
+	F f(FD_CORRECT_UPGRADE);
 
 	const char *sub_protocols[2] = {"wamp", "chat"};
 
@@ -430,12 +443,9 @@ BOOST_AUTO_TEST_CASE(http_upgrade_with_unsupported_websocket_protocol)
 		"Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 	struct websocket ws;
-	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
-	connection->parser.data = &ws;
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
+	f.connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when websocket upgrade contains only unsupported sub protocols");
@@ -462,7 +472,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 	};
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
-		F f;
+		F f(FD_CORRECT_UPGRADE);
 
 		std::string request;
 		request.append("GET / ");
@@ -470,12 +480,9 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		request.append(CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 		struct websocket ws;
-		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "chat") == 0, "Websocket initialization failed!");
-		connection->parser.data = &ws;
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "chat") == 0, "Websocket initialization failed!");
+		f.connection->parser.data = &ws;
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
@@ -511,7 +518,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 	};
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
-		F f;
+		F f(FD_CORRECT_UPGRADE);
 
 		std::string request;
 		request.append("GET / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: ");
@@ -519,12 +526,9 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 		request.append(CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 		struct websocket ws;
-		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "soap") == 0, "Websocket initialization failed!");
-		connection->parser.data = &ws;
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "soap") == 0, "Websocket initialization failed!");
+		f.connection->parser.data = &ws;
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
@@ -553,19 +557,16 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 	};
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(table); ++i) {
-		F f;
+		F f(FD_CORRECT_UPGRADE);
 
 		std::string request;
 		request.append(table[i].method);
 		request.append(" / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==" CRLF CRLF);
 		std::vector<char> data(request.begin(), request.end());
 
-		struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CORRECT_UPGRADE, false);
-		BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 		struct websocket ws;
-		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "json") == 0, "Websocket initialization failed!");
-		connection->parser.data = &ws;
+		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "json") == 0, "Websocket initialization failed!");
+		f.connection->parser.data = &ws;
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
@@ -580,18 +581,15 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 
 BOOST_AUTO_TEST_CASE(test_http_close_while_reading)
 {
-	F f;
+	F f(FD_CLOSE_WHILE_READING);
 
 	std::string request;
 	request.append("GET / HTTP/1.1" CRLF "Connection: Upgrade" CRLF "Upgrade: websocket" CRLF "Sec-WebSocket-Version: 13" CRLF);
 	std::vector<char> data(request.begin(), request.end());
 
-	struct http_connection *connection = alloc_http_connection(&f.http_server, &f.loop, FD_CLOSE_WHILE_READING, false);
-	BOOST_REQUIRE_MESSAGE(connection != NULL, "Failed to allocate http connection");
-
 	struct websocket ws;
-	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "wamp") == 0, "Websocket initialization failed!");
-	connection->parser.data = &ws;
+	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "wamp") == 0, "Websocket initialization failed!");
+	f.connection->parser.data = &ws;
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
