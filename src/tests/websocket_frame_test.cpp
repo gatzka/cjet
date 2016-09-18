@@ -30,7 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <endian.h>
-#include <cstdint>
+#include <stdint.h>
 
 #include "buffered_reader.h"
 #include "http_connection.h"
