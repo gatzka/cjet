@@ -81,29 +81,29 @@ void buffered_socket_set_error(void *this_ptr, void (*error)(void *error_context
 
 /**
  * @brief buffered_socket_read_exactly starts an IO operation to read exactly \p num bytes.
- * @param bs The buffered_socket to operate on.
+ * @param this_ptr The buffered_socket to operate on.
  * @param num The number of bytes buffered_socket shall read before calling \p read_callback.
  * @param read_callback The callback that will be called in case of success or error.
- * @param context The context pointer that will be the first argument of \p read_callback.
+ * @param callback_context The context pointer that will be the first argument of \p read_callback.
  * @return 0 if everything is fine
  * @return -1 if an error occured or the underlying socket connection was closed either by the
  *         peer or inside the \p read_callback function.
  */
 int buffered_socket_read_exactly(void *this_ptr, size_t num,
-	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *calback_context);
+	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *callback_context);
 
 /**
  * @brief buffered_socket_read_until starts an IO operation to read until \p delim is found.
- * @param bs The buffered_socket to operate on.
+ * @param this_ptr The buffered_socket to operate on.
  * @param delim The delimiter that will be searched for.
  * @param read_callback The callback that will be called in case of success or error.
- * @param context The context pointer that will be the first argument of \p read_callback.
+ * @param callback_context The context pointer that will be the first argument of \p read_callback.
  * @return 0 if everything is fine,
  * @return -1 if an error occured or the underlying socket connection was closed either by the
  *         peer or inside the read_callback() function.
  */
 int buffered_socket_read_until(void *this_ptr, const char *delim,
-	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *context);
+	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *callback_context);
 
 #ifdef __cplusplus
 }
