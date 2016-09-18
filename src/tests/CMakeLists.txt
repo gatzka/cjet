@@ -259,7 +259,6 @@ TARGET_LINK_LIBRARIES(
 
 SET(WEBSOCKET_FRAME_TEST
     ../base64.c
-    ../buffered_socket.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
