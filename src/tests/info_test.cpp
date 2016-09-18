@@ -75,6 +75,24 @@ static cJSON *create_correct_info_method()
 	return root;
 }
 
+BOOST_AUTO_TEST_CASE(test_info_without_id)
+{
+	cJSON *root = cJSON_CreateObject();
+	BOOST_REQUIRE(root != NULL);
+	cJSON_AddStringToObject(root, "method", "info");
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddItemToObject(root, "params", params);
+
+	struct peer *p = alloc_peer();
+	int ret = handle_info(root, p);
+	cJSON_Delete(root);
+	BOOST_CHECK(ret == -1);
+
+	free_peer(p);
+}
+
 BOOST_AUTO_TEST_CASE(create_info)
 {
 	struct peer *p = alloc_peer();
