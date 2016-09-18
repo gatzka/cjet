@@ -32,12 +32,6 @@ SET(CMAKE_C_FLAGS "-pipe -std=c99 ${WARN_SWITCHES} -ggdb --coverage")
 
 SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
 SET(CMAKE_CXX_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
-IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
-	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0.0)
-		SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -flto")
-		SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -flto")
-	ENDIF()
-ENDIF()
 
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
 	IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 4.8.0)
@@ -135,13 +129,11 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(HTTP_CONNECTION_TEST
-    ../buffered_socket.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-	../linux/jet_string.c
+    ../linux/jet_string.c
     http_connection_test.cpp
-    log.cpp
 )
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
 TARGET_LINK_LIBRARIES(
@@ -251,6 +243,7 @@ SET(WEBSOCKET_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
+    ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
     ../sha1/sha1.c
     ../tests/websocket_test.cpp
@@ -266,7 +259,6 @@ TARGET_LINK_LIBRARIES(
 
 SET(WEBSOCKET_FRAME_TEST
     ../base64.c
-    ../buffered_socket.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c

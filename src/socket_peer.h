@@ -29,16 +29,16 @@
 
 #include <stdbool.h>
 
-#include "buffered_socket.h"
-#include "eventloop.h"
-#include "generated/os_config.h"
+#include "buffered_reader.h"
 #include "peer.h"
 
 struct socket_peer {
 	struct peer peer;
-	struct buffered_socket bs;
+	struct buffered_reader br;
 };
 
-struct socket_peer *alloc_jet_peer(struct eventloop *loop, socket_type socket, bool is_local_connection);
+struct socket_peer *alloc_jet_peer(void);
+void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, bool is_local_connection);
+void free_peer_on_error(void *context);
 
 #endif

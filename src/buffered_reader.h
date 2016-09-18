@@ -24,39 +24,23 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HTTP_CONNECTION_H
-#define CJET_HTTP_CONNECTION_H
+#ifndef BUFFERED_READER_H
+#define BUFFERED_READER_H
 
-#include <stdbool.h>
+#include <stddef.h>
 
-#include "buffered_reader.h"
-#include "http_server.h"
+#include "buffered_socket.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+typedef enum bs_read_callback_return (*read_handler)(void *context, char *buf, size_t len);
+typedef void (*error_handler)(void *error_context);
 
-struct http_connection {
-	struct buffered_reader br;
-	http_parser parser;
-	http_parser_settings parser_settings;
-	struct http_server *server;
-	unsigned int status_code;
-	bool is_local_connection;
+struct buffered_reader {
+	void *this_ptr;
+	int (*read_exactly)(void *this_ptr, size_t num, read_handler handler, void *handler_context);
+	int (*read_until)(void *this_ptr, const char *delim, read_handler handler, void *handler_context);
+	int (*writev)(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
+	int (*close)(void *this_ptr);
+	void(*set_error_handler)(void *this_ptr, error_handler hanlder, void *error_context);
 };
-
-struct http_connection *alloc_http_connection(void);
-int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
-void free_connection(void *context);
-int send_http_error_response(struct http_connection *connection);
-
-#define HTTP_OK 200
-#define HTTP_BAD_REQUEST 400
-#define HTTP_NOT_FOUND 404
-#define HTTP_INTERNAL_SERVER_ERROR 500
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

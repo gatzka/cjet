@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2014> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,39 +24,16 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HTTP_CONNECTION_H
-#define CJET_HTTP_CONNECTION_H
+#include <stdlib.h>
 
-#include <stdbool.h>
+#include "buffered_socket.h"
 
-#include "buffered_reader.h"
-#include "http_server.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-struct http_connection {
-	struct buffered_reader br;
-	http_parser parser;
-	http_parser_settings parser_settings;
-	struct http_server *server;
-	unsigned int status_code;
-	bool is_local_connection;
-};
-
-struct http_connection *alloc_http_connection(void);
-int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
-void free_connection(void *context);
-int send_http_error_response(struct http_connection *connection);
-
-#define HTTP_OK 200
-#define HTTP_BAD_REQUEST 400
-#define HTTP_NOT_FOUND 404
-#define HTTP_INTERNAL_SERVER_ERROR 500
-
-#ifdef __cplusplus
+struct buffered_socket *buffered_socket_acquire(void)
+{
+	return (struct buffered_socket *)malloc(sizeof(struct buffered_socket));
 }
-#endif
 
-#endif
+void buffered_socket_release(void *this_ptr)
+{
+	free(this_ptr);
+}
