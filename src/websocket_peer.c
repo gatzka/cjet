@@ -74,8 +74,8 @@ static void free_websocket_peer(struct websocket_peer *ws_peer)
 
 static void free_websocket_peer_callback(struct websocket *s)
 {
-   struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-   free_websocket_peer(ws_peer);
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	free_websocket_peer(ws_peer);
 }
 
 static void free_websocket_peer_on_error(void *context)
