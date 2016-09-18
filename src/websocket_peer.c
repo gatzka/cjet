@@ -132,7 +132,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 
 	struct buffered_reader *br = &connection->br;
 	br->set_error_handler(br->this_ptr, free_websocket_peer_on_error, ws_peer);
-	
+
 	int ret = websocket_init(&ws_peer->websocket, connection, true, free_websocket_peer_callback, sub_protocol);
 	if (ret < 0) {
 		return -1;
