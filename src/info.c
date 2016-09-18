@@ -108,6 +108,6 @@ int handle_info(const cJSON *json_rpc, struct peer *p)
 		return ret;
 	} else {
 		log_peer_err(p, "Could not render JSON into a string!\n");
+		return -1;
 	}
-	return 0;
 }
