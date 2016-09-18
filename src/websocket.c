@@ -35,8 +35,8 @@
 #include "jet_endian.h"
 #include "jet_string.h"
 #include "log.h"
-#include "parse.h"
 #include "sha1/sha1.h"
+#include "util.h"
 #include "websocket.h"
 
 static const uint8_t WS_MASK_SET = 0x80;
