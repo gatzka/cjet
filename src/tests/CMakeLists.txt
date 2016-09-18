@@ -243,6 +243,7 @@ SET(WEBSOCKET_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
+    ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
     ../sha1/sha1.c
     ../tests/websocket_test.cpp
