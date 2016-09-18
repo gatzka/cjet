@@ -29,117 +29,108 @@
 #define BOOST_TEST_MODULE websocket_frame_tests
 
 #include <boost/test/unit_test.hpp>
-#include <errno.h>
+#include <endian.h>
+#include <cstdint>
 
-#include "jet_endian.h"
-#include "jet_string.h"
-#include "socket.h"
-#include "buffered_socket.h"
+#include "buffered_reader.h"
+#include "http_connection.h"
 #include "websocket.h"
-
-#define CRLF "\r\n"
 
 #ifndef ARRAY_SIZE
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-static char write_buffer[5000];
-static char *write_buffer_ptr;
+static const uint8_t WS_HEADER_FIN = 0x80;
+static const uint8_t WS_HEADER_MASK = 0x80;
+static const uint8_t WS_OPCODE_CLOSE = 0x08;
 
-static http_parser response_parser;
-static http_parser_settings response_parser_settings;
-static bool got_complete_response_header = false;
-static bool response_parse_error = false;
+static uint8_t write_buffer[5000];
+static uint8_t *write_buffer_ptr;
 
-extern "C" {
-	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
-	{
-		(void)sock;
-		size_t complete_length = 0;
-		for (unsigned int i = 0; i < count; i++) {
-			if (!got_complete_response_header) {
-				size_t nparsed = http_parser_execute(&response_parser, &response_parser_settings, (const char *)io_vec[i].iov_base, io_vec[i].iov_len);
-				if (nparsed != io_vec[i].iov_len) {
-					response_parse_error = true;
-					errno = EFAULT;
-					return -1;
-				}
-				} else {
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
-				write_buffer_ptr += io_vec[i].iov_len;
-			}
-			complete_length += io_vec[i].iov_len;
-		}
-		return complete_length;
-	}
-
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
-	{
-		(void)buf;
-		(void)count;
-
-		switch (sock) {
-
-		default:
-			errno = EWOULDBLOCK;
-			return -1;
-		}
-	}
-
-	int socket_close(socket_type sock)
-	{
-		(void)sock;
-		return 0;
-	}
-}
-
-static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
-{
-	(void)this_ptr;
-	(void)ev;
-	return EL_CONTINUE_LOOP;
-}
-
-static void eventloop_fake_remove(const void *this_ptr, const struct io_event *ev)
-{
-	(void)this_ptr;
-	(void)ev;
-}
+static bool close_called;
 
 static void ws_on_error(struct websocket *ws)
 {
 	(void)ws;
 }
 
+
+static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
+{
+	(void)this_ptr;
+	size_t complete_length = 0;
+
+	for (unsigned int i = 0; i < count; i++) {
+		::memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
+		write_buffer_ptr += io_vec[i].iov_len;
+		complete_length += io_vec[i].iov_len;
+	}
+	return complete_length;
+}
+
+static bool is_close_frame()
+{
+	const uint8_t *ptr = write_buffer;
+	uint8_t header;
+	::memcpy(&header, ptr, sizeof(header));
+	if ((header & WS_HEADER_FIN) != WS_HEADER_FIN) {
+		return false;
+	}
+	if ((header & WS_OPCODE_CLOSE) != WS_OPCODE_CLOSE) {
+		return false;
+	}
+	ptr += sizeof(header);
+
+	uint8_t length;
+	::memcpy(&length, ptr, sizeof(length));
+	if ((length & WS_HEADER_MASK) == WS_HEADER_MASK) {
+		return false;
+	}
+	if (length != 2) {
+		return false;
+	}
+	ptr += sizeof(length);
+
+	uint16_t status_code;
+	::memcpy(&status_code, ptr, sizeof(status_code));
+	status_code = be16toh(status_code);
+	if (status_code != 1001) {
+		return false;
+	}
+	return true;
+}
+
+static int close(void *this_ptr)
+{
+	(void)this_ptr;
+	close_called = true;
+	return 0;
+}
+
 struct F {
 
 	F()
 	{
+		close_called = false;
 		write_buffer_ptr = write_buffer;
-		loop.init = NULL;
-		loop.destroy = NULL;
-		loop.run = NULL;
-		loop.add = eventloop_fake_add;
-		loop.remove = eventloop_fake_remove;
 
-		struct buffered_socket *bs = (struct buffered_socket *)malloc(sizeof(*bs));
-		buffered_socket_init(bs, 12, &loop, NULL, NULL);
-		websocket_init(&ws, NULL, true, ws_on_error, "jet");
-		ws.bs = bs;
-		ws.connection = NULL;
+		struct http_connection *connection = alloc_http_connection();
+		connection->br.writev = writev;
+		connection->br.close = close;
+		websocket_init(&ws, connection, true, ws_on_error, "jet");
+		ws.upgrade_complete = true;
 	}
 
 	~F()
 	{
-		websocket_free(&ws);
 	}
 
-	struct eventloop loop;
 	struct websocket ws;
 };
 
-BOOST_FIXTURE_TEST_CASE(websocket_correct_text_frame, F)
+BOOST_FIXTURE_TEST_CASE(test_close_frame_on_websocket_free, F)
 {
-	BOOST_CHECK_MESSAGE(1 == 1, "got it");
+	websocket_free(&ws);
+	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
