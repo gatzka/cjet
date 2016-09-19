@@ -55,14 +55,14 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 #define WS_PING_FRAME 0x9
 #define WS_PONG_FRAME 0x0a
 
-static void unmask_payload(char *buffer, uint8_t *mask, unsigned int length)
+static void unmask_payload(uint8_t *buffer, uint8_t *mask, unsigned int length)
 {
 	for (unsigned int i= 0; i < length; i++) {
 		buffer[i] = buffer[i] ^ (mask[i % 4]);
 	}
 }
 
-static enum websocket_callback_return ws_handle_frame(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
@@ -71,19 +71,19 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 
 	case WS_BINARY_FRAME:
 		if (s->binary_message_received != NULL) {
-			return s->binary_message_received(s, msg, length);
+			return s->binary_message_received(s, frame, length);
 		}
 		break;
 
 	case WS_TEXT_FRAME:
 		if (s->text_message_received != NULL) {
-			return s->text_message_received(s, msg, length);
+			return s->text_message_received(s, (char *)frame, length);
 		}
 		break;
 
 	case WS_PING_FRAME:
 	{
-		int ret = websocket_send_pong_frame(s, 0, msg, length);
+		int ret = websocket_send_pong_frame(s, 0, frame, length);
 		if (ret < 0) {
 			return WS_ERROR;
 		}
@@ -92,7 +92,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 
 	case WS_PONG_FRAME:
 		if (s->pong_received != NULL) {
-			return s->pong_received(s, msg, length);
+			return s->pong_received(s, frame, length);
 		}
 
 		break;
@@ -101,12 +101,12 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 		if (s->close_received != NULL) {
 			uint16_t status_code = 0;
 			if (length >= 2) {
-				memcpy(&status_code, msg, sizeof(status_code));
+				memcpy(&status_code, frame, sizeof(status_code));
 				status_code = jet_be16toh(status_code);
-				msg += sizeof(status_code);
+				frame += sizeof(status_code);
 				length -= sizeof(status_code);
 			}
-			return s->close_received(s, status_code, msg, length);
+			return s->close_received(s, status_code, (char *)frame, length);
 		}
 		break;
 
@@ -118,7 +118,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, char 
 	return WS_OK;
 }
 
-static enum bs_read_callback_return ws_get_payload(void *context, char *buf, size_t len)
+static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -154,7 +154,7 @@ static enum bs_read_callback_return ws_get_payload(void *context, char *buf, siz
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_mask(void *context, char *buf, size_t len)
+static enum bs_read_callback_return ws_get_mask(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -179,7 +179,7 @@ static void read_mask_or_payload(struct websocket *s)
 	}
 }
 
-static enum bs_read_callback_return ws_get_length16(void *context, char *buf, size_t len)
+static enum bs_read_callback_return ws_get_length16(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -196,7 +196,7 @@ static enum bs_read_callback_return ws_get_length16(void *context, char *buf, si
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_length64(void *context, char *buf, size_t len)
+static enum bs_read_callback_return ws_get_length64(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -213,7 +213,7 @@ static enum bs_read_callback_return ws_get_length64(void *context, char *buf, si
 	return BS_OK;
 }
 
-static enum bs_read_callback_return ws_get_first_length(void *context, char *buf, size_t len)
+static enum bs_read_callback_return ws_get_first_length(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -243,7 +243,7 @@ static enum bs_read_callback_return ws_get_first_length(void *context, char *buf
 	return BS_OK;
 }
 
-enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
+enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -268,7 +268,7 @@ enum bs_read_callback_return ws_get_header(void *context, char *buf, size_t len)
 	return BS_OK;
 }
 
-enum bs_read_callback_return websocket_read_header_line(void *context, char *buf, size_t len)
+enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *buf, size_t len)
 {
 	struct websocket *s = (struct websocket *)context;
 
@@ -277,7 +277,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, char *buf
 		return BS_CLOSED;
 	}
 
-	size_t nparsed = http_parser_execute(&s->connection->parser, &s->connection->parser_settings, buf, len);
+	size_t nparsed = http_parser_execute(&s->connection->parser, &s->connection->parser_settings, (const char *)buf, len);
 	if (unlikely(nparsed != (size_t)len)) {
 		s->connection->status_code = HTTP_BAD_REQUEST;
 		send_http_error_response(s->connection);
@@ -494,7 +494,7 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	}
 }
 
-static int send_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length, unsigned int type)
+static int send_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length, unsigned int type)
 {
 	char ws_header[14];
 	uint8_t first_len;
@@ -532,29 +532,29 @@ static int send_frame(struct websocket *s, uint32_t mask, const char *payload, s
 	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
-int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
+int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length)
 {
 	return send_frame(s, mask, payload, length, WS_BINARY_FRAME);
 }
 
 int websocket_send_text_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
 {
-	return send_frame(s, mask, payload, length, WS_TEXT_FRAME);
+	return send_frame(s, mask, (const uint8_t *)payload, length, WS_TEXT_FRAME);
 }
 
-int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
+int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length)
 {
 	return send_frame(s, mask, payload, length, WS_PING_FRAME);
 }
 
-int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length)
+int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length)
 {
 	return send_frame(s, mask, payload, length, WS_PONG_FRAME);
 }
 
 int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t status_code, const char *payload, size_t length)
 {
-	char buffer[length + sizeof(status_code)];
+	uint8_t buffer[length + sizeof(status_code)];
 	status_code = jet_htobe16(status_code);
 	memcpy(buffer, &status_code, sizeof(status_code));
 	memcpy(buffer + sizeof(status_code), payload, length);

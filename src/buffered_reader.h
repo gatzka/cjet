@@ -28,10 +28,11 @@
 #define BUFFERED_READER_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 #include "buffered_socket.h"
 
-typedef enum bs_read_callback_return (*read_handler)(void *context, char *buf, size_t len);
+typedef enum bs_read_callback_return (*read_handler)(void *context, uint8_t *buf, size_t len);
 typedef void (*error_handler)(void *error_context);
 
 struct buffered_reader {
@@ -40,7 +41,7 @@ struct buffered_reader {
 	int (*read_until)(void *this_ptr, const char *delim, read_handler handler, void *handler_context);
 	int (*writev)(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
 	int (*close)(void *this_ptr);
-	void(*set_error_handler)(void *this_ptr, error_handler hanlder, void *error_context);
+	void(*set_error_handler)(void *this_ptr, error_handler handler, void *error_context);
 };
 
 #endif

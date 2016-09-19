@@ -352,7 +352,7 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_websocket_protocol, F)
 	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
-	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
 	websocket_free(&ws);
 	if (ret == BS_OK) {
@@ -393,7 +393,7 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_illegal_websocket_key, F)
 	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
-	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when illegal WebSocketKey was provided!");
 	websocket_free(&ws);
 }
@@ -423,7 +423,7 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_unsupported_websocket_protocol, F)
 	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "jet") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
-	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when websocket upgrade contains only unsupported sub protocols");
 	BOOST_CHECK_MESSAGE(ws_error == true, "on_error function was not called when websocket upgrade contains only unsupported sub protocols");
 	websocket_free(&ws);
@@ -459,7 +459,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "chat") == 0, "Websocket initialization failed!");
 		f.connection->parser.data = &ws;
 		
-		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
 		websocket_free(&ws);
 		if (ret == BS_OK) {
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "soap") == 0, "Websocket initialization failed!");
 		f.connection->parser.data = &ws;
 
-		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
 		websocket_free(&ws);
 		if (ret == BS_OK) {
@@ -541,7 +541,7 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 		BOOST_REQUIRE_MESSAGE(websocket_init(&ws, f.connection, true, ws_on_error, "json") == 0, "Websocket initialization failed!");
 		f.connection->parser.data = &ws;
 
-		bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
 		websocket_free(&ws);
 		if (ret == BS_OK) {
@@ -562,7 +562,7 @@ BOOST_FIXTURE_TEST_CASE(test_http_only_header_parts, F)
 	BOOST_REQUIRE_MESSAGE(websocket_init(&ws, connection, true, ws_on_error, "wamp") == 0, "Websocket initialization failed!");
 	connection->parser.data = &ws;
 
-	bs_read_callback_return ret = websocket_read_header_line(&ws, &data[0], data.size());
+	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
 	websocket_free(&ws);
 }

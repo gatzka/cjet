@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
+#include <stdint.h>
 
 #include "buffered_socket.h"
 #include "eventloop.h"
@@ -45,8 +46,8 @@
 static bool close_called = false;
 static bool create_called = false;
 
-static char readbuffer[5000];
-static char *readbuffer_ptr;
+static uint8_t readbuffer[5000];
+static uint8_t *readbuffer_ptr;
 static size_t readbuffer_length;
 
 static char write_buffer[5000];
@@ -62,7 +63,7 @@ int on_create(struct http_connection *connection)
 }
 
 static int read_until(void *this_ptr, const char *delim,
-                      enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
+                      enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
                       void *callback_context)
 {
 	(void)this_ptr;
@@ -154,9 +155,10 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE(test_read_invalid_startline, F)
 {
-	::strcpy(readbuffer, "aaaa\r\n");
+	const char message[] = "aaaa\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, NULL, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for invalid start line!");
@@ -166,9 +168,10 @@ BOOST_FIXTURE_TEST_CASE(test_read_invalid_startline, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_empty_startline, F)
 {
-	::strcpy(readbuffer, "");
+	const char message[] = "";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, NULL, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for empty start line!");
@@ -177,9 +180,10 @@ BOOST_FIXTURE_TEST_CASE(test_read_empty_startline, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match, F)
 {
-	::strcpy(readbuffer, "GET /infotext.html HTTP/1.1\r\n");
+	const char message[] = "GET /infotext.html HTTP/1.1\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, &http_server, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for correct start line and URL match!");
@@ -190,9 +194,11 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match, F)
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_match_create_called, F)
 {
 	handler[0].create = on_create;
-	::strcpy(readbuffer, "GET /infotext.html HTTP/1.1\r\n");
+
+	const char message[] = "GET /infotext.html HTTP/1.1\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, &http_server, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for correct start line and URL match!");
@@ -205,9 +211,10 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_no_match, F)
 {
 	handler[0].request_target = "/foobar/";
 
-	::strcpy(readbuffer, "GET /infotext.html HTTP/1.1\r\n");
+	const char message[] = "GET /infotext.html HTTP/1.1\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, &http_server, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for invalid start line!");
@@ -217,9 +224,10 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_url_no_match, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_invalid_url, F)
 {
-	::strcpy(readbuffer, "GET http://ww%.google.de/ HTTP/1.1\r\n");
+	const char message[] = "GET http://ww%.google.de/ HTTP/1.1\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, &http_server, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for invalid URL!");
@@ -229,9 +237,10 @@ BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_invalid_url, F)
 
 BOOST_FIXTURE_TEST_CASE(test_read_valid_startline_connect_request_url_match, F)
 {
-	::strcpy(readbuffer, "CONNECT www.example.com:443 HTTP/1.1\r\n");
+	const char message[] = "CONNECT www.example.com:443 HTTP/1.1\r\n";
+	::memcpy(readbuffer, message, sizeof(message));
 	readbuffer_ptr = readbuffer;
-	readbuffer_length = ::strlen(readbuffer);
+	readbuffer_length = ::strlen(message);
 
 	int ret = init_http_connection(connection, &http_server, &br, false);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "Initialization failed for CONNECT http method!");

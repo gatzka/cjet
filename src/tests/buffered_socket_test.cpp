@@ -427,7 +427,7 @@ struct F {
 		f->error_func_alt_called = true;
 	}
 
-	static enum bs_read_callback_return read_callback(void *context, char *buf, size_t len)
+	static enum bs_read_callback_return read_callback(void *context, uint8_t *buf, size_t len)
 	{
 		struct F *f = (struct F *)context;
 		memcpy(f->read_buffer, buf, len);

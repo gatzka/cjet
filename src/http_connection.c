@@ -116,7 +116,7 @@ int send_http_error_response(struct http_connection *connection)
 	return br->writev(br->this_ptr, &iov, 1);
 }
 
-static enum bs_read_callback_return read_start_line(void *context, char *buf, size_t len)
+static enum bs_read_callback_return read_start_line(void *context, uint8_t *buf, size_t len)
 {
 	struct http_connection *connection = (struct http_connection *)context;
 
@@ -125,7 +125,7 @@ static enum bs_read_callback_return read_start_line(void *context, char *buf, si
 		return BS_CLOSED;
 	}
 
-	size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, buf, len);
+	size_t nparsed = http_parser_execute(&connection->parser, &connection->parser_settings, (const char *)buf, len);
 
 	if (unlikely(nparsed != (size_t)len)) {
 		if (connection->status_code == 0) {

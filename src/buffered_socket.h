@@ -28,6 +28,7 @@
 #define CJET_BUFFERED_SOCKET_H
 
 #include <stddef.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #include "eventloop.h"
@@ -58,14 +59,14 @@ struct buffered_socket_io_vector {
 struct buffered_socket {
 	struct io_event ev;
 	unsigned int to_write;
-	char *read_ptr;
-	char *write_ptr;
-	char *write_buffer_ptr;
-	char read_buffer[CONFIG_MAX_MESSAGE_SIZE];
-	char write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
-	ssize_t (*reader)(struct buffered_socket *bs, union buffered_socket_reader_context reader_context, char **read_ptr);
+	uint8_t *read_ptr;
+	uint8_t *write_ptr;
+	uint8_t *write_buffer_ptr;
+	uint8_t read_buffer[CONFIG_MAX_MESSAGE_SIZE];
+	uint8_t write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
+	ssize_t (*reader)(struct buffered_socket *bs, union buffered_socket_reader_context reader_context, uint8_t **read_ptr);
 	union buffered_socket_reader_context reader_context;
-	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len);
+	enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len);
 	void *read_callback_context;
 	void (*error)(void *error_context);
 	void *error_context;
@@ -90,7 +91,8 @@ void buffered_socket_set_error(void *this_ptr, void (*error)(void *error_context
  *         peer or inside the \p read_callback function.
  */
 int buffered_socket_read_exactly(void *this_ptr, size_t num,
-	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *callback_context);
+                                 enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
+                                 void *callback_context);
 
 /**
  * @brief buffered_socket_read_until starts an IO operation to read until \p delim is found.
@@ -103,7 +105,8 @@ int buffered_socket_read_exactly(void *this_ptr, size_t num,
  *         peer or inside the read_callback() function.
  */
 int buffered_socket_read_until(void *this_ptr, const char *delim,
-	enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len), void *callback_context);
+                               enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
+                               void *callback_context);
 
 #ifdef __cplusplus
 }

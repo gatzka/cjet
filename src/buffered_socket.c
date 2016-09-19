@@ -27,6 +27,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <string.h>
 
 #include "buffered_socket.h"
@@ -39,7 +40,7 @@
 
 static int send_buffer(struct buffered_socket *bs)
 {
-	char *write_buffer_ptr = bs->write_buffer;
+	uint8_t *write_buffer_ptr = bs->write_buffer;
 	while (bs->to_write != 0) {
 		struct buffered_socket_io_vector iov;
 		iov.iov_base = write_buffer_ptr;
@@ -75,7 +76,7 @@ static int send_buffer(struct buffered_socket *bs)
 static int go_reading(struct buffered_socket *bs)
 {
 	while (1) {
-		char *buffer;
+		uint8_t *buffer;
 		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
 		if (unlikely(len < 0)) {
 			return len;
@@ -128,7 +129,7 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 		return -1;
 	}
 
-	char *write_buffer_ptr = bs->write_buffer + bs->to_write;
+	uint8_t *write_buffer_ptr = bs->write_buffer + bs->to_write;
 	memcpy(write_buffer_ptr, buf, to_copy);
 	bs->to_write += to_copy;
 	return 0;
@@ -222,7 +223,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */ 
-static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
+static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
 	size_t count = ctx.num;
 	while (1) {
@@ -262,13 +263,13 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */ 
-static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, char **read_ptr)
+static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
-	const char *haystack = bs->read_ptr;
+	const uint8_t *haystack = bs->read_ptr;
 	const char *needle = ctx.ptr;
 	size_t needle_length = strlen(needle);
 	while (1) {
-		char *found = jet_memmem(haystack, unread_bytes(bs), needle, needle_length);
+		uint8_t *found = jet_memmem(haystack, unread_bytes(bs), needle, needle_length);
 		if (found != NULL) {
 			*read_ptr = bs->read_ptr;
 			ptrdiff_t diff = (found + needle_length) - bs->read_ptr;
@@ -374,7 +375,7 @@ int buffered_socket_writev(void *this_ptr, struct buffered_socket_io_vector *io_
 }
 
 int buffered_socket_read_exactly(void *this_ptr, size_t num,
-                                 enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
+                                 enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
                                  void *callback_context)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
@@ -405,7 +406,7 @@ int buffered_socket_read_exactly(void *this_ptr, size_t num,
 }
 
 int buffered_socket_read_until(void *this_ptr, const char *delim,
-                               enum bs_read_callback_return (*read_callback)(void *context, char *buf, size_t len),
+                               enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
                                void *callback_context)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;

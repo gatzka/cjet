@@ -43,11 +43,16 @@
 static const uint8_t WS_HEADER_FIN = 0x80;
 static const uint8_t WS_HEADER_MASK = 0x80;
 static const uint8_t WS_OPCODE_CLOSE = 0x08;
+static const uint8_t WS_OPCODE_TEXT = 0x01;
 
 static uint8_t write_buffer[5000];
 static uint8_t *write_buffer_ptr;
 
+static uint8_t read_buffer[5000];
+static size_t read_buffer_length;
+
 static bool close_called;
+static bool text_message_received_called;
 
 static void ws_on_error(struct websocket *ws)
 {
@@ -107,11 +112,76 @@ static int close(void *this_ptr)
 	return 0;
 }
 
+static enum websocket_callback_return text_message_received(struct websocket *s, char *msg, size_t length)
+{
+	(void)s;
+	text_message_received_called = true;
+	return WS_OK;
+}
+
+static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
+{
+	if (!shall_mask) {
+		::memcpy(ptr, payload, length);
+	} else {
+		for (uint64_t i = 0; i < length; i++) {
+			uint8_t byte = payload[i] ^ mask[i % 4];
+			*ptr = byte;
+			ptr++;
+		}
+	}
+}
+
+static void prepare_text_message(const char *message, bool shall_mask, uint8_t mask[4])
+{
+	uint8_t *ptr = read_buffer;
+	read_buffer_length = 0;
+	uint8_t header = 0x00;
+	header |= WS_HEADER_FIN;
+	header |= WS_OPCODE_TEXT;
+	::memcpy(ptr, &header, sizeof(header));
+	ptr += sizeof(header);
+
+	uint8_t first_length = 0x00;
+	if (shall_mask) {
+		first_length |= WS_HEADER_MASK;
+	}
+	uint64_t length = ::strlen(message);
+	if (length < 126) {
+		first_length = first_length | (uint8_t)length;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+	} else if (length <= sizeof(uint16_t)) {
+		first_length = first_length | 126;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+		uint16_t len = (uint16_t)length;
+		len = htobe16(len);
+		::memcpy(ptr, &len, sizeof(len));
+		ptr += sizeof(len);
+	} else {
+		first_length = first_length | 127;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+		length = htobe64(length);
+		::memcpy(ptr, &length, sizeof(length));
+		ptr += sizeof(length);
+	}
+
+	if (shall_mask) {
+		::memcpy(ptr, mask, 4);
+		ptr += 4;
+	}
+
+	fill_payload(ptr, (const uint8_t *)message, length, shall_mask, mask);
+}
+
 struct F {
 
 	F()
 	{
 		close_called = false;
+		text_message_received_called = false;
 		write_buffer_ptr = write_buffer;
 
 		struct http_connection *connection = alloc_http_connection();
@@ -119,6 +189,7 @@ struct F {
 		connection->br.close = close;
 		websocket_init(&ws, connection, true, ws_on_error, "jet");
 		ws.upgrade_complete = true;
+		ws.text_message_received = text_message_received;
 	}
 
 	~F()
@@ -134,3 +205,10 @@ BOOST_FIXTURE_TEST_CASE(test_close_frame_on_websocket_free, F)
 	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
+BOOST_FIXTURE_TEST_CASE(test_receive_text_frame, F)
+{
+	static const char *message = "Hello World!";
+	prepare_text_message(message, false, NULL);
+	ws_get_header(&ws, read_buffer, read_buffer_length);
+	websocket_free(&ws);
+}
