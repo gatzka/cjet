@@ -49,7 +49,10 @@ static uint8_t write_buffer[5000];
 static uint8_t *write_buffer_ptr;
 
 static uint8_t read_buffer[5000];
+static uint8_t *read_buffer_ptr;
 static size_t read_buffer_length;
+static uint8_t readback_buffer[5000];
+static uint8_t *readback_buffer_ptr;
 
 static bool close_called;
 static bool text_message_received_called;
@@ -58,7 +61,6 @@ static void ws_on_error(struct websocket *ws)
 {
 	(void)ws;
 }
-
 
 static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
 {
@@ -71,6 +73,15 @@ static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsi
 		complete_length += io_vec[i].iov_len;
 	}
 	return complete_length;
+}
+
+static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *handler_context)
+{
+	(void)this_ptr;
+	uint8_t *ptr = read_buffer_ptr;
+	read_buffer_ptr += num;
+	handler(handler_context, ptr, num);
+	return 0;
 }
 
 static bool is_close_frame()
@@ -115,6 +126,9 @@ static int close(void *this_ptr)
 static enum websocket_callback_return text_message_received(struct websocket *s, char *msg, size_t length)
 {
 	(void)s;
+	(void)msg;
+	(void)length;
+	::strncpy((char *)readback_buffer, msg, length);
 	text_message_received_called = true;
 	return WS_OK;
 }
@@ -141,6 +155,7 @@ static void prepare_text_message(const char *message, bool shall_mask, uint8_t m
 	header |= WS_OPCODE_TEXT;
 	::memcpy(ptr, &header, sizeof(header));
 	ptr += sizeof(header);
+	read_buffer_length += sizeof(header);
 
 	uint8_t first_length = 0x00;
 	if (shall_mask) {
@@ -151,21 +166,26 @@ static void prepare_text_message(const char *message, bool shall_mask, uint8_t m
 		first_length = first_length | (uint8_t)length;
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
 	} else if (length <= sizeof(uint16_t)) {
 		first_length = first_length | 126;
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
 		uint16_t len = (uint16_t)length;
 		len = htobe16(len);
 		::memcpy(ptr, &len, sizeof(len));
 		ptr += sizeof(len);
+		read_buffer_length += sizeof(len);
 	} else {
 		first_length = first_length | 127;
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
 		length = htobe64(length);
 		::memcpy(ptr, &length, sizeof(length));
 		ptr += sizeof(length);
+		read_buffer_length += sizeof(length);
 	}
 
 	if (shall_mask) {
@@ -174,6 +194,7 @@ static void prepare_text_message(const char *message, bool shall_mask, uint8_t m
 	}
 
 	fill_payload(ptr, (const uint8_t *)message, length, shall_mask, mask);
+	read_buffer_length += length;
 }
 
 struct F {
@@ -183,9 +204,12 @@ struct F {
 		close_called = false;
 		text_message_received_called = false;
 		write_buffer_ptr = write_buffer;
+		read_buffer_ptr = read_buffer;
+		readback_buffer_ptr = readback_buffer;
 
 		struct http_connection *connection = alloc_http_connection();
 		connection->br.writev = writev;
+		connection->br.read_exactly = read_exactly;
 		connection->br.close = close;
 		websocket_init(&ws, connection, true, ws_on_error, "jet");
 		ws.upgrade_complete = true;
@@ -208,7 +232,10 @@ BOOST_FIXTURE_TEST_CASE(test_close_frame_on_websocket_free, F)
 BOOST_FIXTURE_TEST_CASE(test_receive_text_frame, F)
 {
 	static const char *message = "Hello World!";
-	prepare_text_message(message, false, NULL);
-	ws_get_header(&ws, read_buffer, read_buffer_length);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_text_message(message, true, mask);
+	ws_get_header(&ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&ws);
+	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
+	BOOST_CHECK_MESSAGE(::strcmp(message, (char *)readback_buffer) == 0, "Did not received the same message as sent!");
 }
