@@ -199,7 +199,7 @@ static void prepare_text_message(const char *message, bool shall_mask, uint8_t m
 
 struct F {
 
-	F()
+	F(bool is_server)
 	{
 		close_called = false;
 		text_message_received_called = false;
@@ -211,7 +211,7 @@ struct F {
 		connection->br.writev = writev;
 		connection->br.read_exactly = read_exactly;
 		connection->br.close = close;
-		websocket_init(&ws, connection, true, ws_on_error, "jet");
+		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
 	}
@@ -223,19 +223,25 @@ struct F {
 	struct websocket ws;
 };
 
-BOOST_FIXTURE_TEST_CASE(test_close_frame_on_websocket_free, F)
+BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 {
-	websocket_free(&ws);
+	bool is_server = true;
+	F f(is_server);
+	
+	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
-BOOST_FIXTURE_TEST_CASE(test_receive_text_frame, F)
+BOOST_AUTO_TEST_CASE(test_receive_text_frame)
 {
+	bool is_server = true;
+	F f(is_server);
+	
 	static const char *message = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_text_message(message, true, mask);
-	ws_get_header(&ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&ws);
+	prepare_text_message(message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
 	BOOST_CHECK_MESSAGE(::strcmp(message, (char *)readback_buffer) == 0, "Did not received the same message as sent!");
 }
