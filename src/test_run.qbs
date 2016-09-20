@@ -36,6 +36,7 @@ Project {
   UnittestRunner {
     lcovRemovePatterns: [
       "*/cjet/src/json/*",
+      "*/cjet/src/http-parser/*",
       "/usr/include/*",
     ]
     wrapper: [
