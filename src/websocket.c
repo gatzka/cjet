@@ -135,7 +135,9 @@ static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, 
 		s->on_error(s);
 		return BS_CLOSED;
 	} else {
-		unmask_payload(buf, s->mask, len);
+		if (s->ws_flags.mask != 0) {
+			unmask_payload(buf, s->mask, len);
+		}
 		enum websocket_callback_return ret = ws_handle_frame(s, buf, len);
 		switch (ret) {
 		case WS_OK:
