@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_text_frame)
+BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_server)
 {
 	bool is_server = true;
 	F f(is_server);
@@ -240,6 +240,19 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame)
 	static const char *message = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_text_message(message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
+	BOOST_CHECK_MESSAGE(::strcmp(message, (char *)readback_buffer) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_client)
+{
+	bool is_server = false;
+	F f(is_server);
+	
+	static const char *message = "Tell me why!";
+	prepare_text_message(message, is_server, NULL);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
