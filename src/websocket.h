@@ -73,6 +73,7 @@ struct websocket {
 	enum websocket_callback_return (*text_frame_received)(struct websocket *s, char *msg, size_t length, bool is_last_frame);
 	enum websocket_callback_return (*binary_message_received)(struct websocket *s, uint8_t *msg, size_t length);
 	enum websocket_callback_return (*binary_frame_received)(struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame);
+	enum websocket_callback_return (*ping_received)(struct websocket *s, uint8_t *msg, size_t length);
 	enum websocket_callback_return (*pong_received)(struct websocket *s, uint8_t *msg, size_t length);
 	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code, char *msg, size_t length);
 	bool protocol_requested;

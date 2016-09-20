@@ -42,8 +42,11 @@
 
 static const uint8_t WS_HEADER_FIN = 0x80;
 static const uint8_t WS_HEADER_MASK = 0x80;
-static const uint8_t WS_OPCODE_CLOSE = 0x08;
+
 static const uint8_t WS_OPCODE_TEXT = 0x01;
+static const uint8_t WS_OPCODE_CLOSE = 0x08;
+static const uint8_t WS_OPCODE_PING = 0x09;
+static const uint8_t WS_OPCODE_PONG = 0x0a;
 
 static uint8_t write_buffer[5000];
 static uint8_t *write_buffer_ptr;
@@ -52,10 +55,11 @@ static uint8_t read_buffer[5000];
 static uint8_t *read_buffer_ptr;
 static size_t read_buffer_length;
 static uint8_t readback_buffer[5000];
-static uint8_t *readback_buffer_ptr;
+static size_t readback_buffer_length;
 
 static bool close_called;
 static bool text_message_received_called;
+static bool ping_received_called;
 
 static void ws_on_error(struct websocket *ws)
 {
@@ -82,6 +86,51 @@ static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *
 	read_buffer_ptr += num;
 	handler(handler_context, ptr, num);
 	return 0;
+}
+
+static bool is_pong_frame(const char *payload)
+{
+	size_t payload_length = ::strlen(payload);
+
+	uint8_t *ptr = write_buffer;
+	uint8_t header;
+	::memcpy(&header, ptr, sizeof(header));
+	if ((header & WS_HEADER_FIN) != WS_HEADER_FIN) {
+		return false;
+	}
+	if ((header & WS_OPCODE_PONG) != WS_OPCODE_PONG) {
+		return false;
+	}
+	ptr += sizeof(header);
+
+	uint8_t length;
+	::memcpy(&length, ptr, sizeof(length));
+	bool is_masked = false;
+	if ((length & WS_HEADER_MASK) == WS_HEADER_MASK) {
+		is_masked = true;
+	}
+	length = length & ~WS_HEADER_MASK;
+	if (length != payload_length) {
+		return false;
+	}
+	ptr += sizeof(length);
+
+	if (is_masked) {
+		uint8_t mask[4];
+		memcpy(mask, ptr, sizeof(mask));
+		ptr += sizeof(mask);
+
+		for (unsigned int i = 0; i < length; i++) {
+			char byte = ptr[i] ^ mask[i % 4];
+			ptr[i] = byte;
+		}
+	}
+	
+
+	if (::memcmp(ptr, payload, payload_length) != 0) {
+		return false;
+	}
+	return true;
 }
 
 static bool is_close_frame()
@@ -128,8 +177,20 @@ static enum websocket_callback_return text_message_received(struct websocket *s,
 	(void)s;
 	(void)msg;
 	(void)length;
-	::strncpy((char *)readback_buffer, msg, length);
+	::memcpy(readback_buffer, msg, length);
+	readback_buffer_length += length;
 	text_message_received_called = true;
+	return WS_OK;
+}
+
+static enum websocket_callback_return ping_received(struct websocket *s, uint8_t *msg, size_t length)
+{
+	(void)s;
+	(void)msg;
+	(void)length;
+	::memcpy(readback_buffer, msg, length);
+	readback_buffer_length += length;
+	ping_received_called = true;
 	return WS_OK;
 }
 
@@ -146,13 +207,13 @@ static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, 
 	}
 }
 
-static void prepare_text_message(const char *message, bool shall_mask, uint8_t mask[4])
+static void prepare_message(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
 {
 	uint8_t *ptr = read_buffer;
 	read_buffer_length = 0;
 	uint8_t header = 0x00;
 	header |= WS_HEADER_FIN;
-	header |= WS_OPCODE_TEXT;
+	header |= type;
 	::memcpy(ptr, &header, sizeof(header));
 	ptr += sizeof(header);
 	read_buffer_length += sizeof(header);
@@ -203,9 +264,10 @@ struct F {
 	{
 		close_called = false;
 		text_message_received_called = false;
+		ping_received_called = false;
 		write_buffer_ptr = write_buffer;
 		read_buffer_ptr = read_buffer;
-		readback_buffer_ptr = readback_buffer;
+		readback_buffer_length = 0;
 
 		struct http_connection *connection = alloc_http_connection();
 		connection->br.writev = writev;
@@ -214,6 +276,7 @@ struct F {
 		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
+		ws.ping_received = ping_received;
 	}
 
 	~F()
@@ -236,25 +299,55 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_server)
 {
 	bool is_server = true;
 	F f(is_server);
-	
+
 	static const char *message = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_text_message(message, is_server, mask);
+	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
-	BOOST_CHECK_MESSAGE(::strcmp(message, (char *)readback_buffer) == 0, "Did not received the same message as sent!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_client)
 {
 	bool is_server = false;
 	F f(is_server);
-	
+
 	static const char *message = "Tell me why!";
-	prepare_text_message(message, is_server, NULL);
+	prepare_message(WS_OPCODE_TEXT, message, is_server, NULL);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
-	BOOST_CHECK_MESSAGE(::strcmp(message, (char *)readback_buffer) == 0, "Did not received the same message as sent!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
+{
+	bool is_server = true;
+	F f(is_server);
+
+	static const char *message = "Playing ping pong!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_PING, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same payload as sent in ping!");
+	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
+{
+	bool is_server = false;
+	F f(is_server);
+
+	static const char *message = "Playing ping pong!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_PING, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same payload as sent in ping!");
+	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }

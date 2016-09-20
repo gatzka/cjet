@@ -85,8 +85,14 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	{
 		int ret = websocket_send_pong_frame(s, 0, frame, length);
 		if (ret < 0) {
+			// TODO: maybe call the error callback?
 			return WS_ERROR;
 		}
+
+		if (s->ping_received != NULL) {
+			return s->ping_received(s, frame, length);
+		}
+
 		break;
 	}
 
