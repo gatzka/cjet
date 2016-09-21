@@ -77,6 +77,7 @@ SET(CJET_FILES
 
 SET(CJET_LINUX_FILES
         linux/eventloop_epoll.c
+        linux/websocket_random.c
         linux/buffered_socket_alloc.c
         linux/jet_endian.c
         linux/jet_string.c

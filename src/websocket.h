@@ -83,6 +83,9 @@ struct websocket {
 	} sub_protocol;
 };
 
+int websocket_init_random(void);
+void websocket_fill_mask_randomly(uint8_t mask[4]);
+
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol);
 void websocket_free(struct websocket *ws);
 enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *buf, size_t len);
@@ -91,11 +94,11 @@ enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t l
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length);
 int websocket_upgrade_on_headers_complete(http_parser *parser);
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
-int websocket_send_text_frame(struct websocket *s, uint32_t mask, const char *payload, size_t length);
-int websocket_send_binary_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length);
-int websocket_sent_close_frame(struct websocket *s, uint32_t mask, uint16_t status_code, const char *payload, size_t length);
-int websocket_send_ping_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length);
-int websocket_send_pong_frame(struct websocket *s, uint32_t mask, const uint8_t *payload, size_t length);
+int websocket_send_text_frame(struct websocket *s, char *payload, size_t length);
+int websocket_send_binary_frame(struct websocket *s, uint8_t *payload, size_t length);
+int websocket_sent_close_frame(struct websocket *s, uint16_t status_code, const char *payload, size_t length);
+int websocket_send_ping_frame(struct websocket *s, uint8_t *payload, size_t length);
+int websocket_send_pong_frame(struct websocket *s, uint8_t *payload, size_t length);
 
 #ifdef __cplusplus
 }

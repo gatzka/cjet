@@ -40,7 +40,7 @@ static const char *method_no_args_path = "/method_no_args/";
 
 static const int INVALID_PARAMS_ERROR = -32602;
 
-int send_message(struct peer *p, const char *rendered, size_t len)
+int send_message(struct peer *p, char *rendered, size_t len)
 {
 	(void)p;
 	(void)rendered;
