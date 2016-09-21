@@ -61,6 +61,14 @@ static bool close_called;
 static bool text_message_received_called;
 static bool ping_received_called;
 
+static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
+{
+	for (unsigned int i = 0; i < length; i++) {
+		uint8_t byte = ptr[i] ^ mask[i % 4];
+		ptr[i] = byte;
+	}
+}
+
 static void ws_on_error(struct websocket *ws)
 {
 	(void)ws;
@@ -120,10 +128,7 @@ static bool is_pong_frame(const char *payload)
 		memcpy(mask, ptr, sizeof(mask));
 		ptr += sizeof(mask);
 
-		for (unsigned int i = 0; i < length; i++) {
-			char byte = ptr[i] ^ mask[i % 4];
-			ptr[i] = byte;
-		}
+		mask_payload(ptr, length, mask);
 	}
 	
 
@@ -194,20 +199,15 @@ static enum websocket_callback_return ping_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
-static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
+static void fill_payload(uint8_t *ptr, uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
-	if (!shall_mask) {
-		::memcpy(ptr, payload, length);
-	} else {
-		for (uint64_t i = 0; i < length; i++) {
-			uint8_t byte = payload[i] ^ mask[i % 4];
-			*ptr = byte;
-			ptr++;
-		}
+	::memcpy(ptr, payload, length);
+	if (shall_mask) {
+		mask_payload(ptr, length, mask);
 	}
 }
 
-static void prepare_message(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
+static void prepare_message(uint8_t type, char *message, bool shall_mask, uint8_t mask[4])
 {
 	uint8_t *ptr = read_buffer;
 	read_buffer_length = 0;
@@ -254,7 +254,7 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 		ptr += 4;
 	}
 
-	fill_payload(ptr, (const uint8_t *)message, length, shall_mask, mask);
+	fill_payload(ptr, (uint8_t *)message, length, shall_mask, mask);
 	read_buffer_length += length;
 }
 
@@ -262,6 +262,8 @@ struct F {
 
 	F(bool is_server)
 	{
+		websocket_init_random();
+
 		close_called = false;
 		text_message_received_called = false;
 		ping_received_called = false;
@@ -300,7 +302,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_server)
 	bool is_server = true;
 	F f(is_server);
 
-	static const char *message = "Hello World!";
+	char message[] = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
@@ -314,7 +316,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_client)
 	bool is_server = false;
 	F f(is_server);
 
-	static const char *message = "Tell me why!";
+	char message[] = "Tell me why!";
 	prepare_message(WS_OPCODE_TEXT, message, is_server, NULL);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
@@ -327,13 +329,12 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 	bool is_server = true;
 	F f(is_server);
 
-	static const char *message = "Playing ping pong!";
+	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same payload as sent in ping!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }
 
@@ -342,12 +343,11 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 	bool is_server = false;
 	F f(is_server);
 
-	static const char *message = "Playing ping pong!";
+	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same payload as sent in ping!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }

@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,48 +24,35 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_PEER_H
-#define CJET_PEER_H
-
-#include <stdbool.h>
-#include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
-#include "generated/cjet_config.h"
-#include "generated/os_config.h"
-#include "http-parser/http_parser.h"
-#include "json/cJSON.h"
-#include "list.h"
-#include "eventloop.h"
+#include "websocket.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+int websocket_init_random(void)
+{
+	unsigned int seed;
+	FILE* urandom = fopen("/dev/urandom", "r");
+	if (urandom == NULL) {
+		return -1;
+	}
 
-struct peer {
-	struct list_head state_list;
-	struct list_head next_peer;
-	struct list_head fetch_list;
-	void *routing_table;
-	char *name;
-	int (*send_message)(struct peer *p, char *rendered, size_t len);
-	void (*close)(struct peer *p);
-	bool is_local_connection;
-};
-
-int init_peer(struct peer *p, bool is_local_connection);
-void free_peer_resources(struct peer *p);
-struct list_head *get_peer_list(void);
-void set_peer_name(struct peer *peer, const char *name);
-const char *get_peer_name(const struct peer *p);
-int get_number_of_peers(void);
-void log_peer_info(const struct peer *p, const char *fmt, ...);
-void log_peer_err(const struct peer *p, const char *fmt, ...);
-void destroy_all_peers(void);
-
-#ifdef __cplusplus
+	int ret = -1;
+	int len = fread(&seed, sizeof(seed), 1, urandom);
+	if (len == sizeof(seed)) {
+		srand(seed);
+		ret = 0;
+	}
+	fclose(urandom);
+	return ret;
 }
-#endif
 
-#endif
+void websocket_fill_mask_randomly(uint8_t mask[4])
+{
+	for (unsigned int i = 0; i < 4; i++) {
+		int x = rand() & 0xff;
+		mask[i] = (uint8_t)x;
+	}
+}
