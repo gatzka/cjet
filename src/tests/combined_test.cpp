@@ -183,7 +183,7 @@ static struct state_or_method *get_state(const char *path)
 	return (struct state_or_method *)state_table_get(path);
 }
 
-int send_message(struct peer *p, const char *rendered, size_t len)
+int send_message(struct peer *p, char *rendered, size_t len)
 {
 	(void)len;
 	if (p == fetch_peer_1) {

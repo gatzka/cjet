@@ -37,7 +37,7 @@
 static char readback_buffer[10000];
 
 extern "C" {
-	int send_message(struct peer *p, const char *rendered, size_t len)
+	int send_message(struct peer *p, char *rendered, size_t len)
 	{
 		(void)p;
 		char *ptr = readback_buffer;
