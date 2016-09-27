@@ -40,7 +40,7 @@ int websocket_init_random(void)
 	}
 
 	int ret = -1;
-	int len = fread(&seed, sizeof(seed), 1, urandom);
+	int len = fread(&seed, 1, sizeof(seed), urandom);
 	if (len == sizeof(seed)) {
 		srand(seed);
 		ret = 0;
