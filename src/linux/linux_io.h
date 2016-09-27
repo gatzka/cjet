@@ -27,13 +27,16 @@
 #ifndef CJET_LINUX_IO_H
 #define CJET_LINUX_IO_H
 
+#include <stdbool.h>
+
 #include "eventloop.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int run_io(struct eventloop *loop, const char *user_name, int run_foreground);
+int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground);
+int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground);
 
 #ifdef __cplusplus
 }

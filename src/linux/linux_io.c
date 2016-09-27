@@ -26,12 +26,15 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pwd.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -40,17 +43,12 @@
 
 #include "buffered_reader.h"
 #include "compiler.h"
-#include "jet_endian.h"
 #include "eventloop.h"
-#include "generated/os_config.h"
 #include "http_connection.h"
 #include "http_server.h"
 #include "jet_server.h"
-#include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "log.h"
-#include "parse.h"
-#include "peer.h"
 #include "socket_peer.h"
 #include "util.h"
 #include "websocket.h"
@@ -294,18 +292,15 @@ static int start_server(struct io_event *ev)
 	}
 }
 
-static int create_server_socket(int server_port)
+static int create_server_socket_all_interfaces(int port)
 {
-	int listen_fd;
-	struct sockaddr_in6 serveraddr;
-	static const int reuse_on = 1;
-
-	listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
+	int listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (unlikely(listen_fd < 0)) {
 		log_err("Could not create listen socket!\n");
 		return -1;
 	}
 
+	static const int reuse_on = 1;
 	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 			sizeof(reuse_on)) < 0)) {
 		log_err("Could not set %s!\n", "SO_REUSEADDR");
@@ -317,9 +312,10 @@ static int create_server_socket(int server_port)
 		goto error;
 	}
 
+	struct sockaddr_in6 serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sin6_family = AF_INET6;
-	serveraddr.sin6_port = htons(server_port);
+	serveraddr.sin6_port = htons(port);
 	serveraddr.sin6_addr = in6addr_any;
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
 		log_err("bind failed!\n");
@@ -330,11 +326,82 @@ static int create_server_socket(int server_port)
 		log_err("listen failed!\n");
 		goto error;
 	}
-	return listen_fd;
 
+	return listen_fd;
+	
 error:
 	close(listen_fd);
 	return -1;
+}
+
+static int create_server_socket_bound(const char *bind_addr, int port)
+{
+	struct addrinfo hints;
+	struct addrinfo *servinfo;
+
+	memset(&hints, 0, sizeof hints);
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = AI_PASSIVE | AI_V4MAPPED | AI_NUMERICHOST;
+
+	char server_port_string[6];
+	sprintf(server_port_string, "%d", port);
+
+	int ret = getaddrinfo(bind_addr, server_port_string, &hints, &servinfo);
+	if (ret != 0) {
+		log_err("Could not set resolve address to bind!");
+		return -1;
+	}
+
+	int listen_fd;
+	struct addrinfo *rp;
+	for (rp = servinfo; rp != NULL; rp = rp->ai_next) {
+		listen_fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+		if (listen_fd == -1) {
+			continue;
+		}
+
+		static const int reuse_on = 1;
+		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+				sizeof(reuse_on)) < 0)) {
+			log_err("Could not set %s!\n", "SO_REUSEADDR");
+			continue;
+		}
+
+		if (rp->ai_family == AF_INET6) {
+			static const int ipv6_only = 1;
+			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
+					sizeof(ipv6_only)) < 0)) {
+				log_err("Could not set %s!\n", "IPV6_V6ONLY");
+				continue;
+			}
+		}
+
+		if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
+			log_err("Could not set %s!\n", "O_NONBLOCK");
+			continue;
+		}
+
+		if (bind(listen_fd, rp->ai_addr, rp->ai_addrlen) == 0) {
+			break;
+		}
+		close(listen_fd);
+	}
+
+	if (rp == NULL) {
+		log_err("Could not bind to address!");
+		return -1;
+	}
+
+	freeaddrinfo(servinfo);
+
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
+		log_err("listen failed!\n");
+		close(listen_fd);
+		return -1;
+	}
+
+	return listen_fd;
 }
 
 static void stop_server(struct io_event *ev)
@@ -391,7 +458,7 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-int run_io(struct eventloop *loop, const char *user_name, int run_foreground)
+int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground)
 {
 	int ret = 0;
 
@@ -400,35 +467,50 @@ int run_io(struct eventloop *loop, const char *user_name, int run_foreground)
 	}
 
 	if (loop->init(loop->this_ptr) < 0) {
-		go_ahead = 0;
 		ret = -1;
-		goto unregister_signal_handler;
+		goto eventloop_init_failed;
 	}
 
-	int jet_fd = create_server_socket(CONFIG_JET_PORT);
-	if (jet_fd < 0) {
-		goto eventloop_destroy;
+	// start jet server on ipv6 loopback
+	int ipv6_jet_fd = create_server_socket_bound("::1", CONFIG_JET_PORT);
+	if (ipv6_jet_fd < 0) {
+		ret = -1;
+		goto create_ipv6_jet_socket_failed;
 	}
-
-	struct jet_server jet_server = {
+	struct jet_server ipv6_jet_server = {
 		.ev = {
 			.read_function = accept_jet,
 			.write_function = NULL,
 			.error_function = accept_jet_error,
 			.loop = loop,
-			.sock = jet_fd
+			.sock = ipv6_jet_fd
 		}
 	};
-
-	ret = start_server(&jet_server.ev);
-	if (ret  < 0) {
-		close(jet_fd);
-		goto eventloop_destroy;
+	ret = start_server(&ipv6_jet_server.ev);
+	if (ret < 0) {
+		close(ipv6_jet_fd);
+		goto start_ipv6_jet_server_failed;
 	}
 
-	int http_fd = create_server_socket(CONFIG_JETWS_PORT);
-	if (http_fd < 0) {
-		goto stop_jet_server;
+	// start jet server on ipv4 loopback
+	int ipv4_jet_fd = create_server_socket_bound("127.0.0.1", CONFIG_JET_PORT);
+	if (ipv4_jet_fd < 0) {
+		ret = -1;
+		goto create_ipv4_jet_socket_failed;
+	}
+	struct jet_server ipv4_jet_server = {
+		.ev = {
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = ipv4_jet_fd
+		}
+	};
+	ret = start_server(&ipv4_jet_server.ev);
+	if (ret < 0) {
+		close(ipv4_jet_fd);
+		goto start_ipv4_jet_server_failed;
 	}
 
 	const struct url_handler handler[] = {
@@ -443,46 +525,186 @@ int run_io(struct eventloop *loop, const char *user_name, int run_foreground)
 		},
 	};
 
+	// start websocket jet server on ipv6 loopback
+	int ipv6_http_fd = create_server_socket_bound("::1", CONFIG_JETWS_PORT);
+	if (ipv6_http_fd < 0) {
+		ret = -1;
+		goto create_ipv6_jetws_socket_failed;
+	}
+	struct http_server ipv6_http_server = {
+		.ev = {
+			.read_function = accept_http,
+			.write_function = NULL,
+			.error_function = accept_http_error,
+			.loop = loop,
+			.sock = ipv6_http_fd
+		},
+		.handler = handler,
+		.num_handlers = ARRAY_SIZE(handler),
+	};
+	ret = start_server(&ipv6_http_server.ev);
+	if (ret < 0) {
+		close(ipv6_http_fd);
+		goto start_ipv6_jetws_server_failed;
+	}
+
+	// start websocket jet server on ipv4 loopback
+	int ipv4_http_fd = create_server_socket_bound("127.0.0.1", CONFIG_JETWS_PORT);
+	if (ipv4_http_fd < 0) {
+		ret = -1;
+		goto create_ipv4_jetws_socket_failed;
+	}
+	struct http_server ipv4_http_server = {
+		.ev = {
+			.read_function = accept_http,
+			.write_function = NULL,
+			.error_function = accept_http_error,
+			.loop = loop,
+			.sock = ipv4_http_fd
+		},
+		.handler = handler,
+		.num_handlers = ARRAY_SIZE(handler),
+	};
+	ret = start_server(&ipv4_http_server.ev);
+	if (ret < 0) {
+		close(ipv4_http_fd);
+		goto start_ipv4_jetws_server_failed;
+	}
+
+	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
+		ret = -1;
+		log_err("Can't drop privileges of cjet!\n");
+		goto drop_privileges_failed;
+	}
+
+	if (!run_foreground) {
+		if (daemon(0, 0) != 0) {
+			ret = -1;
+			log_err("Can't daemonize cjet!\n");
+			goto daemonize_failed;
+		}
+	}
+
+	ret = loop->run(loop->this_ptr, &go_ahead);
+	destroy_all_peers();
+
+daemonize_failed:
+drop_privileges_failed:
+	stop_server(&ipv4_http_server.ev);
+start_ipv4_jetws_server_failed:
+create_ipv4_jetws_socket_failed:
+	stop_server(&ipv6_http_server.ev);
+start_ipv6_jetws_server_failed:
+create_ipv6_jetws_socket_failed:
+	stop_server(&ipv4_jet_server.ev);
+start_ipv4_jet_server_failed:
+create_ipv4_jet_socket_failed:
+	stop_server(&ipv6_jet_server.ev);
+start_ipv6_jet_server_failed:
+create_ipv6_jet_socket_failed:
+	loop->destroy(loop->this_ptr);
+eventloop_init_failed:
+	unregister_signal_handler();
+	return ret;
+}
+
+int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground)
+{
+	int ret = 0;
+
+	if (register_signal_handler() < 0) {
+		return -1;
+	}
+
+	if (loop->init(loop->this_ptr) < 0) {
+		go_ahead = 0;
+		ret = -1;
+		goto eventloop_init_failed;
+	}
+
+	const struct url_handler handler[] = {
+		{
+			.request_target = "/",
+			.create = alloc_websocket_peer,
+			.on_header_field = websocket_upgrade_on_header_field,
+			.on_header_value = websocket_upgrade_on_header_value,
+			.on_headers_complete = websocket_upgrade_on_headers_complete,
+			.on_body = NULL,
+			.on_message_complete = NULL,
+		},
+	};
+
+	int jet_fd = create_server_socket_all_interfaces(CONFIG_JET_PORT);
+	if (jet_fd < 0) {
+		ret = -1;
+		goto create_jet_socket_failed;
+	}
+
+	struct jet_server jet_server = {
+		.ev = {
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = jet_fd
+		}
+	};
+	ret = start_server(&jet_server.ev);
+	if (ret  < 0) {
+		close(jet_fd);
+		goto start_jet_server_failed;
+	}
+
+	int http_fd = create_server_socket_all_interfaces(CONFIG_JETWS_PORT);
+	if (http_fd < 0) {
+		ret = -1;
+		goto create_jetws_socket_failed;
+	}
+	
 	 struct http_server http_server = {
 		.ev = {
 			.read_function = accept_http,
 			.write_function = NULL,
 			.error_function = accept_http_error,
 			.loop = loop,
-			.sock = http_fd,
+			.sock = http_fd
 		},
 		.handler = handler,
 		.num_handlers = ARRAY_SIZE(handler),
 	};
-
 	ret = start_server(&http_server.ev);
 	if (ret  < 0) {
 		close(http_fd);
-		goto stop_jet_server;
+		goto start_jetws_server_failed;
 	}
 
 	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
 		go_ahead = 0;
 		ret = -1;
-		goto stop_http_server;
+		goto drop_privileges_failed;
 	}
 
 	if (!run_foreground) {
 		if (daemon(0, 0) != 0) {
 			log_err("Can't daemonize cjet!\n");
+			ret = -1;
+			goto daemonize_failed;
 		}
 	}
-	ret = loop->run(loop->this_ptr, &go_ahead);
 
+	ret = loop->run(loop->this_ptr, &go_ahead);
 	destroy_all_peers();
 
-stop_http_server:
+daemonize_failed:
+drop_privileges_failed:
 	stop_server(&http_server.ev);
-stop_jet_server:
+start_jetws_server_failed:
+create_jetws_socket_failed:
 	stop_server(&jet_server.ev);
-eventloop_destroy:
+start_jet_server_failed:
+create_jet_socket_failed:
 	loop->destroy(loop->this_ptr);
-unregister_signal_handler:
+eventloop_init_failed:
 	unregister_signal_handler();
 	return ret;
 }

@@ -26,6 +26,7 @@
 
 #include <getopt.h>
 #include <signal.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -38,20 +39,25 @@
 
 int main(int argc, char **argv)
 {
-	int run_foreground = 0;
+	bool run_foreground = false;
+	bool bind_local_only = false;
 	int c;
 	const char *user_name = NULL;
 
-	while ((c = getopt (argc, argv, "fu:")) != -1) {
+	while ((c = getopt (argc, argv, "flu:")) != -1) {
 		switch (c) {
 			case 'f':
-				run_foreground = 1;
+				run_foreground = true;
 				break;
 			case 'u':
 				user_name = optarg;
 				break;
+			case 'l':
+				bind_local_only = true;
+				(void)bind_local_only;
+				break;
 			case '?':
-				fprintf(stderr, "Usage: %s [-f] [-u username]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-l] [-f] [-u username]\n", argv[0]);
 				return EXIT_FAILURE;
 				break;
 		}
@@ -76,8 +82,14 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&eloop.loop, user_name, run_foreground) < 0) {
-		goto run_io_failed;
+	if (bind_local_only) {
+		if (run_io_only_local(&eloop.loop, user_name, run_foreground) < 0) {
+			goto run_io_failed;
+		}
+	} else {
+		if (run_io_all_interfaces(&eloop.loop, user_name, run_foreground) < 0) {
+			goto run_io_failed;
+		}
 	}
 	log_info("%s stopped", CJET_NAME);
 
