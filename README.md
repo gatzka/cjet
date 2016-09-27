@@ -82,3 +82,5 @@ qbs -f ~/workspace/cjet/all.qbs release profile:clang cjet.runAnalyzer:true
 Just execute `cjet.bin` to run cjet in daemon mode. There are some command line options available:
 - -f to run cjet in foreground.
 - -u <username> to run cjet with the privileges of a certain user
+- -l let cjet only listen on the loopback device
+
