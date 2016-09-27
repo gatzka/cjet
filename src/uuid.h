@@ -29,6 +29,6 @@
 
 #include "json/cJSON.h"
 
-char *get_routed_request_uuid(void *address, const cJSON *origin_request_id);
+char *alloc_routed_request_uuid(void *address, const cJSON *origin_request_id);
 
 #endif

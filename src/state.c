@@ -173,7 +173,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	char *routed_request_id = get_routed_request_uuid(p, origin_request_id);
+	char *routed_request_id = alloc_routed_request_uuid(p, origin_request_id);
 	if (routed_request_id == NULL) {
 		error = create_internal_error(
 			p, "reason", "could not create request id");
