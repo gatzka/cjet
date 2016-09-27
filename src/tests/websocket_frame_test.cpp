@@ -60,6 +60,7 @@ static size_t readback_buffer_length;
 static bool close_called;
 static bool text_message_received_called;
 static bool ping_received_called;
+static bool pong_received_called;
 
 static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
 {
@@ -199,6 +200,17 @@ static enum websocket_callback_return ping_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
+static enum websocket_callback_return pong_received(struct websocket *s, uint8_t *msg, size_t length)
+{
+	(void)s;
+	(void)msg;
+	(void)length;
+	::memcpy(readback_buffer, msg, length);
+	readback_buffer_length += length;
+	pong_received_called = true;
+	return WS_OK;
+}
+
 static void fill_payload(uint8_t *ptr, uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
 	::memcpy(ptr, payload, length);
@@ -267,6 +279,7 @@ struct F {
 		close_called = false;
 		text_message_received_called = false;
 		ping_received_called = false;
+		pong_received_called = false;
 		write_buffer_ptr = write_buffer;
 		read_buffer_ptr = read_buffer;
 		readback_buffer_length = 0;
@@ -279,6 +292,7 @@ struct F {
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
 		ws.ping_received = ping_received;
+		ws.pong_received = pong_received;
 	}
 
 	~F()
@@ -350,4 +364,32 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_pong_on_server)
+{
+	bool is_server = true;
+	F f(is_server);
+
+	char message[] = "Playing pong!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
+{
+	bool is_server = false;
+	F f(is_server);
+
+	char message[] = "Playing pong!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
