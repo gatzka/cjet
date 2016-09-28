@@ -68,7 +68,6 @@ static int ws_send_message(struct peer *p, char *rendered, size_t len)
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
 	free_peer_resources(&ws_peer->peer);
-	websocket_free(&ws_peer->websocket);
 	free(ws_peer);
 }
 
@@ -81,6 +80,9 @@ static void free_websocket_peer_callback(struct websocket *s)
 static void free_websocket_peer_on_error(void *context)
 {
 	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
+	// TODO: call on_err
+	ws_peer->websocket.on_error(&ws_peer->websocket);
+	websocket_free(&ws_peer->websocket, 1001);
 	free_websocket_peer(ws_peer);
 }
 
@@ -95,10 +97,8 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 	}
 }
 
-static enum websocket_callback_return close_callback(struct websocket *s, uint16_t status_code,  char *msg, size_t length)
+static enum websocket_callback_return close_callback(struct websocket *s, uint16_t status_code)
 {
-	(void)msg;
-	(void)length;
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_peer_info(&ws_peer->peer, "Websocket peer closed connection: %d\n", status_code);
 	free_websocket_peer(ws_peer);
