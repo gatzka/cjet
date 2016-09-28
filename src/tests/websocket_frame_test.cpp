@@ -324,7 +324,7 @@ BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 	bool is_server = true;
 	F f(is_server);
 	
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
@@ -337,7 +337,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
@@ -350,7 +350,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_on_client)
 	char message[] = "Tell me why!";
 	prepare_message(WS_OPCODE_TEXT, message, is_server, NULL);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }
@@ -378,7 +378,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_server)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_client)
 	char message[] = "Tell me why!";
 	prepare_message(WS_OPCODE_BINARY, message, is_server, NULL);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws);
+	websocket_free(&f.ws, 1001);
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }

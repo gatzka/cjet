@@ -75,7 +75,7 @@ struct websocket {
 	enum websocket_callback_return (*binary_frame_received)(struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame);
 	enum websocket_callback_return (*ping_received)(struct websocket *s, uint8_t *msg, size_t length);
 	enum websocket_callback_return (*pong_received)(struct websocket *s, uint8_t *msg, size_t length);
-	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code, char *msg, size_t length);
+	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code);
 	bool protocol_requested;
 	struct {
 		const char *name;
@@ -87,7 +87,7 @@ int websocket_init_random(void);
 void websocket_fill_mask_randomly(uint8_t mask[4]);
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol);
-void websocket_free(struct websocket *ws);
+void websocket_free(struct websocket *ws, uint16_t status_code);
 enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *buf, size_t len);
 enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t len);
 

@@ -310,7 +310,7 @@ BOOST_FIXTURE_TEST_CASE(test_websocket_init, F)
 	struct websocket ws;
 	int ret = websocket_init(&ws, connection, true, ws_on_error, "soap");
 	BOOST_CHECK_MESSAGE(ret == 0, "Initializaton of websocket failed!");
-	websocket_free(&ws);
+	websocket_free(&ws, 1001);
 }
 
 BOOST_AUTO_TEST_CASE(test_websocket_init_without_error_callback)
@@ -354,7 +354,7 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_websocket_protocol, F)
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
-	websocket_free(&ws);
+	websocket_free(&ws, 1001);
 	if (ret == BS_OK) {
 		BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
 		BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
@@ -395,7 +395,6 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_illegal_websocket_key, F)
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when illegal WebSocketKey was provided!");
-	websocket_free(&ws);
 }
 
 BOOST_FIXTURE_TEST_CASE(http_upgrade_with_unsupported_websocket_protocol, F)
@@ -426,7 +425,6 @@ BOOST_FIXTURE_TEST_CASE(http_upgrade_with_unsupported_websocket_protocol, F)
 	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket was not closed when websocket upgrade contains only unsupported sub protocols");
 	BOOST_CHECK_MESSAGE(ws_error == true, "on_error function was not called when websocket upgrade contains only unsupported sub protocols");
-	websocket_free(&ws);
 }
 
 BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
@@ -461,10 +459,9 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_http_version)
 		
 		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
-		websocket_free(&ws);
 		if (ret == BS_OK) {
+			websocket_free(&ws, 1001);
 			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
-			
 			BOOST_CHECK_MESSAGE(response_parser.status_code == 101, "Expected 101 status code");
 			BOOST_CHECK_MESSAGE(response_parser.http_major == 1, "Expected http major 1");
 			BOOST_CHECK_MESSAGE(response_parser.http_minor == 1, "Expected http minor 1");
@@ -506,10 +503,9 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_ws_version)
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
-		websocket_free(&ws);
 		if (ret == BS_OK) {
+			websocket_free(&ws, 1001);
 			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
-
 		} else {
 			BOOST_CHECK_MESSAGE(ws_error == true, "Wrong websocket version accepted!");
 		}
@@ -543,9 +539,9 @@ BOOST_AUTO_TEST_CASE(test_http_upgrade_wrong_http_method)
 
 		bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 		BOOST_CHECK_MESSAGE(ret == table[i].expected_return, "websocket_read_header_line did not return expected return value");
-		websocket_free(&ws);
 		if (ret == BS_OK) {
 			BOOST_CHECK_MESSAGE(ws_error == false, "Got error while parsing response for correct upgrade request");
+			websocket_free(&ws, 1001);
 		} else {
 			BOOST_CHECK_MESSAGE(ws_error == true, "Illegal http method accepted!");
 		}
@@ -564,7 +560,7 @@ BOOST_FIXTURE_TEST_CASE(test_http_only_header_parts, F)
 
 	bs_read_callback_return ret = websocket_read_header_line(&ws, (uint8_t *)&data[0], data.size());
 	BOOST_CHECK_MESSAGE(ret == BS_OK, "websocket_read_header_line did not return expected return value");
-	websocket_free(&ws);
+	websocket_free(&ws, 1001);
 }
 
 BOOST_FIXTURE_TEST_CASE(test_close_while_reading_http_headers, F)
@@ -576,5 +572,4 @@ BOOST_FIXTURE_TEST_CASE(test_close_while_reading_http_headers, F)
 	bs_read_callback_return ret = websocket_read_header_line(&ws, NULL, 0);
 	BOOST_CHECK_MESSAGE(ret == BS_CLOSED, "websocket_read_header_line did not return expected return value");
 	BOOST_CHECK_MESSAGE(ws_error, "error function was not called socket was closed during header read!");
-	websocket_free(&ws);
 }
