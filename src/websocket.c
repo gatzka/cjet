@@ -64,46 +64,48 @@ static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
 
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
+	enum websocket_callback_return ret = WS_OK;
+
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
 		log_err("Fragmented websocket frame not supported!\n");
-		return WS_ERROR;
+		ret = WS_ERROR;
+		break;
 
 	case WS_BINARY_FRAME:
 		if (s->binary_message_received != NULL) {
-			return s->binary_message_received(s, frame, length);
+			ret = s->binary_message_received(s, frame, length);
 		}
 		break;
 
 	case WS_TEXT_FRAME:
 		if (s->text_message_received != NULL) {
-			return s->text_message_received(s, (char *)frame, length);
+			ret = s->text_message_received(s, (char *)frame, length);
 		}
 		break;
 
 	case WS_PING_FRAME:
 	{
-		int ret = websocket_send_pong_frame(s, frame, length);
-		if (ret < 0) {
+		int pong_ret = websocket_send_pong_frame(s, frame, length);
+		if (unlikely(pong_ret < 0)) {
 			// TODO: maybe call the error callback?
-			return WS_ERROR;
+			ret = WS_ERROR;
+		} else {
+			if (s->ping_received != NULL) {
+				ret = s->ping_received(s, frame, length);
+			}
 		}
-
-		if (s->ping_received != NULL) {
-			return s->ping_received(s, frame, length);
-		}
-
 		break;
 	}
 
 	case WS_PONG_FRAME:
 		if (s->pong_received != NULL) {
-			return s->pong_received(s, frame, length);
+			ret = s->pong_received(s, frame, length);
 		}
-
 		break;
 
 	case WS_CLOSE_FRAME:
+		// TODO: answer myself with close?
 		if (s->close_received != NULL) {
 			uint16_t status_code = 0;
 			if (length >= 2) {
@@ -112,16 +114,17 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 				frame += sizeof(status_code);
 				length -= sizeof(status_code);
 			}
-			return s->close_received(s, status_code, (char *)frame, length);
+			ret = s->close_received(s, status_code, (char *)frame, length);
 		}
 		break;
 
 	default:
 		log_err("Unsupported websocket frame!\n");
-		return WS_ERROR;
+		ret = WS_ERROR;
+		break;
 	}
 
-	return WS_OK;
+	return ret;
 }
 
 static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, size_t len)
