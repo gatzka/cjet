@@ -82,7 +82,7 @@ static void free_websocket_peer_on_error(void *context)
 	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
 	// TODO: call on_err
 	ws_peer->websocket.on_error(&ws_peer->websocket);
-	websocket_free(&ws_peer->websocket, 1001);
+	websocket_free(&ws_peer->websocket, WS_CLOSE_GOING_AWAY);
 	free_websocket_peer(ws_peer);
 }
 

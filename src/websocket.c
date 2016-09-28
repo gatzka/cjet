@@ -117,7 +117,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			frame += sizeof(status_code);
 			length -= sizeof(status_code);
 		}
-		websocket_free(s, 1001);
+		websocket_free(s, WS_CLOSE_GOING_AWAY);
 		if (s->close_received != NULL) {
 			s->close_received(s, status_code);
 		}
@@ -148,13 +148,13 @@ static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, 
 		/*
 		 * Other side closed the socket
 		 */
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
 	struct buffered_reader *br = &s->connection->br;
 	if (unlikely(s->is_server && (s->ws_flags.mask == 0))) {
-		handle_error(s, 1002);
+		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return BS_CLOSED;
 	} else {
 		if (s->ws_flags.mask != 0) {
@@ -170,7 +170,7 @@ static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, 
 			return BS_CLOSED;
 
 		case WS_ERROR:
-			handle_error(s, 1011);
+			handle_error(s, WS_CLOSE_INTERNAL_ERROR);
 			return BS_CLOSED;
 		}
 
@@ -183,7 +183,7 @@ static enum bs_read_callback_return ws_get_mask(void *context, uint8_t *buf, siz
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -208,7 +208,7 @@ static enum bs_read_callback_return ws_get_length16(void *context, uint8_t *buf,
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -225,7 +225,7 @@ static enum bs_read_callback_return ws_get_length64(void *context, uint8_t *buf,
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -242,7 +242,7 @@ static enum bs_read_callback_return ws_get_first_length(void *context, uint8_t *
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -272,7 +272,7 @@ enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t l
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len == 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -297,7 +297,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *
 	struct websocket *s = (struct websocket *)context;
 
 	if (unlikely(len <= 0)) {
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -305,7 +305,7 @@ enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *
 	if (unlikely(nparsed != (size_t)len)) {
 		s->connection->status_code = HTTP_BAD_REQUEST;
 		send_http_error_response(s->connection);
-		handle_error(s, 1001);
+		handle_error(s, WS_CLOSE_GOING_AWAY);
 		return BS_CLOSED;
 	}
 
@@ -579,13 +579,14 @@ int websocket_send_pong_frame(struct websocket *s, uint8_t *payload, size_t leng
 	return send_frame(s, payload, length, WS_PONG_FRAME);
 }
 
-int websocket_send_close_frame(struct websocket *s, uint16_t status_code, const char *payload, size_t length)
+int websocket_send_close_frame(struct websocket *s, enum ws_status_code status_code, const char *payload, size_t length)
 {
-	uint8_t buffer[length + sizeof(status_code)];
-	status_code = jet_htobe16(status_code);
-	memcpy(buffer, &status_code, sizeof(status_code));
-	memcpy(buffer + sizeof(status_code), payload, length);
-	return send_frame(s, buffer, length + sizeof(status_code), WS_CLOSE_FRAME);
+	uint16_t code = status_code;
+	uint8_t buffer[length + sizeof(code)];
+	code = jet_htobe16(code);
+	memcpy(buffer, &code, sizeof(code));
+	memcpy(buffer + sizeof(code), payload, length);
+	return send_frame(s, buffer, length + sizeof(code), WS_CLOSE_FRAME);
 }
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
@@ -610,7 +611,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	return 0;
 }
 
-void websocket_free(struct websocket *ws, uint16_t status_code)
+void websocket_free(struct websocket *ws, enum ws_status_code status_code)
 {
 	if (ws->upgrade_complete) {
 		websocket_send_close_frame(ws, status_code, NULL, 0);
