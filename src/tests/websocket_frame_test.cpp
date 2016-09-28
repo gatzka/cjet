@@ -44,6 +44,7 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 static const uint8_t WS_HEADER_MASK = 0x80;
 
 static const uint8_t WS_OPCODE_TEXT = 0x01;
+static const uint8_t WS_OPCODE_BINARY = 0x02;
 static const uint8_t WS_OPCODE_CLOSE = 0x08;
 static const uint8_t WS_OPCODE_PING = 0x09;
 static const uint8_t WS_OPCODE_PONG = 0x0a;
@@ -59,6 +60,7 @@ static size_t readback_buffer_length;
 
 static bool close_called;
 static bool text_message_received_called;
+static bool binary_message_received_called;
 static bool ping_received_called;
 static bool pong_received_called;
 
@@ -186,11 +188,19 @@ static int close(void *this_ptr)
 static enum websocket_callback_return text_message_received(struct websocket *s, char *msg, size_t length)
 {
 	(void)s;
-	(void)msg;
-	(void)length;
 	::memcpy(readback_buffer, msg, length);
 	readback_buffer_length += length;
 	text_message_received_called = true;
+	return WS_OK;
+}
+
+
+static enum websocket_callback_return binary_message_received(struct websocket *s, uint8_t *msg, size_t length)
+{
+	(void)s;
+	::memcpy(readback_buffer, msg, length);
+	readback_buffer_length += length;
+	binary_message_received_called = true;
 	return WS_OK;
 }
 
@@ -283,6 +293,7 @@ struct F {
 
 		close_called = false;
 		text_message_received_called = false;
+		binary_message_received_called = false;
 		ping_received_called = false;
 		pong_received_called = false;
 		write_buffer_ptr = write_buffer;
@@ -296,6 +307,7 @@ struct F {
 		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
+		ws.binary_message_received = binary_message_received;
 		ws.ping_received = ping_received;
 		ws.pong_received = pong_received;
 	}
@@ -316,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_server)
+BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server)
 {
 	bool is_server = true;
 	F f(is_server);
@@ -330,7 +342,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_server)
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_text_frame_on_client)
+BOOST_AUTO_TEST_CASE(test_receive_text_message_on_client)
 {
 	bool is_server = false;
 	F f(is_server);
@@ -396,5 +408,19 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_free(&f.ws);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server)
+{
+	bool is_server = true;
+	F f(is_server);
+
+	char message[] = "Hello World!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
