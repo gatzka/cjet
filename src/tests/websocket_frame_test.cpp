@@ -424,3 +424,16 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server)
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
+
+BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_client)
+{
+	bool is_server = false;
+	F f(is_server);
+
+	char message[] = "Tell me why!";
+	prepare_message(WS_OPCODE_BINARY, message, is_server, NULL);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_free(&f.ws);
+	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
