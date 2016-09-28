@@ -73,18 +73,20 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_BINARY_FRAME:
-		if (s->binary_message_received != NULL) {
+		if (likely(s->binary_message_received != NULL)) {
 			ret = s->binary_message_received(s, frame, length);
 		} else {
-		// TODO: send close socket with code 1003	
+			websocket_free(s, WS_CLOSE_UNSUPPORTED);
+			ret = WS_CLOSED;
 		}
 		break;
 
 	case WS_TEXT_FRAME:
-		if (s->text_message_received != NULL) {
+		if (likely(s->text_message_received != NULL)) {
 			ret = s->text_message_received(s, (char *)frame, length);
 		} else {
-		// TODO: send close socket with code 1003	
+			websocket_free(s, WS_CLOSE_UNSUPPORTED);
+			ret = WS_CLOSED;
 		}
 		break;
 
