@@ -91,7 +91,7 @@ struct websocket {
 	enum websocket_callback_return (*binary_frame_received)(struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame);
 	enum websocket_callback_return (*ping_received)(struct websocket *s, uint8_t *msg, size_t length);
 	enum websocket_callback_return (*pong_received)(struct websocket *s, uint8_t *msg, size_t length);
-	enum websocket_callback_return (*close_received)(struct websocket *s, uint16_t status_code);
+	enum websocket_callback_return (*close_received)(struct websocket *s, enum ws_status_code status_code);
 	bool protocol_requested;
 	struct {
 		const char *name;

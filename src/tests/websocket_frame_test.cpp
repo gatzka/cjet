@@ -217,6 +217,13 @@ static enum websocket_callback_return ping_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
+static enum websocket_callback_return close_received(struct websocket *s, enum ws_status_code status_code)
+{
+	(void)s;
+	(void)status_code;
+	return WS_OK;
+}
+
 static enum websocket_callback_return pong_received(struct websocket *s, uint8_t *msg, size_t length)
 {
 	(void)s;
@@ -313,6 +320,7 @@ struct F {
 		ws.binary_message_received = binary_message_received;
 		ws.ping_received = ping_received;
 		ws.pong_received = pong_received;
+		ws.close_received = close_received;
 	}
 
 	~F()

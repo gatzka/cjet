@@ -127,7 +127,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		}
 		websocket_free(s, WS_CLOSE_GOING_AWAY);
 		if (s->close_received != NULL) {
-			s->close_received(s, status_code);
+			s->close_received(s, (enum ws_status_code)status_code);
 		}
 		ret = WS_CLOSED;
 		break;

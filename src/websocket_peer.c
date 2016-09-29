@@ -97,7 +97,7 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 	}
 }
 
-static enum websocket_callback_return close_callback(struct websocket *s, uint16_t status_code)
+static enum websocket_callback_return close_callback(struct websocket *s, enum ws_status_code status_code)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_peer_info(&ws_peer->peer, "Websocket peer closed connection: %d\n", status_code);
