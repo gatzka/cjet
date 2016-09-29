@@ -58,12 +58,14 @@ static size_t read_buffer_length;
 static uint8_t readback_buffer[5000];
 static size_t readback_buffer_length;
 
-static bool close_called;
+static bool br_close_called;
 static bool got_error;
 static bool text_message_received_called;
 static bool binary_message_received_called;
 static bool ping_received_called;
 static bool pong_received_called;
+static bool close_received_called;
+static enum ws_status_code status_code_received;
 
 static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
 {
@@ -100,7 +102,6 @@ static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *
 	if ((ptr - read_buffer) <= (ssize_t)read_buffer_length) {
 		handler(handler_context, ptr, num);
 	} else {
-		
 		num++;
 	}
 	return 0;
@@ -183,7 +184,7 @@ static bool is_close_frame(enum ws_status_code code)
 static int close(void *this_ptr)
 {
 	(void)this_ptr;
-	close_called = true;
+	br_close_called = true;
 	return 0;
 }
 
@@ -217,18 +218,17 @@ static enum websocket_callback_return ping_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
-static enum websocket_callback_return close_received(struct websocket *s, enum ws_status_code status_code)
+static enum websocket_callback_return close_received(struct websocket *s, enum ws_status_code code)
 {
 	(void)s;
-	(void)status_code;
+	close_received_called = true;
+	status_code_received = code;
 	return WS_OK;
 }
 
 static enum websocket_callback_return pong_received(struct websocket *s, uint8_t *msg, size_t length)
 {
 	(void)s;
-	(void)msg;
-	(void)length;
 	::memcpy(readback_buffer, msg, length);
 	readback_buffer_length += length;
 	pong_received_called = true;
@@ -288,6 +288,7 @@ static void prepare_message(uint8_t type, char *message, bool shall_mask, uint8_
 	if (shall_mask) {
 		::memcpy(ptr, mask, 4);
 		ptr += 4;
+		read_buffer_length += 4;
 	}
 
 	fill_payload(ptr, (uint8_t *)message, length, shall_mask, mask);
@@ -300,12 +301,14 @@ struct F {
 	{
 		websocket_init_random();
 
-		close_called = false;
+		br_close_called = false;
 		got_error = false;
 		text_message_received_called = false;
 		binary_message_received_called = false;
 		ping_received_called = false;
+		close_received_called = false;
 		pong_received_called = false;
+		status_code_received = (enum ws_status_code)0;
 		write_buffer_ptr = write_buffer;
 		read_buffer_ptr = read_buffer;
 		readback_buffer_length = 0;
@@ -461,6 +464,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a text message without a callback registered!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
@@ -475,5 +479,24 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a binary message without a callback registered!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
 }
 
+BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
+{
+	bool is_server = true;
+	F f(is_server);
+	uint16_t code = WS_CLOSE_GOING_AWAY;
+	uint16_t code_be = htobe16(code);
+	char message[3];
+	memcpy(message, &code_be, sizeof(code_be));
+	message[2] = '\0';
+	
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_CLOSE, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called!");
+	BOOST_CHECK_MESSAGE(status_code_received == code, "Incorrect status code received!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent receiving a close!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
+}
