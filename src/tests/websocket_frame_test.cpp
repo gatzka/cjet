@@ -101,8 +101,6 @@ static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *
 	read_buffer_ptr += num;
 	if ((ptr - read_buffer) <= (ssize_t)read_buffer_length) {
 		handler(handler_context, ptr, num);
-	} else {
-		num++;
 	}
 	return 0;
 }
