@@ -62,6 +62,12 @@ static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
 	}
 }
 
+static void handle_error(struct websocket *s, uint16_t status_code)
+{
+	s->on_error(s);
+	websocket_free(s, status_code);
+}
+
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
 	enum websocket_callback_return ret = WS_OK;
@@ -76,7 +82,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		if (likely(s->binary_message_received != NULL)) {
 			ret = s->binary_message_received(s, frame, length);
 		} else {
-			websocket_free(s, WS_CLOSE_UNSUPPORTED);
+			handle_error(s, WS_CLOSE_UNSUPPORTED);
 			ret = WS_CLOSED;
 		}
 		break;
@@ -85,7 +91,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		if (likely(s->text_message_received != NULL)) {
 			ret = s->text_message_received(s, (char *)frame, length);
 		} else {
-			websocket_free(s, WS_CLOSE_UNSUPPORTED);
+			handle_error(s, WS_CLOSE_UNSUPPORTED);
 			ret = WS_CLOSED;
 		}
 		break;
@@ -134,12 +140,6 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	return ret;
-}
-
-static void handle_error(struct websocket *s, uint16_t status_code)
-{
-	s->on_error(s);
-	websocket_free(s, status_code);
 }
 
 static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, size_t len)

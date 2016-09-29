@@ -59,6 +59,7 @@ static uint8_t readback_buffer[5000];
 static size_t readback_buffer_length;
 
 static bool close_called;
+static bool got_error;
 static bool text_message_received_called;
 static bool binary_message_received_called;
 static bool ping_received_called;
@@ -75,6 +76,7 @@ static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
 static void ws_on_error(struct websocket *ws)
 {
 	(void)ws;
+	got_error = true;
 }
 
 static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
@@ -146,7 +148,7 @@ static bool is_pong_frame(const char *payload)
 	return true;
 }
 
-static bool is_close_frame()
+static bool is_close_frame(enum ws_status_code code)
 {
 	const uint8_t *ptr = write_buffer;
 	uint8_t header;
@@ -172,7 +174,7 @@ static bool is_close_frame()
 	uint16_t status_code;
 	::memcpy(&status_code, ptr, sizeof(status_code));
 	status_code = be16toh(status_code);
-	if (status_code != WS_CLOSE_GOING_AWAY) {
+	if (status_code != code) {
 		return false;
 	}
 	return true;
@@ -292,6 +294,7 @@ struct F {
 		websocket_init_random();
 
 		close_called = false;
+		got_error = false;
 		text_message_received_called = false;
 		binary_message_received_called = false;
 		ping_received_called = false;
@@ -325,7 +328,7 @@ BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 	F f(is_server);
 	
 	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
-	BOOST_CHECK_MESSAGE(is_close_frame(), "No close frame sent when freeing the websocket!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when freeing the websocket!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server)
@@ -437,3 +440,32 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_client)
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
+
+BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
+{
+	bool is_server = true;
+	F f(is_server);
+	f.ws.text_message_received = NULL;
+
+	char message[] = "Hello World!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a text message without a callback registered!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
+{
+	bool is_server = true;
+	F f(is_server);
+	f.ws.binary_message_received = NULL;
+
+	char message[] = "Hello World!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a binary message without a callback registered!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
+}
+
