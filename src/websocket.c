@@ -65,7 +65,7 @@ static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
 static void handle_error(struct websocket *s, uint16_t status_code)
 {
 	s->on_error(s);
-	websocket_free(s, status_code);
+	websocket_close(s, status_code);
 }
 
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
@@ -126,7 +126,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			frame += sizeof(status_code);
 			length -= sizeof(status_code);
 		}
-		websocket_free(s, WS_CLOSE_GOING_AWAY);
+		websocket_close(s, WS_CLOSE_GOING_AWAY);
 		if (s->close_received != NULL) {
 			s->close_received(s, (enum ws_status_code)status_code);
 		}
@@ -622,7 +622,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	return 0;
 }
 
-void websocket_free(struct websocket *ws, enum ws_status_code status_code)
+void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 {
 	if (ws->upgrade_complete) {
 		websocket_send_close_frame(ws, status_code, NULL, 0);
