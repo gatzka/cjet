@@ -52,7 +52,7 @@ static const uint8_t WS_OPCODE_PONG = 0x0a;
 static uint8_t write_buffer[5000];
 static uint8_t *write_buffer_ptr;
 
-static uint8_t read_buffer[5000];
+static uint8_t *read_buffer;
 static uint8_t *read_buffer_ptr;
 static size_t read_buffer_length;
 static uint8_t readback_buffer[5000];
@@ -99,7 +99,8 @@ static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *
 	(void)this_ptr;
 	uint8_t *ptr = read_buffer_ptr;
 	read_buffer_ptr += num;
-	if ((ptr - read_buffer) <= (ssize_t)read_buffer_length) {
+	if ((ptr - read_buffer) < (ssize_t)read_buffer_length) {
+	//if ((ptr - read_buffer) <= (ssize_t)read_buffer_length) {
 		handler(handler_context, ptr, num);
 	}
 	return 0;
@@ -295,7 +296,7 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 
 struct F {
 
-	F(bool is_server)
+	F(bool is_server, uint32_t buffer_length)
 	{
 		websocket_init_random();
 
@@ -308,6 +309,7 @@ struct F {
 		pong_received_called = false;
 		status_code_received = (enum ws_status_code)0;
 		write_buffer_ptr = write_buffer;
+		read_buffer = (uint8_t *)::malloc(buffer_length);
 		read_buffer_ptr = read_buffer;
 		readback_buffer_length = 0;
 
@@ -326,6 +328,7 @@ struct F {
 
 	~F()
 	{
+		free(read_buffer);
 	}
 
 	struct websocket ws;
@@ -334,7 +337,7 @@ struct F {
 BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when freeing the websocket!");
@@ -347,7 +350,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message)
 
 	for (unsigned int j = 0; j < ARRAY_SIZE(is_server); j++) {
 		for (unsigned int i = 0; i < ARRAY_SIZE(messages); i++) {
-			F f(is_server[j]);
+			F f(is_server[j], 5000);
 
 			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 			prepare_message(WS_OPCODE_TEXT, messages[i], is_server[j], mask);
@@ -366,7 +369,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message)
 
 	for (unsigned int j = 0; j < ARRAY_SIZE(is_server); j++) {
 		for (unsigned int i = 0; i < ARRAY_SIZE(messages); i++) {
-			F f(is_server[j]);
+			F f(is_server[j], 5000);
 
 			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 			prepare_message(WS_OPCODE_BINARY, messages[i], is_server[j], mask);
@@ -381,7 +384,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message)
 BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 
 	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
@@ -395,7 +398,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 {
 	bool is_server = false;
-	F f(is_server);
+	F f(is_server, 5000);
 
 	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
@@ -409,7 +412,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 BOOST_AUTO_TEST_CASE(test_receive_pong_on_server)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 
 	char message[] = "Playing pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
@@ -423,7 +426,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_server)
 BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 {
 	bool is_server = false;
-	F f(is_server);
+	F f(is_server, 5000);
 
 	char message[] = "Playing pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
@@ -437,7 +440,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 	f.ws.text_message_received = NULL;
 
 	char message[] = "Hello World!";
@@ -452,7 +455,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
 BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 	f.ws.binary_message_received = NULL;
 
 	char message[] = "Hello World!";
@@ -467,7 +470,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
 BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
 {
 	bool is_server = true;
-	F f(is_server);
+	F f(is_server, 5000);
 	uint16_t code = WS_CLOSE_GOING_AWAY;
 	uint16_t code_be = htobe16(code);
 	char message[3];
