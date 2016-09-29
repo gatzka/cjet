@@ -235,7 +235,7 @@ static enum websocket_callback_return pong_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
-static void fill_payload(uint8_t *ptr, uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
+static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
 	::memcpy(ptr, payload, length);
 	if (shall_mask) {
@@ -243,7 +243,7 @@ static void fill_payload(uint8_t *ptr, uint8_t *payload, uint64_t length, bool s
 	}
 }
 
-static void prepare_message(uint8_t type, char *message, bool shall_mask, uint8_t mask[4])
+static void prepare_message(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
 {
 	uint8_t *ptr = read_buffer;
 	read_buffer_length = 0;
@@ -337,36 +337,47 @@ BOOST_AUTO_TEST_CASE(test_close_frame_on_websocket_free)
 {
 	bool is_server = true;
 	F f(is_server);
-	
+
 	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when freeing the websocket!");
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server)
+BOOST_AUTO_TEST_CASE(test_receive_text_message)
 {
-	bool is_server = true;
-	F f(is_server);
+	const char *messages[2] = {"Hello World!", ""};
+	bool is_server[2] = {true, false};
 
-	char message[] = "Hello World!";
-	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
-	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
-	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+	for (unsigned int j = 0; j < ARRAY_SIZE(is_server); j++) {
+		for (unsigned int i = 0; i < ARRAY_SIZE(messages); i++) {
+			F f(is_server[j]);
+
+			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+			prepare_message(WS_OPCODE_TEXT, messages[i], is_server[j], mask);
+			ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+			websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
+			BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
+			BOOST_CHECK_MESSAGE(::strncmp(messages[i], (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+		}
+	}
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_text_message_on_client)
+BOOST_AUTO_TEST_CASE(test_receive_binary_message)
 {
-	bool is_server = false;
-	F f(is_server);
+	const char *messages[2] = {"Hello World!", ""};
+	bool is_server[2] = {true, false};
 
-	char message[] = "Tell me why!";
-	prepare_message(WS_OPCODE_TEXT, message, is_server, NULL);
-	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
-	BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+	for (unsigned int j = 0; j < ARRAY_SIZE(is_server); j++) {
+		for (unsigned int i = 0; i < ARRAY_SIZE(messages); i++) {
+			F f(is_server[j]);
+
+			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+			prepare_message(WS_OPCODE_BINARY, messages[i], is_server[j], mask);
+			ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+			websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
+			BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
+			BOOST_CHECK_MESSAGE(::strncmp(messages[i], (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+		}
+	}
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
@@ -425,33 +436,6 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 }
 
-BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server)
-{
-	bool is_server = true;
-	F f(is_server);
-
-	char message[] = "Hello World!";
-	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
-	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
-	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
-}
-
-BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_client)
-{
-	bool is_server = false;
-	F f(is_server);
-
-	char message[] = "Tell me why!";
-	prepare_message(WS_OPCODE_BINARY, message, is_server, NULL);
-	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	websocket_free(&f.ws, WS_CLOSE_GOING_AWAY);
-	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
-	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
-}
-
 BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
 {
 	bool is_server = true;
@@ -491,7 +475,7 @@ BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
 	char message[3];
 	memcpy(message, &code_be, sizeof(code_be));
 	message[2] = '\0';
-	
+
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_CLOSE, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
