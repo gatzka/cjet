@@ -75,7 +75,8 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
 		log_err("Fragmented websocket frame not supported!\n");
-		ret = WS_ERROR;
+		handle_error(s, WS_CLOSE_UNSUPPORTED);
+		ret = WS_CLOSED;
 		break;
 
 	case WS_BINARY_FRAME:
