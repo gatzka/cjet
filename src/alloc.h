@@ -36,6 +36,7 @@ extern "C" {
 void *cjet_malloc(size_t size);
 void cjet_free(void *ptr);
 void *cjet_calloc(size_t nmemb, size_t size);
+size_t cjet_get_alloc_size(void);
 
 #ifdef __cplusplus
 }

@@ -81,5 +81,11 @@ void *cjet_calloc(size_t nmemb, size_t size)
 	}
 
 	ptr->size = alloc_size;
+	allocated_memory += alloc_size;
 	return &ptr->data;
+}
+
+size_t cjet_get_alloc_size(void)
+{
+	return allocated_memory;
 }

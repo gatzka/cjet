@@ -203,6 +203,19 @@ Project {
     }
 
     CppApplication {
+        name: "alloc_tests"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends { name: "unittestSettings" }
+
+        files: [
+            "linux/alloc.c",
+            "tests/alloc_test.cpp",
+        ]
+    }
+
+    CppApplication {
         name: "buffered_socket_test"
         type: ["application", "unittest"]
         consoleApplication: true
