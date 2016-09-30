@@ -112,6 +112,7 @@ TARGET_LINK_LIBRARIES(
 SET(STRING_TEST
 	../linux/alloc.c
 	../linux/jet_string.c
+	log.cpp
 	string_test.cpp
 )
 ADD_EXECUTABLE(string_test.bin ${STRING_TEST})
@@ -139,6 +140,7 @@ SET(HTTP_CONNECTION_TEST
     ../http_server.c
 	../linux/alloc.c
     ../linux/jet_string.c
+	log.cpp
     http_connection_test.cpp
 )
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
@@ -234,6 +236,7 @@ TARGET_LINK_LIBRARIES(
 SET(BASE64_TEST
 	../linux/alloc.c
 	../base64.c
+	log.cpp
 	base64_test.cpp
 )
 ADD_EXECUTABLE(base64_test.bin ${BASE64_TEST})
@@ -246,6 +249,7 @@ SET(HTTP_PARSER_TEST
 	../http-parser/http_parser.c
 	../http-parser/test.c
 	../linux/alloc.c
+	log.cpp
 )
 ADD_EXECUTABLE(http_parser_test.bin ${HTTP_PARSER_TEST})
 TARGET_LINK_LIBRARIES(
