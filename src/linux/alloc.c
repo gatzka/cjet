@@ -29,7 +29,10 @@
 
 #include "alloc.h"
 #include "compiler.h"
+#include "generated/cjet_config.h"
 #include "util.h"
+
+static size_t allocated_memory = 0;
 
 struct memblock {
 	size_t size;
@@ -38,27 +41,40 @@ struct memblock {
 
 void *cjet_malloc(size_t size)
 {
-	struct memblock *ptr = (struct memblock *)malloc(size + sizeof(size_t));
+	size_t alloc_size = size + sizeof(size_t);
+	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
+		return NULL;
+	}
+
+	struct memblock *ptr = (struct memblock *)malloc(alloc_size);
 	if (unlikely(ptr == NULL)) {
 		return NULL;
 	}
-	ptr->size = size;
+
+	ptr->size = alloc_size;
+	allocated_memory += alloc_size;
 	return &ptr->data;
 }
 
 void cjet_free(void *ptr)
 {
 	struct memblock *mem = container_of(ptr, struct memblock, data);
+	allocated_memory -= mem->size;
 	free(mem);
 }
 
 void *cjet_calloc(size_t nmemb, size_t size)
 {
-	size_t bytes = nmemb * size + sizeof(size_t);
-	struct memblock *ptr = calloc(1, bytes);
+	size_t alloc_size = nmemb * size + sizeof(size_t);
+	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
+		return NULL;
+	}
+
+	struct memblock *ptr = calloc(1, alloc_size);
 	if (unlikely(ptr == NULL)) {
 		return NULL;
 	}
-	ptr->size = nmemb * size;
+
+	ptr->size = alloc_size;
 	return &ptr->data;
 }
