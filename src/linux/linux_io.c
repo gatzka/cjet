@@ -365,6 +365,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 				sizeof(reuse_on)) < 0)) {
 			log_err("Could not set %s!\n", "SO_REUSEADDR");
+			close(listen_fd);
 			continue;
 		}
 
@@ -373,12 +374,14 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
 					sizeof(ipv6_only)) < 0)) {
 				log_err("Could not set %s!\n", "IPV6_V6ONLY");
+				close(listen_fd);
 				continue;
 			}
 		}
 
 		if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
 			log_err("Could not set %s!\n", "O_NONBLOCK");
+			close(listen_fd);
 			continue;
 		}
 
@@ -388,12 +391,12 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		close(listen_fd);
 	}
 
+	freeaddrinfo(servinfo);
+
 	if (rp == NULL) {
 		log_err("Could not bind to address!");
 		return -1;
 	}
-
-	freeaddrinfo(servinfo);
 
 	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
 		log_err("listen failed!\n");
