@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
+#include "parse.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -52,6 +53,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 struct F {
 	F()
 	{
+		init_parser();
 		state_hashtable_create();
 		init_peer(&owner_peer, false);
 		owner_peer.send_message = send_message;

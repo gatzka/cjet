@@ -258,6 +258,7 @@ void free_peer(struct peer *p)
 struct F {
 	F()
 	{
+		init_parser();
 		state_hashtable_create();
 		owner_peer = alloc_peer();
 		set_peer = alloc_peer();

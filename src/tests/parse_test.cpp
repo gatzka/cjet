@@ -60,6 +60,7 @@ int send_message(struct peer *p, char *rendered, size_t len)
 struct F {
 	F()
 	{
+		init_parser();
 		init_peer(&p, false);
 		p.send_message = send_message;
 		init_peer(&set_peer, false);
