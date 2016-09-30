@@ -29,9 +29,9 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "fetch.h"
 #include "jet_string.h"
@@ -77,7 +77,7 @@ void free_peer_resources(struct peer *p)
 	delete_routing_table(p);
 	list_del(&p->next_peer);
 	if (p->name != NULL) {
-		free(p->name);
+		cjet_free(p->name);
 	}
 	--number_of_peers;
 }
@@ -101,7 +101,7 @@ int init_peer(struct peer *p, bool is_local_connection)
 void set_peer_name(struct peer *peer, const char *name)
 {
 	if (peer->name != NULL) {
-		free(peer->name);
+		cjet_free(peer->name);
 	}
 	peer->name = duplicate_string(name);
 }

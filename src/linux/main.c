@@ -31,10 +31,12 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "generated/version.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "log.h"
+#include "parse.h"
 #include "table.h"
 
 int main(int argc, char **argv)
@@ -43,6 +45,8 @@ int main(int argc, char **argv)
 	bool bind_local_only = false;
 	int c;
 	const char *user_name = NULL;
+
+	init_parser();
 
 	while ((c = getopt (argc, argv, "flu:")) != -1) {
 		switch (c) {

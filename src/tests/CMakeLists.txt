@@ -74,6 +74,7 @@ add_library(jet STATIC
 )
 
 SET(INFO_TEST
+	../linux/alloc.c
 	info_test.cpp
 	log.cpp
 )
@@ -85,6 +86,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(RESPONSE_TEST
+	../linux/alloc.c
 	log.cpp
 	response_test.cpp
 )
@@ -96,6 +98,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ROUTER_TEST
+	../linux/alloc.c
 	log.cpp
 	router_test.cpp
 )
@@ -107,6 +110,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STRING_TEST
+	../linux/alloc.c
 	../linux/jet_string.c
 	string_test.cpp
 )
@@ -118,6 +122,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(BUFFEREDSOCKET_TEST
 	../buffered_socket.c
+	../linux/alloc.c
 	../linux/jet_string.c
 	buffered_socket_test.cpp
 	log.cpp
@@ -132,6 +137,7 @@ SET(HTTP_CONNECTION_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
+	../linux/alloc.c
     ../linux/jet_string.c
     http_connection_test.cpp
 )
@@ -142,6 +148,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(CONFIG_TEST
+	../linux/alloc.c
 	config_test.cpp
 	log.cpp
 )
@@ -153,6 +160,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(PEER_TEST
+	../linux/alloc.c
 	log.cpp
 	peer_test.cpp
 )
@@ -164,6 +172,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(JSON_PARSE_TEST
+	../linux/alloc.c
 	log.cpp
 	parse_test.cpp
 )
@@ -175,6 +184,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
+	../linux/alloc.c
 	log.cpp
 	state_test.cpp
 )
@@ -186,6 +196,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(METHOD_TEST
+	../linux/alloc.c
 	log.cpp
 	method_test.cpp
 )
@@ -197,6 +208,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(COMBINED_TEST
+	../linux/alloc.c
 	log.cpp
 	combined_test.cpp
 )
@@ -208,6 +220,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(FETCH_TEST
+	../linux/alloc.c
 	log.cpp
 	fetch_test.cpp
 )
@@ -219,6 +232,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(BASE64_TEST
+	../linux/alloc.c
 	../base64.c
 	base64_test.cpp
 )
@@ -231,6 +245,7 @@ TARGET_LINK_LIBRARIES(
 SET(HTTP_PARSER_TEST
 	../http-parser/http_parser.c
 	../http-parser/test.c
+	../linux/alloc.c
 )
 ADD_EXECUTABLE(http_parser_test.bin ${HTTP_PARSER_TEST})
 TARGET_LINK_LIBRARIES(
@@ -243,6 +258,7 @@ SET(WEBSOCKET_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
+	../linux/alloc.c
     ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
@@ -263,6 +279,7 @@ SET(WEBSOCKET_FRAME_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
+	../linux/alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
     ../sha1/sha1.c

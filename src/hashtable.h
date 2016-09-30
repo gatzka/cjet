@@ -62,26 +62,16 @@
 #ifndef HASHTABLE_H
 #define HASHTABLE_H
 
-#ifdef __linux__
-	#ifdef __KERNEL__
-		#include <linux/mm.h>
-		#include <linux/slab.h>
-		#include <linux/string.h>
-		#include <linux/types.h>
-	#else
-		#include <stdint.h>
-		#include <stdlib.h>
-		#include <string.h>
+#include <stdint.h>
+#include <string.h>
 
-		#define GFP_KERNEL 1
+#include "alloc.h"
 
-		#define kmalloc(size, priority) malloc(size)
-		#define kfree(__ptr) free(__ptr)
-		#define wmb() __sync_synchronize()
-	#endif
-#else
-	#error "Unsupported operating system!"
-#endif
+#define GFP_KERNEL 1
+
+#define kmalloc(size, priority) cjet_malloc(size)
+#define kfree(__ptr) cjet_free(__ptr)
+#define wmb() __sync_synchronize()
 
 #define HASHTABLE_SUCCESS 0
 #define HASHTABLE_FULL -1

@@ -26,6 +26,7 @@
 
 #include <stddef.h>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "hashtable.h"
 #include "json/cJSON.h"
@@ -190,7 +191,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		char *routed_id = val.vals[2];
 		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
 		cJSON_Delete(origin_request_id);
-		free(routed_id);
+		cjet_free(routed_id);
 	}
 	return ret;
 }
@@ -225,7 +226,7 @@ static void clear_routing_entry(struct value_route_table *val)
 
 	send_shutdown_response(origin_peer, origin_request_id);
 	cJSON_Delete(origin_request_id);
-	free(id);
+	cjet_free(id);
 }
 
 void remove_peer_from_routing_table(const struct peer *p,
