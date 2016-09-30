@@ -25,13 +25,21 @@
  */
 
 #include <stddef.h>
+#include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
+#include "compiler.h"
 #include "jet_string.h"
 
 char *duplicate_string(const char *s)
 {
-	return strdup(s);
+	char *ptr = cjet_malloc(strlen(s) + 1);
+	if (unlikely(ptr == NULL)) {
+		return NULL;
+	}
+	strcpy(ptr, s);
+	return ptr;
 }
 
 const char *jet_strcasestr(const char *haystack, const char *needle)

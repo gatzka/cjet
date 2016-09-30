@@ -24,16 +24,15 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
-
+#include "alloc.h"
 #include "buffered_socket.h"
 
 struct buffered_socket *buffered_socket_acquire(void)
 {
-	return (struct buffered_socket *)malloc(sizeof(struct buffered_socket));
+	return (struct buffered_socket *)cjet_malloc(sizeof(struct buffered_socket));
 }
 
 void buffered_socket_release(void *this_ptr)
 {
-	free(this_ptr);
+	cjet_free(this_ptr);
 }

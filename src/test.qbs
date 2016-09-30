@@ -43,6 +43,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/info_test.cpp",
             "tests/log.cpp",
         ]
@@ -56,6 +57,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/response_test.cpp",
             "tests/log.cpp",
         ]
@@ -69,6 +71,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/router_test.cpp",
         ]
@@ -82,6 +85,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/string_test.cpp",
         ]
     }
@@ -94,6 +98,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/config_test.cpp",
         ]
@@ -107,6 +112,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/peer_test.cpp",
             "tests/log.cpp",
         ]
@@ -120,6 +126,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/parse_test.cpp",
             "tests/log.cpp",
         ]
@@ -133,6 +140,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/state_test.cpp",
         ]
@@ -146,6 +154,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/method_test.cpp",
         ]
@@ -159,6 +168,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/combined_test.cpp",
         ] 
@@ -172,6 +182,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "tests/log.cpp",
             "tests/fetch_test.cpp",
         ]
@@ -182,11 +193,10 @@ Project {
         type: ["application", "unittest"]
         consoleApplication: true
 
-        Depends {
-          name: "unittestSettings"
-        }
+        Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
             "base64.c",
             "tests/base64_test.cpp",
         ]
@@ -202,6 +212,7 @@ Project {
         }
 
         files: [
+            "linux/alloc.c",
             "buffered_socket.c",
             "tests/buffered_socket_test.cpp",
             "tests/log.cpp"
@@ -221,6 +232,7 @@ Project {
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
+            "linux/alloc.c",
             "tests/http_connection_test.cpp",
         ]
     }
@@ -240,6 +252,7 @@ Project {
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
+            "linux/alloc.c",
             "linux/buffered_socket_alloc.c",
             "linux/jet_endian.c",
             "linux/websocket_random.c",
@@ -264,6 +277,7 @@ Project {
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
+            "linux/alloc.c",
             "linux/jet_endian.c",
             "linux/websocket_random.c",
             "sha1/sha1.c",
@@ -285,6 +299,7 @@ Project {
         }
 
         files: [
+            "linux/alloc.c",
             "http-parser/http_parser.c",
             "http-parser/test.c",
         ]

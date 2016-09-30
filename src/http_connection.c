@@ -27,10 +27,10 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 
+#include "alloc.h"
 #include "buffered_reader.h"
 #include "compiler.h"
 #include "http-parser/http_parser.h"
@@ -102,7 +102,7 @@ void free_connection(void *context)
 	struct buffered_reader *br = &connection->br;
 	br->close(br->this_ptr);
 
-	free(connection);
+	cjet_free(connection);
 }
 
 int send_http_error_response(struct http_connection *connection)
@@ -161,5 +161,5 @@ int init_http_connection(struct http_connection *connection, struct http_server 
 
 struct http_connection *alloc_http_connection(void)
 {
-	return malloc(sizeof(struct http_connection));
+	return cjet_malloc(sizeof(struct http_connection));
 }

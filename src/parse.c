@@ -28,6 +28,7 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "config.h"
 #include "fetch.h"
@@ -405,4 +406,13 @@ int parse_message(const char *msg, uint32_t length, struct peer *p)
 out:
 	cJSON_Delete(root);
 	return ret;
+}
+
+void init_parser(void)
+{
+	cJSON_Hooks hooks = {
+		.malloc_fn = cjet_malloc,
+		.free_fn = cjet_free
+	};
+	cJSON_InitHooks(&hooks);
 }

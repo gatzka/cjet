@@ -26,9 +26,9 @@
 
 #include <arpa/inet.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "buffered_reader.h"
 #include "compiler.h"
 #include "jet_endian.h"
@@ -45,7 +45,7 @@ static void free_jet_peer(struct socket_peer *p)
 {
 	free_peer_resources(&p->peer);
 	p->br.close(p->br.this_ptr);
-	free(p);
+	cjet_free(p);
 }
 
 void free_peer_on_error(void *context)
@@ -133,5 +133,5 @@ void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, boo
 
 struct socket_peer *alloc_jet_peer(void)
 {
-	return malloc(sizeof(struct socket_peer));
+	return cjet_malloc(sizeof(struct socket_peer));
 }

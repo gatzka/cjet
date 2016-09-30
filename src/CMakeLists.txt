@@ -76,9 +76,9 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-        linux/eventloop_epoll.c
-        linux/websocket_random.c
+        linux/alloc.c
         linux/buffered_socket_alloc.c
+        linux/eventloop_epoll.c
         linux/jet_endian.c
         linux/jet_string.c
         linux/linux_io.c
@@ -86,6 +86,7 @@ SET(CJET_LINUX_FILES
         linux/socket.c
         linux/timer.c
         linux/uuid.c
+        linux/websocket_random.c
 )
 
 FOREACH(_file ${CJET_FILES})

@@ -25,9 +25,9 @@
  */
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "generated/cjet_config.h"
 #include "hashtable.h"
@@ -45,7 +45,7 @@
 static struct state_or_method *alloc_state(const char *path, const cJSON *value_object,
 				 struct peer *p, double timeout, int flags)
 {
-	struct state_or_method *s = calloc(1, sizeof(*s));
+	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
 	if (unlikely(s == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
 				 "state");
@@ -54,7 +54,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
-	s->fetcher_table = calloc(s->fetch_table_size, sizeof(struct fetch *));
+	s->fetcher_table = cjet_calloc(s->fetch_table_size, sizeof(struct fetch *));
 	if (s->fetcher_table == NULL) {
 		log_peer_err(p, "Could not allocate memory for fetch table!\n");
 		goto alloc_fetch_table_failed;
@@ -80,11 +80,11 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	return s;
 
 value_copy_failed:
-	free(s->path);
+	cjet_free(s->path);
 alloc_path_failed:
-	free(s->fetcher_table);
+	cjet_free(s->fetcher_table);
 alloc_fetch_table_failed:
-	free(s);
+	cjet_free(s);
 	return NULL;
 }
 
@@ -93,9 +93,9 @@ static void free_state_or_method(struct state_or_method *s)
 	if (s->value != NULL) {
 		cJSON_Delete(s->value);
 	}
-	free(s->path);
-	free(s->fetcher_table);
-	free(s);
+	cjet_free(s->path);
+	cjet_free(s->fetcher_table);
+	cjet_free(s);
 }
 
 bool state_is_fetch_only(struct state_or_method *s)
@@ -205,14 +205,14 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 			p, "reason", "could not send routing information");
 	}
 
-	free(rendered_message);
+	cjet_free(rendered_message);
 	cJSON_Delete(routed_message);
 	return error;
 
 delete_json:
 	cJSON_Delete(routed_message);
 delete_routed_request_id:
-	free(routed_request_id);
+	cjet_free(routed_request_id);
 	return error;
 }
 

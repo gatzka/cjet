@@ -24,12 +24,12 @@
  * SOFTWARE.
  */
 
-#include <stdlib.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "base64.h"
 #include "compiler.h"
 #include "http_connection.h"
@@ -68,7 +68,7 @@ static int ws_send_message(struct peer *p, char *rendered, size_t len)
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
 	free_peer_resources(&ws_peer->peer);
-	free(ws_peer);
+	cjet_free(ws_peer);
 }
 
 static void free_websocket_peer_callback(struct websocket *s)
@@ -146,7 +146,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 
 int alloc_websocket_peer(struct http_connection *connection)
 {
-	struct websocket_peer *ws_peer = calloc(1, sizeof(*ws_peer));
+	struct websocket_peer *ws_peer = cjet_calloc(1, sizeof(*ws_peer));
 	if (ws_peer == NULL) {
 		return -1;
 	}

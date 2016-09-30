@@ -26,9 +26,9 @@
 
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "fetch.h"
 #include "jet_string.h"
@@ -172,7 +172,7 @@ static const struct supported_matcher matchers[] = {
 
 static struct path_matcher *create_path_matcher(unsigned int number_of_path_elements)
 {
-	struct path_matcher *pm = calloc(1, sizeof(*pm) + (sizeof(pm->path_elements) * (number_of_path_elements - 1)));
+	struct path_matcher *pm = cjet_calloc(1, sizeof(*pm) + (sizeof(pm->path_elements) * (number_of_path_elements - 1)));
 	if (unlikely(pm == NULL)) {
 		log_err("Could not create path matcher!\n");
 	} else {
@@ -185,7 +185,7 @@ static void free_path_elements(const struct path_matcher *pm)
 {
 	for (unsigned int i = 0; i < pm->number_of_path_elements; i++) {
 		if (pm->path_elements[i] != NULL) {
-			free(pm->path_elements[i]);
+			cjet_free(pm->path_elements[i]);
 		}
 	}
 }
@@ -255,7 +255,7 @@ static int create_matcher(struct fetch *f, const cJSON *matcher, unsigned int ma
 				return -1;
 			}
 			if (unlikely(fill_path_elements(pm, matcher, has_multiple_path_elements, number_of_path_elements))) {
-				free(pm);
+				cjet_free(pm);
 				return -1;
 			}
 			pm->match_function = match_function;
@@ -271,7 +271,7 @@ static void free_matcher(struct fetch *f)
 	for (unsigned int i = 0; i < f->number_of_matchers; i++) {
 		if (f->matcher[i] != NULL) {
 			free_path_elements(f->matcher[i]);
-			free(f->matcher[i]);
+			cjet_free(f->matcher[i]);
 		}
 	}
 }
@@ -300,7 +300,7 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, unsigned int n
 	struct fetch *f;
 	size_t matcher_size = sizeof(f->matcher);
 
-	f = calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
+	f = cjet_calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
 	if (unlikely(f == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
 		return NULL;
@@ -311,7 +311,7 @@ static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, unsigned int n
 	f->fetch_id = cJSON_Duplicate(id, 1);
 	if (unlikely(f->fetch_id == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
-		free(f);
+		cjet_free(f);
 		return NULL;
 	}
 	return f;
@@ -361,7 +361,7 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	if (unlikely(add_matchers(f, path, ignore_case) < 0)) {
 		*error = create_internal_error(p, "reason", "could not add matchers to fetch");
 		cJSON_Delete(f->fetch_id);
-		free(f);
+		cjet_free(f);
 		return NULL;
 	}
 
@@ -372,7 +372,7 @@ static void free_fetch(struct fetch *f)
 {
 	free_matcher(f);
 	cJSON_Delete(f->fetch_id);
-	free(f);
+	cjet_free(f);
 }
 
 static int ids_equal(const cJSON *id1, const cJSON *id2)
@@ -433,13 +433,13 @@ static int add_fetch_to_state(struct state_or_method *s, struct fetch *f)
 		}
 	}
 	unsigned int new_size = MAX(CONFIG_INITIAL_FETCH_TABLE_SIZE, s->fetch_table_size * 2);
-	void *new_fetch_table = calloc(new_size, sizeof(struct fetch*));
+	void *new_fetch_table = cjet_calloc(new_size, sizeof(struct fetch*));
 	if (new_fetch_table == NULL) {
 		return -1;
 	}
 	memcpy(new_fetch_table, s->fetcher_table, s->fetch_table_size * sizeof(struct fetch*));
 	s->fetch_table_size = new_size;
-	free(s->fetcher_table);
+	cjet_free(s->fetcher_table);
 	s->fetcher_table = new_fetch_table;
 	return add_fetch_to_state(s, f);
 }
@@ -494,12 +494,12 @@ static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 	struct peer *p = f->peer;
 	if (unlikely(p->send_message(p, rendered_message,
 			strlen(rendered_message)) != 0)) {
-		free(rendered_message);
+		cjet_free(rendered_message);
 		goto error;
 	}
 
 	cJSON_Delete(root);
-	free(rendered_message);
+	cjet_free(rendered_message);
 
 	return 0;
 error:

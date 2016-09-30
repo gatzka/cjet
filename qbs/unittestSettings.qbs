@@ -121,6 +121,7 @@ StaticLibrary {
         "state.c",
         "table.c",
         "linux/uuid.c",
+        "tests/log.cpp"
     ]
   }
 }

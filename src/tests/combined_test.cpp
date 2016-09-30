@@ -32,6 +32,7 @@
 
 #include "eventloop.h"
 #include "json/cJSON.h"
+#include "parse.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -221,6 +222,7 @@ void free_peer(struct peer *p)
 struct F {
 	F()
 	{
+		init_parser();
 		state_hashtable_create();
 		owner_peer = alloc_peer();
 		call_peer = alloc_peer();

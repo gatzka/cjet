@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "json/cJSON.h"
+#include "parse.h"
 #include "peer.h"
 #include "router.h"
 #include "state.h"
@@ -108,6 +109,7 @@ static cJSON *get_result_from_response(const cJSON *response)
 struct F {
 	F()
 	{
+		init_parser();
 		state_hashtable_create();
 		init_peer(&p, false);
 		p.send_message = send_message;

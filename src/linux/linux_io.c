@@ -35,12 +35,12 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "alloc.h"
 #include "buffered_reader.h"
 #include "compiler.h"
 #include "eventloop.h"
@@ -158,7 +158,7 @@ static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local
 	return;
 
 alloc_bs_failed:
-	free(peer);
+	cjet_free(peer);
 alloc_peer_failed:
 	close(fd);
 }
@@ -199,9 +199,9 @@ static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 	return;
 
 init_failed:
-	free(bs);
+	cjet_free(bs);
 alloc_bs_failed:
-	free(connection);
+	cjet_free(connection);
 alloc_failed:
 	close(fd);
 }

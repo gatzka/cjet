@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,19 +24,18 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_PARSE_H
-#define CJET_PARSE_H
+#ifndef CJET_ALLOC_H
+#define CJET_ALLOC_H
 
-#include <stdint.h>
-
-#include "peer.h"
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void init_parser(void);
-int parse_message(const char *msg, uint32_t length, struct peer *p);
+void *cjet_malloc(size_t size);
+void cjet_free(void *ptr);
+void *cjet_calloc(size_t nmemb, size_t size);
 
 #ifdef __cplusplus
 }

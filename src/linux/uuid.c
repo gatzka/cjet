@@ -27,6 +27,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "alloc.h"
+#include "compiler.h"
 #include "json/cJSON.h"
 #include "uuid.h"
 
@@ -34,21 +36,29 @@ static unsigned int uuid = 0;
 
 char *alloc_routed_request_uuid(void *address, const cJSON *origin_request_id)
 {
-	char *buf;
-	int ret;
 	uuid++;
 	if (origin_request_id != NULL) {
 		if (origin_request_id->type == cJSON_String) {
-			ret = asprintf(&buf, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+			size_t needed = snprintf(NULL, 0, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+			char *buf = cjet_malloc(needed);
+			if (likely(buf != NULL)) {
+				snprintf(buf, needed, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+			}
+			return buf;
 		} else {
-			ret = asprintf(&buf, "%x_%x_%p", origin_request_id->valueint, uuid, address);
+			size_t needed = snprintf(NULL, 0, "%x_%x_%p", origin_request_id->valueint, uuid, address);
+			char *buf = cjet_malloc(needed);
+			if (likely(buf != NULL)) {
+				snprintf(buf, needed, "%x_%x_%p", origin_request_id->valueint, uuid, address);
+			}
+			return buf;
 		}
 	} else {
-		ret = asprintf(&buf, "%x_%p", uuid, address);
-	}
-	if (ret == -1) {
-		return NULL;
-	} else {
+		size_t needed = snprintf(NULL, 0, "%x_%p", uuid, address);
+		char *buf = cjet_malloc(needed);
+		if (likely(buf != NULL)) {
+			snprintf(buf, needed, "%x_%p", uuid, address);
+		}
 		return buf;
 	}
 }

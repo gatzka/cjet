@@ -28,6 +28,7 @@
 #define CJET_CONFIG_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 enum {CONFIG_JET_PORT = ${CONFIG_JET_PORT}};
 enum {CONFIG_JETWS_PORT = ${CONFIG_JETWS_PORT}};
@@ -70,5 +71,10 @@ enum {CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH = ${CONFIG_MAX_NUMBERS_OF_MATCHERS
  * This parameter configures if "add" of states or methods is only allowed from localhost peers.
  */
 static const bool CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST = ${CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST};
+
+/*
+ * This parameter configures how much memory cjet might allocate from heap
+ */
+static const size_t CONFIG_MAX_HEAPSIZE_IN_KBYTE = ${CONFIG_MAX_HEAPSIZE_IN_KBYTE};
 
 #endif
