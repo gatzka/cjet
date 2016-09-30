@@ -30,6 +30,7 @@
 #include "alloc.h"
 #include "compiler.h"
 #include "generated/cjet_config.h"
+#include "log.h"
 #include "util.h"
 
 static size_t allocated_memory = 0;
@@ -43,11 +44,13 @@ void *cjet_malloc(size_t size)
 {
 	size_t alloc_size = size + sizeof(size_t);
 	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
+		log_err("Maximum allows heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 
 	struct memblock *ptr = (struct memblock *)malloc(alloc_size);
 	if (unlikely(ptr == NULL)) {
+		log_err("Can't get requested memory from OS, allocated heap size: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 
@@ -67,11 +70,13 @@ void *cjet_calloc(size_t nmemb, size_t size)
 {
 	size_t alloc_size = nmemb * size + sizeof(size_t);
 	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
+		log_err("Maximum allows heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 
 	struct memblock *ptr = calloc(1, alloc_size);
 	if (unlikely(ptr == NULL)) {
+		log_err("Can't get requested memory from OS, allocated heap size: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 
