@@ -263,7 +263,7 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
 		read_buffer_length += sizeof(first_length);
-	} else if (length <= UINT16_MAX) {
+	} else if (length <= 65535) {
 		first_length = first_length | 126;
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
