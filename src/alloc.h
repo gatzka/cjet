@@ -29,8 +29,17 @@
 
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void *cjet_malloc(size_t size);
 void cjet_free(void *ptr);
 void *cjet_calloc(size_t nmemb, size_t size);
+size_t get_allocated_memory(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
