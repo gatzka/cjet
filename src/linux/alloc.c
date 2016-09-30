@@ -28,18 +28,37 @@
 #include <stdlib.h>
 
 #include "alloc.h"
+#include "compiler.h"
+#include "util.h"
+
+struct memblock {
+	size_t size;
+	void *data;
+};
 
 void *cjet_malloc(size_t size)
 {
-	return malloc(size);
+	struct memblock *ptr = (struct memblock *)malloc(size + sizeof(size_t));
+	if (unlikely(ptr == NULL)) {
+		return NULL;
+	}
+	ptr->size = size;
+	return &ptr->data;
 }
 
 void cjet_free(void *ptr)
 {
-	free(ptr);
+	struct memblock *mem = container_of(ptr, struct memblock, data);
+	free(mem);
 }
 
 void *cjet_calloc(size_t nmemb, size_t size)
 {
-	return calloc(nmemb, size);
+	size_t bytes = nmemb * size + sizeof(size_t);
+	struct memblock *ptr = calloc(1, bytes);
+	if (unlikely(ptr == NULL)) {
+		return NULL;
+	}
+	ptr->size = nmemb * size;
+	return &ptr->data;
 }
