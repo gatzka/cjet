@@ -49,7 +49,7 @@ static const uint8_t WS_OPCODE_CLOSE = 0x08;
 static const uint8_t WS_OPCODE_PING = 0x09;
 static const uint8_t WS_OPCODE_PONG = 0x0a;
 
-static uint8_t write_buffer[5000];
+static uint8_t write_buffer[70000];
 static uint8_t *write_buffer_ptr;
 
 static uint8_t *read_buffer;
@@ -604,8 +604,56 @@ BOOST_AUTO_TEST_CASE(test_sending_binary_message)
 			::strcpy(message, messages[i]);
 			websocket_send_binary_frame(&f.ws, (uint8_t *)message, ::strlen(message));
 			websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
-			BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_BINARY, messages[i], ::strlen(messages[i])), "Not a valid text message sent!");
+			BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_BINARY, messages[i], ::strlen(messages[i])), "Not a valid binary message sent!");
 			free(message);
 		}
 	}
+}
+
+BOOST_AUTO_TEST_CASE(test_send_ping_message)
+{
+	const char *messages[2] = {"Hello World!", ""};
+	bool is_server[2] = {true, false};
+
+	for (unsigned int j = 0; j < ARRAY_SIZE(is_server); j++) {
+		for (unsigned int i = 0; i < ARRAY_SIZE(messages); i++) {
+			F f(is_server[j], 5000);
+			char *message = (char *)::malloc(::strlen(messages[i]) + 1);
+			::strcpy(message, messages[i]);
+			websocket_send_ping_frame(&f.ws, (uint8_t *)message, ::strlen(message));
+			websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+			BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_PING, messages[i], ::strlen(messages[i])), "Not a valid ping message sent!");
+			free(message);
+		}
+	}
+}
+
+BOOST_AUTO_TEST_CASE(test_send_medium_binary_message)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	char message[127];
+	::memset(message, 'A', sizeof(message));
+	message[sizeof(message) - 1] = 0x00;
+
+	websocket_send_binary_frame(&f.ws, (uint8_t *)message, ::strlen(message));
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_BINARY, message, ::strlen(message)), "Not a valid medium size binary message sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_send_large_binary_message)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	static const size_t buffer_size = 65537;
+	char *message = (char *)::malloc(buffer_size);
+	::memset(message, 'A', buffer_size);
+	message[buffer_size - 1] = 0x00;
+
+	websocket_send_binary_frame(&f.ws, (uint8_t *)message, ::strlen(message));
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_BINARY, message, ::strlen(message)), "Not a valid large size binary message sent!");
+	free(message);
 }
