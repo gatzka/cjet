@@ -55,7 +55,7 @@ static uint8_t *write_buffer_ptr;
 static uint8_t *read_buffer;
 static uint8_t *read_buffer_ptr;
 static size_t read_buffer_length;
-static uint8_t readback_buffer[5000];
+static uint8_t readback_buffer[70000];
 static size_t readback_buffer_length;
 
 static bool br_close_called;
@@ -263,7 +263,7 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
 		read_buffer_length += sizeof(first_length);
-	} else if (length <= sizeof(uint16_t)) {
+	} else if (length <= UINT16_MAX) {
 		first_length = first_length | 126;
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
@@ -278,10 +278,10 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 		::memcpy(ptr, &first_length, sizeof(first_length));
 		ptr += sizeof(first_length);
 		read_buffer_length += sizeof(first_length);
-		length = htobe64(length);
-		::memcpy(ptr, &length, sizeof(length));
-		ptr += sizeof(length);
-		read_buffer_length += sizeof(length);
+		uint64_t len = htobe64(length);
+		::memcpy(ptr, &len, sizeof(length));
+		ptr += sizeof(len);
+		read_buffer_length += sizeof(len);
 	}
 
 	if (shall_mask) {
@@ -484,4 +484,40 @@ BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
 	BOOST_CHECK_MESSAGE(status_code_received == code, "Incorrect status code received!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent receiving a close!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_medium_binary_message)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	char message[127];
+	::memset(message, 'A', sizeof(message));
+	message[sizeof(message) - 1] = 0x00;
+	
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_large_binary_message)
+{
+	bool is_server = true;
+	F f(is_server, 70000);
+
+	static const size_t buffer_size = 65537;
+	char *message = (char *)::malloc(buffer_size);
+	::memset(message, 'A', buffer_size);
+	message[buffer_size - 1] = 0x00;
+
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
+	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+	free(message);
 }
