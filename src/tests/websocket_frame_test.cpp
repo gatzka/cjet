@@ -100,7 +100,6 @@ static int read_exactly(void *this_ptr, size_t num, read_handler handler, void *
 	uint8_t *ptr = read_buffer_ptr;
 	read_buffer_ptr += num;
 	if ((ptr - read_buffer) < (ssize_t)read_buffer_length) {
-	//if ((ptr - read_buffer) <= (ssize_t)read_buffer_length) {
 		handler(handler_context, ptr, num);
 	}
 	return 0;
@@ -180,6 +179,60 @@ static bool is_close_frame(enum ws_status_code code)
 	return true;
 }
 
+static bool check_frame(uint8_t opcode, const char *payload, size_t payload_length)
+{
+	uint8_t *ptr = write_buffer;
+	uint8_t header;
+	::memcpy(&header, ptr, sizeof(header));
+	if ((header & WS_HEADER_FIN) != WS_HEADER_FIN) {
+		return false;
+	}
+	if ((header & opcode) != opcode) {
+		return false;
+	}
+	ptr += sizeof(header);
+
+	uint8_t first_length;
+	::memcpy(&first_length, ptr, sizeof(first_length));
+
+	bool is_masked = ((first_length & WS_HEADER_MASK) == WS_HEADER_MASK);
+	first_length = first_length & ~WS_HEADER_MASK;
+	ptr += sizeof(first_length);
+
+	uint64_t length;
+	if (first_length == 126) {
+		uint16_t len;
+		::memcpy(&len, ptr, sizeof(len));
+		ptr += sizeof(len);
+		len = be16toh(len);
+		length = len;
+	} else if (first_length == 127) {
+		uint64_t len;
+		::memcpy(&len, ptr, sizeof(len));
+		ptr += sizeof(len);
+		len = be64toh(len);
+		length = len;
+	} else {
+		length = first_length;
+	}
+
+	if (length != payload_length) {
+		return false;
+	}
+
+	if (is_masked) {
+		uint8_t mask[4];
+		::memcpy(mask, ptr, sizeof(mask));
+		ptr += sizeof(mask);
+		mask_payload(ptr, length, mask);
+	}
+	if (::memcmp(ptr, payload, length) != 0) {
+		return false;
+	}
+
+	return true;
+}
+
 static int close(void *this_ptr)
 {
 	(void)this_ptr;
@@ -195,7 +248,6 @@ static enum websocket_callback_return text_message_received(struct websocket *s,
 	text_message_received_called = true;
 	return WS_OK;
 }
-
 
 static enum websocket_callback_return binary_message_received(struct websocket *s, uint8_t *msg, size_t length)
 {
@@ -520,4 +572,15 @@ BOOST_AUTO_TEST_CASE(test_receive_large_binary_message)
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 	free(message);
+}
+
+BOOST_AUTO_TEST_CASE(test_sending_text_message)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	char message[] = "Hello World!";
+	websocket_send_text_frame(&f.ws, message, ::strlen(message));
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_TEXT, message, ::strlen(message)), "Not a valid text message sent!");
 }
