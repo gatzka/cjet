@@ -24,7 +24,11 @@
  * SOFTWARE.
  */
 
+#ifndef CJET_LINUX_TIMER_H
+#define CJET_LINUX_TIMER_H
+
 #include <sys/timerfd.h>
 
 struct itimerspec convert_timeout_to_itimerspec(double timeout);
 
+#endif
