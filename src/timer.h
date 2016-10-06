@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,11 +24,26 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_TIMER_H
-#define CJET_LINUX_TIMER_H
+#ifndef CJET_TIMER_H
+#define CJET_TIMER_H
 
-#include <sys/timerfd.h>
+#include <stdbool.h>
+#include <stdint.h>
 
-struct itimerspec convert_timeout_to_itimerspec(double timeout);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef void(*timer_handler)(void *context, bool cancelled);
+
+struct cjet_timer {
+	void *this_ptr;
+	int (*start)(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context);
+	int (*cancel)(void *this_ptr);
+};
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
