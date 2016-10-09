@@ -40,13 +40,13 @@ struct http_connection {
 	struct buffered_reader br;
 	http_parser parser;
 	http_parser_settings parser_settings;
-	struct http_server *server;
+	const struct http_server *server;
 	unsigned int status_code;
 	bool is_local_connection;
 };
 
 struct http_connection *alloc_http_connection(void);
-int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
+int init_http_connection(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
 void free_connection(void *context);
 int send_http_error_response(struct http_connection *connection);
 

@@ -138,7 +138,7 @@ static enum bs_read_callback_return read_start_line(void *context, uint8_t *buf,
 	return BS_OK;
 }
 
-int init_http_connection(struct http_connection *connection, struct http_server *server, struct buffered_reader *reader, bool is_local_connection)
+int init_http_connection(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection)
 {
 	connection->is_local_connection = is_local_connection;
 	connection->status_code = 0;

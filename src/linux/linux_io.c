@@ -169,7 +169,7 @@ static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 		close(fd);
 		return;
 	}
-	struct http_server *server = container_of(ev, struct http_server, ev);
+	const struct http_server *server = const_container_of(ev, struct http_server, ev);
 	struct http_connection *connection = alloc_http_connection();
 	if (unlikely(connection == NULL)) {
 		log_err("Could not allocate http connection!\n");
