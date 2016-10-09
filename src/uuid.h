@@ -27,8 +27,11 @@
 #ifndef CJET_UUID_H
 #define CJET_UUID_H
 
+#include <stddef.h>
 #include "json/cJSON.h"
 
 char *alloc_routed_request_uuid(void *address, const cJSON *origin_request_id);
+size_t calculate_size_for_routed_request_id(const void *address, const cJSON *origin_request_id);
+void fill_routed_request_id(char *buf, size_t buf_size, const void *address, const cJSON *origin_request_id);
 
 #endif

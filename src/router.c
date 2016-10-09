@@ -34,6 +34,7 @@
 #include "peer.h"
 #include "response.h"
 #include "router.h"
+#include "uuid.h"
 
 DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 3)
 
@@ -98,6 +99,41 @@ cJSON *create_routed_message(const struct peer *p, const char *path, enum type w
 error:
 	log_peer_err(p, "Could not allocate memory for %s object!\n", "routed");
 	cJSON_Delete(message);
+	return NULL;
+}
+
+struct routing_request {
+	const struct peer *p;
+	cJSON *origin_request_id;
+	char id[];
+};
+
+struct routing_request *alloc_routing_request(const struct peer *p, const cJSON *origin_request_id)
+{
+	struct routing_request *request;
+
+	size_t size_for_id = calculate_size_for_routed_request_id(p, origin_request_id);
+	request = cjet_malloc(sizeof(*request) + size_for_id);
+	if (likely(request != NULL)) {
+		cJSON *origin_request_id_copy;
+		if (origin_request_id != NULL) {
+			origin_request_id_copy = cJSON_Duplicate(origin_request_id, 1);
+			if (unlikely(origin_request_id_copy == NULL)) {
+				log_peer_err(p, "Could not copy origin_request_id object!\n");
+				goto duplicate_id_failed;
+			}
+		} else {
+			origin_request_id_copy = NULL;
+		}
+		request->p = p;
+		request->origin_request_id = origin_request_id_copy;
+		fill_routed_request_id(request->id, size_for_id, p, origin_request_id);
+	}
+
+	return request;
+
+duplicate_id_failed:
+	cjet_free(request);
 	return NULL;
 }
 
