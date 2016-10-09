@@ -34,6 +34,25 @@
 
 static unsigned int uuid = 0;
 
+size_t calculate_size_for_routed_request_id(const void *address, const cJSON *origin_request_id)
+{
+	if (origin_request_id != NULL) {
+		return snprintf(NULL, 0, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+	} else {
+		return snprintf(NULL, 0, "%x_%p", uuid, address);
+	}
+}
+
+void fill_routed_request_id(char *buf, size_t buf_size, const void *address, const cJSON *origin_request_id)
+{
+
+	if (origin_request_id != NULL) {
+		snprintf(buf, buf_size, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+	} else {
+		snprintf(buf, buf_size, "%x_%p", uuid, address);
+	}
+}
+
 char *alloc_routed_request_uuid(void *address, const cJSON *origin_request_id)
 {
 	uuid++;
