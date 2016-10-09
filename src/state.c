@@ -173,21 +173,21 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	char *routed_request_id = alloc_routed_request_uuid(p, origin_request_id);
-	if (routed_request_id == NULL) {
+	struct routing_request *request = alloc_routing_request(p, origin_request_id);
+	if (unlikely(request == NULL)) {
 		error = create_internal_error(
-			p, "reason", "could not create request id");
+			p, "reason", "could not create routing request");
 		return error;
 	}
-	cJSON *routed_message = create_routed_message(p, path, what, value, routed_request_id);
+
+	cJSON *routed_message = create_routed_message(p, path, what, value, request->id);
 	if (unlikely(routed_message == NULL)) {
 		error = create_internal_error(
 			p, "reason", "could not create routed JSON object");
-		goto delete_routed_request_id;
+		goto routed_message_creation_failed;
 	}
 
-	if (unlikely(setup_routing_information(s, p, origin_request_id,
-						   routed_request_id) != 0)) {
+	if (unlikely(setup_routing_information(s, request) != 0)) {
 		error = create_internal_error(
 			p, "reason", "could not setup routing information");
 		goto delete_json;
@@ -199,6 +199,7 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 						  "could not render message");
 		goto delete_json;
 	}
+
 	if (unlikely(s->peer->send_message(s->peer, rendered_message,
 				  strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
@@ -211,8 +212,8 @@ cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
 
 delete_json:
 	cJSON_Delete(routed_message);
-delete_routed_request_id:
-	cjet_free(routed_request_id);
+routed_message_creation_failed:
+	cjet_free(request);
 	return error;
 }
 
