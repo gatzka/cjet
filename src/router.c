@@ -104,19 +104,19 @@ error:
 int setup_routing_information(struct state_or_method *s,
 	struct peer *origin_peer, const cJSON *origin_request_id, char *id)
 {
-	cJSON *id_copy;
+	cJSON *origin_request_id_copy;
 	if (origin_request_id != NULL) {
-		id_copy = cJSON_Duplicate(origin_request_id, 1);
-		if (unlikely(id_copy == NULL)) {
+		origin_request_id_copy = cJSON_Duplicate(origin_request_id, 1);
+		if (unlikely(origin_request_id_copy == NULL)) {
 			log_peer_err(origin_peer, "Could not copy origin_request_id object!\n");
-			goto id_copy_error;
+			goto duplicate_id_failed;
 		}
 	} else {
-		id_copy = NULL;
+		origin_request_id_copy = NULL;
 	}
 	struct value_route_table val;
 	val.vals[0] = origin_peer;
-	val.vals[1] = id_copy;
+	val.vals[1] = origin_request_id_copy;
 	val.vals[2] = id;
 	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
 			id, val, NULL) != HASHTABLE_SUCCESS)) {
@@ -126,8 +126,8 @@ int setup_routing_information(struct state_or_method *s,
 	return 0;
 
 hash_put_error:
-	cJSON_Delete(id_copy);
-id_copy_error:
+	cJSON_Delete(origin_request_id_copy);
+duplicate_id_failed:
 	return -1;
 }
 
