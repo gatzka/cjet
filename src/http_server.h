@@ -42,7 +42,7 @@ struct http_server {
 	size_t num_handlers;
 };
 
-const struct url_handler *find_url_handler(struct http_server *server, const char *url, size_t url_length);
+const struct url_handler *find_url_handler(const struct http_server *server, const char *url, size_t url_length);
 
 #ifdef __cplusplus
 }

@@ -30,7 +30,7 @@
 #include "http_server.h"
 #include "url_handler.h"
 
-const struct url_handler *find_url_handler(struct http_server *server, const char *url, size_t url_length)
+const struct url_handler *find_url_handler(const struct http_server *server, const char *url, size_t url_length)
 {
 	for (size_t i = 0; i < server->num_handlers; i++) {
 		size_t length = strlen(server->handler[i].request_target);
