@@ -551,7 +551,7 @@ cJSON *add_fetch_to_states(struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	struct list_head *peer_list = get_peer_list();
+	const struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		int ret = add_fetch_to_states_in_peer(p, f);
@@ -585,7 +585,7 @@ static void remove_fetch_from_states(struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	struct list_head *peer_list = get_peer_list();
+	const struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		rem_fetch_from_states_in_peer(p, f);
@@ -611,7 +611,7 @@ int find_fetchers_for_state(struct state_or_method *s)
 	int ret = 0;
 	struct list_head *item;
 	struct list_head *tmp;
-	struct list_head *peer_list = get_peer_list();
+	const struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		ret = find_fetchers_for_state_in_peer(p, s);

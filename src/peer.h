@@ -37,7 +37,6 @@
 #include "http-parser/http_parser.h"
 #include "json/cJSON.h"
 #include "list.h"
-#include "eventloop.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -56,7 +55,7 @@ struct peer {
 
 int init_peer(struct peer *p, bool is_local_connection);
 void free_peer_resources(struct peer *p);
-struct list_head *get_peer_list(void);
+const struct list_head *get_peer_list(void);
 void set_peer_name(struct peer *peer, const char *name);
 const char *get_peer_name(const struct peer *p);
 int get_number_of_peers(void);

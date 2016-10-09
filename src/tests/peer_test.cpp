@@ -55,7 +55,7 @@ void free_peer(struct peer *p)
 	::free(p);
 }
 
-static bool peer_in_list(struct list_head *peer_list, struct peer *p)
+static bool peer_in_list(const struct list_head *peer_list, struct peer *p)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(check_peer_list)
 	struct peer *p2 = alloc_peer();
 	p2->close = close_peer;
 
-	struct list_head *peer_list = get_peer_list();
+	const struct list_head *peer_list = get_peer_list();
 	BOOST_CHECK(peer_in_list(peer_list, p1) && peer_in_list(peer_list, p2));
 
 	destroy_all_peers();

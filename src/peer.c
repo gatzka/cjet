@@ -52,7 +52,7 @@ int get_number_of_peers(void)
 	return number_of_peers;
 }
 
-struct list_head *get_peer_list(void)
+const struct list_head *get_peer_list(void)
 {
 	return &peer_list;
 }
