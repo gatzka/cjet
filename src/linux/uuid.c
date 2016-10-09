@@ -52,32 +52,3 @@ void fill_routed_request_id(char *buf, size_t buf_size, const void *address, con
 		snprintf(buf, buf_size, "%x_%p", uuid, address);
 	}
 }
-
-char *alloc_routed_request_uuid(void *address, const cJSON *origin_request_id)
-{
-	uuid++;
-	if (origin_request_id != NULL) {
-		if (origin_request_id->type == cJSON_String) {
-			size_t needed = snprintf(NULL, 0, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
-			char *buf = cjet_malloc(needed);
-			if (likely(buf != NULL)) {
-				snprintf(buf, needed, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
-			}
-			return buf;
-		} else {
-			size_t needed = snprintf(NULL, 0, "%x_%x_%p", origin_request_id->valueint, uuid, address);
-			char *buf = cjet_malloc(needed);
-			if (likely(buf != NULL)) {
-				snprintf(buf, needed, "%x_%x_%p", origin_request_id->valueint, uuid, address);
-			}
-			return buf;
-		}
-	} else {
-		size_t needed = snprintf(NULL, 0, "%x_%p", uuid, address);
-		char *buf = cjet_malloc(needed);
-		if (likely(buf != NULL)) {
-			snprintf(buf, needed, "%x_%p", uuid, address);
-		}
-		return buf;
-	}
-}

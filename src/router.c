@@ -36,7 +36,7 @@
 #include "router.h"
 #include "uuid.h"
 
-DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 3)
+DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
 
 int add_routing_table(struct peer *p)
 {
@@ -102,12 +102,6 @@ error:
 	return NULL;
 }
 
-struct routing_request {
-	const struct peer *p;
-	cJSON *origin_request_id;
-	char id[];
-};
-
 struct routing_request *alloc_routing_request(const struct peer *p, const cJSON *origin_request_id)
 {
 	struct routing_request *request;
@@ -137,37 +131,19 @@ duplicate_id_failed:
 	return NULL;
 }
 
-int setup_routing_information(struct state_or_method *s,
-	struct peer *origin_peer, const cJSON *origin_request_id, char *id)
+int setup_routing_information(struct state_or_method *s, struct routing_request *request)
 {
-	cJSON *origin_request_id_copy;
-	if (origin_request_id != NULL) {
-		origin_request_id_copy = cJSON_Duplicate(origin_request_id, 1);
-		if (unlikely(origin_request_id_copy == NULL)) {
-			log_peer_err(origin_peer, "Could not copy origin_request_id object!\n");
-			goto duplicate_id_failed;
-		}
-	} else {
-		origin_request_id_copy = NULL;
-	}
 	struct value_route_table val;
-	val.vals[0] = origin_peer;
-	val.vals[1] = origin_request_id_copy;
-	val.vals[2] = id;
+	val.vals[0] = request;
 	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
-			id, val, NULL) != HASHTABLE_SUCCESS)) {
-		log_peer_err(origin_peer, "Routing table full!\n");
-		goto hash_put_error;
+			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+		log_peer_err(request->p, "Routing table full!\n");
+		return -1;
 	}
 	return 0;
-
-hash_put_error:
-	cJSON_Delete(origin_request_id_copy);
-duplicate_id_failed:
-	return -1;
 }
 
-static int format_and_send_response(struct peer *p, const cJSON *response)
+static int format_and_send_response(const struct peer *p, const cJSON *response)
 {
 	char *rendered = cJSON_PrintUnformatted(response);
 	if (likely(rendered != NULL)) {
@@ -180,7 +156,7 @@ static int format_and_send_response(struct peer *p, const cJSON *response)
 	}
 }
 
-static int send_routing_response(struct peer *p,
+static int send_routing_response(const struct peer *p,
 	const cJSON *origin_request_id, const cJSON *response, const char *result_type)
 {
 	if (unlikely(origin_request_id == NULL)) {
@@ -215,24 +191,25 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		log_peer_err(p, "no id in response!\n");
 		return -1;
 	}
+
 	if (unlikely(id->type != cJSON_String)) {
 		log_peer_err(p, "id is not a string!\n");
 		return -1;
 	}
+
 	struct value_route_table val;
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
-		struct peer *origin_peer = val.vals[0];
-		cJSON *origin_request_id = val.vals[1];
-		char *routed_id = val.vals[2];
-		ret = send_routing_response(origin_peer, origin_request_id, response, result_type);
-		cJSON_Delete(origin_request_id);
-		cjet_free(routed_id);
+		struct routing_request *request = val.vals[0];
+		ret = send_routing_response(request->p, request->origin_request_id, response, result_type);
+		cJSON_Delete(request->origin_request_id);
+		cjet_free(request);
 	}
+
 	return ret;
 }
 
-static void send_shutdown_response(struct peer *p,
+static void send_shutdown_response(const struct peer *p,
 	const cJSON *origin_request_id)
 {
 	if (origin_request_id == NULL) {
@@ -255,14 +232,11 @@ static void send_shutdown_response(struct peer *p,
 
 static void clear_routing_entry(struct value_route_table *val)
 {
-	struct peer *origin_peer = val->vals[0];
+	struct routing_request *request = val->vals[0];
 
-	cJSON *origin_request_id = val->vals[1];
-	char *id = val->vals[2];
-
-	send_shutdown_response(origin_peer, origin_request_id);
-	cJSON_Delete(origin_request_id);
-	cjet_free(id);
+	send_shutdown_response(request->p, request->origin_request_id);
+	cJSON_Delete(request->origin_request_id);
+	cjet_free(request);
 }
 
 void remove_peer_from_routing_table(const struct peer *p,

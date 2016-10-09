@@ -37,10 +37,15 @@ extern "C" {
 
 #define ROUTED_MESSAGE -1
 
+struct routing_request {
+	const struct peer *p;
+	cJSON *origin_request_id;
+	char id[];
+};
+
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
 	const cJSON *value, const char *id);
-int setup_routing_information(struct state_or_method *s,
-	struct peer *origin_peer, const cJSON *origin_request_id, char *id);
+int setup_routing_information(struct state_or_method *s, struct routing_request *request);
 struct routing_request *alloc_routing_request(const struct peer *p, const cJSON *origin_request_id);
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p);
