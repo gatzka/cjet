@@ -100,7 +100,7 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 	return BS_OK;
 }
 
-static int send_message(struct peer *p, char *rendered, size_t len)
+static int send_message(const struct peer *p, char *rendered, size_t len)
 {
 	uint32_t message_length = htonl(len);
 	struct buffered_socket_io_vector iov[2];
@@ -108,9 +108,9 @@ static int send_message(struct peer *p, char *rendered, size_t len)
 	iov[0].iov_len = sizeof(message_length);
 	iov[1].iov_base = rendered;
 	iov[1].iov_len = len;
-	struct socket_peer *s_peer = container_of(p, struct socket_peer, peer);
+	const struct socket_peer *s_peer = const_container_of(p, struct socket_peer, peer);
 
-	struct buffered_reader *br = &s_peer->br;
+	const struct buffered_reader *br = &s_peer->br;
 	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
