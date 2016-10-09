@@ -530,7 +530,7 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	}
 }
 
-static int send_frame(struct websocket *s, uint8_t *payload, size_t length, unsigned int type)
+static int send_frame(const struct websocket *s, uint8_t *payload, size_t length, unsigned int type)
 {
 	char ws_header[14];
 	uint8_t first_len;
@@ -571,27 +571,27 @@ static int send_frame(struct websocket *s, uint8_t *payload, size_t length, unsi
 	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
-int websocket_send_binary_frame(struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_binary_frame(const struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_BINARY_FRAME);
 }
 
-int websocket_send_text_frame(struct websocket *s, char *payload, size_t length)
+int websocket_send_text_frame(const struct websocket *s, char *payload, size_t length)
 {
 	return send_frame(s, (uint8_t *)payload, length, WS_TEXT_FRAME);
 }
 
-int websocket_send_ping_frame(struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_ping_frame(const struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_PING_FRAME);
 }
 
-int websocket_send_pong_frame(struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_pong_frame(const struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_PONG_FRAME);
 }
 
-int websocket_send_close_frame(struct websocket *s, enum ws_status_code status_code, const char *payload, size_t length)
+int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code, const char *payload, size_t length)
 {
 	uint16_t code = status_code;
 	uint8_t buffer[length + sizeof(code)];
