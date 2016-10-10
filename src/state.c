@@ -107,7 +107,7 @@ bool state_is_fetch_only(struct state_or_method *s)
 	}
 }
 
-cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
+cJSON *change_state(const struct peer *p, const char *path, const cJSON *value)
 {
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s == NULL)) {
@@ -141,7 +141,7 @@ cJSON *change_state(struct peer *p, const char *path, const cJSON *value)
 	return NULL;
 }
 
-cJSON *set_or_call(struct peer *p, const char *path, const cJSON *value,
+cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		 const cJSON *json_rpc, enum type what)
 {
 	cJSON *error;
@@ -258,7 +258,7 @@ static void remove_state_or_method(struct state_or_method *s)
 	free_state_or_method(s);
 }
 
-int remove_state_or_method_from_peer(struct peer *p, const char *path)
+int remove_state_or_method_from_peer(const struct peer *p, const char *path)
 {
 	struct list_head *item;
 	struct list_head *tmp;

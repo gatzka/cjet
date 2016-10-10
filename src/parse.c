@@ -78,7 +78,7 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *params,
 	return 0;
 }
 
-static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct peer *p)
+static int possibly_send_response(const cJSON *json_rpc, cJSON *error, const struct peer *p)
 {
 	int ret = 0;
 	if (error == (cJSON *)ROUTED_MESSAGE) {
@@ -119,7 +119,7 @@ static int possibly_send_response(const cJSON *json_rpc, cJSON *error, struct pe
 	return ret;
 }
 
-static int process_change(const cJSON *json_rpc, struct peer *p)
+static int process_change(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
@@ -143,7 +143,7 @@ static int process_change(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_set(const cJSON *json_rpc, struct peer *p)
+static int process_set(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
@@ -167,7 +167,7 @@ static int process_set(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_call(const cJSON *json_rpc, struct peer *p)
+static int process_call(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
@@ -220,7 +220,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_remove(const cJSON *json_rpc, struct peer *p)
+static int process_remove(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
@@ -262,7 +262,7 @@ static int process_fetch(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
-static int process_unfetch(const cJSON *json_rpc, struct peer *p)
+static int process_unfetch(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {

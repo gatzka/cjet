@@ -34,7 +34,7 @@ extern "C" {
 #include "generated/os_config.h"
 
 /**
- * @brief The eventloop_return enum defines the allowed return values of evetnloop callback functions.
+ * @brief The eventloop_return enum defines the allowed return values of eventloop callback functions.
  */
 enum eventloop_return {
 	EL_ABORT_LOOP, /**< The eventloop will be aborted. */

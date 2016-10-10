@@ -125,7 +125,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 {
 	static const char *sub_protocol = "jet";
 
-	init_peer(&ws_peer->peer, is_local_connection);
+	init_peer(&ws_peer->peer, is_local_connection, connection->server->ev.loop);
 	ws_peer->peer.send_message = ws_send_message;
 	ws_peer->peer.close = close_websocket_peer;
 

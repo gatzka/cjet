@@ -116,9 +116,12 @@ static int send_message(const struct peer *p, char *rendered, size_t len)
 
 void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, bool is_local_connection)
 {
-	init_peer(&p->peer, is_local_connection);
+	struct buffered_socket *bs = (struct buffered_socket *)reader->this_ptr;
+	
+	init_peer(&p->peer, is_local_connection, bs->ev.loop);
 	p->peer.send_message = send_message;
 	p->peer.close = close_jet_peer;
+	
 
 	struct buffered_reader *br = &p->br;
 	br->this_ptr = reader->this_ptr;

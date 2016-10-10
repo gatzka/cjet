@@ -55,9 +55,9 @@ struct F {
 	{
 		init_parser();
 		state_hashtable_create();
-		init_peer(&owner_peer, false);
+		init_peer(&owner_peer, false, NULL);
 		owner_peer.send_message = send_message;
-		init_peer(&call_peer, false);
+		init_peer(&call_peer, false, NULL);
 		call_peer.send_message = send_message;
 	}
 	~F()

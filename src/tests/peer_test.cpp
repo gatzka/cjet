@@ -36,7 +36,7 @@
 struct peer *alloc_peer()
 {
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));
-	int ret = init_peer(p, false);
+	int ret = init_peer(p, false, NULL);
 	if (ret != 0) {
 		free(p);
 		p = NULL;

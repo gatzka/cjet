@@ -37,7 +37,7 @@
 struct F {
 	F()
 	{
-		init_peer(&p, false);
+		init_peer(&p, false, NULL);
 	}
 
 	~F()
