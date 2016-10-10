@@ -42,6 +42,8 @@ struct cjet_timer {
 	int (*cancel)(void *this_ptr);
 };
 
+void init_cjet_timer(struct cjet_timer *timer);
+
 #ifdef __cplusplus
 }
 #endif

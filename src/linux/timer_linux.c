@@ -27,7 +27,8 @@
 #include <math.h>
 #include <sys/timerfd.h>
 
-#include "linux/timer.h"
+#include "linux/timer_linux.h"
+#include "timer.h"
 
 struct itimerspec convert_timeout_to_itimerspec(double timeout)
 {
@@ -41,4 +42,9 @@ struct itimerspec convert_timeout_to_itimerspec(double timeout)
 	ts.it_value.tv_nsec = nanos;
 
 	return ts;
+}
+
+void init_cjet_timer(struct cjet_timer *timer)
+{
+	(void)timer;
 }
