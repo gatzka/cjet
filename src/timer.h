@@ -30,6 +30,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "eventloop.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,12 +39,13 @@ extern "C" {
 typedef void(*timer_handler)(void *context, bool cancelled);
 
 struct cjet_timer {
+	struct io_event ev;
 	void *this_ptr;
 	int (*start)(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context);
 	int (*cancel)(void *this_ptr);
 };
 
-void init_cjet_timer(struct cjet_timer *timer);
+void init_cjet_timer(struct cjet_timer *timer, struct eventloop *loop);
 
 #ifdef __cplusplus
 }

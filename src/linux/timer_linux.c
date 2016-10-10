@@ -44,7 +44,8 @@ struct itimerspec convert_timeout_to_itimerspec(double timeout)
 	return ts;
 }
 
-void init_cjet_timer(struct cjet_timer *timer)
+void init_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
 {
 	(void)timer;
+	(void)loop;
 }
