@@ -50,7 +50,7 @@ struct path_matcher {
 
 struct fetch {
 	cJSON *fetch_id;
-	struct peer *peer;
+	const struct peer *peer;
 	unsigned int number_of_matchers;
 	struct list_head next_fetch;
 	struct path_matcher *matcher[1];
@@ -58,7 +58,7 @@ struct fetch {
 
 cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 	struct fetch **fetch_return);
-cJSON *remove_fetch_from_peer(struct peer *p, const cJSON *params);
+cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *params);
 void remove_all_fetchers_from_peer(struct peer *p);
 cJSON *add_fetch_to_states(struct fetch *f);
 int find_fetchers_for_state(struct state_or_method *s);

@@ -90,7 +90,7 @@ error:
 	return NULL;
 }
 
-int handle_info(const cJSON *json_rpc, struct peer *p)
+int handle_info(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {

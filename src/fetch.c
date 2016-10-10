@@ -295,7 +295,7 @@ error:
 	return -1;
 }
 
-static struct fetch *alloc_fetch(struct peer *p, const cJSON *id, unsigned int number_of_matchers)
+static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned int number_of_matchers)
 {
 	struct fetch *f;
 	size_t matcher_size = sizeof(f->matcher);
@@ -491,7 +491,8 @@ static int notify_fetching_peer(struct state_or_method *s, struct fetch *f,
 	if (unlikely(rendered_message == NULL)) {
 		goto error;
 	}
-	struct peer *p = f->peer;
+
+	const struct peer *p = f->peer;
 	if (unlikely(p->send_message(p, rendered_message,
 			strlen(rendered_message)) != 0)) {
 		cjet_free(rendered_message);
@@ -655,7 +656,7 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 	return NULL;
 }
 
-cJSON *remove_fetch_from_peer(struct peer *p, const cJSON *params)
+cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *params)
 {
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
