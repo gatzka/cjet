@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "eventloop.h"
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
 #include "http-parser/http_parser.h"
@@ -50,10 +51,11 @@ struct peer {
 	char *name;
 	int (*send_message)(const struct peer *p, char *rendered, size_t len);
 	void (*close)(struct peer *p);
+	struct eventloop *loop;
 	bool is_local_connection;
 };
 
-int init_peer(struct peer *p, bool is_local_connection);
+int init_peer(struct peer *p, bool is_local_connection, struct eventloop *loop);
 void free_peer_resources(struct peer *p);
 const struct list_head *get_peer_list(void);
 void set_peer_name(struct peer *peer, const char *name);
