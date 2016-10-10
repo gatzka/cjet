@@ -30,6 +30,7 @@
 #include "json/cJSON.h"
 #include "peer.h"
 #include "state.h"
+#include "timer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,7 @@ extern "C" {
 #define ROUTED_MESSAGE -1
 
 struct routing_request {
+    struct cjet_timer timer;
 	const struct peer *p;
 	cJSON *origin_request_id;
 	char id[];
