@@ -92,21 +92,21 @@ static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handle
 	timer->handler_context = handler_context;
 
 
-	struct itimerspec time = convert_timeoutns_to_itimerspec(timeout_ns);
-	return timerfd_settime(timer->ev.sock, 0, &time, NULL);
+	struct itimerspec timeout = convert_timeoutns_to_itimerspec(timeout_ns);
+	return timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
 }
 
 static int timer_cancel(void *this_ptr)
 {
 	struct cjet_timer *timer = (struct cjet_timer *)this_ptr;
-	static const struct itimerspec time = {
+	static const struct itimerspec timeout = {
 		.it_interval.tv_sec = 0,
 		.it_interval.tv_nsec = 0,
 		.it_value.tv_sec = 0,
 		.it_value.tv_nsec = 0
 	};
 
-	int ret = timerfd_settime(timer->ev.sock, 0, &time, NULL);
+	int ret = timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
 	if (likely(ret == 0)) {
 		timer->handler(timer->handler_context, true);
 	} else {
