@@ -53,7 +53,7 @@ static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 {
 	struct itimerspec ts;
 	time_t seconds = timeout / 1000000000;
-	long nanos = timeout - seconds;
+	long nanos = timeout - (seconds * 1000000000);
 
 	ts.it_interval.tv_sec = 0;
 	ts.it_interval.tv_nsec = 0;
