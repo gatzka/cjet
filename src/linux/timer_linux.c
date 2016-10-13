@@ -132,7 +132,7 @@ int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
 	timer->start = timer_start;
 	timer->cancel = timer_cancel;
 
-	enum eventloop_return ev_ret = timer->ev.loop->add(timer->ev.loop, &timer->ev);
+	enum eventloop_return ev_ret = timer->ev.loop->add(timer->ev.loop->this_ptr, &timer->ev);
 	if (unlikely(ev_ret == EL_ABORT_LOOP)) {
 		return -1;
 	} else {
