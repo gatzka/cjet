@@ -30,6 +30,7 @@
 #include <unistd.h>
 
 #include "compiler.h"
+#include "eventloop.h"
 #include "linux/timer_linux.h"
 #include "timer.h"
 #include "util.h"
@@ -90,6 +91,7 @@ static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handle
 	timer->handler = handler;
 	timer->handler_context = handler_context;
 
+
 	struct itimerspec time = convert_timeoutns_to_itimerspec(timeout_ns);
 	return timerfd_settime(timer->ev.sock, 0, &time, NULL);
 }
@@ -103,16 +105,18 @@ static int timer_cancel(void *this_ptr)
 		.it_value.tv_sec = 0,
 		.it_value.tv_nsec = 0
 	};
+
 	int ret = timerfd_settime(timer->ev.sock, 0, &time, NULL);
 	if (likely(ret == 0)) {
 		timer->handler(timer->handler_context, true);
 	} else {
 		// TODO: maybe call registered callback with error parameter
 	}
+
 	return ret;
 }
 
-int init_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
+int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
 {
 	timer->ev.loop = loop;
 	int ret = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
@@ -128,5 +132,16 @@ int init_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
 	timer->start = timer_start;
 	timer->cancel = timer_cancel;
 
-	return 0;
+	enum eventloop_return ev_ret = timer->ev.loop->add(timer->ev.loop, &timer->ev);
+	if (unlikely(ev_ret == EL_ABORT_LOOP)) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+void destroy_cjet_timer(struct cjet_timer *timer)
+{
+	timer->ev.loop->remove(timer->ev.loop, &timer->ev);
+	close(timer->ev.sock);
 }
