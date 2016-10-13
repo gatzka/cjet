@@ -27,6 +27,8 @@
 #ifndef CJET_UTIL_H
 #define CJET_UTIL_H
 
+#include <stddef.h>
+
 #define container_of(ptr, type, member) ( \
 	(void *)((char *)ptr - offsetof(type,member) ))
 
