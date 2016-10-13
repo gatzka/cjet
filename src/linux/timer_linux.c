@@ -26,6 +26,7 @@
 
 #include <fcntl.h>
 #include <math.h>
+#include <string.h>
 #include <sys/timerfd.h>
 #include <unistd.h>
 
@@ -99,12 +100,8 @@ static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handle
 static int timer_cancel(void *this_ptr)
 {
 	struct cjet_timer *timer = (struct cjet_timer *)this_ptr;
-	static const struct itimerspec timeout = {
-		.it_interval.tv_sec = 0,
-		.it_interval.tv_nsec = 0,
-		.it_value.tv_sec = 0,
-		.it_value.tv_nsec = 0
-	};
+	static struct itimerspec timeout;
+	memset(&timeout, 0x0, sizeof(timeout));
 
 	int ret = timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
 	if (likely(ret == 0)) {
