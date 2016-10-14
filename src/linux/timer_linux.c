@@ -138,7 +138,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 	}
 }
 
-void destroy_cjet_timer(struct cjet_timer *timer)
+void cjet_timer_destroy(struct cjet_timer *timer)
 {
 	timer->ev.loop->remove(timer->ev.loop, &timer->ev);
 	close(timer->ev.sock);
