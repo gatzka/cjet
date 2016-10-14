@@ -47,7 +47,7 @@ struct cjet_timer {
 	void *handler_context;
 };
 
-int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop);
+int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop);
 void destroy_cjet_timer(struct cjet_timer *timer);
 
 #ifdef __cplusplus

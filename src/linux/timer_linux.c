@@ -113,7 +113,7 @@ static int timer_cancel(void *this_ptr)
 	return ret;
 }
 
-int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
+int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 {
 	timer->ev.loop = loop;
 	int ret = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
