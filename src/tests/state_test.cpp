@@ -106,16 +106,39 @@ static cJSON *get_result_from_response(const cJSON *response)
 	return NULL;
 }
 
+static enum eventloop_return fake_add(const void *this_ptr, const struct io_event *ev)
+{
+	(void)this_ptr;
+	(void)ev;
+	return EL_CONTINUE_LOOP;
+}
+
+static void fake_remove(const void *this_ptr, const struct io_event *ev)
+{
+	(void)this_ptr;
+	(void)ev;
+	return;
+}
+
+static struct eventloop loop;
+
 struct F {
 	F()
 	{
+		loop.this_ptr = NULL;
+		loop.init = NULL;
+		loop.destroy = NULL;
+		loop.run = NULL;
+		loop.add = fake_add;
+		loop.remove = fake_remove;
+
 		init_parser();
 		state_hashtable_create();
-		init_peer(&p, false, NULL);
+		init_peer(&p, false, &loop);
 		p.send_message = send_message;
-		init_peer(&owner_peer, false, NULL);
+		init_peer(&owner_peer, false, &loop);
 		owner_peer.send_message = send_message;
-		init_peer(&set_peer, false, NULL);
+		init_peer(&set_peer, false, &loop);
 		set_peer.send_message = send_message;
 	}
 	~F()

@@ -36,11 +36,13 @@
 #include "timer.h"
 #include "util.h"
 
+static const unsigned long NSECONDS_IN_SECONDS = 1000000000;
+
 struct itimerspec convert_timeout_to_itimerspec(double timeout)
 {
 	struct itimerspec ts;
 	time_t seconds = (time_t)floor(timeout);
-	long nanos = (long)((timeout - floor(timeout)) * 1000000000);
+	long nanos = (long)((timeout - floor(timeout)) * NSECONDS_IN_SECONDS);
 
 	ts.it_interval.tv_sec = 0;
 	ts.it_interval.tv_nsec = 0;
@@ -53,8 +55,8 @@ struct itimerspec convert_timeout_to_itimerspec(double timeout)
 static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 {
 	struct itimerspec ts;
-	time_t seconds = timeout / 1000000000;
-	long nanos = timeout - (seconds * 1000000000);
+	time_t seconds = timeout / NSECONDS_IN_SECONDS;
+	long nanos = timeout - (seconds * NSECONDS_IN_SECONDS);
 
 	ts.it_interval.tv_sec = 0;
 	ts.it_interval.tv_nsec = 0;
@@ -62,7 +64,6 @@ static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 	ts.it_value.tv_nsec = nanos;
 	return ts;
 }
-
 
 static enum eventloop_return timer_read(struct io_event *ev)
 {
@@ -113,7 +114,7 @@ static int timer_cancel(void *this_ptr)
 	return ret;
 }
 
-int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
+int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 {
 	timer->ev.loop = loop;
 	int ret = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
@@ -137,7 +138,7 @@ int create_cjet_timer(struct cjet_timer *timer, struct eventloop *loop)
 	}
 }
 
-void destroy_cjet_timer(struct cjet_timer *timer)
+void cjet_timer_destroy(struct cjet_timer *timer)
 {
 	timer->ev.loop->remove(timer->ev.loop, &timer->ev);
 	close(timer->ev.sock);

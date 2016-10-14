@@ -75,6 +75,7 @@ add_library(jet STATIC
 
 SET(INFO_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	info_test.cpp
 	log.cpp
 )
@@ -87,6 +88,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(RESPONSE_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	response_test.cpp
 )
@@ -99,6 +101,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(ROUTER_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	router_test.cpp
 )
@@ -151,6 +154,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(CONFIG_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	config_test.cpp
 	log.cpp
 )
@@ -163,6 +167,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(PEER_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	peer_test.cpp
 )
@@ -175,6 +180,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(JSON_PARSE_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	parse_test.cpp
 )
@@ -187,6 +193,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(STATE_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	state_test.cpp
 )
@@ -199,6 +206,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(METHOD_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	method_test.cpp
 )
@@ -211,6 +219,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(COMBINED_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	combined_test.cpp
 )
@@ -223,6 +232,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(FETCH_TEST
 	../linux/alloc.c
+	../linux/timer_linux.c
 	log.cpp
 	fetch_test.cpp
 )
