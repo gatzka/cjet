@@ -63,18 +63,18 @@ static void fake_remove(const void *this_ptr, const struct io_event *ev)
 	return;
 }
 
-static struct eventloop loop = {
-	.this_ptr = NULL,
-	.init = NULL,
-	.destroy = NULL,
-	.run = NULL,
-	.add = fake_add,
-	.remove = fake_remove
-};
+static struct eventloop loop;
 
 struct F {
 	F()
 	{
+		loop.this_ptr = NULL;
+		loop.init = NULL;
+		loop.destroy = NULL;
+		loop.run = NULL;
+		loop.add = fake_add;
+		loop.remove = fake_remove;
+
 		init_parser();
 		state_hashtable_create();
 		init_peer(&owner_peer, false, &loop);
