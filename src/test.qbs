@@ -44,6 +44,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/info_test.cpp",
             "tests/log.cpp",
         ]
@@ -58,6 +59,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/response_test.cpp",
             "tests/log.cpp",
         ]
@@ -72,6 +74,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/router_test.cpp",
         ]
@@ -99,6 +102,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/config_test.cpp",
         ]
@@ -113,6 +117,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/peer_test.cpp",
             "tests/log.cpp",
         ]
@@ -127,6 +132,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/parse_test.cpp",
             "tests/log.cpp",
         ]
@@ -141,6 +147,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/state_test.cpp",
         ]
@@ -155,6 +162,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/method_test.cpp",
         ]
@@ -169,6 +177,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/combined_test.cpp",
         ] 
@@ -183,6 +192,7 @@ Project {
 
         files: [
             "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/log.cpp",
             "tests/fetch_test.cpp",
         ]

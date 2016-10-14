@@ -34,6 +34,7 @@
 #include "peer.h"
 #include "response.h"
 #include "router.h"
+#include "timer.h"
 #include "uuid.h"
 
 DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
@@ -119,6 +120,7 @@ struct routing_request *alloc_routing_request(const struct peer *p, const cJSON 
 		} else {
 			origin_request_id_copy = NULL;
 		}
+
 		request->p = p;
 		request->origin_request_id = origin_request_id_copy;
 		fill_routed_request_id(request->id, size_for_id, p, origin_request_id);
@@ -129,18 +131,6 @@ struct routing_request *alloc_routing_request(const struct peer *p, const cJSON 
 duplicate_id_failed:
 	cjet_free(request);
 	return NULL;
-}
-
-int setup_routing_information(struct state_or_method *s, struct routing_request *request)
-{
-	struct value_route_table val;
-	val.vals[0] = request;
-	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
-			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		log_peer_err(request->p, "Routing table full!\n");
-		return -1;
-	}
-	return 0;
 }
 
 static int format_and_send_response(const struct peer *p, const cJSON *response)
@@ -162,6 +152,7 @@ static int send_routing_response(const struct peer *p,
 	if (unlikely(origin_request_id == NULL)) {
 		return 0;
 	}
+
 	cJSON *response_copy = cJSON_Duplicate(response, 1);
 	if (likely(response_copy != NULL)) {
 		cJSON *result_response =
@@ -177,6 +168,53 @@ static int send_routing_response(const struct peer *p,
 		}
 	} else {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "response_copy");
+		return -1;
+	}
+
+	return 0;
+}
+
+static uint64_t convert_seconds_to_nsec(double seconds)
+{
+	return (uint64_t)(seconds * 1000000000.0);
+}
+
+static void request_timeout_handler(void *context, bool cancelled) {
+	struct routing_request *request = (struct routing_request *)context;
+	if (unlikely(!cancelled)) {
+		struct value_route_table val;
+		int ret = HASHTABLE_REMOVE(route_table, request->p->routing_table, request->id, &val);
+		if (likely(ret == HASHTABLE_SUCCESS)) {
+			cJSON *error = create_internal_error(request->p, "reason", "timeout for routed request");
+			send_routing_response(request->p, request->origin_request_id, error, "error");
+			cjet_timer_destroy(&request->timer);
+			cJSON_Delete(request->origin_request_id);
+			cjet_free(request);
+		} else {
+			log_peer_err(request->p, "hashtable remove from request_timeout_handler not successful");
+		}
+	}
+}
+
+int setup_routing_information(struct state_or_method *s, struct routing_request *request)
+{
+	if (unlikely(cjet_timer_init(&request->timer, s->peer->loop) < 0)) {
+		log_peer_err(request->p, "Could not init timer for routing request!\n");
+		return -1;
+	}
+
+	uint64_t timeout_ns = convert_seconds_to_nsec(s->timeout);
+	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
+	if (unlikely(ret < 0)) {
+		log_peer_err(request->p, "Could not start timer for routing request!\n");
+		return -1;
+	}
+
+	struct value_route_table val;
+	val.vals[0] = request;
+	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
+			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+		log_peer_err(request->p, "Routing table full!\n");
 		return -1;
 	}
 
@@ -201,6 +239,11 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
 		struct routing_request *request = val.vals[0];
+		if (unlikely(request->timer.cancel(&request->timer) < 0)) {
+			log_peer_err(p, "Could not cancel request timer!\n");
+		}
+
+		cjet_timer_destroy(&request->timer);
 		ret = send_routing_response(request->p, request->origin_request_id, response, result_type);
 		cJSON_Delete(request->origin_request_id);
 		cjet_free(request);

@@ -40,7 +40,6 @@ typedef void(*timer_handler)(void *context, bool cancelled);
 
 struct cjet_timer {
 	struct io_event ev;
-	void *this_ptr;
 	int (*start)(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context);
 	int (*cancel)(void *this_ptr);
 	timer_handler handler;

@@ -49,15 +49,37 @@ int send_message(const struct peer *p, char *rendered, size_t len)
 	return 0;
 }
 
+static enum eventloop_return fake_add(const void *this_ptr, const struct io_event *ev)
+{
+	(void)this_ptr;
+	(void)ev;
+	return EL_CONTINUE_LOOP;
+}
+
+static void fake_remove(const void *this_ptr, const struct io_event *ev)
+{
+	(void)this_ptr;
+	(void)ev;
+	return;
+}
+
+static struct eventloop loop = {
+	.this_ptr = NULL,
+	.init = NULL,
+	.destroy = NULL,
+	.run = NULL,
+	.add = fake_add,
+	.remove = fake_remove
+};
 
 struct F {
 	F()
 	{
 		init_parser();
 		state_hashtable_create();
-		init_peer(&owner_peer, false, NULL);
+		init_peer(&owner_peer, false, &loop);
 		owner_peer.send_message = send_message;
-		init_peer(&call_peer, false, NULL);
+		init_peer(&call_peer, false, &loop);
 		call_peer.send_message = send_message;
 	}
 	~F()
