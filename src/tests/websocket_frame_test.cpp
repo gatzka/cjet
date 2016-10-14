@@ -81,7 +81,7 @@ static void ws_on_error(struct websocket *ws)
 	got_error = true;
 }
 
-static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
+static int writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	(void)this_ptr;
 	size_t complete_length = 0;

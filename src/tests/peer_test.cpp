@@ -33,6 +33,24 @@
 #include "log.h"
 #include "peer.h"
 
+extern "C" {
+
+	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	{
+		(void)sock;
+		(void)count;
+		uint64_t number_of_timeouts = 1;
+		::memcpy(buf, &number_of_timeouts, sizeof(number_of_timeouts));
+		return 8;
+	}
+
+	int socket_close(socket_type sock)
+	{
+		(void)sock;
+		return 0;
+	}
+}
+
 struct peer *alloc_peer()
 {
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));

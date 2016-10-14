@@ -28,10 +28,10 @@
 #include <math.h>
 #include <string.h>
 #include <sys/timerfd.h>
-#include <unistd.h>
 
 #include "compiler.h"
 #include "eventloop.h"
+#include "socket.h"
 #include "timer.h"
 #include "util.h"
 
@@ -55,7 +55,7 @@ static enum eventloop_return timer_read(struct io_event *ev)
 	struct cjet_timer *timer = container_of(ev, struct cjet_timer, ev);
 
 	uint64_t number_of_expirations;
-	int ret = read(ev->sock, &number_of_expirations, sizeof(number_of_expirations));
+	int ret = socket_read(ev->sock, &number_of_expirations, sizeof(number_of_expirations));
 	if (likely(ret == sizeof(number_of_expirations))) {
 		timer->handler(timer->handler_context, false);
 	} else {
@@ -126,5 +126,5 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 void cjet_timer_destroy(struct cjet_timer *timer)
 {
 	timer->ev.loop->remove(timer->ev.loop, &timer->ev);
-	close(timer->ev.sock);
+	socket_close(timer->ev.sock);
 }

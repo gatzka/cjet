@@ -37,12 +37,17 @@
 extern "C" {
 #endif
 
+struct socket_io_vector {
+	const void *iov_base;
+	size_t iov_len;
+};
+
 /*
  * Platform independent prototypes for socket operations.
  * This functions must be implemented in an OS specific way.
  */
 ssize_t socket_read(socket_type sock, void *buf, size_t count);
-ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count);
+ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count);
 int socket_close(socket_type sock);
 
 #ifdef __cplusplus

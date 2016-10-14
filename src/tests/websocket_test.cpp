@@ -66,7 +66,7 @@ static bool got_complete_response_header = false;
 static bool response_parse_error = false;
 
 extern "C" {
-	ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
+	ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 	{
 		(void)sock;
 		size_t complete_length = 0;

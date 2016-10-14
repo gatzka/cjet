@@ -373,7 +373,7 @@ static int send_upgrade_response(struct http_connection *connection)
 
 	static const char switch_response_end[] = CRLF CRLF;
 
-	struct buffered_socket_io_vector iov[5];
+	struct socket_io_vector iov[5];
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response ) - 1;
 	iov[1].iov_base = accept_value;
@@ -561,7 +561,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 	}
 	ws_header[1] = first_len;
 
-	struct buffered_socket_io_vector iov[2];
+	struct socket_io_vector iov[2];
 	iov[0].iov_base = ws_header;
 	iov[0].iov_len = header_index;
 	iov[1].iov_base = payload;

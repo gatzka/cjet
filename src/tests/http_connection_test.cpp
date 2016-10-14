@@ -80,7 +80,7 @@ static int close(void *context)
 	return 0;
 }
 
-static int writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
+static int writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	(void)this_ptr;
 	size_t complete_length = 0;
