@@ -32,25 +32,10 @@
 
 #include "compiler.h"
 #include "eventloop.h"
-#include "linux/timer_linux.h"
 #include "timer.h"
 #include "util.h"
 
 static const unsigned long NSECONDS_IN_SECONDS = 1000000000;
-
-struct itimerspec convert_timeout_to_itimerspec(double timeout)
-{
-	struct itimerspec ts;
-	time_t seconds = (time_t)floor(timeout);
-	long nanos = (long)((timeout - floor(timeout)) * NSECONDS_IN_SECONDS);
-
-	ts.it_interval.tv_sec = 0;
-	ts.it_interval.tv_nsec = 0;
-	ts.it_value.tv_sec = seconds;
-	ts.it_value.tv_nsec = nanos;
-
-	return ts;
-}
 
 static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 {
