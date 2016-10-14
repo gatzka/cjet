@@ -173,7 +173,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	struct routing_request *request = alloc_routing_request(p, origin_request_id);
+	struct routing_request *request = alloc_routing_request(p, s->peer, origin_request_id);
 	if (unlikely(request == NULL)) {
 		error = create_internal_error(
 			p, "reason", "could not create routing request");

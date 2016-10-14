@@ -39,6 +39,8 @@
 
 static char send_buffer[100000];
 
+struct io_event *timer_ev;
+
 extern "C" {
 	ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
@@ -126,7 +128,7 @@ static cJSON *get_result_from_response(const cJSON *response)
 static enum eventloop_return fake_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
-	(void)ev;
+	timer_ev = (struct io_event *)ev;
 	return EL_CONTINUE_LOOP;
 }
 
@@ -134,6 +136,7 @@ static void fake_remove(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;
+	timer_ev = NULL;
 	return;
 }
 
@@ -142,6 +145,7 @@ static struct eventloop loop;
 struct F {
 	F()
 	{
+		timer_ev = NULL;
 		loop.this_ptr = NULL;
 		loop.init = NULL;
 		loop.destroy = NULL;
@@ -170,6 +174,25 @@ struct F {
 	struct peer owner_peer;
 	struct peer set_peer;
 };
+
+static void check_internal_error(const cJSON *error)
+{
+	cJSON *code = cJSON_GetObjectItem(error, "code");
+	if (code != NULL) {
+		BOOST_CHECK(code->type == cJSON_Number);
+		BOOST_CHECK(code->valueint == -32603);
+	} else {
+		BOOST_FAIL("No code object!");
+	}
+
+	cJSON *message = cJSON_GetObjectItem(error, "message");
+	if (message != NULL) {
+		BOOST_CHECK(message->type == cJSON_String);
+		BOOST_CHECK(strcmp(message->valuestring, "Internal error") == 0);
+	} else {
+		BOOST_FAIL("No message object!");
+	}
+}
 
 static void check_invalid_params(const cJSON *error)
 {
@@ -375,6 +398,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	error = set_or_call(&set_peer, path, new_value, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK(timer_ev != NULL);
 
 	cJSON *routed_message = parse_send_buffer();
 	cJSON *response = create_response_from_message(routed_message);
@@ -382,6 +406,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	int ret = handle_routing_response(response, result, "result", &p);
 	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(timer_ev == NULL);
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
@@ -468,3 +493,39 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
 }
+
+BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *new_value = get_value_from_request(set_request);
+	error = set_or_call(&set_peer, path, new_value, set_request, STATE);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	cJSON *routed_message = parse_send_buffer();
+	cJSON *response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+
+	enum eventloop_return el_ret = timer_ev->read_function(timer_ev);
+	BOOST_CHECK_MESSAGE(el_ret == EL_CONTINUE_LOOP, "timer read function did not returned EL_CONTINUE_LOOP");
+	BOOST_CHECK_MESSAGE(timer_ev == NULL, "timer was not removed from eventloop");
+	cJSON *error_message = parse_send_buffer();
+	BOOST_CHECK_MESSAGE(error_message != NULL, "Did not get a parseable JSON message after timeout!");
+	error = cJSON_GetObjectItem(error_message, "error");
+	BOOST_REQUIRE_MESSAGE(error != NULL, "Error message does not contain an error object!");
+	check_internal_error(error);
+	cJSON_Delete(error_message);
+
+	int ret = handle_routing_response(response, result, "result", &p);
+	BOOST_CHECK(ret == -1);
+
+	cJSON_Delete(routed_message);
+	cJSON_Delete(response);
+}
+

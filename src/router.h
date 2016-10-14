@@ -40,7 +40,8 @@ extern "C" {
 
 struct routing_request {
     struct cjet_timer timer;
-	const struct peer *p;
+	const struct peer *requesting_peer;
+	const struct peer *owner_peer;
 	cJSON *origin_request_id;
 	char id[];
 };
@@ -48,7 +49,7 @@ struct routing_request {
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
 	const cJSON *value, const char *id);
 int setup_routing_information(struct state_or_method *s, struct routing_request *request);
-struct routing_request *alloc_routing_request(const struct peer *p, const cJSON *origin_request_id);
+struct routing_request *alloc_routing_request(const struct peer *requesting_peer, const struct peer *owner_peer, const cJSON *origin_request_id);
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p);
 
