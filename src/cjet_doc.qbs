@@ -25,24 +25,44 @@
  */
 
 import qbs 1.0
+import '../qbs/versions.js' as Versions
 
 Project {
-  name: "cjet with tests"
-  minimumQbsVersion: "1.4.0"
 
-  SubProject {
-    filePath: "src/cjet.qbs"
-  }
+  property bool runAnalyzer: false
 
-  SubProject {
-    filePath: "src/cjet_doc.qbs"
-  }
+  name: "cjet"
+  minimumQbsVersion: "1.6.0"
 
-  SubProject {
-    filePath: "src/test_run.qbs"
-    Properties {
-      profile: "gcc"
+  qbsSearchPaths: "../qbs/"
+
+  Product {
+    name: "cjet-docs";
+    type: "docs";
+
+    Depends { name: "generateDoxygen" }
+
+    Group {
+      name: "Doxygen config"
+      files: [
+        "Doxyfile.in"
+      ]
+      fileTags: ["doxy_input"]
+    }
+
+    Group {
+      name: "version file"
+      files: [
+        "version"
+      ]
+      fileTags: ["version_file"]
+    }
+
+    Group {
+      name: "Doxygen C inputs";
+      prefix: "**/"
+      files: ["*.h", "*.c"];
+      fileTags: "source";
     }
   }
 }
-
