@@ -69,6 +69,23 @@ static enum result setter_caller_result;
 static enum event fetch_peer_1_event;
 static enum event fetch_peer_2_event;
 
+extern "C" {
+	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	{
+		(void)sock;
+		(void)count;
+		uint64_t number_of_timeouts = 1;
+		::memcpy(buf, &number_of_timeouts, sizeof(number_of_timeouts));
+		return 8;
+	}
+
+	int socket_close(socket_type sock)
+	{
+		(void)sock;
+		return 0;
+	}
+}
+
 static cJSON *parse_send_buffer(const char *buffer)
 {
 	const char *end_parse;

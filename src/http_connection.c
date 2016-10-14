@@ -108,7 +108,7 @@ void free_connection(void *context)
 int send_http_error_response(struct http_connection *connection)
 {
 	const char *response = get_response(connection->status_code);
-	struct buffered_socket_io_vector iov;
+	struct socket_io_vector iov;
 	iov.iov_base = response;
 	iov.iov_len = strlen(response);
 

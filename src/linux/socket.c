@@ -29,7 +29,6 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#include "buffered_socket.h"
 #include "compiler.h"
 #include "socket.h"
 
@@ -38,7 +37,7 @@ ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	return read(sock, buf, count);
 }
 
-ssize_t socket_writev(socket_type sock, struct buffered_socket_io_vector *io_vec, unsigned int count)
+ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 {
 	struct iovec iov[count];
 

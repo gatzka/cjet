@@ -34,6 +34,7 @@
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
+#include "socket.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,11 +50,6 @@ enum bs_read_callback_return {BS_OK, BS_CLOSED};
 union buffered_socket_reader_context {
 	const char *ptr;
 	size_t num;
-};
-
-struct buffered_socket_io_vector {
-	const void *iov_base;
-	size_t iov_len;
 };
 
 struct buffered_socket {
@@ -77,7 +73,7 @@ void buffered_socket_release(void *this_ptr);
 
 void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct eventloop *loop, void (*error)(void *error_context), void *error_context);
 int buffered_socket_close(void *context);
-int buffered_socket_writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
+int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count);
 void buffered_socket_set_error(void *this_ptr, void (*error)(void *error_context), void *error_context);
 
 /**

@@ -39,7 +39,7 @@ struct buffered_reader {
 	void *this_ptr;
 	int (*read_exactly)(void *this_ptr, size_t num, read_handler handler, void *handler_context);
 	int (*read_until)(void *this_ptr, const char *delim, read_handler handler, void *handler_context);
-	int (*writev)(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count);
+	int (*writev)(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count);
 	int (*close)(void *this_ptr);
 	void(*set_error_handler)(void *this_ptr, error_handler handler, void *error_context);
 };

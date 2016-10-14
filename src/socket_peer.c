@@ -103,7 +103,7 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 static int send_message(const struct peer *p, char *rendered, size_t len)
 {
 	uint32_t message_length = htonl(len);
-	struct buffered_socket_io_vector iov[2];
+	struct socket_io_vector iov[2];
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);
 	iov[1].iov_base = rendered;

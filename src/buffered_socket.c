@@ -42,7 +42,7 @@ static int send_buffer(struct buffered_socket *bs)
 {
 	uint8_t *write_buffer_ptr = bs->write_buffer;
 	while (bs->to_write != 0) {
-		struct buffered_socket_io_vector iov;
+		struct socket_io_vector iov;
 		iov.iov_base = write_buffer_ptr;
 		iov.iov_len = bs->to_write;
 		ssize_t written = socket_writev(bs->ev.sock, &iov, 1);
@@ -135,7 +135,7 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 	return 0;
 }
 
-static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct buffered_socket_io_vector *io_vec,
+static int copy_iovec_to_write_buffer(struct buffered_socket *bs, const struct socket_io_vector *io_vec,
                                       unsigned int count, size_t iovec_written)
 {
 	for (unsigned int i = 0; i < count; i++) {
@@ -319,10 +319,10 @@ int buffered_socket_close(void *context)
 	return ret;
 }
 
-int buffered_socket_writev(void *this_ptr, struct buffered_socket_io_vector *io_vec, unsigned int count)
+int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
-	struct buffered_socket_io_vector iov[count + 1];
+	struct socket_io_vector iov[count + 1];
 	size_t to_write = bs->to_write;
 	iov[0].iov_base = bs->write_buffer;
 	iov[0].iov_len = bs->to_write;

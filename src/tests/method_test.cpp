@@ -41,6 +41,23 @@ static const char *method_no_args_path = "/method_no_args/";
 
 static const int INVALID_PARAMS_ERROR = -32602;
 
+extern "C" {
+	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	{
+		(void)sock;
+		(void)count;
+		uint64_t number_of_timeouts = 1;
+		::memcpy(buf, &number_of_timeouts, sizeof(number_of_timeouts));
+		return 8;
+	}
+
+	int socket_close(socket_type sock)
+	{
+		(void)sock;
+		return 0;
+	}
+}
+
 int send_message(const struct peer *p, char *rendered, size_t len)
 {
 	(void)p;
