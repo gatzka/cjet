@@ -529,3 +529,33 @@ BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
 	cJSON_Delete(response);
 }
 
+BOOST_FIXTURE_TEST_CASE(set_with_destroy_before_response, F)
+{
+	struct peer setter_peer;
+	init_peer(&setter_peer, false, &loop);
+	setter_peer.send_message = send_message;
+
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *new_value = get_value_from_request(set_request);
+	error = set_or_call(&setter_peer, path, new_value, set_request, STATE);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+
+	cJSON *routed_message = parse_send_buffer();
+	cJSON *response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+
+	free_peer_resources(&setter_peer);
+
+	int ret = handle_routing_response(response, result, "result", &p);
+	BOOST_CHECK(ret == -1);
+
+	cJSON_Delete(routed_message);
+	cJSON_Delete(response);
+}

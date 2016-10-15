@@ -299,9 +299,8 @@ void remove_peer_from_routing_table(const struct peer *p,
 			int ret = HASHTABLE_GET(route_table,
 					p->routing_table, entry->key, &val);
 			if (ret == HASHTABLE_SUCCESS) {
-				// TODO: WRITE Unit test. This seems terrebly wrong. It must be a struct routing_request *
-				struct peer *origin_peer = val.vals[0];
-				if (origin_peer == peer_to_remove) {
+				struct routing_request *request = val.vals[0];
+				if (likely(request->requesting_peer == peer_to_remove)) {
 					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, NULL);
 					clear_routing_entry(&val);
 				}
