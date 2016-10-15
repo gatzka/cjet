@@ -597,7 +597,9 @@ int websocket_send_close_frame(const struct websocket *s, enum ws_status_code st
 	uint8_t buffer[length + sizeof(code)];
 	code = jet_htobe16(code);
 	memcpy(buffer, &code, sizeof(code));
-	memcpy(buffer + sizeof(code), payload, length);
+	if (length > 0) {
+		memcpy(buffer + sizeof(code), payload, length);
+	}
 	return send_frame(s, buffer, length + sizeof(code), WS_CLOSE_FRAME);
 }
 
