@@ -124,6 +124,8 @@ static inline void hashtable_delete_##name(struct hashtable_##type_name *table) 
 	return; \
 } \
 \
+_Pragma ("GCC diagnostic push") \
+_Pragma ("GCC diagnostic ignored \"-Wunused-function\"") \
 static inline int hashtable_get_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
 { \
 	uint32_t hash_pos = hash_func_##name##_##type_name(key); \
@@ -139,6 +141,7 @@ static inline int hashtable_get_##name(struct hashtable_##type_name *table, type
 	} \
 	return HASHTABLE_INVALIDENTRY; \
 } \
+_Pragma ("GCC diagnostic pop") \
 \
 static inline uint32_t hop_range_##name(void) \
 { \
