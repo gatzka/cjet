@@ -296,12 +296,10 @@ void remove_peer_from_routing_table(const struct peer *p,
 		struct hashtable_string *entry = &(table[i]);
 		if (entry->key != (char *)HASHTABLE_INVALIDENTRY) {
 			struct value_route_table val;
-			int ret = HASHTABLE_GET(route_table,
-					p->routing_table, entry->key, &val);
+			int ret = HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, &val);
 			if (ret == HASHTABLE_SUCCESS) {
 				struct routing_request *request = val.vals[0];
 				if (likely(request->requesting_peer == peer_to_remove)) {
-					HASHTABLE_REMOVE(route_table, p->routing_table, entry->key, NULL);
 					clear_routing_entry(&val);
 				}
 			}
