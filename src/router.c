@@ -198,14 +198,25 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-int setup_routing_information(struct state_or_method *s, struct routing_request *request)
+int setup_routing_information(struct state_or_method *s, const cJSON *timeout, struct routing_request *request)
 {
+	uint64_t timeout_ns;
+	if (timeout != NULL) {
+		if (unlikely(timeout->type != cJSON_Number)) {
+			log_peer_err(request->requesting_peer, "timeout for set/call is not a number!\n");
+			return -1;
+		} else {
+			timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
+		}
+	} else {
+		timeout_ns = convert_seconds_to_nsec(s->timeout);
+	}
+
 	if (unlikely(cjet_timer_init(&request->timer, s->peer->loop) < 0)) {
 		log_peer_err(request->requesting_peer, "Could not init timer for routing request!\n");
 		return -1;
 	}
 
-	uint64_t timeout_ns = convert_seconds_to_nsec(s->timeout);
 	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
 	if (unlikely(ret < 0)) {
 		log_peer_err(request->requesting_peer, "Could not start timer for routing request!\n");

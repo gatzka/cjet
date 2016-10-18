@@ -142,7 +142,7 @@ cJSON *change_state(const struct peer *p, const char *path, const cJSON *value)
 }
 
 cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
-		 const cJSON *json_rpc, enum type what)
+		const cJSON *timeout, const cJSON *json_rpc, enum type what)
 {
 	cJSON *error;
 	struct state_or_method *s = state_table_get(path);
@@ -187,7 +187,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto routed_message_creation_failed;
 	}
 
-	if (unlikely(setup_routing_information(s, request) != 0)) {
+	if (unlikely(setup_routing_information(s, timeout, request) != 0)) {
 		error = create_internal_error(
 			p, "reason", "could not setup routing information");
 		goto delete_json;

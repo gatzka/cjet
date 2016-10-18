@@ -163,7 +163,9 @@ static int process_set(const cJSON *json_rpc, const struct peer *p)
 		error = create_invalid_params_error(p, "reason", "no value given");
 		return possibly_send_response(json_rpc, error, p);
 	}
-	error = set_or_call(p, path, value, json_rpc, STATE);
+
+	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
+	error = set_or_call(p, path, value, timeout, json_rpc, STATE);
 	return possibly_send_response(json_rpc, error, p);
 }
 
@@ -182,7 +184,8 @@ static int process_call(const cJSON *json_rpc, const struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 	const cJSON *args = cJSON_GetObjectItem(params, "args");
-	error = set_or_call(p, path, args, json_rpc, METHOD);
+	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
+	error = set_or_call(p, path, args, timeout, json_rpc, METHOD);
 	return possibly_send_response(json_rpc, error, p);
 }
 
