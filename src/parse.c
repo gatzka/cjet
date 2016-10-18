@@ -215,7 +215,22 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	error = add_state_or_method_to_peer(p, path, value, flags);
+	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
+
+	double routed_request_timeout;
+	if (timeout != NULL) {
+		if (unlikely(timeout->type != cJSON_Number)) {
+			error =
+				create_invalid_request_error(p, "reason", "timeout must be a number");
+			return possibly_send_response(json_rpc, error, p);
+		} else {
+			routed_request_timeout = timeout->valuedouble;
+		}
+	} else {
+		routed_request_timeout = CONFIG_ROUTED_MESSAGES_TIMEOUT;
+	}
+
+	error = add_state_or_method_to_peer(p, path, value, flags, routed_request_timeout);
 
 	return possibly_send_response(json_rpc, error, p);
 }

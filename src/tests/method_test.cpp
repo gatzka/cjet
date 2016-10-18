@@ -167,7 +167,7 @@ BOOST_FIXTURE_TEST_CASE(delete_nonexisting_state, F)
 BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 {
 
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, "/foo/bar", NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, "/foo/bar", NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -186,10 +186,10 @@ BOOST_FIXTURE_TEST_CASE(add_method_twice, F)
 {
 	const char path[] = "/foo/bar";
 
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
-	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
+	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -201,11 +201,11 @@ BOOST_FIXTURE_TEST_CASE(add_method_existing_state, F)
 	int state_value = 12345;
 
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
-	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
+	error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_REQUIRE(error != NULL);
 	check_invalid_params(error);
 	cJSON_Delete(error);
@@ -217,7 +217,7 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 	int state_value = 12345;
 
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -236,7 +236,7 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 {
 	const char path[] = "/foo/bar";
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	int ret = remove_state_or_method_from_peer(&owner_peer, path);
@@ -249,7 +249,7 @@ BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 
 BOOST_FIXTURE_TEST_CASE(correct_call, F)
 {
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -260,7 +260,7 @@ BOOST_FIXTURE_TEST_CASE(correct_call, F)
 
 BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00);
+	cJSON *error = add_state_or_method_to_peer(&owner_peer, method_no_args_path, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(method_no_args_path);
