@@ -171,7 +171,7 @@ BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(&owner_peer, "/bar/foo", NULL, call_json_rpc, METHOD);
+	error = set_or_call(&owner_peer, "/bar/foo", NULL, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if (error != NULL) {
@@ -222,7 +222,7 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 	cJSON_Delete(value);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(&call_peer, path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, path, NULL, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if (error != NULL) {
@@ -253,7 +253,7 @@ BOOST_FIXTURE_TEST_CASE(correct_call, F)
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(&call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, method_no_args_path, NULL, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 }
@@ -264,7 +264,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(method_no_args_path);
-	error = set_or_call(&call_peer, method_no_args_path, NULL, call_json_rpc, METHOD);
+	error = set_or_call(&call_peer, method_no_args_path, NULL, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	if ((error != NULL) && (error != (cJSON *)ROUTED_MESSAGE)) {
