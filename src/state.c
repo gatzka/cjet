@@ -217,14 +217,14 @@ routed_message_creation_failed:
 	return error;
 }
 
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags)
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags, double routed_request_timeout_s)
 {
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, p, CONFIG_ROUTED_MESSAGES_TIMEOUT, flags);
+	s = alloc_state(path, value, p, routed_request_timeout_s, flags);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 			create_internal_error(p, "reason", "not enough memory");

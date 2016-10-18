@@ -487,7 +487,7 @@ BOOST_FIXTURE_TEST_CASE(lots_of_fetches_to_single_state, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -529,7 +529,7 @@ BOOST_FIXTURE_TEST_CASE(multiple_fetches_before_state_add, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -554,7 +554,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -736,7 +736,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 	}
@@ -889,7 +889,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
