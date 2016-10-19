@@ -64,6 +64,7 @@ int send_message(const struct peer *p, char *rendered, size_t len)
 	memcpy(send_buffer, rendered, len);
 	return 0;
 }
+
 static struct state_or_method *get_state(const char *path)
 {
 	return (struct state_or_method *)state_table_get(path);
