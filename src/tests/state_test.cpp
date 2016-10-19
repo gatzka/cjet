@@ -106,10 +106,25 @@ static cJSON *create_set_request(const char *request_id)
 	return set_request;
 }
 
+static cJSON *create_set_request_with_timeout(const char *request_id, double timeout_s)
+{
+	cJSON *set_request = create_set_request(request_id);
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON_AddNumberToObject(params, "timeout", timeout_s);
+	return set_request;
+}
+
 static cJSON *get_value_from_request(const cJSON *set_request)
 {
 	cJSON *params = cJSON_GetObjectItem(set_request, "params");
 	cJSON *value = cJSON_GetObjectItem(params, "value");
+	return value;
+}
+
+static cJSON *get_timeout_from_request(const cJSON *set_request)
+{
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON *value = cJSON_GetObjectItem(params, "timeout");
 	return value;
 }
 
@@ -163,6 +178,7 @@ struct F {
 		init_peer(&set_peer, false, &loop);
 		set_peer.send_message = send_message;
 	}
+
 	~F()
 	{
 		free_peer_resources(&set_peer);
@@ -411,6 +427,78 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_with_correct_timeout, F)
+{
+	double timeout_s = 2.22;
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request_with_timeout("request1", timeout_s);
+	cJSON *new_value = get_value_from_request(set_request);
+	cJSON *timeout = get_timeout_from_request(set_request);
+	error = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	cJSON_Delete(set_request);
+	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK(timer_ev != NULL);
+
+	cJSON *routed_message = parse_send_buffer();
+	cJSON *response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+
+	int ret = handle_routing_response(response, result, "result", &p);
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK(timer_ev == NULL);
+
+	cJSON_Delete(routed_message);
+	cJSON_Delete(response);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_with_negative_timeout, F)
+{
+	double timeout_s = -2.22;
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request_with_timeout("request1", timeout_s);
+	cJSON *new_value = get_value_from_request(set_request);
+	cJSON *timeout = get_timeout_from_request(set_request);
+	error = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	check_invalid_params(error);
+	cJSON_Delete(set_request);
+	cJSON_Delete(error);
+	BOOST_CHECK(error != (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(error != NULL, "no error object created for set request with negative timeout");
+	BOOST_CHECK(timer_ev == NULL);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON_AddStringToObject(params, "timeout", "hello");
+	cJSON *new_value = get_value_from_request(set_request);
+	cJSON *timeout = get_timeout_from_request(set_request);
+	error = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	check_invalid_params(error);
+	cJSON_Delete(set_request);
+	cJSON_Delete(error);
+	BOOST_CHECK(error != (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(error != NULL, "no error object created for set request with negative timeout");
+	BOOST_CHECK(timer_ev == NULL);
 }
 
 BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)

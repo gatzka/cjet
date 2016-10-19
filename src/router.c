@@ -198,40 +198,50 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-int setup_routing_information(struct state_or_method *s, const cJSON *timeout, struct routing_request *request)
+cJSON *setup_routing_information(struct state_or_method *s, const cJSON *timeout, struct routing_request *request)
 {
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			log_peer_err(request->requesting_peer, "timeout for set/call is not a number!\n");
-			return -1;
+			cJSON *error = create_invalid_params_error(
+				request->requesting_peer, "reason", "timeout for set/call is not a number");
+			return error;
 		} else {
-			timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
+			if (timeout->valuedouble < 0) {
+				cJSON *error = create_invalid_params_error(
+					request->requesting_peer, "reason", "timeout for set/call is a negative number");
+				return error;
+			} else {
+				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
+			}
 		}
 	} else {
 		timeout_ns = convert_seconds_to_nsec(s->timeout);
 	}
 
 	if (unlikely(cjet_timer_init(&request->timer, s->peer->loop) < 0)) {
-		log_peer_err(request->requesting_peer, "Could not init timer for routing request!\n");
-		return -1;
+		cJSON *error = create_internal_error(
+			request->requesting_peer, "reason", "could not init timer for routing request");
+		return error;
 	}
 
 	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
 	if (unlikely(ret < 0)) {
-		log_peer_err(request->requesting_peer, "Could not start timer for routing request!\n");
-		return -1;
+		cJSON *error = create_internal_error(
+			request->requesting_peer, "reason", "could not start timer for routing request");
+		return error;
 	}
 
 	struct value_route_table val;
 	val.vals[0] = request;
 	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
 			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		log_peer_err(request->requesting_peer, "Routing table full!\n");
-		return -1;
+		cJSON *error = create_internal_error(
+			request->requesting_peer, "reason", "routing table full");
+		return error;
 	}
 
-	return 0;
+	return NULL;
 }
 
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
