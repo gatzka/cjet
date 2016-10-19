@@ -206,7 +206,12 @@ int setup_routing_information(struct state_or_method *s, const cJSON *timeout, s
 			log_peer_err(request->requesting_peer, "timeout for set/call is not a number!\n");
 			return -1;
 		} else {
-			timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
+			if (timeout->valuedouble <0) {
+				log_peer_err(request->requesting_peer, "timeout for set/call is a negative number!\n");
+				return -1;
+			} else {
+				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
+			}
 		}
 	} else {
 		timeout_ns = convert_seconds_to_nsec(s->timeout);
