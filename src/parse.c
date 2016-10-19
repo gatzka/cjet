@@ -224,7 +224,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
 			error =
-				create_invalid_request_error(p, "reason", "timeout must be a number");
+				create_invalid_params_error(p, "reason", "timeout must be a number");
 			return possibly_send_response(json_rpc, error, p);
 		} else {
 			routed_request_timeout = timeout->valuedouble;
