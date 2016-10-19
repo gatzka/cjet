@@ -187,9 +187,8 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto routed_message_creation_failed;
 	}
 
-	if (unlikely(setup_routing_information(s, timeout, request) != 0)) {
-		error = create_internal_error(
-			p, "reason", "could not setup routing information");
+	error = setup_routing_information(s, timeout, request);
+	if (unlikely(error != NULL)) {
 		goto delete_json;
 	}
 	error = (cJSON *)ROUTED_MESSAGE;
@@ -213,6 +212,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 delete_json:
 	cJSON_Delete(routed_message);
 routed_message_creation_failed:
+	cJSON_Delete(request->origin_request_id);
 	cjet_free(request);
 	return error;
 }
