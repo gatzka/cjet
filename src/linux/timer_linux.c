@@ -52,7 +52,7 @@ static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 
 static enum eventloop_return timer_read(struct io_event *ev)
 {
-	struct cjet_timer *timer = container_of(ev, struct cjet_timer, ev);
+	struct cjet_timer *timer = (struct cjet_timer *)container_of(ev, struct cjet_timer, ev);
 
 	uint64_t number_of_expirations;
 	int ret = socket_read(ev->sock, &number_of_expirations, sizeof(number_of_expirations));
@@ -77,7 +77,6 @@ static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handle
 	struct cjet_timer *timer = (struct cjet_timer *)this_ptr;
 	timer->handler = handler;
 	timer->handler_context = handler_context;
-
 
 	struct itimerspec timeout = convert_timeoutns_to_itimerspec(timeout_ns);
 	return timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
