@@ -479,6 +479,28 @@ BOOST_FIXTURE_TEST_CASE(set_with_negative_timeout, F)
 	BOOST_CHECK(timer_ev == NULL);
 }
 
+BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
+{
+	const char path[] = "/foo/bar/";
+	cJSON *value = cJSON_CreateNumber(1234);
+	cJSON *error = add_state_or_method_to_peer(&p, path, value, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_CHECK(error == NULL);
+	cJSON_Delete(value);
+
+	cJSON *set_request = create_set_request("request1");
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
+	cJSON_AddStringToObject(params, "timeout", "hello");
+	cJSON *new_value = get_value_from_request(set_request);
+	cJSON *timeout = get_timeout_from_request(set_request);
+	error = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	check_invalid_params(error);
+	cJSON_Delete(set_request);
+	cJSON_Delete(error);
+	BOOST_CHECK(error != (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(error != NULL, "no error object created for set request with negative timeout");
+	BOOST_CHECK(timer_ev == NULL);
+}
+
 BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
 {
 	cJSON *value = cJSON_CreateNumber(1234);
