@@ -353,7 +353,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		return -1;
 	}
 
-	int listen_fd;
+	int listen_fd = -1;
 	struct addrinfo *rp;
 	for (rp = servinfo; rp != NULL; rp = rp->ai_next) {
 		listen_fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
@@ -393,7 +393,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 
 	freeaddrinfo(servinfo);
 
-	if (rp == NULL) {
+	if ((listen_fd == -1) || (rp == NULL)) {
 		log_err("Could not bind to address!");
 		return -1;
 	}
