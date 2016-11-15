@@ -131,6 +131,11 @@ struct F {
 		br.read_until = br_read_until;
 		br.set_error_handler = br_set_error_handler;
 		br.writev = br_writev;
+
+		server.ev.loop = NULL;
+
+		connection = alloc_http_connection();
+		init_http_connection(connection, &server, &br, false);
 	}
 
 	~F()
@@ -138,6 +143,8 @@ struct F {
 	}
 
 	struct buffered_reader br;
+	struct http_server server;
+	struct http_connection *connection;
 };
 
 static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
@@ -239,16 +246,8 @@ static bool is_close_frame(enum ws_status_code code)
 	return true;
 }
 
-BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
+BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_destryoing_peers, F)
 {
-	F f;
-
-	struct http_server server;
-	server.ev.loop = NULL;
-
-	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &f.br, false);
-
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
@@ -260,16 +259,8 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when destryoing all peers!");
 }
 
-BOOST_AUTO_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error)
+BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error, F)
 {
-	F f;
-
-	struct http_server server;
-	server.ev.loop = NULL;
-
-	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &f.br, false);
-
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
@@ -281,16 +272,8 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when bufferd_reader has an error!");
 }
 
-BOOST_AUTO_TEST_CASE(test_connection_closed_when_receiving_fin)
+BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_receiving_fin, F)
 {
-	F f;
-
-	struct http_server server;
-	server.ev.loop = NULL;
-
-	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &f.br, false);
-
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
@@ -305,16 +288,8 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_receiving_fin)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when receiving a close frame!");
 }
 
-BOOST_AUTO_TEST_CASE(test_connection_closed_when_illegal_message)
+BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_illegal_message, F)
 {
-	F f;
-
-	struct http_server server;
-	server.ev.loop = NULL;
-
-	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &f.br, false);
-
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
