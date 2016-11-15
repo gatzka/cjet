@@ -294,58 +294,6 @@ static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, 
 	}
 }
 
-static void prepare_message_string(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
-{
-	uint8_t *ptr = read_buffer;
-	read_buffer_length = 0;
-	uint8_t header = 0x00;
-	header |= WS_HEADER_FIN;
-	header |= type;
-	::memcpy(ptr, &header, sizeof(header));
-	ptr += sizeof(header);
-	read_buffer_length += sizeof(header);
-
-	uint8_t first_length = 0x00;
-	if (shall_mask) {
-		first_length |= WS_HEADER_MASK;
-	}
-	uint64_t length = ::strlen(message);
-	if (length < 126) {
-		first_length = first_length | (uint8_t)length;
-		::memcpy(ptr, &first_length, sizeof(first_length));
-		ptr += sizeof(first_length);
-		read_buffer_length += sizeof(first_length);
-	} else if (length <= 65535) {
-		first_length = first_length | 126;
-		::memcpy(ptr, &first_length, sizeof(first_length));
-		ptr += sizeof(first_length);
-		read_buffer_length += sizeof(first_length);
-		uint16_t len = (uint16_t)length;
-		len = htobe16(len);
-		::memcpy(ptr, &len, sizeof(len));
-		ptr += sizeof(len);
-		read_buffer_length += sizeof(len);
-	} else {
-		first_length = first_length | 127;
-		::memcpy(ptr, &first_length, sizeof(first_length));
-		ptr += sizeof(first_length);
-		read_buffer_length += sizeof(first_length);
-		uint64_t len = htobe64(length);
-		::memcpy(ptr, &len, sizeof(length));
-		ptr += sizeof(len);
-		read_buffer_length += sizeof(len);
-	}
-
-	if (shall_mask) {
-		::memcpy(ptr, mask, 4);
-		ptr += 4;
-		read_buffer_length += 4;
-	}
-
-	fill_payload(ptr, (uint8_t *)message, length, shall_mask, mask);
-	read_buffer_length += length;
-}
-
 static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
 	uint8_t *ptr = read_buffer;
@@ -395,6 +343,11 @@ static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool
 
 	fill_payload(ptr, buffer, length, shall_mask, mask);
 	read_buffer_length += length;
+}
+
+static void prepare_message_string(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
+{
+	prepare_message(type, (uint8_t *)message, ::strlen(message), shall_mask, mask);
 }
 
 struct F {
