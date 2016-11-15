@@ -32,5 +32,6 @@ if(FEATURE_POST_BUILD_UNITTEST)
   ADD_TEST(NAME string_test COMMAND string_test.bin)
   ADD_TEST(NAME websocket_frame_test COMMAND websocket_frame_test.bin)
   ADD_TEST(NAME websocket_test COMMAND websocket_test.bin)
+  ADD_TEST(NAME websocket_peer_test COMMAND websocket_peer_test.bin)
 
 endif()
