@@ -718,5 +718,6 @@ BOOST_AUTO_TEST_CASE(test_receive_fin_on_server)
 	prepare_message(WS_OPCODE_CLOSE, NULL, 0, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent after receiving a close frame!");
+	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called after receiving a close frame!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
