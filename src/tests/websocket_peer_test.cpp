@@ -44,7 +44,7 @@ static const uint8_t WS_OPCODE_CLOSE = 0x08;
 static const uint8_t WS_OPCODE_ILLEGAL = 0x0b;
 
 static unsigned int num_close_called = 0;
-static uint8_t read_buffer[5000];
+static uint8_t read_buffer[70000];
 static size_t read_buffer_length;
 static uint8_t *read_buffer_ptr;
 
@@ -133,6 +133,8 @@ struct F {
 		br.writev = br_writev;
 
 		server.ev.loop = NULL;
+		server.handler = NULL;
+		server.num_handlers = 0;
 
 		connection = alloc_http_connection();
 		init_http_connection(connection, &server, &br, false);
