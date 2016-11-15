@@ -1,4 +1,4 @@
 cscope.*
 *.swp
 build*
-*.qbs.user
+*.qbs.user*

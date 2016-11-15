@@ -461,14 +461,14 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-static int run_jet(const struct eventloop *loop, const char *user_name, bool run_foreground)
+static int run_jet(const struct eventloop *loop, const struct cmdline_config *config)
 {
-	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
+	if ((config->user_name != NULL) && drop_privileges(config->user_name) < 0) {
 		log_err("Can't drop privileges of cjet!\n");
 		return -1;
 	}
 
-	if (!run_foreground) {
+	if (!config->run_foreground) {
 		if (daemon(0, 0) != 0) {
 			log_err("Can't daemonize cjet!\n");
 			return -1;
@@ -480,7 +480,7 @@ static int run_jet(const struct eventloop *loop, const char *user_name, bool run
 	return ret;
 }
 
-static int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground, const struct url_handler *handler, size_t num_handlers)
+static int run_io_only_local(struct eventloop *loop, const struct cmdline_config *config, const struct url_handler *handler, size_t num_handlers)
 {
 	int ret = 0;
 
@@ -574,7 +574,7 @@ static int run_io_only_local(struct eventloop *loop, const char *user_name, bool
 		goto start_ipv4_jetws_server_failed;
 	}
 
-	ret = run_jet(loop, user_name, run_foreground);
+	ret = run_jet(loop, config);
 
 	stop_server(&ipv4_http_server.ev);
 start_ipv4_jetws_server_failed:
@@ -589,7 +589,7 @@ create_ipv4_jet_socket_failed:
 	return ret;
 }
 
-static int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground, const struct url_handler *handler, size_t num_handlers)
+static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_config *config, const struct url_handler *handler, size_t num_handlers)
 {
 	int ret = 0;
 
@@ -636,7 +636,7 @@ static int run_io_all_interfaces(struct eventloop *loop, const char *user_name, 
 		goto start_jetws_server_failed;
 	}
 
-	ret = run_jet(loop, user_name, run_foreground);
+	ret = run_jet(loop, config);
 
 	stop_server(&http_server.ev);
 start_jetws_server_failed:
@@ -645,7 +645,7 @@ create_jetws_socket_failed:
 	return ret;
 }
 
-int run_io(struct eventloop *loop, const char *user_name, const char *request_target, bool run_foreground, bool bind_only_local)
+int run_io(struct eventloop *loop, const struct cmdline_config *config)
 {
 	int ret;
 
@@ -661,7 +661,7 @@ int run_io(struct eventloop *loop, const char *user_name, const char *request_ta
 
 	const struct url_handler handler[] = {
 		{
-			.request_target = request_target,
+			.request_target = config->request_target,
 			.create = alloc_websocket_peer,
 			.on_header_field = websocket_upgrade_on_header_field,
 			.on_header_value = websocket_upgrade_on_header_value,
@@ -671,10 +671,10 @@ int run_io(struct eventloop *loop, const char *user_name, const char *request_ta
 		},
 	};
 
-	if (bind_only_local) {
-		ret = run_io_only_local(loop, user_name, run_foreground, handler, ARRAY_SIZE(handler));
+	if (config->bind_local_only) {
+		ret = run_io_only_local(loop, config, handler, ARRAY_SIZE(handler));
 	} else {
-		ret = run_io_all_interfaces(loop, user_name, run_foreground, handler, ARRAY_SIZE(handler));
+		ret = run_io_all_interfaces(loop, config, handler, ARRAY_SIZE(handler));
 	}
 
 	loop->destroy(loop->this_ptr);

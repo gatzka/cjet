@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "alloc.h"
+#include "cmdline_config.h"
 #include "generated/version.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
@@ -41,27 +42,31 @@
 
 int main(int argc, char **argv)
 {
-	bool run_foreground = false;
-	bool bind_local_only = false;
-	int c;
-	const char *user_name = NULL;
-	const char *request_target = "/api/jet/";
+	struct cmdline_config config = {
+		.run_foreground = false,
+		.bind_local_only = false,
+		.user_name = NULL,
+		.request_target = "/api/jet/",
+	};
+
 
 	init_parser();
+
+	int c;
 
 	while ((c = getopt (argc, argv, "flru:")) != -1) {
 		switch (c) {
 			case 'f':
-				run_foreground = true;
+				config.run_foreground = true;
 				break;
 			case 'l':
-				bind_local_only = true;
+				config.bind_local_only = true;
 				break;
 			case 'u':
-				user_name = optarg;
+				config.user_name = optarg;
 				break;
 			case 'r':
-				request_target = optarg;
+				config.request_target = optarg;
 				break;
 			case '?':
 				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>]\n", argv[0]);
@@ -89,7 +94,7 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&eloop.loop, user_name, request_target, run_foreground, bind_local_only) < 0) {
+	if (run_io(&eloop.loop, &config) < 0) {
 		goto run_io_failed;
 	}
 
