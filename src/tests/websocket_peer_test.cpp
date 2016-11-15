@@ -37,7 +37,14 @@
 #include "socket.h"
 #include "websocket_peer.h"
 
+static const uint8_t WS_HEADER_FIN = 0x80;
+static const uint8_t WS_HEADER_MASK = 0x80;
+
+static const uint8_t WS_OPCODE_CLOSE = 0x08;
+
 static unsigned int num_close_called = 0;
+static uint8_t write_buffer[70000];
+static uint8_t *write_buffer_ptr;
 
 extern "C" {
 
@@ -72,12 +79,19 @@ extern "C" {
 		return 0;
 	}
 
-	static int br_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count) {
+	static int br_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
+	{
 		(void)this_ptr;
-		(void)io_vec;
-		(void)count;
-		return 0;
+		size_t complete_length = 0;
+
+		for (unsigned int i = 0; i < count; i++) {
+			::memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
+			write_buffer_ptr += io_vec[i].iov_len;
+			complete_length += io_vec[i].iov_len;
+		}
+		return complete_length;
 	}
+
 
 	static int br_close(void *this_ptr) {
 		(void)this_ptr;
@@ -93,8 +107,53 @@ extern "C" {
 	}
 }
 
+struct F {
+
+	F()
+	{
+		write_buffer_ptr = write_buffer;
+	}
+
+	~F()
+	{
+	}
+};
+
+static bool is_close_frame(enum ws_status_code code)
+{
+	const uint8_t *ptr = write_buffer;
+	uint8_t header;
+	::memcpy(&header, ptr, sizeof(header));
+	if ((header & WS_HEADER_FIN) != WS_HEADER_FIN) {
+		return false;
+	}
+	if ((header & WS_OPCODE_CLOSE) != WS_OPCODE_CLOSE) {
+		return false;
+	}
+	ptr += sizeof(header);
+
+	uint8_t length;
+	::memcpy(&length, ptr, sizeof(length));
+	if ((length & WS_HEADER_MASK) == WS_HEADER_MASK) {
+		return false;
+	}
+	if (length != 2) {
+		return false;
+	}
+	ptr += sizeof(length);
+
+	uint16_t status_code;
+	::memcpy(&status_code, ptr, sizeof(status_code));
+	status_code = be16toh(status_code);
+	if (status_code != code) {
+		return false;
+	}
+	return true;
+}
+
 BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 {
+	F f;
 	struct buffered_reader br;
 	br.this_ptr = NULL;
 	br.close = br_close;
@@ -112,7 +171,11 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
+	struct websocket *socket = (struct websocket *)connection->parser.data;
+	socket->upgrade_complete = true;
+
 	destroy_all_peers();
-	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when websocket is closed!");
+	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when destryoing all peers!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when destryoing all peers!");
 }
 
