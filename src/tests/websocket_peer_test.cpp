@@ -43,6 +43,10 @@ static const uint8_t WS_HEADER_MASK = 0x80;
 static const uint8_t WS_OPCODE_CLOSE = 0x08;
 
 static unsigned int num_close_called = 0;
+static uint8_t read_buffer[5000];
+static size_t read_buffer_length;
+static uint8_t *read_buffer_ptr;
+
 static uint8_t write_buffer[70000];
 static uint8_t *write_buffer_ptr;
 static error_handler br_error_handler = NULL;
@@ -67,9 +71,11 @@ extern "C" {
 
 	static int br_read_exactly(void *this_ptr, size_t num, read_handler handler, void *handler_context) {
 		(void)this_ptr;
-		(void)num;
-		(void)handler;
-		(void)handler_context;
+		uint8_t *ptr = read_buffer_ptr;
+		read_buffer_ptr += num;
+		if ((ptr - read_buffer) < (ssize_t)read_buffer_length) {
+			handler(handler_context, ptr, num);
+		}
 		return 0;
 	}
 
@@ -115,12 +121,90 @@ struct F {
 	{
 		num_close_called = 0;
 		write_buffer_ptr = write_buffer;
+
+		read_buffer_ptr = read_buffer;
+
+		br.this_ptr = NULL;
+		br.close = br_close;
+		br.read_exactly = br_read_exactly;
+		br.read_until = br_read_until;
+		br.set_error_handler = br_set_error_handler;
+		br.writev = br_writev;
 	}
 
 	~F()
 	{
 	}
+
+	struct buffered_reader br;
 };
+
+static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
+{
+	for (unsigned int i = 0; i < length; i++) {
+		uint8_t byte = ptr[i] ^ mask[i % 4];
+		ptr[i] = byte;
+	}
+}
+
+static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
+{
+	::memcpy(ptr, payload, length);
+	if (shall_mask) {
+		mask_payload(ptr, length, mask);
+	}
+}
+
+static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4])
+{
+	uint8_t *ptr = read_buffer;
+	read_buffer_length = 0;
+	uint8_t header = 0x00;
+	header |= WS_HEADER_FIN;
+	header |= type;
+	::memcpy(ptr, &header, sizeof(header));
+	ptr += sizeof(header);
+	read_buffer_length += sizeof(header);
+
+	uint8_t first_length = 0x00;
+	if (shall_mask) {
+		first_length |= WS_HEADER_MASK;
+	}
+	if (length < 126) {
+		first_length = first_length | (uint8_t)length;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
+	} else if (length <= 65535) {
+		first_length = first_length | 126;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
+		uint16_t len = (uint16_t)length;
+		len = htobe16(len);
+		::memcpy(ptr, &len, sizeof(len));
+		ptr += sizeof(len);
+		read_buffer_length += sizeof(len);
+	} else {
+		first_length = first_length | 127;
+		::memcpy(ptr, &first_length, sizeof(first_length));
+		ptr += sizeof(first_length);
+		read_buffer_length += sizeof(first_length);
+		uint64_t len = htobe64(length);
+		::memcpy(ptr, &len, sizeof(length));
+		ptr += sizeof(len);
+		read_buffer_length += sizeof(len);
+	}
+
+	if (shall_mask) {
+		::memcpy(ptr, mask, 4);
+		ptr += 4;
+		read_buffer_length += 4;
+	}
+
+	fill_payload(ptr, buffer, length, shall_mask, mask);
+	read_buffer_length += length;
+}
 
 static bool is_close_frame(enum ws_status_code code)
 {
@@ -157,19 +241,12 @@ static bool is_close_frame(enum ws_status_code code)
 BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 {
 	F f;
-	struct buffered_reader br;
-	br.this_ptr = NULL;
-	br.close = br_close;
-	br.read_exactly = br_read_exactly;
-	br.read_until = br_read_until;
-	br.set_error_handler = br_set_error_handler;
-	br.writev = br_writev;
 
 	struct http_server server;
 	server.ev.loop = NULL;
 
 	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &br, false);
+	init_http_connection(connection, &server, &f.br, false);
 
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
@@ -185,19 +262,12 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 BOOST_AUTO_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error)
 {
 	F f;
-	struct buffered_reader br;
-	br.this_ptr = NULL;
-	br.close = br_close;
-	br.read_exactly = br_read_exactly;
-	br.read_until = br_read_until;
-	br.set_error_handler = br_set_error_handler;
-	br.writev = br_writev;
 
 	struct http_server server;
 	server.ev.loop = NULL;
 
 	struct http_connection *connection = alloc_http_connection();
-	init_http_connection(connection, &server, &br, false);
+	init_http_connection(connection, &server, &f.br, false);
 
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
@@ -208,5 +278,29 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error)
 
 	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when buffered_reader has an error!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when bufferd_reader has an error!");
+}
+
+BOOST_AUTO_TEST_CASE(test_connection_closed_when_receiving_fin)
+{
+	F f;
+
+	struct http_server server;
+	server.ev.loop = NULL;
+
+	struct http_connection *connection = alloc_http_connection();
+	init_http_connection(connection, &server, &f.br, false);
+
+	int ret = alloc_websocket_peer(connection);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
+
+	struct websocket *socket = (struct websocket *)connection->parser.data;
+	socket->upgrade_complete = true;
+
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_CLOSE, NULL, 0, true, mask);
+	ws_get_header(socket, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when receiving a close frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when receiving a close frame!");
 }
 
