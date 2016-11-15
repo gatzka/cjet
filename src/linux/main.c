@@ -45,23 +45,26 @@ int main(int argc, char **argv)
 	bool bind_local_only = false;
 	int c;
 	const char *user_name = NULL;
+	const char *request_target = "/api/jet/";
 
 	init_parser();
 
-	while ((c = getopt (argc, argv, "flu:")) != -1) {
+	while ((c = getopt (argc, argv, "flru:")) != -1) {
 		switch (c) {
 			case 'f':
 				run_foreground = true;
 				break;
+			case 'l':
+				bind_local_only = true;
+				break;
 			case 'u':
 				user_name = optarg;
 				break;
-			case 'l':
-				bind_local_only = true;
-				(void)bind_local_only;
+			case 'r':
+				request_target = optarg;
 				break;
 			case '?':
-				fprintf(stderr, "Usage: %s [-l] [-f] [-u username]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>]\n", argv[0]);
 				return EXIT_FAILURE;
 				break;
 		}
@@ -86,7 +89,7 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&eloop.loop, user_name, run_foreground, bind_local_only) < 0) {
+	if (run_io(&eloop.loop, user_name, request_target, run_foreground, bind_local_only) < 0) {
 		goto run_io_failed;
 	}
 

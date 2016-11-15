@@ -645,7 +645,7 @@ create_jetws_socket_failed:
 	return ret;
 }
 
-int run_io(struct eventloop *loop, const char *user_name, bool run_foreground, bool bind_only_local)
+int run_io(struct eventloop *loop, const char *user_name, const char *request_target, bool run_foreground, bool bind_only_local)
 {
 	int ret;
 
@@ -661,7 +661,7 @@ int run_io(struct eventloop *loop, const char *user_name, bool run_foreground, b
 
 	const struct url_handler handler[] = {
 		{
-			.request_target = "/",
+			.request_target = request_target,
 			.create = alloc_websocket_peer,
 			.on_header_field = websocket_upgrade_on_header_field,
 			.on_header_value = websocket_upgrade_on_header_value,
