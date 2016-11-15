@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,19 +24,19 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_IO_H
-#define CJET_LINUX_IO_H
-
-#include <stdbool.h>
-
-#include "cmdline_config.h"
-#include "eventloop.h"
+#ifndef CJET_CMDLINE_CONFIG_H
+#define CJET_CMDLINE_CONFIG_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int run_io(struct eventloop *loop, const struct cmdline_config *config);
+struct cmdline_config {
+	bool run_foreground;
+	bool bind_local_only;
+	const char *user_name;
+	const char *request_target;
+};
 
 #ifdef __cplusplus
 }
