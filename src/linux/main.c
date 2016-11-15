@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (run_io(&eloop.loop, user_name, run_foreground, bind_local_only) < 0) {
+	if (run_io(&eloop.loop, user_name, "/api/jet/", run_foreground, bind_local_only) < 0) {
 		goto run_io_failed;
 	}
 
