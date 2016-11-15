@@ -461,24 +461,33 @@ static int drop_privileges(const char *user_name)
 	return 0;
 }
 
-int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground)
+static int run_jet(const struct eventloop *loop, const char *user_name, bool run_foreground)
 {
-	int ret = 0;
-
-	if (register_signal_handler() < 0) {
+	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
+		log_err("Can't drop privileges of cjet!\n");
 		return -1;
 	}
 
-	if (loop->init(loop->this_ptr) < 0) {
-		ret = -1;
-		goto eventloop_init_failed;
+	if (!run_foreground) {
+		if (daemon(0, 0) != 0) {
+			log_err("Can't daemonize cjet!\n");
+			return -1;
+		}
 	}
+
+	int ret = loop->run(loop->this_ptr, &go_ahead);
+	destroy_all_peers();
+	return ret;
+}
+
+static int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground, const struct url_handler *handler, size_t num_handlers)
+{
+	int ret = 0;
 
 	// start jet server on ipv6 loopback
 	int ipv6_jet_fd = create_server_socket_bound("::1", CONFIG_JET_PORT);
 	if (ipv6_jet_fd < 0) {
-		ret = -1;
-		goto create_ipv6_jet_socket_failed;
+		return -1;
 	}
 	struct jet_server ipv6_jet_server = {
 		.ev = {
@@ -492,7 +501,7 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 	ret = start_server(&ipv6_jet_server.ev);
 	if (ret < 0) {
 		close(ipv6_jet_fd);
-		goto start_ipv6_jet_server_failed;
+		return -1;
 	}
 
 	// start jet server on ipv4 loopback
@@ -501,6 +510,7 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 		ret = -1;
 		goto create_ipv4_jet_socket_failed;
 	}
+
 	struct jet_server ipv4_jet_server = {
 		.ev = {
 			.read_function = accept_jet,
@@ -516,24 +526,13 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 		goto start_ipv4_jet_server_failed;
 	}
 
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/",
-			.create = alloc_websocket_peer,
-			.on_header_field = websocket_upgrade_on_header_field,
-			.on_header_value = websocket_upgrade_on_header_value,
-			.on_headers_complete = websocket_upgrade_on_headers_complete,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
-
 	// start websocket jet server on ipv6 loopback
 	int ipv6_http_fd = create_server_socket_bound("::1", CONFIG_JETWS_PORT);
 	if (ipv6_http_fd < 0) {
 		ret = -1;
 		goto create_ipv6_jetws_socket_failed;
 	}
+
 	struct http_server ipv6_http_server = {
 		.ev = {
 			.read_function = accept_http,
@@ -543,7 +542,7 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 			.sock = ipv6_http_fd
 		},
 		.handler = handler,
-		.num_handlers = ARRAY_SIZE(handler),
+		.num_handlers = num_handlers
 	};
 	ret = start_server(&ipv6_http_server.ev);
 	if (ret < 0) {
@@ -557,6 +556,7 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 		ret = -1;
 		goto create_ipv4_jetws_socket_failed;
 	}
+
 	struct http_server ipv4_http_server = {
 		.ev = {
 			.read_function = accept_http,
@@ -566,7 +566,7 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 			.sock = ipv4_http_fd
 		},
 		.handler = handler,
-		.num_handlers = ARRAY_SIZE(handler),
+		.num_handlers = num_handlers
 	};
 	ret = start_server(&ipv4_http_server.ev);
 	if (ret < 0) {
@@ -574,25 +574,8 @@ int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_fo
 		goto start_ipv4_jetws_server_failed;
 	}
 
-	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
-		ret = -1;
-		log_err("Can't drop privileges of cjet!\n");
-		goto drop_privileges_failed;
-	}
+	ret = run_jet(loop, user_name, run_foreground);
 
-	if (!run_foreground) {
-		if (daemon(0, 0) != 0) {
-			ret = -1;
-			log_err("Can't daemonize cjet!\n");
-			goto daemonize_failed;
-		}
-	}
-
-	ret = loop->run(loop->this_ptr, &go_ahead);
-	destroy_all_peers();
-
-daemonize_failed:
-drop_privileges_failed:
 	stop_server(&ipv4_http_server.ev);
 start_ipv4_jetws_server_failed:
 create_ipv4_jetws_socket_failed:
@@ -603,44 +586,16 @@ create_ipv6_jetws_socket_failed:
 start_ipv4_jet_server_failed:
 create_ipv4_jet_socket_failed:
 	stop_server(&ipv6_jet_server.ev);
-start_ipv6_jet_server_failed:
-create_ipv6_jet_socket_failed:
-	loop->destroy(loop->this_ptr);
-eventloop_init_failed:
-	unregister_signal_handler();
 	return ret;
 }
 
-int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground)
+static int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground, const struct url_handler *handler, size_t num_handlers)
 {
 	int ret = 0;
 
-	if (register_signal_handler() < 0) {
-		return -1;
-	}
-
-	if (loop->init(loop->this_ptr) < 0) {
-		go_ahead = 0;
-		ret = -1;
-		goto eventloop_init_failed;
-	}
-
-	const struct url_handler handler[] = {
-		{
-			.request_target = "/",
-			.create = alloc_websocket_peer,
-			.on_header_field = websocket_upgrade_on_header_field,
-			.on_header_value = websocket_upgrade_on_header_value,
-			.on_headers_complete = websocket_upgrade_on_headers_complete,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
-	};
-
 	int jet_fd = create_server_socket_all_interfaces(CONFIG_JET_PORT);
 	if (jet_fd < 0) {
-		ret = -1;
-		goto create_jet_socket_failed;
+		return -1;
 	}
 
 	struct jet_server jet_server = {
@@ -655,7 +610,7 @@ int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool ru
 	ret = start_server(&jet_server.ev);
 	if (ret  < 0) {
 		close(jet_fd);
-		goto start_jet_server_failed;
+		return -1;
 	}
 
 	int http_fd = create_server_socket_all_interfaces(CONFIG_JETWS_PORT);
@@ -673,7 +628,7 @@ int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool ru
 			.sock = http_fd
 		},
 		.handler = handler,
-		.num_handlers = ARRAY_SIZE(handler),
+		.num_handlers = num_handlers
 	};
 	ret = start_server(&http_server.ev);
 	if (ret  < 0) {
@@ -681,31 +636,47 @@ int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool ru
 		goto start_jetws_server_failed;
 	}
 
-	if ((user_name != NULL) && drop_privileges(user_name) < 0) {
-		go_ahead = 0;
-		ret = -1;
-		goto drop_privileges_failed;
-	}
+	ret = run_jet(loop, user_name, run_foreground);
 
-	if (!run_foreground) {
-		if (daemon(0, 0) != 0) {
-			log_err("Can't daemonize cjet!\n");
-			ret = -1;
-			goto daemonize_failed;
-		}
-	}
-
-	ret = loop->run(loop->this_ptr, &go_ahead);
-	destroy_all_peers();
-
-daemonize_failed:
-drop_privileges_failed:
 	stop_server(&http_server.ev);
 start_jetws_server_failed:
 create_jetws_socket_failed:
 	stop_server(&jet_server.ev);
-start_jet_server_failed:
-create_jet_socket_failed:
+	return ret;
+}
+
+int run_io(struct eventloop *loop, const char *user_name, bool run_foreground, bool bind_only_local)
+{
+	int ret;
+
+	if (register_signal_handler() < 0) {
+		return -1;
+	}
+
+	if (loop->init(loop->this_ptr) < 0) {
+		go_ahead = 0;
+		ret = -1;
+		goto eventloop_init_failed;
+	}
+
+	const struct url_handler handler[] = {
+		{
+			.request_target = "/",
+			.create = alloc_websocket_peer,
+			.on_header_field = websocket_upgrade_on_header_field,
+			.on_header_value = websocket_upgrade_on_header_value,
+			.on_headers_complete = websocket_upgrade_on_headers_complete,
+			.on_body = NULL,
+			.on_message_complete = NULL,
+		},
+	};
+
+	if (bind_only_local) {
+		ret = run_io_only_local(loop, user_name, run_foreground, handler, ARRAY_SIZE(handler));
+	} else {
+		ret = run_io_all_interfaces(loop, user_name, run_foreground, handler, ARRAY_SIZE(handler));
+	}
+
 	loop->destroy(loop->this_ptr);
 eventloop_init_failed:
 	unregister_signal_handler();

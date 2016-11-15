@@ -35,8 +35,7 @@
 extern "C" {
 #endif
 
-int run_io_only_local(struct eventloop *loop, const char *user_name, bool run_foreground);
-int run_io_all_interfaces(struct eventloop *loop, const char *user_name, bool run_foreground);
+int run_io(struct eventloop *loop, const char *user_name, bool run_foreground, bool bind_only_local);
 
 #ifdef __cplusplus
 }

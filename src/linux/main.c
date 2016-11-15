@@ -86,15 +86,10 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
-	if (bind_local_only) {
-		if (run_io_only_local(&eloop.loop, user_name, run_foreground) < 0) {
-			goto run_io_failed;
-		}
-	} else {
-		if (run_io_all_interfaces(&eloop.loop, user_name, run_foreground) < 0) {
-			goto run_io_failed;
-		}
+	if (run_io(&eloop.loop, user_name, run_foreground, bind_local_only) < 0) {
+		goto run_io_failed;
 	}
+
 	log_info("%s stopped", CJET_NAME);
 
 	state_hashtable_delete();
