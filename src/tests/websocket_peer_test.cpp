@@ -41,6 +41,7 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 static const uint8_t WS_HEADER_MASK = 0x80;
 
 static const uint8_t WS_OPCODE_CLOSE = 0x08;
+static const uint8_t WS_OPCODE_ILLEGAL = 0x0b;
 
 static unsigned int num_close_called = 0;
 static uint8_t read_buffer[5000];
@@ -304,3 +305,26 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_receiving_fin)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when receiving a close frame!");
 }
 
+BOOST_AUTO_TEST_CASE(test_connection_closed_when_illegal_message)
+{
+	F f;
+
+	struct http_server server;
+	server.ev.loop = NULL;
+
+	struct http_connection *connection = alloc_http_connection();
+	init_http_connection(connection, &server, &f.br, false);
+
+	int ret = alloc_websocket_peer(connection);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
+
+	struct websocket *socket = (struct websocket *)connection->parser.data;
+	socket->upgrade_complete = true;
+
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_ILLEGAL, NULL, 0, true, mask);
+	ws_get_header(socket, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when receiving an illegal frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent when receiving an illegal frame!");
+}
