@@ -58,7 +58,6 @@ int main(int argc, char **argv)
 				break;
 			case 'l':
 				bind_local_only = true;
-				(void)bind_local_only;
 				break;
 			case '?':
 				fprintf(stderr, "Usage: %s [-l] [-f] [-u username]\n", argv[0]);
