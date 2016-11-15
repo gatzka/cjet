@@ -33,11 +33,19 @@
 #include "peer.h"
 #include "websocket.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct websocket_peer {
 	struct peer peer;
 	struct websocket websocket;
 };
 
 int alloc_websocket_peer(struct http_connection *connection);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
