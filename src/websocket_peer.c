@@ -115,8 +115,8 @@ static enum websocket_callback_return pong_received(struct websocket *s, uint8_t
 
 static void peer_close_websocket_peer(struct peer *p)
 {
-	// TODO: close with going away
 	struct websocket_peer *ws_peer = container_of(p, struct websocket_peer, peer);
+	websocket_close(&ws_peer->websocket, WS_CLOSE_GOING_AWAY);
 	free_websocket_peer(ws_peer);
 }
 

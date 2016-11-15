@@ -33,6 +33,7 @@
 #include "buffered_reader.h"
 #include "generated/os_config.h"
 #include "http_connection.h"
+#include "peer.h"
 #include "socket.h"
 #include "websocket_peer.h"
 
@@ -92,7 +93,7 @@ extern "C" {
 	}
 }
 
-BOOST_AUTO_TEST_CASE(strcase)
+BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 {
 	struct buffered_reader br;
 	br.this_ptr = NULL;
@@ -111,9 +112,7 @@ BOOST_AUTO_TEST_CASE(strcase)
 	int ret = alloc_websocket_peer(connection);
 	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
 
-	struct websocket *socket = (struct websocket *)connection->parser.data;
-	socket->close_received(socket, WS_CLOSE_GOING_AWAY);
-
+	destroy_all_peers();
 	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when websocket is closed!");
 }
 
