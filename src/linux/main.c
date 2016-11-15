@@ -64,7 +64,7 @@ int main(int argc, char **argv)
 				request_target = optarg;
 				break;
 			case '?':
-				fprintf(stderr, "Usage: %s [-l] [-f] [-u username]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>]\n", argv[0]);
 				return EXIT_FAILURE;
 				break;
 		}
