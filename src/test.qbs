@@ -94,6 +94,29 @@ Project {
     }
 
     CppApplication {
+        name: "websocket_peer_test"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends { name: "unittestSettings" }
+
+        files: [
+            "base64.c",
+            "http-parser/http_parser.c",
+            "http_connection.c",
+            "http_server.c",
+            "linux/alloc.c",
+            "linux/jet_endian.c",
+            "linux/timer_linux.c",
+            "linux/websocket_random.c",
+            "sha1/sha1.c",
+            "tests/websocket_peer_test.cpp",
+            "websocket.c",
+            "websocket_peer.c",
+        ]
+    }
+
+    CppApplication {
         name: "config_test"
         type: ["application", "unittest"]
         consoleApplication: true
