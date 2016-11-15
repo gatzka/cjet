@@ -45,6 +45,8 @@ static const uint8_t WS_OPCODE_CLOSE = 0x08;
 static unsigned int num_close_called = 0;
 static uint8_t write_buffer[70000];
 static uint8_t *write_buffer_ptr;
+static error_handler br_error_handler = NULL;
+static void *br_error_context = NULL;
 
 extern "C" {
 
@@ -101,8 +103,8 @@ extern "C" {
 
 	static void br_set_error_handler(void *this_ptr, error_handler handler, void *error_context) {
 		(void)this_ptr;
-		(void)handler;
-		(void)error_context;
+		br_error_handler = handler;
+		br_error_context = error_context;
 		return;
 	}
 }
@@ -111,6 +113,7 @@ struct F {
 
 	F()
 	{
+		num_close_called = 0;
 		write_buffer_ptr = write_buffer;
 	}
 
@@ -177,5 +180,33 @@ BOOST_AUTO_TEST_CASE(test_connection_closed_when_destryoing_peers)
 	destroy_all_peers();
 	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when destryoing all peers!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when destryoing all peers!");
+}
+
+BOOST_AUTO_TEST_CASE(test_connection_closed_when_buffered_reader_gots_error)
+{
+	F f;
+	struct buffered_reader br;
+	br.this_ptr = NULL;
+	br.close = br_close;
+	br.read_exactly = br_read_exactly;
+	br.read_until = br_read_until;
+	br.set_error_handler = br_set_error_handler;
+	br.writev = br_writev;
+
+	struct http_server server;
+	server.ev.loop = NULL;
+
+	struct http_connection *connection = alloc_http_connection();
+	init_http_connection(connection, &server, &br, false);
+
+	int ret = alloc_websocket_peer(connection);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "alloc_websocket_peer did not return 0");
+
+	struct websocket *socket = (struct websocket *)connection->parser.data;
+	socket->upgrade_complete = true;
+	br_error_handler(br_error_context);
+
+	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when buffered_reader has an error!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when bufferd_reader has an error!");
 }
 
