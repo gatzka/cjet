@@ -64,8 +64,8 @@ static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
 
 static void handle_error(struct websocket *s, uint16_t status_code)
 {
-	s->on_error(s);
 	websocket_close(s, status_code);
+	s->on_error(s);
 }
 
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)

@@ -67,7 +67,6 @@ static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
-	websocket_close(&ws_peer->websocket, WS_CLOSE_GOING_AWAY);
 	free_peer_resources(&ws_peer->peer);
 	cjet_free(ws_peer);
 }
@@ -81,8 +80,7 @@ static void free_websocket_peer_callback(struct websocket *s)
 static void free_websocket_peer_on_error(void *context)
 {
 	struct websocket_peer *ws_peer = (struct websocket_peer *)context;
-	// TODO: call on_err
-	ws_peer->websocket.on_error(&ws_peer->websocket);
+	websocket_close(&ws_peer->websocket, WS_CLOSE_GOING_AWAY);
 	free_websocket_peer(ws_peer);
 }
 
@@ -115,9 +113,10 @@ static enum websocket_callback_return pong_received(struct websocket *s, uint8_t
 	return WS_OK;
 }
 
-static void close_websocket_peer(struct peer *p)
+static void peer_close_websocket_peer(struct peer *p)
 {
 	struct websocket_peer *ws_peer = container_of(p, struct websocket_peer, peer);
+	websocket_close(&ws_peer->websocket, WS_CLOSE_GOING_AWAY);
 	free_websocket_peer(ws_peer);
 }
 
@@ -127,7 +126,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 
 	init_peer(&ws_peer->peer, is_local_connection, connection->server->ev.loop);
 	ws_peer->peer.send_message = ws_send_message;
-	ws_peer->peer.close = close_websocket_peer;
+	ws_peer->peer.close = peer_close_websocket_peer;
 
 	struct buffered_reader *br = &connection->br;
 	br->set_error_handler(br->this_ptr, free_websocket_peer_on_error, ws_peer);

@@ -294,7 +294,7 @@ static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, 
 	}
 }
 
-static void prepare_message(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
+static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
 	uint8_t *ptr = read_buffer;
 	read_buffer_length = 0;
@@ -309,7 +309,6 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 	if (shall_mask) {
 		first_length |= WS_HEADER_MASK;
 	}
-	uint64_t length = ::strlen(message);
 	if (length < 126) {
 		first_length = first_length | (uint8_t)length;
 		::memcpy(ptr, &first_length, sizeof(first_length));
@@ -342,8 +341,13 @@ static void prepare_message(uint8_t type, const char *message, bool shall_mask, 
 		read_buffer_length += 4;
 	}
 
-	fill_payload(ptr, (uint8_t *)message, length, shall_mask, mask);
+	fill_payload(ptr, buffer, length, shall_mask, mask);
 	read_buffer_length += length;
+}
+
+static void prepare_message_string(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
+{
+	prepare_message(type, (uint8_t *)message, ::strlen(message), shall_mask, mask);
 }
 
 struct F {
@@ -405,7 +409,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message)
 			F f(is_server[j], 5000);
 
 			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-			prepare_message(WS_OPCODE_TEXT, messages[i], is_server[j], mask);
+			prepare_message_string(WS_OPCODE_TEXT, messages[i], is_server[j], mask);
 			ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 			websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 			BOOST_CHECK_MESSAGE(text_message_received_called, "Callback for text messages was not called!");
@@ -424,7 +428,7 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message)
 			F f(is_server[j], 5000);
 
 			uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-			prepare_message(WS_OPCODE_BINARY, messages[i], is_server[j], mask);
+			prepare_message_string(WS_OPCODE_BINARY, messages[i], is_server[j], mask);
 			ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 			websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 			BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
@@ -440,7 +444,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 
 	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_PING, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
@@ -454,7 +458,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 
 	char message[] = "Playing ping pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_PING, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_PING, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
@@ -468,7 +472,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_server)
 
 	char message[] = "Playing pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_PONG, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
@@ -482,7 +486,7 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 
 	char message[] = "Playing pong!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_PONG, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_PONG, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
@@ -497,11 +501,11 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
 
 	char message[] = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_TEXT, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_TEXT, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a text message without a callback registered!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
-	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
@@ -512,11 +516,11 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message_on_server_without_callback)
 
 	char message[] = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_BINARY, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a binary message without a callback registered!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent after error!");
-	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
@@ -530,12 +534,12 @@ BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
 	message[2] = '\0';
 
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_CLOSE, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_CLOSE, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called!");
 	BOOST_CHECK_MESSAGE(status_code_received == code, "Incorrect status code received!");
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent receiving a close!");
-	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after webscoket close!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_medium_binary_message)
@@ -548,7 +552,7 @@ BOOST_AUTO_TEST_CASE(test_receive_medium_binary_message)
 	message[sizeof(message) - 1] = 0x00;
 	
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_BINARY, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
@@ -566,7 +570,7 @@ BOOST_AUTO_TEST_CASE(test_receive_large_binary_message)
 	message[buffer_size - 1] = 0x00;
 
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_BINARY, message, is_server, mask);
+	prepare_message_string(WS_OPCODE_BINARY, message, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(binary_message_received_called, "Callback for binary messages was not called!");
@@ -656,4 +660,17 @@ BOOST_AUTO_TEST_CASE(test_send_large_binary_message)
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(check_frame(WS_OPCODE_BINARY, message, ::strlen(message)), "Not a valid large size binary message sent!");
 	free(message);
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_fin_on_server)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message(WS_OPCODE_CLOSE, NULL, 0, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent after receiving a close frame!");
+	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called after receiving a close frame!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
