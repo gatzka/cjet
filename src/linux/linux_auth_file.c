@@ -24,23 +24,15 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_AUTHENTICATE_H
-#define CJET_AUTHENTICATE_H
+#include "authenticate.h"
 
-#include "json/cJSON.h"
-#include "peer.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, const char *passwd);
-
-int load_passwd_data(const char *passwd_file);
-void free_passwd_data(void);
-
-#ifdef __cplusplus
+int load_passwd_data(const char *passwd_file)
+{
+	(void)passwd_file;
+	return 0;
 }
-#endif
 
-#endif
+void free_passwd_data(void)
+{
+
+}

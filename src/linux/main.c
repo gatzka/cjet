@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include "alloc.h"
+#include "authenticate.h"
 #include "cmdline_config.h"
 #include "generated/version.h"
 #include "linux/eventloop_epoll.h"
@@ -77,11 +78,19 @@ int main(int argc, char **argv)
 				break;
 		}
 	}
+
+	if (load_passwd_data(config.passwd_file) < 0) {
+		log_err("Cannot load password file!\n");
+		return EXIT_FAILURE;
+	}
+
 	signal(SIGPIPE, SIG_IGN);
 
+	int ret = EXIT_SUCCESS;
 	if ((state_hashtable_create()) == -1) {
 		log_err("Cannot allocate hashtable for states!\n");
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
+		goto state_hashtable_create_failed;
 	}
 
 	struct eventloop_epoll eloop = {
@@ -98,15 +107,15 @@ int main(int argc, char **argv)
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
 	if (run_io(&eloop.loop, &config) < 0) {
+		ret = EXIT_FAILURE;
 		goto run_io_failed;
 	}
 
 	log_info("%s stopped", CJET_NAME);
 
-	state_hashtable_delete();
-	return EXIT_SUCCESS;
-
 run_io_failed:
 	state_hashtable_delete();
-	return EXIT_FAILURE;
+state_hashtable_create_failed:
+	free_passwd_data();
+	return ret;
 }
