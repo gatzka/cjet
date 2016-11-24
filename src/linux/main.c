@@ -46,15 +46,15 @@ int main(int argc, char **argv)
 		.run_foreground = false,
 		.bind_local_only = false,
 		.user_name = NULL,
+		.passwd_file = NULL,
 		.request_target = "/api/jet/",
 	};
-
 
 	init_parser();
 
 	int c;
 
-	while ((c = getopt (argc, argv, "flru:")) != -1) {
+	while ((c = getopt (argc, argv, "flpru:")) != -1) {
 		switch (c) {
 			case 'f':
 				config.run_foreground = true;
@@ -62,14 +62,17 @@ int main(int argc, char **argv)
 			case 'l':
 				config.bind_local_only = true;
 				break;
-			case 'u':
-				config.user_name = optarg;
+			case 'p':
+				config.passwd_file = optarg;
 				break;
 			case 'r':
 				config.request_target = optarg;
 				break;
+			case 'u':
+				config.user_name = optarg;
+				break;
 			case '?':
-				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>]\n", argv[0]);
+				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>]\n", argv[0]);
 				return EXIT_FAILURE;
 				break;
 		}

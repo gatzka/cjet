@@ -35,6 +35,7 @@ struct cmdline_config {
 	bool run_foreground;
 	bool bind_local_only;
 	const char *user_name;
+	const char *passwd_file;
 	const char *request_target;
 };
 
