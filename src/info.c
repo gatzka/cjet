@@ -71,7 +71,7 @@ static cJSON *create_info(void)
 	}
 	cJSON_AddItemToObject(features, "batches", batches);
 
-	cJSON *authentication = cJSON_CreateFalse();
+	cJSON *authentication = cJSON_CreateTrue();
 	if (unlikely(authentication == NULL)) {
 		goto error;
 	}
