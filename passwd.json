@@ -1,0 +1,20 @@
+{
+  "users": {
+    "john": {
+      "password": "doe",
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": ["users"]
+      }
+    },
+    "bob": {
+      "password": "bear",
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": ["users"]
+      }
+    }
+  }
+}
