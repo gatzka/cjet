@@ -125,7 +125,12 @@ bool credentials_ok(const char *user_name, const char *passwd)
 		return false;
 	}
 
-	if (strcmp(password->valuestring, passwd) == 0) {
+	char *encrypted = crypt(passwd, password->valuestring);
+	if (encrypted == NULL) {
+		log_err("Error decrypting passwords\n");
+	}
+
+	if (strcmp(password->valuestring, encrypted) == 0) {
 		return true;
 	}
 
