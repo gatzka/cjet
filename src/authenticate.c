@@ -30,7 +30,7 @@
 #include "json/cJSON.h"
 #include "peer.h"
 
-cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, const char *passwd)
+cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, char *passwd)
 {
 	(void)p;
 	(void)params;

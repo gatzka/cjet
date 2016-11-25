@@ -103,7 +103,7 @@ void free_passwd_data(void)
 	}
 }
 
-bool credentials_ok(const char *user_name, const char *passwd)
+bool credentials_ok(const char *user_name, char *passwd)
 {
 	if (unlikely(user_data == NULL)) {
 		return false;
@@ -126,6 +126,10 @@ bool credentials_ok(const char *user_name, const char *passwd)
 	}
 
 	char *encrypted = crypt(passwd, password->valuestring);
+	for (char *p = passwd; *p != '\0'; p++) {
+		*p = '\0';
+	}
+
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
 	}
