@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 
 	int c;
 
-	while ((c = getopt (argc, argv, "flpru:")) != -1) {
+	while ((c = getopt (argc, argv, "flp:r:u:")) != -1) {
 		switch (c) {
 			case 'f':
 				config.run_foreground = true;
