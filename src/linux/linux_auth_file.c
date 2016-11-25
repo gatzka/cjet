@@ -24,15 +24,78 @@
  * SOFTWARE.
  */
 
+#include <fcntl.h>
+#include <limits.h>
+#include <stddef.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include "alloc.h"
 #include "authenticate.h"
+#include "json/cJSON.h"
+#include "log.h"
+
+static cJSON *user_data = NULL;
 
 int load_passwd_data(const char *passwd_file)
 {
-	(void)passwd_file;
-	return 0;
+	if (passwd_file == NULL) {
+		return 0;
+	}
+
+	char *rp = realpath(passwd_file, NULL);
+	if (rp == NULL) {
+		return -1;
+	}
+
+	int fd = open(rp, O_RDONLY);
+	if (fd == -1) {
+		log_err("Cannot open passwd file: %s\n", passwd_file);
+		return -1;
+	}
+
+	free(rp);
+
+	off_t size = lseek(fd, 0, SEEK_END);
+	lseek(fd, 0, SEEK_SET);
+
+	int ret = 0;
+	void *p = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+	if (p == MAP_FAILED) {
+		log_err("Cannot mmap passwd file!\n");
+		ret = -1;
+		goto mmap_failed;
+	}
+
+	user_data = cJSON_ParseWithOpts(p, NULL, 0);
+	if (user_data == NULL) {
+		log_err("Cannot parse passwd file!\n");
+		ret = -1;
+		goto parse_failed;
+	}
+
+	const cJSON *users = cJSON_GetObjectItem(user_data, "users");
+	if (users == NULL) {
+		log_err("No user object in passwd file!\n");
+		ret = -1;
+		goto get_users_failed;
+	}
+
+get_users_failed:
+parse_failed:
+	munmap(p, size);
+mmap_failed:
+	close(fd);
+	return ret;
 }
 
 void free_passwd_data(void)
 {
-
+	if (user_data != NULL) {
+		cJSON_Delete(user_data);
+		user_data = NULL;
+	}
 }
