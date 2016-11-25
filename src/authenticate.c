@@ -29,12 +29,14 @@
 #include "authenticate.h"
 #include "json/cJSON.h"
 #include "peer.h"
+#include "response.h"
 
-cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, char *passwd)
+cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 {
-	(void)p;
-	(void)params;
-
-	credentials_ok(user, passwd);
-	return NULL;
+	if (credentials_ok(user, passwd)) {
+		return NULL;
+	} else {
+		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
+		return error;
+	}
 }
