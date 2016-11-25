@@ -193,10 +193,10 @@ static enum bs_read_callback_return ws_get_mask(void *context, uint8_t *buf, siz
 	if (likely(s->length > 0)) {
 		struct buffered_reader *br = &s->connection->br;
 		br->read_exactly(br->this_ptr, s->length, ws_get_payload, s);
+		return BS_OK;
 	} else {
-		ws_get_payload(s, NULL, 0);
+		return ws_get_payload(s, NULL, 0);
 	}
-	return BS_OK;
 }
 
 static void read_mask_or_payload(struct websocket *s)
