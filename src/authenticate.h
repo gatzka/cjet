@@ -27,6 +27,8 @@
 #ifndef CJET_AUTHENTICATE_H
 #define CJET_AUTHENTICATE_H
 
+#include <stdbool.h>
+
 #include "json/cJSON.h"
 #include "peer.h"
 
@@ -38,6 +40,7 @@ cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *us
 
 int load_passwd_data(const char *passwd_file);
 void free_passwd_data(void);
+bool credentials_ok(const char *user_name, const char *passwd);
 
 #ifdef __cplusplus
 }

@@ -34,8 +34,7 @@ cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *us
 {
 	(void)p;
 	(void)params;
-	(void)user;
-	(void)passwd;
 
+	credentials_ok(user, passwd);
 	return NULL;
 }
