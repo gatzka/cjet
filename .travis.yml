@@ -15,20 +15,16 @@ env:
     - BUILD=gcc
     - BUILD=clang
 
-before_script:
-  - mkdir build
-  - cd build
-
 script:
   - if [ "$COVERITY_SCAN_BRANCH" != 1 ]; then
       case ${BUILD} in
         gcc)
-          cmake ../ &&
+          cmake . &&
           make &&
           make test
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/clang.cmake ../  &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/clang.cmake . &&
           make &&
           make test
           ;;
