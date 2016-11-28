@@ -347,7 +347,7 @@ static int process_authenticate(const cJSON *json_rpc, struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	cJSON *error = handle_authentication(p, user->valuestring, passwd->valuestring);
+	cJSON *error = handle_authentication(p, params, user->valuestring, passwd->valuestring);
 	return possibly_send_response(json_rpc, error, p);
 }
 

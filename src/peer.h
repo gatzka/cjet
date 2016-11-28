@@ -52,6 +52,7 @@ struct peer {
 	int (*send_message)(const struct peer *p, char *rendered, size_t len);
 	void (*close)(struct peer *p);
 	struct eventloop *loop;
+	struct cJSON *auth;
 	bool is_local_connection;
 };
 
