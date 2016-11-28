@@ -14,7 +14,7 @@ CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_co
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
-SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wpointer-arith -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
@@ -54,6 +54,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 INCLUDE(hardening)
 
 SET(CJET_FILES
+        authenticate.c
         base64.c
         buffered_socket.c
         config.c
@@ -77,6 +78,7 @@ SET(CJET_FILES
 
 SET(CJET_LINUX_FILES
         linux/alloc.c
+		linux/linux_auth_file.c
         linux/buffered_socket_alloc.c
         linux/eventloop_epoll.c
         linux/jet_endian.c
@@ -110,6 +112,7 @@ ADD_EXECUTABLE(cjet
 TARGET_LINK_LIBRARIES(
         cjet
         m
+		crypt
 )
 
 INSTALL(TARGETS cjet RUNTIME DESTINATION bin)

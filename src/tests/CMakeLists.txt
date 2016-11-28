@@ -59,6 +59,7 @@ MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
 add_library(jet STATIC 
+	../authenticate.c
 	../config.c
  	../fetch.c
  	../info.c
@@ -181,6 +182,7 @@ TARGET_LINK_LIBRARIES(
 SET(JSON_PARSE_TEST
 	../linux/alloc.c
 	../linux/timer_linux.c
+	auth_stub.cpp
 	log.cpp
 	parse_test.cpp
 )
@@ -194,6 +196,7 @@ TARGET_LINK_LIBRARIES(
 SET(STATE_TEST
 	../linux/alloc.c
 	../linux/timer_linux.c
+	auth_stub.cpp
 	log.cpp
 	state_test.cpp
 )
@@ -207,6 +210,7 @@ TARGET_LINK_LIBRARIES(
 SET(METHOD_TEST
 	../linux/alloc.c
 	../linux/timer_linux.c
+	auth_stub.cpp
 	log.cpp
 	method_test.cpp
 )
@@ -220,6 +224,7 @@ TARGET_LINK_LIBRARIES(
 SET(COMBINED_TEST
 	../linux/alloc.c
 	../linux/timer_linux.c
+	auth_stub.cpp
 	log.cpp
 	combined_test.cpp
 )
@@ -233,6 +238,7 @@ TARGET_LINK_LIBRARIES(
 SET(FETCH_TEST
 	../linux/alloc.c
 	../linux/timer_linux.c
+	auth_stub.cpp
 	log.cpp
 	fetch_test.cpp
 )
@@ -320,19 +326,20 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(WEBSOCKET_PEER_TEST
+	../linux/alloc.c
+	../linux/timer_linux.c
     ../base64.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-	../linux/alloc.c
     ../linux/jet_endian.c
-	../linux/timer_linux.c
     ../linux/websocket_random.c
     ../sha1/sha1.c
-    ../tests/websocket_peer_test.cpp
-    ../tests/log.cpp
     ../websocket.c
     ../websocket_peer.c
+	auth_stub.cpp
+    log.cpp
+    websocket_peer_test.cpp
 )
 ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(

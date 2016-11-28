@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,50 +24,37 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_PEER_H
-#define CJET_PEER_H
-
-#include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
-#include <string.h>
 
-#include "eventloop.h"
-#include "generated/cjet_config.h"
-#include "generated/os_config.h"
-#include "http-parser/http_parser.h"
+#include "authenticate.h"
 #include "json/cJSON.h"
 #include "list.h"
+#include "peer.h"
+#include "response.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, char *passwd)
+{
+	if (!list_empty(&p->fetch_list)) {
+		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
+		return error;
+	}
 
-struct peer {
-	struct list_head state_list;
-	struct list_head next_peer;
-	struct list_head fetch_list;
-	void *routing_table;
-	char *name;
-	int (*send_message)(const struct peer *p, char *rendered, size_t len);
-	void (*close)(struct peer *p);
-	struct eventloop *loop;
-	struct cJSON *auth;
-	bool is_local_connection;
-};
+	if (!credentials_ok(user, passwd)) {
+		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
+		return error;
+	}
 
-int init_peer(struct peer *p, bool is_local_connection, struct eventloop *loop);
-void free_peer_resources(struct peer *p);
-const struct list_head *get_peer_list(void);
-void set_peer_name(struct peer *peer, const char *name);
-const char *get_peer_name(const struct peer *p);
-int get_number_of_peers(void);
-void log_peer_info(const struct peer *p, const char *fmt, ...);
-void log_peer_err(const struct peer *p, const char *fmt, ...);
-void destroy_all_peers(void);
+	const cJSON *auth = cJSON_GetObjectItem(params, "auth");
+	if (auth == NULL) {
+		cJSON *error = create_invalid_params_error(p, "no auth object available", user);
+		return error;
+	}
 
-#ifdef __cplusplus
+	p->auth = cJSON_Duplicate(auth, 1);
+	if (p->auth == NULL) {
+		cJSON *error = create_invalid_params_error(p, "Could not allocate memory for auth object", user);
+		return error;
+	}
+
+	return NULL;
 }
-#endif
-
-#endif

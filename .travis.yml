@@ -15,9 +15,6 @@ env:
     - BUILD=gcc
     - BUILD=clang
 
-before_install:
-  - pip install --user travis cpp-coveralls
-
 before_script:
   - mkdir build
   - cd build
@@ -39,8 +36,8 @@ script:
     fi
 
 after_success:
-  - coveralls --verbose --root .. --build-root . --exclude src/json/ --exclude src/http-parser/ --exclude src/tests/ --exclude src/linux/epoll/tests/ --exclude build/CMakeFiles/CompilerIdC/ --exclude build/CMakeFiles/CompilerIdCXX/ --gcov-options '\-lp'
-
+  - bash <(curl -s https://codecov.io/bash)
+ 
 addons:
   apt:
     sources:

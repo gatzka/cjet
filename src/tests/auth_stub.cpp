@@ -1,5 +1,5 @@
 /*
- *The MIT License (MIT)
+ * The MIT License (MIT)
  *
  * Copyright (c) <2016> <Stephan Gatzka>
  *
@@ -24,23 +24,17 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_CMDLINE_CONFIG_H
-#define CJET_CMDLINE_CONFIG_H
+#include <stdbool.h>
 
-#ifdef __cplusplus
+#include "authenticate.h"
+
 extern "C" {
-#endif
 
-struct cmdline_config {
-	bool run_foreground;
-	bool bind_local_only;
-	const char *user_name;
-	const char *passwd_file;
-	const char *request_target;
-};
-
-#ifdef __cplusplus
+	bool credentials_ok(const char *user, char *passwd)
+	{
+		(void)user;
+		(void)passwd;
+		return true;
+	}
 }
-#endif
 
-#endif

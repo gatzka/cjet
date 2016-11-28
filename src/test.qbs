@@ -110,6 +110,7 @@ Project {
             "linux/timer_linux.c",
             "linux/websocket_random.c",
             "sha1/sha1.c",
+            "tests/auth_stub.cpp",
             "tests/websocket_peer_test.cpp",
             "websocket.c",
             "websocket_peer.c",
@@ -156,8 +157,9 @@ Project {
         files: [
             "linux/alloc.c",
             "linux/timer_linux.c",
-            "tests/parse_test.cpp",
+            "tests/auth_stub.cpp",
             "tests/log.cpp",
+            "tests/parse_test.cpp",
         ]
     }
 
@@ -171,6 +173,7 @@ Project {
         files: [
             "linux/alloc.c",
             "linux/timer_linux.c",
+            "tests/auth_stub.cpp",
             "tests/log.cpp",
             "tests/state_test.cpp",
         ]
@@ -187,6 +190,7 @@ Project {
             "linux/alloc.c",
             "linux/timer_linux.c",
             "tests/log.cpp",
+            "tests/auth_stub.cpp",
             "tests/method_test.cpp",
         ]
     }
@@ -202,6 +206,7 @@ Project {
             "linux/alloc.c",
             "linux/timer_linux.c",
             "tests/log.cpp",
+            "tests/auth_stub.cpp",
             "tests/combined_test.cpp",
         ] 
     }
@@ -217,6 +222,7 @@ Project {
             "linux/alloc.c",
             "linux/timer_linux.c",
             "tests/log.cpp",
+            "tests/auth_stub.cpp",
             "tests/fetch_test.cpp",
         ]
     }

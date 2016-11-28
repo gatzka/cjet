@@ -68,7 +68,7 @@ Project {
     cpp.visibility: "hidden"
     cpp.useRPaths: false
     cpp.cLanguageVersion: "c99"
-    cpp.dynamicLibraries: ["m"]
+    cpp.dynamicLibraries: ["m", "crypt"]
 
     Group {
       name: "installation files"

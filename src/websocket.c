@@ -193,22 +193,24 @@ static enum bs_read_callback_return ws_get_mask(void *context, uint8_t *buf, siz
 	if (likely(s->length > 0)) {
 		struct buffered_reader *br = &s->connection->br;
 		br->read_exactly(br->this_ptr, s->length, ws_get_payload, s);
+		return BS_OK;
 	} else {
-		ws_get_payload(s, NULL, 0);
+		return ws_get_payload(s, NULL, 0);
 	}
-	return BS_OK;
 }
 
-static void read_mask_or_payload(struct websocket *s)
+static enum bs_read_callback_return read_mask_or_payload(struct websocket *s)
 {
 	struct buffered_reader *br = &s->connection->br;
 	if (s->ws_flags.mask == 1) {
 		br->read_exactly(br->this_ptr, sizeof(s->mask), ws_get_mask, s);
+		return BS_OK;
 	} else {
 		if (likely(s->length > 0)) {
 			br->read_exactly(br->this_ptr, s->length, ws_get_payload, s);
+			return BS_OK;
 		} else {
-			ws_get_payload(s, NULL, 0);
+			return ws_get_payload(s, NULL, 0);
 		}
 	}
 }
@@ -226,8 +228,7 @@ static enum bs_read_callback_return ws_get_length16(void *context, uint8_t *buf,
 	memcpy(&field, buf, sizeof(field));
 	field = jet_be16toh(field);
 	s->length = field;
-	read_mask_or_payload(s);
-	return BS_OK;
+	return read_mask_or_payload(s);
 }
 
 static enum bs_read_callback_return ws_get_length64(void *context, uint8_t *buf, size_t len)
@@ -243,8 +244,7 @@ static enum bs_read_callback_return ws_get_length64(void *context, uint8_t *buf,
 	memcpy(&field, buf, sizeof(field));
 	field = jet_be64toh(field);
 	s->length = field;
-	read_mask_or_payload(s);
-	return BS_OK;
+	return read_mask_or_payload(s);
 }
 
 static enum bs_read_callback_return ws_get_first_length(void *context, uint8_t *buf, size_t len)
@@ -268,13 +268,14 @@ static enum bs_read_callback_return ws_get_first_length(void *context, uint8_t *
 	field = field & ~WS_MASK_SET;
 	if (field < 126) {
 		s->length = field;
-		read_mask_or_payload(s);
+		return read_mask_or_payload(s);
 	} else if (field == 126) {
 		br->read_exactly(br->this_ptr, 2, ws_get_length16, s);
+		return BS_OK;
 	} else {
 		br->read_exactly(br->this_ptr, 8, ws_get_length64, s);
+		return BS_OK;
 	}
-	return BS_OK;
 }
 
 enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t len)

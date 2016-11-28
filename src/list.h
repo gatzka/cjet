@@ -57,6 +57,11 @@ static inline void list_add_tail(struct list_head *new_entry, struct list_head *
 	__list_add(new_entry, head->prev, head);
 }
 
+static inline int list_empty(const struct list_head *head)
+{
+	return head->next == head;
+}
+
 #define list_for_each_safe(pos, n, head) \
 	for (pos = (head)->next, n = pos->next; pos != (head); \
 		pos = n, n = pos->next)

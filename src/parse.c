@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "alloc.h"
+#include "authenticate.h"
 #include "compiler.h"
 #include "config.h"
 #include "fetch.h"
@@ -311,6 +312,45 @@ static int process_config(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
+static int process_authenticate(const cJSON *json_rpc, struct peer *p)
+{
+	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no params found");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	const cJSON *user = cJSON_GetObjectItem(params, "user");
+	if (unlikely(user == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no user given");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	if (unlikely(user->type != cJSON_String)) {
+		cJSON *error = create_invalid_params_error(
+			p, "reason", "user is not a string");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
+	if (unlikely(passwd == NULL)) {
+		cJSON *error =
+			create_invalid_params_error(p, "reason", "no password given");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	if (unlikely(passwd->type != cJSON_String)) {
+		cJSON *error = create_invalid_params_error(
+			p, "reason", "password is not a string");
+		return possibly_send_response(json_rpc, error, p);
+	}
+
+	cJSON *error = handle_authentication(p, params, user->valuestring, passwd->valuestring);
+	return possibly_send_response(json_rpc, error, p);
+}
+
 static int handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
@@ -332,6 +372,8 @@ static int handle_method(const cJSON *json_rpc, const char *method_name,
 		return process_config(json_rpc, p);
 	} else if (strcmp(method_name, "info") == 0) {
 		return handle_info(json_rpc, p);
+	} else if (strcmp(method_name, "authenticate") == 0) {
+		return process_authenticate(json_rpc, p);
 	} else {
 		cJSON *error = create_method_not_found_error(p, "reason", method_name);
 		return possibly_send_response(json_rpc, error, p);

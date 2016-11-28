@@ -43,7 +43,6 @@ Product {
         flags.push("-Wunused-result");
         flags.push("-Wcast-qual");
         flags.push("-Wcast-align");
-        flags.push("-Wpointer-arith");
         flags.push("-Wformat=2");
         flags.push("-Wwrite-strings");
         flags.push("-Wmissing-prototypes");
