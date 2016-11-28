@@ -30,7 +30,7 @@
 
 extern "C" {
 
-	bool credentials_ok(const char *user, const char *passwd)
+	bool credentials_ok(const char *user, char *passwd)
 	{
 		(void)user;
 		(void)passwd;
