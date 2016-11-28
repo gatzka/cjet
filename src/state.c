@@ -42,7 +42,7 @@
 #include "table.h"
 #include "uuid.h"
 
-static struct state_or_method *alloc_state(const char *path, const cJSON *value_object,
+static struct state_or_method *alloc_state(const char *path, const cJSON *value_object, const cJSON *access,
 				 struct peer *p, double timeout, int flags)
 {
 	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
@@ -51,7 +51,16 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 				 "state");
 		return NULL;
 	}
-	s->access = NULL;
+
+	if (access == NULL) {
+		s->access = NULL;
+	} else {
+		s->access = cJSON_Duplicate(access, 1);
+		if (s->access == NULL) {
+			log_peer_err(p, "Could not allocate memory for fetch table!\n");
+			goto duplicate_access_failed;
+		}
+	}
 	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
@@ -85,6 +94,10 @@ value_copy_failed:
 alloc_path_failed:
 	cjet_free(s->fetcher_table);
 alloc_fetch_table_failed:
+	if (s->access != NULL) {
+		cJSON_Delete(s->access);
+	}
+duplicate_access_failed:
 	cjet_free(s);
 	return NULL;
 }
@@ -223,14 +236,14 @@ routed_message_creation_failed:
 	return error;
 }
 
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags, double routed_request_timeout_s)
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
 {
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, p, routed_request_timeout_s, flags);
+	s = alloc_state(path, value, access, p, routed_request_timeout_s, flags);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 			create_internal_error(p, "reason", "not enough memory");

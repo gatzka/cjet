@@ -220,6 +220,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
+	const cJSON *access = cJSON_GetObjectItem(params, "access");
 
 	double routed_request_timeout;
 	if (timeout != NULL) {
@@ -239,7 +240,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 		routed_request_timeout = CONFIG_ROUTED_MESSAGES_TIMEOUT;
 	}
 
-	error = add_state_or_method_to_peer(p, path, value, flags, routed_request_timeout);
+	error = add_state_or_method_to_peer(p, path, value, access, flags, routed_request_timeout);
 
 	return possibly_send_response(json_rpc, error, p);
 }
