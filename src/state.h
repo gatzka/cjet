@@ -44,6 +44,7 @@ struct state_or_method {
 	struct peer *peer; /*The peer the state belongs to */
 	cJSON *value; /* NULL if method */
 	struct fetch **fetcher_table;
+	cJSON *access;
 	int flags;
 	double timeout;
 	unsigned int fetch_table_size;

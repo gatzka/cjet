@@ -51,6 +51,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 				 "state");
 		return NULL;
 	}
+	s->access = NULL;
 	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
@@ -93,6 +94,11 @@ static void free_state_or_method(struct state_or_method *s)
 	if (s->value != NULL) {
 		cJSON_Delete(s->value);
 	}
+
+	if (s->access != NULL) {
+		cJSON_Delete(s->access);
+	}
+
 	cjet_free(s->path);
 	cjet_free(s->fetcher_table);
 	cjet_free(s);
