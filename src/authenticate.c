@@ -28,11 +28,17 @@
 
 #include "authenticate.h"
 #include "json/cJSON.h"
+#include "list.h"
 #include "peer.h"
 #include "response.h"
 
 cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 {
+	if (!list_empty(&p->fetch_list)) {
+		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
+		return error;
+	}
+
 	if (credentials_ok(user, passwd)) {
 		return NULL;
 	} else {
