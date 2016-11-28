@@ -24,7 +24,7 @@ script:
           make test
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=../cmake/clang.cmake . &&
+          cmake -DCMAKE_TOOLCHAIN_FILE=cmake/clang.cmake . &&
           make &&
           make test
           ;;
