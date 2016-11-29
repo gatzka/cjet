@@ -46,6 +46,7 @@ struct state_or_method {
 	struct fetch **fetcher_table;
 	int number_of_fetch_groups;
 	char **fetchGroups;
+	char **set_groups;
 	int flags;
 	double timeout;
 	unsigned int fetch_table_size;

@@ -58,6 +58,17 @@ static void free_fetch_groups(struct state_or_method *s, unsigned int elements)
 	}
 }
 
+static void free_set_groups(struct state_or_method *s, unsigned int elements)
+{
+	for (unsigned int i = 0; i < elements; i++) {
+		cjet_free(s->set_groups[i]);
+	}
+
+	if (s->set_groups != NULL) {
+		cjet_free(s->set_groups);
+	}
+}
+
 static int fill_fetch_groups(struct state_or_method *s, const cJSON *access)
 {
 	if (access == NULL) {
@@ -97,6 +108,46 @@ static int fill_fetch_groups(struct state_or_method *s, const cJSON *access)
 	return 0;
 }
 
+static int fill_set_groups(struct state_or_method *s, const cJSON *access)
+{
+	if (access == NULL) {
+		return 0;
+	}
+
+	const cJSON *set_groups = cJSON_GetObjectItem(access, "setGroups");
+	if ((set_groups != NULL) && (set_groups->type != cJSON_Array)) {
+		return -1;
+	}
+
+	unsigned int number_of_set_groups = cJSON_GetArraySize(set_groups);
+	if (number_of_set_groups != 0) {
+		s->set_groups = cjet_malloc(sizeof(*(s->set_groups)) * number_of_set_groups);
+		if (s->set_groups == NULL) {
+			return -1;
+		}
+
+		for (unsigned int i = 0; i < number_of_set_groups; i++) {
+			cJSON *setGroup = cJSON_GetArrayItem(set_groups, i);
+			if ((setGroup == NULL) || (setGroup->type != cJSON_String)) {
+				if (i > 0) {
+					free_set_groups(s, i - 1);
+				}
+				return -1;
+			}
+
+			s->set_groups[i] = duplicate_string(setGroup->valuestring);
+			if (s->set_groups[i] == NULL) {
+				if (i > 0) {
+					free_set_groups(s, i - 1);
+				}
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
 static int fill_access(struct state_or_method *s, const cJSON *access)
 {
 	int ret = fill_fetch_groups(s, access);
@@ -104,7 +155,11 @@ static int fill_access(struct state_or_method *s, const cJSON *access)
 		return -1;
 	}
 	if (is_state(s)) {
-		// check for fetchGroups or setGroups
+		ret = fill_set_groups(s, access);
+		if (ret < 0) {
+			free_fetch_groups(s, s->number_of_fetch_groups);
+			return -1;
+		}
 	} else {
 		// check for fetchGroups or callGroups
 	}
