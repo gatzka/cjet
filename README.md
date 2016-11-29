@@ -72,6 +72,11 @@ You can specify as many additional parallel builds by adding more
 profiles. If `unittest-runner.showCoverageData:true` is given, the
 coverage data is directly displayed in a web browser.
 
+If you don't like waiting for the http-parse-tests to complete you can
+disable them;
+```
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjet_unit_tests.buildHttpParserTest:false]...
+```
 If you have clang and clang-analyzer installed, you can run the static
 code analyzer with
 ```

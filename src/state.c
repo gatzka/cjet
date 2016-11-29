@@ -42,7 +42,96 @@
 #include "table.h"
 #include "uuid.h"
 
-static struct state_or_method *alloc_state(const char *path, const cJSON *value_object,
+static bool is_state(const struct state_or_method *s)
+{
+	return (s->value != NULL);
+}
+
+#define FREE_GROUP(access_groups) \
+static void free_##access_groups(struct state_or_method *s, unsigned int elements) \
+{ \
+	for (unsigned int i = 0; i < elements; i++) { \
+		cjet_free(s->access_groups[i]); \
+	} \
+\
+	if (s->access_groups != NULL) { \
+		cjet_free(s->access_groups); \
+	} \
+}
+
+FREE_GROUP(fetch_groups)
+FREE_GROUP(set_groups)
+FREE_GROUP(call_groups)
+
+#define FILL_GROUP(access_groups, json_key) \
+static int fill_##access_groups(struct state_or_method *s, const cJSON *access) \
+{ \
+	if (access == NULL) { \
+		return 0; \
+	} \
+\
+	const cJSON *groups = cJSON_GetObjectItem(access, json_key); \
+	if ((groups != NULL) && (groups->type != cJSON_Array)) { \
+		return -1; \
+	} \
+\
+	unsigned int number_of_##access_groups = cJSON_GetArraySize(groups); \
+	if (number_of_##access_groups != 0) { \
+		s->access_groups = cjet_malloc(sizeof(*(s->access_groups)) * number_of_##access_groups); \
+		if (s->access_groups == NULL) { \
+			return -1; \
+		} \
+\
+		for (unsigned int i = 0; i < number_of_##access_groups; i++) { \
+			cJSON *group = cJSON_GetArrayItem(groups, i); \
+			if ((group == NULL) || (group->type != cJSON_String)) { \
+				if (i > 0) { \
+					free_##access_groups(s, i - 1); \
+				} \
+				return -1; \
+			} \
+\
+			s->access_groups[i] = duplicate_string(group->valuestring); \
+			if (s->access_groups[i] == NULL) { \
+				if (i > 0) { \
+					free_##access_groups(s, i - 1); \
+				} \
+				return -1; \
+			} \
+		} \
+		s->number_of_##access_groups = number_of_##access_groups; \
+	} \
+\
+	return 0; \
+}
+
+FILL_GROUP(fetch_groups, "fetchGroups")
+FILL_GROUP(set_groups, "setGroups")
+FILL_GROUP(call_groups, "callGroups")
+
+static int fill_access(struct state_or_method *s, const cJSON *access)
+{
+	int ret = fill_fetch_groups(s, access);
+	if (ret < 0) {
+		return -1;
+	}
+	if (is_state(s)) {
+		ret = fill_set_groups(s, access);
+		if (ret < 0) {
+			free_fetch_groups(s, s->number_of_set_groups);
+			return -1;
+		}
+	} else {
+		ret = fill_call_groups(s, access);
+		if (ret < 0) {
+			free_call_groups(s, s->number_of_call_groups);
+			return -1;
+		}
+	}
+	return 0;
+}
+
+static struct state_or_method *alloc_state(const char *path, const cJSON *value_object, const cJSON *access,
 				 struct peer *p, double timeout, int flags)
 {
 	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
@@ -51,6 +140,7 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 				 "state");
 		return NULL;
 	}
+
 	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
@@ -77,8 +167,17 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
+	if (fill_access(s, access) < 0) {
+		log_peer_err(p, "Could not fill access information!\n");
+		goto fill_access_failed;
+	}
+
 	return s;
 
+fill_access_failed:
+	if (s->value != NULL) {
+		cJSON_Delete(s->value);
+	}
 value_copy_failed:
 	cjet_free(s->path);
 alloc_path_failed:
@@ -93,6 +192,8 @@ static void free_state_or_method(struct state_or_method *s)
 	if (s->value != NULL) {
 		cJSON_Delete(s->value);
 	}
+
+	free_fetch_groups(s, s->number_of_fetch_groups);
 	cjet_free(s->path);
 	cjet_free(s->fetcher_table);
 	cjet_free(s);
@@ -217,14 +318,14 @@ routed_message_creation_failed:
 	return error;
 }
 
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, int flags, double routed_request_timeout_s)
+cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
 {
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
 		cJSON *error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, p, routed_request_timeout_s, flags);
+	s = alloc_state(path, value, access, p, routed_request_timeout_s, flags);
 	if (unlikely(s == NULL)) {
 		cJSON *error =
 			create_internal_error(p, "reason", "not enough memory");
