@@ -42,6 +42,69 @@
 #include "table.h"
 #include "uuid.h"
 
+static bool is_state(const struct state_or_method *s)
+{
+	return (s->value != NULL);
+}
+
+static void free_fetch_groups(struct state_or_method *s, unsigned int elements)
+{
+	for (unsigned int i = 0; i < elements; i++) {
+		cjet_free(s->fetchGroups[i]);
+	}
+
+	cjet_free(s->fetchGroups);
+}
+
+static int fill_fetch_groups(struct state_or_method *s, const cJSON *access)
+{
+	const cJSON *fetchGroups = cJSON_GetObjectItem(access, "fetchGroups");
+	if ((fetchGroups != NULL) && (fetchGroups->type != cJSON_Array)) {
+		return -1;
+	}
+
+	unsigned int number_of_fetch_groups = cJSON_GetArraySize(fetchGroups);
+	if (number_of_fetch_groups != 0) {
+		s->fetchGroups = cjet_malloc(sizeof(*(s->fetchGroups)) * number_of_fetch_groups);
+		if (s->fetchGroups == NULL) {
+			return -1;
+		}
+
+		for (unsigned int i = 0; i < number_of_fetch_groups; i++) {
+			cJSON *fetchGroup = cJSON_GetArrayItem(fetchGroups, i);
+			if ((fetchGroup == NULL) || (fetchGroup->type != cJSON_String)) {
+				if (i > 0) {
+					free_fetch_groups(s, i - 1);
+				}
+				return -1;
+			}
+			s->fetchGroups[i] = duplicate_string(fetchGroup->valuestring);
+			if (s->fetchGroups[i] == NULL) {
+				if (i > 0) {
+					free_fetch_groups(s, i - 1);
+				}
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int fill_access(struct state_or_method *s, const cJSON *access)
+{
+	int ret = fill_fetch_groups(s, access);
+	if (ret < 0) {
+		return -1;
+	}
+	if (is_state(s)) {
+		// check for fetchGroups or setGroups
+	} else {
+		// check for fetchGroups or callGroups
+	}
+	return 0;
+}
+
 static struct state_or_method *alloc_state(const char *path, const cJSON *value_object, const cJSON *access,
 				 struct peer *p, double timeout, int flags)
 {
@@ -52,15 +115,6 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 		return NULL;
 	}
 
-	if (access == NULL) {
-		s->access = NULL;
-	} else {
-		s->access = cJSON_Duplicate(access, 1);
-		if (s->access == NULL) {
-			log_peer_err(p, "Could not allocate memory for fetch table!\n");
-			goto duplicate_access_failed;
-		}
-	}
 	s->flags = flags;
 	s->timeout = timeout;
 	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
@@ -87,6 +141,8 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
+	fill_access(s, access);
+
 	return s;
 
 value_copy_failed:
@@ -94,10 +150,6 @@ value_copy_failed:
 alloc_path_failed:
 	cjet_free(s->fetcher_table);
 alloc_fetch_table_failed:
-	if (s->access != NULL) {
-		cJSON_Delete(s->access);
-	}
-duplicate_access_failed:
 	cjet_free(s);
 	return NULL;
 }
@@ -108,10 +160,7 @@ static void free_state_or_method(struct state_or_method *s)
 		cJSON_Delete(s->value);
 	}
 
-	if (s->access != NULL) {
-		cJSON_Delete(s->access);
-	}
-
+	free_fetch_groups(s, s->number_of_fetch_groups);
 	cjet_free(s->path);
 	cjet_free(s->fetcher_table);
 	cjet_free(s);
