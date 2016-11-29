@@ -45,7 +45,7 @@ struct state_or_method {
 	cJSON *value; /* NULL if method */
 	struct fetch **fetcher_table;
 	int number_of_fetch_groups;
-	char **fetchGroups;
+	char **fetch_groups;
 	char **set_groups;
 	int flags;
 	double timeout;
