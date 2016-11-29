@@ -4,6 +4,86 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 option(FEATURE_POST_BUILD_UNITTEST  "Automatically run unit-tests as a post build step" ON)
 
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+
+OPTION(COVERALLS "Generate coveralls data" OFF)
+
+IF(COVERALLS)
+    INCLUDE(Coveralls)
+ENDIF()
+
+IF(COVERALLS)
+    SET(COVERAGE_SRCS
+		${PROJECT_SOURCE_DIR}/src/base64.c
+		${PROJECT_SOURCE_DIR}/src/base64.h
+		${PROJECT_SOURCE_DIR}/src/buffered_reader.h
+		${PROJECT_SOURCE_DIR}/src/buffered_socket.c
+		${PROJECT_SOURCE_DIR}/src/buffered_socket.h
+		${PROJECT_SOURCE_DIR}/src/compiler.h
+		${PROJECT_SOURCE_DIR}/src/config.c
+		${PROJECT_SOURCE_DIR}/src/config.h
+		${PROJECT_SOURCE_DIR}/src/eventloop.h
+		${PROJECT_SOURCE_DIR}/src/fetch.c
+		${PROJECT_SOURCE_DIR}/src/fetch.h
+		${PROJECT_SOURCE_DIR}/src/hashtable.h
+		${PROJECT_SOURCE_DIR}/src/http_connection.c
+		${PROJECT_SOURCE_DIR}/src/http_connection.h
+		${PROJECT_SOURCE_DIR}/src/http_server.c
+		${PROJECT_SOURCE_DIR}/src/http_server.h
+		${PROJECT_SOURCE_DIR}/src/info.c
+		${PROJECT_SOURCE_DIR}/src/info.h
+		${PROJECT_SOURCE_DIR}/src/jet_endian.h
+		${PROJECT_SOURCE_DIR}/src/jet_server.h
+		${PROJECT_SOURCE_DIR}/src/jet_string.h
+		${PROJECT_SOURCE_DIR}/src/linux/alloc.c
+		${PROJECT_SOURCE_DIR}/src/linux/buffered_socket_alloc.c
+		${PROJECT_SOURCE_DIR}/src/linux/cmdline_config.h
+		${PROJECT_SOURCE_DIR}/src/linux/eventloop_epoll.c
+		${PROJECT_SOURCE_DIR}/src/linux/eventloop_epoll.h
+		${PROJECT_SOURCE_DIR}/src/linux/jet_endian.c
+		${PROJECT_SOURCE_DIR}/src/linux/jet_string.c
+		${PROJECT_SOURCE_DIR}/src/linux/linux_io.c
+		${PROJECT_SOURCE_DIR}/src/linux/linux_io.h
+		${PROJECT_SOURCE_DIR}/src/linux/main.c
+		${PROJECT_SOURCE_DIR}/src/linux/socket.c
+		${PROJECT_SOURCE_DIR}/src/linux/timer_linux.c
+		${PROJECT_SOURCE_DIR}/src/linux/uuid.c
+		${PROJECT_SOURCE_DIR}/src/linux/websocket_random.c
+		${PROJECT_SOURCE_DIR}/src/list.h
+		${PROJECT_SOURCE_DIR}/src/log.h
+		${PROJECT_SOURCE_DIR}/src/parse.c
+		${PROJECT_SOURCE_DIR}/src/parse.h
+		${PROJECT_SOURCE_DIR}/src/peer.c
+		${PROJECT_SOURCE_DIR}/src/peer.h
+		${PROJECT_SOURCE_DIR}/src/response.c
+		${PROJECT_SOURCE_DIR}/src/response.h
+		${PROJECT_SOURCE_DIR}/src/router.c
+		${PROJECT_SOURCE_DIR}/src/router.h
+		${PROJECT_SOURCE_DIR}/src/sha1/sha1.h
+		${PROJECT_SOURCE_DIR}/src/sha1/sha1.c
+		${PROJECT_SOURCE_DIR}/src/socket.h
+		${PROJECT_SOURCE_DIR}/src/socket_peer.c
+		${PROJECT_SOURCE_DIR}/src/socket_peer.h
+		${PROJECT_SOURCE_DIR}/src/state.h
+		${PROJECT_SOURCE_DIR}/src/table.c
+		${PROJECT_SOURCE_DIR}/src/table.h
+		${PROJECT_SOURCE_DIR}/src/timer.h
+		${PROJECT_SOURCE_DIR}/src/url_handler.h
+		${PROJECT_SOURCE_DIR}/src/util.h
+		${PROJECT_SOURCE_DIR}/src/uuid.h
+		${PROJECT_SOURCE_DIR}/src/websocket.c
+		${PROJECT_SOURCE_DIR}/src/websocket.h
+		${PROJECT_SOURCE_DIR}/src/websocket_peer.c
+		${PROJECT_SOURCE_DIR}/src/websocket_peer.h
+		)
+
+    # Create the coveralls target.
+    coveralls_setup(
+        "${COVERAGE_SRCS}" # The source files.
+        ON                 # If we should upload.
+        ) # (Optional) Alternate project cmake module path.
+        #"${PROJECT_SOURCE_DIR}/CMakeModules/") # (Optional) Alternate project cmake module path.
+ENDIF()
 
 ADD_SUBDIRECTORY(src/)
 
