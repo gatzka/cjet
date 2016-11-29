@@ -19,14 +19,14 @@ script:
   - if [ "$COVERITY_SCAN_BRANCH" != 1 ]; then
       case ${BUILD} in
         gcc)
-          cmake . &&
+          cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug . &&
           make &&
-          make test
+          make coveralls
           ;;
         clang)
-          cmake -DCMAKE_TOOLCHAIN_FILE=cmake/clang.cmake . &&
+          cmake -DCOVERALLS=ON -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=cmake/clang.cmake . &&
           make &&
-          make test
+          make coveralls
           ;;
       esac ;
     fi
