@@ -61,6 +61,7 @@ static void free_##access_groups(struct state_or_method *s, unsigned int element
 
 FREE_GROUP(fetch_groups)
 FREE_GROUP(set_groups)
+FREE_GROUP(call_groups)
 
 #define FILL_GROUP(access_groups, json_key) \
 static int fill_##access_groups(struct state_or_method *s, const cJSON *access) \
@@ -98,6 +99,7 @@ static int fill_##access_groups(struct state_or_method *s, const cJSON *access) 
 				return -1; \
 			} \
 		} \
+		s->number_of_##access_groups = number_of_##access_groups; \
 	} \
 \
 	return 0; \
@@ -105,6 +107,7 @@ static int fill_##access_groups(struct state_or_method *s, const cJSON *access) 
 
 FILL_GROUP(fetch_groups, "fetchGroups")
 FILL_GROUP(set_groups, "setGroups")
+FILL_GROUP(call_groups, "callGroups")
 
 static int fill_access(struct state_or_method *s, const cJSON *access)
 {
@@ -115,11 +118,15 @@ static int fill_access(struct state_or_method *s, const cJSON *access)
 	if (is_state(s)) {
 		ret = fill_set_groups(s, access);
 		if (ret < 0) {
-			free_fetch_groups(s, s->number_of_fetch_groups);
+			free_fetch_groups(s, s->number_of_set_groups);
 			return -1;
 		}
 	} else {
-		// check for fetchGroups or callGroups
+		ret = fill_call_groups(s, access);
+		if (ret < 0) {
+			free_call_groups(s, s->number_of_call_groups);
+			return -1;
+		}
 	}
 	return 0;
 }
