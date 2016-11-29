@@ -141,10 +141,17 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
-	fill_access(s, access);
+	if (fill_access(s, access) < 0) {
+		log_peer_err(p, "Could not fill access information!\n");
+		goto fill_access_failed;
+	}
 
 	return s;
 
+fill_access_failed:
+	if (s->value != NULL) {
+		cJSON_Delete(s->value);
+	}
 value_copy_failed:
 	cjet_free(s->path);
 alloc_path_failed:
