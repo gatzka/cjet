@@ -53,11 +53,17 @@ static void free_fetch_groups(struct state_or_method *s, unsigned int elements)
 		cjet_free(s->fetchGroups[i]);
 	}
 
-	cjet_free(s->fetchGroups);
+	if (s->fetchGroups != NULL) {
+		cjet_free(s->fetchGroups);
+	}
 }
 
 static int fill_fetch_groups(struct state_or_method *s, const cJSON *access)
 {
+	if (access == NULL) {
+		return 0;
+	}
+
 	const cJSON *fetchGroups = cJSON_GetObjectItem(access, "fetchGroups");
 	if ((fetchGroups != NULL) && (fetchGroups->type != cJSON_Array)) {
 		return -1;
