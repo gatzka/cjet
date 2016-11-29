@@ -1127,3 +1127,36 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 
 	BOOST_CHECK(fetch_events.size() == 0);
 }
+
+BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
+{
+	const char *path = "theMethod";
+
+	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_CHECK(error == NULL);
+
+	struct fetch *f = NULL;
+	cJSON *params = create_fetch_params(path, "", "", "", "", "", 0);
+	error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error == NULL);
+	error = add_fetch_to_states(f);
+	BOOST_REQUIRE(error == NULL);
+
+	BOOST_CHECK(fetch_events.size() == 1);
+	cJSON *json = fetch_events.front();
+	event event = get_event_from_json(json);
+	BOOST_CHECK(event == ADD_EVENT);
+
+	cJSON *event_params = cJSON_GetObjectItem(json, "params");
+	BOOST_REQUIRE_MESSAGE(event_params != NULL, "event params must be non null");
+
+	cJSON *event_path = cJSON_GetObjectItem(event_params, "path");
+	BOOST_REQUIRE_MESSAGE(event_path != NULL, "Event path must be non null");
+	BOOST_REQUIRE_MESSAGE(event_path->type == cJSON_String, "Event path must be a string");
+	BOOST_CHECK_MESSAGE(::strcmp(event_path->valuestring, path) == 0, "Add event path does not equals to method path!");
+	cJSON *event_value = cJSON_GetObjectItem(event_params, "value");
+	BOOST_CHECK_MESSAGE(event_value == NULL, "Add event for a method must not have a value!");
+
+	remove_all_fetchers_from_peer(fetch_peer_1);
+	cJSON_Delete(params);
+}
