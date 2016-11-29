@@ -1,8 +1,8 @@
 language: cpp
 
-branches:
-  except:
-    - /^feature.*$/
+# branches:
+#   except:
+#     - /^feature.*$/
 
 sudo: false
 
