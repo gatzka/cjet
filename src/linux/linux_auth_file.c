@@ -134,15 +134,14 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		log_err("Error decrypting passwords\n");
 	}
 
+	const cJSON *auth = NULL;
 	if (strcmp(password->valuestring, encrypted) == 0) {
-		const cJSON *auth = cJSON_GetObjectItem(user, "auth");
+		auth = cJSON_GetObjectItem(user, "auth");
 		if (auth == NULL) {
 			log_err("No auth information for user %s in password file!\n", user_name);
-			return NULL;
 		}
-
-		return auth;
 	}
 
-	return NULL;
+	free(encrypted);
+	return auth;
 }
