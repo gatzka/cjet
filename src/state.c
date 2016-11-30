@@ -194,6 +194,8 @@ static void free_state_or_method(struct state_or_method *s)
 	}
 
 	free_fetch_groups(s, s->number_of_fetch_groups);
+	free_set_groups(s, s->number_of_set_groups);
+	free_call_groups(s, s->number_of_call_groups);
 	cjet_free(s->path);
 	cjet_free(s->fetcher_table);
 	cjet_free(s);
