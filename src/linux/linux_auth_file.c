@@ -103,26 +103,26 @@ void free_passwd_data(void)
 	}
 }
 
-bool credentials_ok(const char *user_name, char *passwd)
+const cJSON *credentials_ok(const char *user_name, char *passwd)
 {
 	if (unlikely(user_data == NULL)) {
-		return false;
+		return NULL;
 	}
 
 	cJSON *user = cJSON_GetObjectItem(users, user_name);
 	if (user == NULL) {
-		return false;
+		return NULL;
 	}
 
 	cJSON *password = cJSON_GetObjectItem(user, "password");
 	if (password == NULL) {
 		log_err("No password for user %s in password file!\n", user_name);
-		return false;
+		return NULL;
 	}
 
 	if (password->type != cJSON_String) {
 		log_err("password for user %s in password file is not a string!\n", user_name);
-		return false;
+		return NULL;
 	}
 
 	char *encrypted = crypt(passwd, password->valuestring);
@@ -135,8 +135,14 @@ bool credentials_ok(const char *user_name, char *passwd)
 	}
 
 	if (strcmp(password->valuestring, encrypted) == 0) {
-		return true;
+		const cJSON *auth = cJSON_GetObjectItem(user, "auth");
+		if (auth == NULL) {
+			log_err("No auth information for user %s in password file!\n", user_name);
+			return NULL;
+		}
+
+		return auth;
 	}
 
-	return false;
+	return NULL;
 }

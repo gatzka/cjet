@@ -36,11 +36,11 @@
 extern "C" {
 #endif
 
-cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, char *passwd);
+cJSON *handle_authentication(struct peer *p, const char *user, char *passwd);
 
 int load_passwd_data(const char *passwd_file);
 void free_passwd_data(void);
-bool credentials_ok(const char *user_name, char *passwd);
+const cJSON *credentials_ok(const char *user_name, char *passwd);
 
 #ifdef __cplusplus
 }

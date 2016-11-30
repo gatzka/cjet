@@ -32,21 +32,16 @@
 #include "peer.h"
 #include "response.h"
 
-cJSON *handle_authentication(struct peer *p, const cJSON *params, const char *user, char *passwd)
+cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 {
 	if (!list_empty(&p->fetch_list)) {
 		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
 		return error;
 	}
 
-	if (!credentials_ok(user, passwd)) {
-		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
-		return error;
-	}
-
-	const cJSON *auth = cJSON_GetObjectItem(params, "auth");
+	const cJSON *auth = credentials_ok(user, passwd);
 	if (auth == NULL) {
-		cJSON *error = create_invalid_params_error(p, "no auth object available", user);
+		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
 		return error;
 	}
 
