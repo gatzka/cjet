@@ -30,11 +30,11 @@
 
 extern "C" {
 
-	bool credentials_ok(const char *user, char *passwd)
+	const cJSON *credentials_ok(const char *user, char *passwd)
 	{
 		(void)user;
 		(void)passwd;
-		return true;
+		return NULL;
 	}
 }
 
