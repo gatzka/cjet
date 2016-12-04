@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <crypt.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
@@ -125,13 +126,17 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		return NULL;
 	}
 
-	char *encrypted = crypt(passwd, password->valuestring);
+	struct crypt_data data;
+	data.initialized = 0;
+
+	char *encrypted = crypt_r(passwd, password->valuestring, &data);
 	for (char *p = passwd; *p != '\0'; p++) {
 		*p = '\0';
 	}
 
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
+		return NULL;
 	}
 
 	const cJSON *auth = NULL;
@@ -142,6 +147,5 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		}
 	}
 
-	free(encrypted);
 	return auth;
 }
