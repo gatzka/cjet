@@ -101,6 +101,10 @@ group_t get_groups(const cJSON *peer_groups)
 		return 0;
 	}
 
+	if (all_groups == NULL) {
+		return 0;
+	}
+
 	group_t groups = 0;
 	unsigned int array_size = cJSON_GetArraySize(peer_groups);
 	for (unsigned int i = 0; i < array_size; ++i) {
