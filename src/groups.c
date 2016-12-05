@@ -122,5 +122,9 @@ group_t get_groups(const cJSON *peer_groups)
 
 bool has_access(group_t has, group_t wants)
 {
+	if (all_groups == NULL) {
+		return true;
+	}
+
 	return (has & wants) != 0;
 }
