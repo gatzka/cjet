@@ -31,6 +31,7 @@
 #include "alloc.h"
 #include "compiler.h"
 #include "fetch.h"
+#include "groups.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
 #include "linux/linux_io.h"
@@ -510,6 +511,10 @@ error:
 
 static int add_fetch_to_state_and_notify(const struct peer *p, struct state_or_method *s, struct fetch *f)
 {
+	if (!has_access(s->fetch_groups, f->peer->fetch_groups)) {
+		return 0;
+	}
+
 	if (state_matches(s, f)) {
 		if (unlikely(add_fetch_to_state(s, f) != 0)) {
 			log_peer_err(p, "Can't add fetch to state %s owned by %s", s->path, get_peer_name(s->peer));
@@ -523,7 +528,7 @@ static int add_fetch_to_state_and_notify(const struct peer *p, struct state_or_m
 	return 0;
 }
 
-static int add_fetch_to_states_in_peer(struct peer *p, struct fetch *f)
+static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -554,7 +559,7 @@ cJSON *add_fetch_to_states(struct fetch *f)
 	struct list_head *tmp;
 	const struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
-		struct peer *p = list_entry(item, struct peer, next_peer);
+		const struct peer *p = list_entry(item, struct peer, next_peer);
 		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
 			return create_internal_error(p, "reason", "could not add fetch to state");
