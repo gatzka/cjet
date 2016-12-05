@@ -59,6 +59,7 @@ SET(CJET_FILES
         buffered_socket.c
         config.c
         fetch.c
+        groups.c
         http-parser/http_parser.c
         http_connection.c
         http_server.c

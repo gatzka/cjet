@@ -27,8 +27,10 @@
 #include <stddef.h>
 
 #include "authenticate.h"
+#include "groups.h"
 #include "json/cJSON.h"
 #include "list.h"
+#include "log.h"
 #include "peer.h"
 #include "response.h"
 
@@ -45,11 +47,12 @@ cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 		return error;
 	}
 
-	p->auth = cJSON_Duplicate(auth, 1);
-	if (p->auth == NULL) {
-		cJSON *error = create_invalid_params_error(p, "Could not allocate memory for auth object", user);
-		return error;
-	}
+	const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
+	p->fetch_groups = get_groups(fetch_groups);
+	const cJSON *set_groups = cJSON_GetObjectItem(auth, "setGroups");
+	p->set_groups = get_groups(set_groups);
+	const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
+	p->call_groups = get_groups(call_groups);
 
 	return NULL;
 }

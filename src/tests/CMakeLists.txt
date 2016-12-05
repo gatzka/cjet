@@ -62,6 +62,7 @@ add_library(jet STATIC
 	../authenticate.c
 	../config.c
  	../fetch.c
+ 	../groups.c
  	../info.c
  	../json/cJSON.c
  	../linux/jet_string.c

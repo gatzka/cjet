@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "groups.h"
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
@@ -52,7 +53,9 @@ struct peer {
 	int (*send_message)(const struct peer *p, char *rendered, size_t len);
 	void (*close)(struct peer *p);
 	struct eventloop *loop;
-	struct cJSON *auth;
+	group_t fetch_groups;
+	group_t set_groups;
+	group_t call_groups;
 	bool is_local_connection;
 };
 

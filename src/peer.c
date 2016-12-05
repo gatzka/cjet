@@ -80,9 +80,6 @@ void free_peer_resources(struct peer *p)
 		cjet_free(p->name);
 	}
 
-	if (p->auth != NULL) {
-		cJSON_Delete(p->auth);
-	}
 	--number_of_peers;
 }
 
@@ -94,7 +91,6 @@ int init_peer(struct peer *p, bool is_local_connection, struct eventloop *loop)
 	p->name = NULL;
 	p->is_local_connection = is_local_connection;
 	p->loop = loop;
-	p->auth = NULL;
 	INIT_LIST_HEAD(&p->next_peer);
 	INIT_LIST_HEAD(&p->state_list);
 	INIT_LIST_HEAD(&p->fetch_list);

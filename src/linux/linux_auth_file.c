@@ -37,6 +37,7 @@
 #include "alloc.h"
 #include "authenticate.h"
 #include "compiler.h"
+#include "groups.h"
 #include "json/cJSON.h"
 #include "log.h"
 
@@ -49,50 +50,72 @@ int load_passwd_data(const char *passwd_file)
 		return 0;
 	}
 
+	if (create_groups() < 0) {
+		return -1;
+	}
+
 	char *rp = realpath(passwd_file, NULL);
 	if (rp == NULL) {
-		return -1;
+		goto realpath_failed;
 	}
 
 	int fd = open(rp, O_RDONLY);
 	if (fd == -1) {
 		log_err("Cannot open passwd file: %s\n", passwd_file);
-		return -1;
+		goto open_failed;
 	}
-
-	free(rp);
 
 	off_t size = lseek(fd, 0, SEEK_END);
 	lseek(fd, 0, SEEK_SET);
 
-	int ret = 0;
 	void *p = mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
 	if (p == MAP_FAILED) {
 		log_err("Cannot mmap passwd file!\n");
-		ret = -1;
 		goto mmap_failed;
 	}
 
 	user_data = cJSON_ParseWithOpts(p, NULL, 0);
 	if (user_data == NULL) {
 		log_err("Cannot parse passwd file!\n");
-		ret = -1;
 		goto parse_failed;
 	}
 
 	users = cJSON_GetObjectItem(user_data, "users");
 	if (users == NULL) {
 		log_err("No user object in passwd file!\n");
-		ret = -1;
 		goto get_users_failed;
 	}
+
+	const cJSON *user = users->child;
+	while (user != NULL) {
+		const cJSON *auth = cJSON_GetObjectItem(user, "auth");
+		if (auth != NULL) {
+			const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
+			add_groups(fetch_groups);
+			const cJSON *set_groups = cJSON_GetObjectItem(auth, "setGroups");
+			add_groups(set_groups);
+			const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
+			add_groups(call_groups);
+		}
+		user = user->next;
+	}
+
+	munmap(p, size);
+	close(fd);
+	free(rp);
+
+	return 0;
 
 get_users_failed:
 parse_failed:
 	munmap(p, size);
 mmap_failed:
 	close(fd);
-	return ret;
+open_failed:
+	free(rp);
+realpath_failed:
+	free_groups();
+	return -1;
 }
 
 void free_passwd_data(void)
@@ -102,6 +125,8 @@ void free_passwd_data(void)
 		user_data = NULL;
 		users = NULL;
 	}
+
+	free_groups();
 }
 
 const cJSON *credentials_ok(const char *user_name, char *passwd)

@@ -113,6 +113,7 @@ StaticLibrary {
         "authenticate.c",
         "config.c",
         "fetch.c",
+        "groups.c",
         "info.c",
         "linux/jet_string.c",
         "parse.c",
