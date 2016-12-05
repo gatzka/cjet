@@ -72,7 +72,7 @@ int create_groups(void) {
 void free_groups(void)
 {
 	if (all_groups != NULL) {
-		cJSON_free(all_groups);
+		cJSON_Delete(all_groups);
 	}
 }
 
@@ -118,4 +118,13 @@ group_t get_groups(const cJSON *peer_groups)
 	}
 
 	return groups;
+}
+
+bool has_access(group_t has, group_t wants)
+{
+	if (all_groups == NULL) {
+		return true;
+	}
+
+	return (has & wants) != 0;
 }

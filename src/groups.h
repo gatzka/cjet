@@ -27,6 +27,7 @@
 #ifndef CJET_GROUPS_H
 #define CJET_GROUPS_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "json/cJSON.h"
@@ -41,6 +42,7 @@ int create_groups(void);
 void free_groups(void);
 int add_groups(const cJSON *groupArray);
 group_t get_groups(const cJSON *peer_groups);
+bool has_access(group_t has, group_t wants);
 
 #ifdef __cplusplus
 }
