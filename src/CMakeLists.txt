@@ -18,7 +18,7 @@ SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
-SET(CMAKE_C_FLAGS_RELEASE "-O2 -fno-asynchronous-unwind-tables")
+SET(CMAKE_C_FLAGS_RELEASE "-O3 -fno-asynchronous-unwind-tables")
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
         IF(NOT CMAKE_C_COMPILER_VERSION VERSION_LESS 5.0.0)
                 SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -flto")
@@ -38,7 +38,7 @@ IF(CMAKE_C_COMPILER_ID STREQUAL GNU AND CMAKE_C_COMPILER_VERSION VERSION_GREATER
 ENDIF()
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu,--as-needed")
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wstrict-overflow=2 -Wl,-O2,--gc-sections,-s")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wstrict-overflow=2 -Wl,-O3,--gc-sections,-s")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-Wl,-O0")
 
 IF(NOT CMAKE_BUILD_TYPE)
