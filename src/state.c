@@ -222,6 +222,13 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 			return error;
 	}
 
+	if (((what == STATE) && (!has_access(s->set_groups, p->set_groups))) ||
+		((what == METHOD) && (!has_access(s->call_groups, p->call_groups)))) {
+		error =
+			create_invalid_params_error(p, "request not authorized", path);
+		return error;
+	}
+
 	const cJSON *origin_request_id = cJSON_GetObjectItem(json_rpc, "id");
 	if ((origin_request_id != NULL) &&
 		((origin_request_id->type != cJSON_String) &&
