@@ -54,7 +54,7 @@ addons:
       description: "Build submitted via Travis CI"
     build_script_url: https://raw.githubusercontent.com/gatzka/cjet/coverity_scan/scripts/travis/travisci_build_coverity_scan.sh
     notification_email: stephan.gatzka@gmail.com
-    build_command_prepend: "cmake ../"
+    build_command_prepend: "cmake ."
     build_command: "make"
     branch_pattern: coverity_scan
 
