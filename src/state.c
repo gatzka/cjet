@@ -49,55 +49,53 @@ static bool is_state(const struct state_or_method *s)
 }
 
 #define FILL_GROUP(access_groups, json_key) \
-static int fill_##access_groups(struct state_or_method *s, const cJSON *access) \
+static cJSON *fill_##access_groups(struct state_or_method *s, const struct peer *p, const cJSON *access) \
 { \
 	if (access == NULL) { \
-		return 0; \
+		return NULL; \
 	} \
 \
 	const cJSON *groups = cJSON_GetObjectItem(access, json_key); \
 	if ((groups != NULL) && (groups->type != cJSON_Array)) { \
-		return -1; \
+		cJSON *error = create_invalid_params_error(p, "reason", #access_groups" is not an array"); \
+		return error; \
 	} \
 \
 	s->access_groups = get_groups(groups); \
 \
-	return 0; \
+	return NULL; \
 }
 
 FILL_GROUP(fetch_groups, "fetchGroups")
 FILL_GROUP(set_groups, "setGroups")
 FILL_GROUP(call_groups, "callGroups")
 
-static int fill_access(struct state_or_method *s, const cJSON *access)
+static cJSON *fill_access(struct state_or_method *s, const struct peer *p, const cJSON *access)
 {
-	int ret = fill_fetch_groups(s, access);
-	if (ret < 0) {
-		return -1;
+	cJSON *error = fill_fetch_groups(s, p, access);
+	if (error != NULL) {
+		return error;
 	}
+
 	if (is_state(s)) {
-		ret = fill_set_groups(s, access);
-		if (ret < 0) {
-			return -1;
+		error = fill_set_groups(s, p, access);
+		if (error != NULL) {
+			return error;
 		}
 	} else {
-		ret = fill_call_groups(s, access);
-		if (ret < 0) {
-			return -1;
+		error = fill_call_groups(s, p, access);
+		if (error != NULL) {
+			return error;
 		}
 	}
-	return 0;
+
+	return NULL;
 }
 
-static struct state_or_method *alloc_state(const char *path, const cJSON *value_object, const cJSON *access,
-				 struct peer *p, double timeout, int flags)
+static cJSON *init_state(struct state_or_method *s, const char *path, const cJSON *value_object, const cJSON *access,
+						 struct peer *p, double timeout, int flags)
 {
-	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
-	if (unlikely(s == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n",
-				 "state");
-		return NULL;
-	}
+	cJSON *error = NULL;
 
 	s->flags = flags;
 	s->timeout = timeout;
@@ -105,32 +103,37 @@ static struct state_or_method *alloc_state(const char *path, const cJSON *value_
 	s->fetcher_table = cjet_calloc(s->fetch_table_size, sizeof(struct fetch *));
 	if (s->fetcher_table == NULL) {
 		log_peer_err(p, "Could not allocate memory for fetch table!\n");
-		goto alloc_fetch_table_failed;
+		error =	create_internal_error(p, "reason", "not enough memory to create fetch table");
+		return error;
 	}
 
 	s->path = duplicate_string(path);
 	if (unlikely(s->path == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n",
-				 "path");
+		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
+		error =	create_internal_error(p, "reason", "not enough memory to copy path");
 		goto alloc_path_failed;
 	}
+
 	if (value_object != NULL) {
 		cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 		if (unlikely(value_copy == NULL)) {
 			log_peer_err(p, "Could not copy value object!\n");
+			error =	create_internal_error(p, "reason", "not enough memory to copy value");
 			goto value_copy_failed;
 		}
 		s->value = value_copy;
 	}
+
 	INIT_LIST_HEAD(&s->state_list);
 	s->peer = p;
 
-	if (fill_access(s, access) < 0) {
+	error = fill_access(s, p, access);
+	if (error != NULL) {
 		log_peer_err(p, "Could not fill access information!\n");
 		goto fill_access_failed;
 	}
 
-	return s;
+	return NULL;
 
 fill_access_failed:
 	if (s->value != NULL) {
@@ -140,9 +143,18 @@ value_copy_failed:
 	cjet_free(s->path);
 alloc_path_failed:
 	cjet_free(s->fetcher_table);
-alloc_fetch_table_failed:
-	cjet_free(s);
-	return NULL;
+	return error;
+}
+
+static struct state_or_method *alloc_state(const struct peer *p)
+{
+	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
+	if (unlikely(s == NULL)) {
+		log_peer_err(p, "Could not allocate memory for %s object!\n",
+				 "state");
+	}
+
+	return s;
 }
 
 static void free_state_or_method(struct state_or_method *s)
@@ -284,28 +296,33 @@ routed_message_creation_failed:
 
 cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
 {
+	cJSON *error;
 	struct state_or_method *s = state_table_get(path);
 	if (unlikely(s != NULL)) {
-		cJSON *error = create_invalid_params_error(p, "exists", path);
+		error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
-	s = alloc_state(path, value, access, p, routed_request_timeout_s, flags);
+
+	s = alloc_state(p);
 	if (unlikely(s == NULL)) {
-		cJSON *error =
-			create_internal_error(p, "reason", "not enough memory");
+		error =	create_internal_error(p, "reason", "not enough memory to allocate state");
+		return error;
+	}
+
+	error = init_state(s, path, value, access, p, routed_request_timeout_s, flags);
+	if (unlikely(error != NULL)) {
+		cjet_free(s);
 		return error;
 	}
 
 	if (unlikely(find_fetchers_for_state(s) != 0)) {
-		cJSON *error = create_internal_error(
-			p, "reason", "Can't notify fetching peer");
+		error = create_internal_error(p, "reason", "Can't notify fetching peer");
 		free_state_or_method(s);
 		return error;
 	}
 
 	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
-		cJSON *error =
-			create_internal_error(p, "reason", "state table full");
+		error =	create_internal_error(p, "reason", "state table full");
 		free_state_or_method(s);
 		return error;
 	}
