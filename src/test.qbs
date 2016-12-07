@@ -242,7 +242,7 @@ Project {
     }
 
     CppApplication {
-        name: "alloc_tests"
+        name: "alloc_test"
         type: ["application", "unittest"]
         consoleApplication: true
 
@@ -251,6 +251,18 @@ Project {
         files: [
             "linux/alloc.c",
             "tests/alloc_test.cpp",
+        ]
+    }
+
+    CppApplication {
+        name: "access_test"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends { name: "unittestSettings" }
+
+        files: [
+            "tests/access_test.cpp",
         ]
     }
 

@@ -261,6 +261,15 @@ TARGET_LINK_LIBRARIES(
 	${Boost_LIBRARIES}
 )
 
+SET(ACCESS_TEST
+	access_test.cpp
+)
+ADD_EXECUTABLE(access_test.bin ${ACCESS_TEST})
+TARGET_LINK_LIBRARIES(
+	access_test.bin
+	${Boost_LIBRARIES}
+)
+
 SET(BASE64_TEST
 	../linux/alloc.c
 	../base64.c
