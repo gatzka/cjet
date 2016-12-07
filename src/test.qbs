@@ -262,6 +262,8 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
+            "linux/alloc.c",
+            "linux/timer_linux.c",
             "tests/access_test.cpp",
         ]
     }
