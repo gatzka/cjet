@@ -50,13 +50,12 @@ ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigne
  * Nevertheless, I want to have the parameter io_vec const. Therefore I
  * selectively disabled the cast-qual warning.
  */
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
+_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 	for (unsigned int i = 0; i < count; i++) {
 		iov[i].iov_base = (void *)io_vec[i].iov_base;
 		iov[i].iov_len = io_vec[i].iov_len;
 	}
-#pragma GCC diagnostic pop
+_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
 }
 

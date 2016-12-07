@@ -118,10 +118,9 @@ enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
+_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 	epoll_ev.data.ptr = (void *)ev;
-#pragma GCC diagnostic pop
+_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
