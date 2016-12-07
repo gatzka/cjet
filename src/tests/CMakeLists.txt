@@ -262,11 +262,15 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ACCESS_TEST
+	../linux/alloc.c
+	../linux/timer_linux.c
 	access_test.cpp
+	log.cpp
 )
 ADD_EXECUTABLE(access_test.bin ${ACCESS_TEST})
 TARGET_LINK_LIBRARIES(
 	access_test.bin
+	jet
 	${Boost_LIBRARIES}
 )
 
