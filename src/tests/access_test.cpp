@@ -271,3 +271,19 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 0, "Number of emitted events != 0!");
 	remove_all_fetchers_from_peer(&fetch_peer);
 }
+
+
+BOOST_AUTO_TEST_CASE(add_group_twice)
+{
+	cJSON *groups = cJSON_CreateArray();
+	cJSON_AddItemToArray(groups, cJSON_CreateString(admins));
+	cJSON_AddItemToArray(groups, cJSON_CreateString(users));
+	cJSON_AddItemToArray(groups, cJSON_CreateString("viewers"));
+	cJSON_AddItemToArray(groups, cJSON_CreateString("viewers"));
+	create_groups();
+	int ret = add_groups(groups);
+	cJSON_Delete(groups);
+	BOOST_CHECK_MESSAGE(ret == 0, "adding a group twice failed!");
+	free_groups();
+}
+
