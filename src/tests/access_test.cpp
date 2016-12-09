@@ -31,6 +31,8 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
+#include <stdio.h>
+
 #include "authenticate.h"
 #include "eventloop.h"
 #include "fetch.h"
@@ -276,14 +278,29 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 BOOST_AUTO_TEST_CASE(add_group_twice)
 {
 	cJSON *groups = cJSON_CreateArray();
-	cJSON_AddItemToArray(groups, cJSON_CreateString(admins));
-	cJSON_AddItemToArray(groups, cJSON_CreateString(users));
 	cJSON_AddItemToArray(groups, cJSON_CreateString("viewers"));
 	cJSON_AddItemToArray(groups, cJSON_CreateString("viewers"));
 	create_groups();
 	int ret = add_groups(groups);
 	cJSON_Delete(groups);
 	BOOST_CHECK_MESSAGE(ret == 0, "adding a group twice failed!");
+	free_groups();
+}
+
+BOOST_AUTO_TEST_CASE(add_too_many_groups)
+{
+	create_groups();
+
+	cJSON *groups = cJSON_CreateArray();
+	for (unsigned int i = 0; i <= sizeof(group_t) * 8; i++) {
+		char buffer[10];
+		::sprintf(buffer, "%s%d", "viewer", i);
+		cJSON_AddItemToArray(groups, cJSON_CreateString(buffer));
+	}
+
+	int ret = add_groups(groups);
+	cJSON_Delete(groups);
+	BOOST_CHECK_MESSAGE(ret == -1, "adding lots of groups did not fail!");
 	free_groups();
 }
 
