@@ -89,6 +89,8 @@ int add_groups(const cJSON *group_array)
 			if (add_group(group->valuestring) < 0) {
 				return -1;
 			}
+		} else {
+			return -1;
 		}
 	}
 
