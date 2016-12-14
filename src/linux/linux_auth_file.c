@@ -91,11 +91,17 @@ int load_passwd_data(const char *passwd_file)
 		const cJSON *auth = cJSON_GetObjectItem(user, "auth");
 		if (auth != NULL) {
 			const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
-			add_groups(fetch_groups);
+			if (fetch_groups != NULL) {
+				add_groups(fetch_groups);
+			}
 			const cJSON *set_groups = cJSON_GetObjectItem(auth, "setGroups");
-			add_groups(set_groups);
+			if (set_groups != NULL) {
+				add_groups(set_groups);
+			}
 			const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
-			add_groups(call_groups);
+			if (call_groups != NULL) {
+				add_groups(call_groups);
+			}
 		}
 		user = user->next;
 	}

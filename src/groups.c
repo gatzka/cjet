@@ -78,8 +78,8 @@ void free_groups(void)
 
 int add_groups(const cJSON *group_array)
 {
-	if ((group_array == NULL) || (group_array->type != cJSON_Array)) {
-		return 0;
+	if ((group_array->type != cJSON_Array)) {
+		return -1;
 	}
 
 	unsigned int array_size = cJSON_GetArraySize(group_array);
