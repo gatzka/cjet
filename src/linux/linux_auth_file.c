@@ -92,15 +92,26 @@ int load_passwd_data(const char *passwd_file)
 		if (auth != NULL) {
 			const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
 			if (fetch_groups != NULL) {
-				add_groups(fetch_groups);
+				if (add_groups(fetch_groups) < 0) {
+					log_err("Fetch group is not an array in passwd file!\n");
+					goto add_fetch_groups_failed;
+				}
 			}
+
 			const cJSON *set_groups = cJSON_GetObjectItem(auth, "setGroups");
 			if (set_groups != NULL) {
-				add_groups(set_groups);
+				if (add_groups(set_groups) < 0) {
+					log_err("Set group is not an array in passwd file!\n");
+					goto add_set_groups_failed;
+				}
 			}
+
 			const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
 			if (call_groups != NULL) {
-				add_groups(call_groups);
+				if (add_groups(call_groups) < 0) {
+					log_err("Call group is not an array in passwd file!\n");
+					goto add_call_groups_failed;
+				}
 			}
 		}
 		user = user->next;
@@ -112,6 +123,9 @@ int load_passwd_data(const char *passwd_file)
 
 	return 0;
 
+add_call_groups_failed:
+add_set_groups_failed:
+add_fetch_groups_failed:
 get_users_failed:
 parse_failed:
 	munmap(p, size);
