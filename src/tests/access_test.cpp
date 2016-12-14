@@ -304,3 +304,13 @@ BOOST_AUTO_TEST_CASE(add_too_many_groups)
 	free_groups();
 }
 
+BOOST_AUTO_TEST_CASE(add_non_array_group)
+{
+	create_groups();
+
+	cJSON *groups = cJSON_CreateFalse();
+	int ret = add_groups(groups);
+	cJSON_Delete(groups);
+	BOOST_CHECK_MESSAGE(ret == -1, "adding a non-array group did not fail!");
+	free_groups();
+}
