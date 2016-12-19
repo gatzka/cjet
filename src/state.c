@@ -168,7 +168,7 @@ static void free_state_or_method(struct element *e)
 	cjet_free(e);
 }
 
-bool state_is_fetch_only(struct element *e)
+bool state_is_fetch_only(const struct element *e)
 {
 	if ((e->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
 		return true;
