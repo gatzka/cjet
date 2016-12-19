@@ -71,7 +71,7 @@ add_library(jet STATIC
  	../peer.c
  	../response.c
  	../router.c
- 	../state.c
+ 	../element.c
  	../table.c
 )
 

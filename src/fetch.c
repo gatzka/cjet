@@ -39,7 +39,7 @@
 #include "log.h"
 #include "peer.h"
 #include "response.h"
-#include "state.h"
+#include "element.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 

@@ -112,6 +112,7 @@ StaticLibrary {
     files: [
         "authenticate.c",
         "config.c",
+        "element.c",
         "fetch.c",
         "groups.c",
         "info.c",
@@ -120,7 +121,6 @@ StaticLibrary {
         "peer.c",
         "response.c",
         "router.c",
-        "state.c",
         "table.c",
         "linux/uuid.c",
         "tests/log.cpp"

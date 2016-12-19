@@ -41,7 +41,7 @@
 #include "peer.h"
 #include "response.h"
 #include "router.h"
-#include "state.h"
+#include "element.h"
 
 static const char *get_path_from_params(const struct peer *p, const cJSON *params, cJSON **err)
 {

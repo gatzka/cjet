@@ -40,7 +40,7 @@
 #include "log.h"
 #include "peer.h"
 #include "router.h"
-#include "state.h"
+#include "element.h"
 #include "util.h"
 
 static LIST_HEAD(peer_list);

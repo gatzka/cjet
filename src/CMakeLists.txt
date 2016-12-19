@@ -58,6 +58,7 @@ SET(CJET_FILES
         base64.c
         buffered_socket.c
         config.c
+        element.c
         fetch.c
         groups.c
         http-parser/http_parser.c
@@ -71,7 +72,6 @@ SET(CJET_FILES
         router.c
         sha1/sha1.c
         socket_peer.c
-        state.c
         table.c
         websocket.c
         websocket_peer.c
