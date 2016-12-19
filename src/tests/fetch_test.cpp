@@ -1160,3 +1160,35 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
 	remove_all_fetchers_from_peer(fetch_peer_1);
 	cJSON_Delete(params);
 }
+
+BOOST_FIXTURE_TEST_CASE(fetch_all, F)
+{
+	static const int number_of_paths = 11;
+
+	for (unsigned int i = 0; i < number_of_paths; i++) {
+		std::ostringstream oss;
+		oss << "foo" << i;
+		int state_value = 12345;
+		cJSON *value = cJSON_CreateNumber(state_value);
+		cJSON *error = add_state_or_method_to_peer(owner_peer, oss.str().c_str(), value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		BOOST_CHECK(error == NULL);
+		cJSON_Delete(value);
+
+		struct state_or_method *s = get_state(oss.str().c_str());
+		BOOST_CHECK(s->value->valueint == state_value);
+	}
+
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "id", "fetch_id_1");
+
+	struct fetch *f = NULL;
+	cJSON *error = add_fetch_to_peer(fetch_peer_1, params, &f);
+	BOOST_REQUIRE(error == NULL);
+	error = add_fetch_to_states(f);
+	BOOST_REQUIRE(error == NULL);
+
+	BOOST_CHECK(fetch_events.size() == number_of_paths);
+	remove_all_fetchers_from_peer(fetch_peer_1);
+	cJSON_Delete(params);
+}
