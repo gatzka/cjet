@@ -43,7 +43,6 @@ typedef int (*match_func)(const struct path_matcher *pm, const char *state_path)
 
 struct path_matcher {
 	match_func match_function;
-	uintptr_t cookie;
 	unsigned int number_of_path_elements;
 	char *path_elements[1];
 };
