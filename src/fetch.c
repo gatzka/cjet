@@ -444,7 +444,7 @@ static int add_fetch_to_state(struct element *e, struct fetch *f)
 	return add_fetch_to_state(e, f);
 }
 
-static int notify_fetching_peer(struct element *e, struct fetch *f,
+static int notify_fetching_peer(const struct element *e, struct fetch *f,
 	const char *event_name)
 {
 	cJSON *root = cJSON_CreateObject();
@@ -540,7 +540,7 @@ static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
 	return 0;
 }
 
-int notify_fetchers(struct element *e, const char *event_name)
+int notify_fetchers(const struct element *e, const char *event_name)
 {
 	for (unsigned int i = 0; i < e->fetch_table_size; i++) {
 		struct fetch *f = e->fetcher_table[i];
