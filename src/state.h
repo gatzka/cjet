@@ -39,7 +39,10 @@
 extern "C" {
 #endif
 
-struct state_or_method {
+/*
+ * A struct element represent either a state or a method.
+ */
+struct element {
 	struct list_head state_list;
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */
@@ -57,7 +60,7 @@ enum type { STATE, METHOD };
 
 static const int FETCH_ONLY_FLAG = 0x01;
 
-bool state_is_fetch_only(struct state_or_method *s);
+bool state_is_fetch_only(struct element *e);
 cJSON *change_state(const struct peer *p, const char *path, const cJSON *value);
 cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	const cJSON *timeout, const cJSON *json_rpc, enum type what);

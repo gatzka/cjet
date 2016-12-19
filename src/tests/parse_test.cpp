@@ -124,9 +124,9 @@ struct F {
 	struct peer set_peer;
 };
 
-static struct state_or_method *get_state(const char *path)
+static struct element *get_state(const char *path)
 {
-	return (struct state_or_method *)state_table_get(path);
+	return (struct element *)state_table_get(path);
 }
 
 static cJSON *create_correct_add_state(const char *path)
@@ -615,8 +615,8 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_timeout, F)
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK_CLOSE(s->timeout, timeout_s, 0.1);
+	struct element *e = get_state(path);
+	BOOST_CHECK_CLOSE(e->timeout, timeout_s, 0.1);
 }
 
 BOOST_FIXTURE_TEST_CASE(parse_add_state_with_negative_timeout, F)
@@ -630,8 +630,8 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_negative_timeout, F)
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK_MESSAGE(s == NULL, "State added even with negative timeout!");
+	struct element *e = get_state(path);
+	BOOST_CHECK_MESSAGE(e == NULL, "State added even with negative timeout!");
 	check_invalid_params_error();
 }
 
@@ -647,8 +647,8 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_illegal_timeout, F)
 	cJSON_Delete(correct_json);
 	BOOST_CHECK(ret == 0);
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK_MESSAGE(s == NULL, "State added even with wrong timeout!");
+	struct element *e = get_state(path);
+	BOOST_CHECK_MESSAGE(e == NULL, "State added even with wrong timeout!");
 	check_invalid_params_error();
 }
 

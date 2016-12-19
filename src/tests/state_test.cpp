@@ -65,9 +65,9 @@ int send_message(const struct peer *p, char *rendered, size_t len)
 	return 0;
 }
 
-static struct state_or_method *get_state(const char *path)
+static struct element *get_state(const char *path)
 {
-	return (struct state_or_method *)state_table_get(path);
+	return (struct element *)state_table_get(path);
 }
 
 static cJSON *parse_send_buffer(void)
@@ -257,8 +257,8 @@ BOOST_FIXTURE_TEST_CASE(add_state, F)
 
 	cJSON_Delete(value);
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 }
 
 BOOST_FIXTURE_TEST_CASE(add_duplicate_state, F)
@@ -324,8 +324,8 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(new_value);
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == 4321);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == 4321);
 }
 
 BOOST_FIXTURE_TEST_CASE(change_not_by_owner, F)

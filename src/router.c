@@ -198,7 +198,7 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-cJSON *setup_routing_information(struct state_or_method *s, const cJSON *timeout, struct routing_request *request)
+cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct routing_request *request)
 {
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
@@ -216,10 +216,10 @@ cJSON *setup_routing_information(struct state_or_method *s, const cJSON *timeout
 			}
 		}
 	} else {
-		timeout_ns = convert_seconds_to_nsec(s->timeout);
+		timeout_ns = convert_seconds_to_nsec(e->timeout);
 	}
 
-	if (unlikely(cjet_timer_init(&request->timer, s->peer->loop) < 0)) {
+	if (unlikely(cjet_timer_init(&request->timer, e->peer->loop) < 0)) {
 		cJSON *error = create_internal_error(
 			request->requesting_peer, "reason", "could not init timer for routing request");
 		return error;
@@ -234,7 +234,7 @@ cJSON *setup_routing_information(struct state_or_method *s, const cJSON *timeout
 
 	struct value_route_table val;
 	val.vals[0] = request;
-	if (unlikely(HASHTABLE_PUT(route_table, s->peer->routing_table,
+	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
 			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
 		cJSON *error = create_internal_error(
 			request->requesting_peer, "reason", "routing table full");

@@ -43,13 +43,13 @@
 #include "table.h"
 #include "uuid.h"
 
-static bool is_state(const struct state_or_method *s)
+static bool is_state(const struct element *e)
 {
-	return (s->value != NULL);
+	return (e->value != NULL);
 }
 
 #define FILL_GROUP(access_groups, json_key) \
-static cJSON *fill_##access_groups(struct state_or_method *s, const struct peer *p, const cJSON *access) \
+static cJSON *fill_##access_groups(struct element *e, const struct peer *p, const cJSON *access) \
 { \
 	if (access == NULL) { \
 		return NULL; \
@@ -61,7 +61,7 @@ static cJSON *fill_##access_groups(struct state_or_method *s, const struct peer 
 		return error; \
 	} \
 \
-	s->access_groups = get_groups(groups); \
+	e->access_groups = get_groups(groups); \
 \
 	return NULL; \
 }
@@ -70,20 +70,20 @@ FILL_GROUP(fetch_groups, "fetchGroups")
 FILL_GROUP(set_groups, "setGroups")
 FILL_GROUP(call_groups, "callGroups")
 
-static cJSON *fill_access(struct state_or_method *s, const struct peer *p, const cJSON *access)
+static cJSON *fill_access(struct element *e, const struct peer *p, const cJSON *access)
 {
-	cJSON *error = fill_fetch_groups(s, p, access);
+	cJSON *error = fill_fetch_groups(e, p, access);
 	if (error != NULL) {
 		return error;
 	}
 
-	if (is_state(s)) {
-		error = fill_set_groups(s, p, access);
+	if (is_state(e)) {
+		error = fill_set_groups(e, p, access);
 		if (error != NULL) {
 			return error;
 		}
 	} else {
-		error = fill_call_groups(s, p, access);
+		error = fill_call_groups(e, p, access);
 		if (error != NULL) {
 			return error;
 		}
@@ -92,23 +92,23 @@ static cJSON *fill_access(struct state_or_method *s, const struct peer *p, const
 	return NULL;
 }
 
-static cJSON *init_state(struct state_or_method *s, const char *path, const cJSON *value_object, const cJSON *access,
+static cJSON *init_state(struct element *e, const char *path, const cJSON *value_object, const cJSON *access,
 						 struct peer *p, double timeout, int flags)
 {
 	cJSON *error = NULL;
 
-	s->flags = flags;
-	s->timeout = timeout;
-	s->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
-	s->fetcher_table = cjet_calloc(s->fetch_table_size, sizeof(struct fetch *));
-	if (s->fetcher_table == NULL) {
+	e->flags = flags;
+	e->timeout = timeout;
+	e->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
+	e->fetcher_table = cjet_calloc(e->fetch_table_size, sizeof(struct fetch *));
+	if (e->fetcher_table == NULL) {
 		log_peer_err(p, "Could not allocate memory for fetch table!\n");
 		error =	create_internal_error(p, "reason", "not enough memory to create fetch table");
 		return error;
 	}
 
-	s->path = duplicate_string(path);
-	if (unlikely(s->path == NULL)) {
+	e->path = duplicate_string(path);
+	if (unlikely(e->path == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
 		error =	create_internal_error(p, "reason", "not enough memory to copy path");
 		goto alloc_path_failed;
@@ -121,13 +121,13 @@ static cJSON *init_state(struct state_or_method *s, const char *path, const cJSO
 			error =	create_internal_error(p, "reason", "not enough memory to copy value");
 			goto value_copy_failed;
 		}
-		s->value = value_copy;
+		e->value = value_copy;
 	}
 
-	INIT_LIST_HEAD(&s->state_list);
-	s->peer = p;
+	INIT_LIST_HEAD(&e->state_list);
+	e->peer = p;
 
-	error = fill_access(s, p, access);
+	error = fill_access(e, p, access);
 	if (error != NULL) {
 		log_peer_err(p, "Could not fill access information!\n");
 		goto fill_access_failed;
@@ -136,41 +136,41 @@ static cJSON *init_state(struct state_or_method *s, const char *path, const cJSO
 	return NULL;
 
 fill_access_failed:
-	if (s->value != NULL) {
-		cJSON_Delete(s->value);
+	if (e->value != NULL) {
+		cJSON_Delete(e->value);
 	}
 value_copy_failed:
-	cjet_free(s->path);
+	cjet_free(e->path);
 alloc_path_failed:
-	cjet_free(s->fetcher_table);
+	cjet_free(e->fetcher_table);
 	return error;
 }
 
-static struct state_or_method *alloc_state(const struct peer *p)
+static struct element *alloc_state(const struct peer *p)
 {
-	struct state_or_method *s = cjet_calloc(1, sizeof(*s));
-	if (unlikely(s == NULL)) {
+	struct element *e = cjet_calloc(1, sizeof(*e));
+	if (unlikely(e == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
 				 "state");
 	}
 
-	return s;
+	return e;
 }
 
-static void free_state_or_method(struct state_or_method *s)
+static void free_state_or_method(struct element *e)
 {
-	if (s->value != NULL) {
-		cJSON_Delete(s->value);
+	if (e->value != NULL) {
+		cJSON_Delete(e->value);
 	}
 
-	cjet_free(s->path);
-	cjet_free(s->fetcher_table);
-	cjet_free(s);
+	cjet_free(e->path);
+	cjet_free(e->fetcher_table);
+	cjet_free(e);
 }
 
-bool state_is_fetch_only(struct state_or_method *s)
+bool state_is_fetch_only(struct element *e)
 {
-	if ((s->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
+	if ((e->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
 		return true;
 	} else {
 		return false;
@@ -179,18 +179,18 @@ bool state_is_fetch_only(struct state_or_method *s)
 
 cJSON *change_state(const struct peer *p, const char *path, const cJSON *value)
 {
-	struct state_or_method *s = state_table_get(path);
-	if (unlikely(s == NULL)) {
+	struct element *e = state_table_get(path);
+	if (unlikely(e == NULL)) {
 		cJSON *error =
 			create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
-	if (unlikely(s->peer != p)) {
+	if (unlikely(e->peer != p)) {
 		cJSON *error =
 			create_invalid_params_error(p, "not owner of state", path);
 		return error;
 	}
-	if (unlikely(s->value == NULL)) {
+	if (unlikely(e->value == NULL)) {
 		cJSON *error =
 			create_invalid_params_error(p, "change on method not possible", path);
 		return error;
@@ -201,9 +201,9 @@ cJSON *change_state(const struct peer *p, const char *path, const cJSON *value)
 			create_internal_error(p, "reason", "not enough memory");
 		return error;
 	}
-	cJSON_Delete(s->value);
-	s->value = value_copy;
-	if (unlikely(notify_fetchers(s, "change") != 0)) {
+	cJSON_Delete(e->value);
+	e->value = value_copy;
+	if (unlikely(notify_fetchers(e, "change") != 0)) {
 		cJSON *error = create_internal_error(
 			p, "reason", "Can't notify fetching peer");
 		return error;
@@ -215,27 +215,27 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		const cJSON *timeout, const cJSON *json_rpc, enum type what)
 {
 	cJSON *error;
-	struct state_or_method *s = state_table_get(path);
-	if (unlikely(s == NULL)) {
+	struct element *e = state_table_get(path);
+	if (unlikely(e == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 
-	if (unlikely(state_is_fetch_only(s))) {
+	if (unlikely(state_is_fetch_only(e))) {
 		error = create_invalid_params_error(
 			p, "fetchOnly", path);
 		return error;
 	}
 
-	if (unlikely(((what == STATE) && (s->value == NULL)) ||
-		((what == METHOD) && (s->value != NULL)))) {
+	if (unlikely(((what == STATE) && (e->value == NULL)) ||
+		((what == METHOD) && (e->value != NULL)))) {
 			error =
 				create_invalid_params_error(p, "set on method / call on state not possible", path);
 			return error;
 	}
 
-	if (((what == STATE) && (!has_access(s->set_groups, p->set_groups))) ||
-		((what == METHOD) && (!has_access(s->call_groups, p->call_groups)))) {
+	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
+		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
 		error =
 			create_invalid_params_error(p, "request not authorized", path);
 		return error;
@@ -250,7 +250,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		return error;
 	}
 
-	struct routing_request *request = alloc_routing_request(p, s->peer, origin_request_id);
+	struct routing_request *request = alloc_routing_request(p, e->peer, origin_request_id);
 	if (unlikely(request == NULL)) {
 		error = create_internal_error(
 			p, "reason", "could not create routing request");
@@ -264,7 +264,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto routed_message_creation_failed;
 	}
 
-	error = setup_routing_information(s, timeout, request);
+	error = setup_routing_information(e, timeout, request);
 	if (unlikely(error != NULL)) {
 		goto delete_json;
 	}
@@ -276,7 +276,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto delete_json;
 	}
 
-	if (unlikely(s->peer->send_message(s->peer, rendered_message,
+	if (unlikely(e->peer->send_message(e->peer, rendered_message,
 				  strlen(rendered_message)) != 0)) {
 		error = create_internal_error(
 			p, "reason", "could not send routing information");
@@ -297,47 +297,47 @@ routed_message_creation_failed:
 cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
 {
 	cJSON *error;
-	struct state_or_method *s = state_table_get(path);
-	if (unlikely(s != NULL)) {
+	struct element *e = state_table_get(path);
+	if (unlikely(e != NULL)) {
 		error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
 
-	s = alloc_state(p);
-	if (unlikely(s == NULL)) {
+	e = alloc_state(p);
+	if (unlikely(e == NULL)) {
 		error =	create_internal_error(p, "reason", "not enough memory to allocate state");
 		return error;
 	}
 
-	error = init_state(s, path, value, access, p, routed_request_timeout_s, flags);
+	error = init_state(e, path, value, access, p, routed_request_timeout_s, flags);
 	if (unlikely(error != NULL)) {
-		cjet_free(s);
+		cjet_free(e);
 		return error;
 	}
 
-	if (unlikely(find_fetchers_for_state(s) != 0)) {
+	if (unlikely(find_fetchers_for_state(e) != 0)) {
 		error = create_internal_error(p, "reason", "Can't notify fetching peer");
-		free_state_or_method(s);
+		free_state_or_method(e);
 		return error;
 	}
 
-	if (unlikely(state_table_put(s->path, s) != HASHTABLE_SUCCESS)) {
+	if (unlikely(state_table_put(e->path, e) != HASHTABLE_SUCCESS)) {
 		error =	create_internal_error(p, "reason", "state table full");
-		free_state_or_method(s);
+		free_state_or_method(e);
 		return error;
 	}
 
-	list_add_tail(&s->state_list, &p->state_list);
+	list_add_tail(&e->state_list, &p->state_list);
 
 	return NULL;
 }
 
-static void remove_state_or_method(struct state_or_method *s)
+static void remove_state_or_method(struct element *e)
 {
-	notify_fetchers(s, "remove");
-	list_del(&s->state_list);
-	state_table_remove(s->path);
-	free_state_or_method(s);
+	notify_fetchers(e, "remove");
+	list_del(&e->state_list);
+	state_table_remove(e->path);
+	free_state_or_method(e);
 }
 
 int remove_state_or_method_from_peer(const struct peer *p, const char *path)
@@ -346,9 +346,9 @@ int remove_state_or_method_from_peer(const struct peer *p, const char *path)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list)
 	{
-		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
-		if (strcmp(s->path, path) == 0) {
-			remove_state_or_method(s);
+		struct element *e = list_entry(item, struct element, state_list);
+		if (strcmp(e->path, path) == 0) {
+			remove_state_or_method(e);
 			return 0;
 		}
 	}
@@ -361,7 +361,7 @@ void remove_all_states_and_methods_from_peer(struct peer *p)
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->state_list)
 	{
-		struct state_or_method *s = list_entry(item, struct state_or_method, state_list);
-		remove_state_or_method(s);
+		struct element *e = list_entry(item, struct element, state_list);
+		remove_state_or_method(e);
 	}
 }

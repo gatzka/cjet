@@ -37,7 +37,7 @@ extern "C" {
 #endif
 
 struct path_matcher;
-struct state_or_method;
+struct element;
 
 typedef int (*match_func)(const struct path_matcher *pm, const char *state_path);
 
@@ -60,9 +60,9 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *params);
 void remove_all_fetchers_from_peer(struct peer *p);
 cJSON *add_fetch_to_states(struct fetch *f);
-int find_fetchers_for_state(struct state_or_method *s);
+int find_fetchers_for_state(struct element *e);
 
-int notify_fetchers(struct state_or_method *s, const char *event_name);
+int notify_fetchers(struct element *e, const char *event_name);
 
 #ifdef __cplusplus
 }

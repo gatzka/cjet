@@ -326,9 +326,9 @@ struct F {
 	}
 };
 
-static struct state_or_method *get_state(const char *path)
+static struct element *get_state(const char *path)
 {
-	return (struct state_or_method *)state_table_get(path);
+	return (struct element *)state_table_get(path);
 }
 
 static cJSON *create_fetch_with_illegal_fetchid()
@@ -493,8 +493,8 @@ BOOST_FIXTURE_TEST_CASE(lots_of_fetches_to_single_state, F)
 
 		cJSON_Delete(value);
 	}
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 
 	unsigned int i;
 	for (i = 0; i <= CONFIG_INITIAL_FETCH_TABLE_SIZE; i++) {
@@ -535,8 +535,8 @@ BOOST_FIXTURE_TEST_CASE(multiple_fetches_before_state_add, F)
 
 		cJSON_Delete(value);
 	}
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 	
 	BOOST_CHECK(fetch_events.size() == i);
 	remove_all_fetchers_from_peer(fetch_peer_1);
@@ -560,8 +560,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 		cJSON_Delete(value);
 	}
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 
 	{
 		struct fetch *f = NULL;
@@ -742,8 +742,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 		cJSON_Delete(value);
 	}
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 
 	{
 		struct fetch *f = NULL;
@@ -896,8 +896,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON_Delete(value);
 	}
 
-	struct state_or_method *s = get_state(path);
-	BOOST_CHECK(s->value->valueint == state_value);
+	struct element *e = get_state(path);
+	BOOST_CHECK(e->value->valueint == state_value);
 
 
 	{
@@ -1175,8 +1175,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_all, F)
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 
-		struct state_or_method *s = get_state(oss.str().c_str());
-		BOOST_CHECK(s->value->valueint == state_value);
+		struct element *e = get_state(oss.str().c_str());
+		BOOST_CHECK(e->value->valueint == state_value);
 	}
 
 	cJSON *params = cJSON_CreateObject();
