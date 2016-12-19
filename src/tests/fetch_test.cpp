@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <list>
+#include <sstream>
 
 #include "eventloop.h"
 #include "json/cJSON.h"
