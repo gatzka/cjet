@@ -87,10 +87,10 @@ int main(int argc, char **argv)
 	signal(SIGPIPE, SIG_IGN);
 
 	int ret = EXIT_SUCCESS;
-	if ((state_hashtable_create()) == -1) {
+	if ((element_hashtable_create()) == -1) {
 		log_err("Cannot allocate hashtable for states!\n");
 		ret = EXIT_FAILURE;
-		goto state_hashtable_create_failed;
+		goto element_hashtable_create_failed;
 	}
 
 	struct eventloop_epoll eloop = {
@@ -114,8 +114,8 @@ int main(int argc, char **argv)
 	log_info("%s stopped", CJET_NAME);
 
 run_io_failed:
-	state_hashtable_delete();
-state_hashtable_create_failed:
+	element_hashtable_delete();
+element_hashtable_create_failed:
 	free_passwd_data();
 	return ret;
 }

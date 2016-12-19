@@ -301,7 +301,7 @@ struct F {
 		loop.remove = fake_remove;
 
 		init_parser();
-		state_hashtable_create();
+		element_hashtable_create();
 		owner_peer = alloc_peer();
 		set_peer = alloc_peer();
 		fetch_peer_1 = alloc_peer();
@@ -322,13 +322,13 @@ struct F {
 		free_peer(fetch_peer_1);
 		free_peer(set_peer);
 		free_peer(owner_peer);
-		state_hashtable_delete();
+		element_hashtable_delete();
 	}
 };
 
 static struct element *get_state(const char *path)
 {
-	return (struct element *)state_table_get(path);
+	return (struct element *)element_table_get(path);
 }
 
 static cJSON *create_fetch_with_illegal_fetchid()
@@ -488,7 +488,7 @@ BOOST_FIXTURE_TEST_CASE(lots_of_fetches_to_single_state, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -530,7 +530,7 @@ BOOST_FIXTURE_TEST_CASE(multiple_fetches_before_state_add, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -555,7 +555,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -737,7 +737,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 	}
@@ -890,7 +890,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		cJSON *value = cJSON_CreateNumber(state_value);
 
-		cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 
 		cJSON_Delete(value);
@@ -941,7 +941,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		error = add_fetch_to_states(f);
 		BOOST_REQUIRE(error == NULL);
 
-		remove_state_or_method_from_peer(owner_peer, path);
+		remove_element_from_peer(owner_peer, path);
 
 		BOOST_CHECK(fetch_events.size() == 2);
 		cJSON *json = fetch_events.front();
@@ -1133,7 +1133,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
 {
 	const char *path = "theMethod";
 
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *error = add_element_to_peer(owner_peer, path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	struct fetch *f = NULL;
@@ -1171,7 +1171,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_all, F)
 		oss << "foo" << i;
 		int state_value = 12345;
 		cJSON *value = cJSON_CreateNumber(state_value);
-		cJSON *error = add_state_or_method_to_peer(owner_peer, oss.str().c_str(), value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+		cJSON *error = add_element_to_peer(owner_peer, oss.str().c_str(), value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 		BOOST_CHECK(error == NULL);
 		cJSON_Delete(value);
 

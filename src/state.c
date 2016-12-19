@@ -92,7 +92,7 @@ static cJSON *fill_access(struct element *e, const struct peer *p, const cJSON *
 	return NULL;
 }
 
-static cJSON *init_state(struct element *e, const char *path, const cJSON *value_object, const cJSON *access,
+static cJSON *init_element(struct element *e, const char *path, const cJSON *value_object, const cJSON *access,
 						 struct peer *p, double timeout, int flags)
 {
 	cJSON *error = NULL;
@@ -124,7 +124,7 @@ static cJSON *init_state(struct element *e, const char *path, const cJSON *value
 		e->value = value_copy;
 	}
 
-	INIT_LIST_HEAD(&e->state_list);
+	INIT_LIST_HEAD(&e->element_list);
 	e->peer = p;
 
 	error = fill_access(e, p, access);
@@ -146,18 +146,18 @@ alloc_path_failed:
 	return error;
 }
 
-static struct element *alloc_state(const struct peer *p)
+static struct element *alloc_element(const struct peer *p)
 {
 	struct element *e = cjet_calloc(1, sizeof(*e));
 	if (unlikely(e == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
-				 "state");
+				 "element");
 	}
 
 	return e;
 }
 
-static void free_state_or_method(struct element *e)
+static void free_element(struct element *e)
 {
 	if (e->value != NULL) {
 		cJSON_Delete(e->value);
@@ -168,7 +168,7 @@ static void free_state_or_method(struct element *e)
 	cjet_free(e);
 }
 
-bool state_is_fetch_only(const struct element *e)
+bool element_is_fetch_only(const struct element *e)
 {
 	if ((e->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
 		return true;
@@ -179,7 +179,7 @@ bool state_is_fetch_only(const struct element *e)
 
 cJSON *change_state(const struct peer *p, const char *path, const cJSON *value)
 {
-	struct element *e = state_table_get(path);
+	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
 		cJSON *error =
 			create_invalid_params_error(p, "not exists", path);
@@ -215,13 +215,13 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		const cJSON *timeout, const cJSON *json_rpc, enum type what)
 {
 	cJSON *error;
-	struct element *e = state_table_get(path);
+	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
 		error = create_invalid_params_error(p, "not exists", path);
 		return error;
 	}
 
-	if (unlikely(state_is_fetch_only(e))) {
+	if (unlikely(element_is_fetch_only(e))) {
 		error = create_invalid_params_error(
 			p, "fetchOnly", path);
 		return error;
@@ -230,7 +230,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
 		((what == METHOD) && (e->value != NULL)))) {
 			error =
-				create_invalid_params_error(p, "set on method / call on state not possible", path);
+				create_invalid_params_error(p, "set/call on element not possible", path);
 			return error;
 	}
 
@@ -294,74 +294,74 @@ routed_message_creation_failed:
 	return error;
 }
 
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
+cJSON *add_element_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
 {
 	cJSON *error;
-	struct element *e = state_table_get(path);
+	struct element *e = element_table_get(path);
 	if (unlikely(e != NULL)) {
 		error = create_invalid_params_error(p, "exists", path);
 		return error;
 	}
 
-	e = alloc_state(p);
+	e = alloc_element(p);
 	if (unlikely(e == NULL)) {
-		error =	create_internal_error(p, "reason", "not enough memory to allocate state");
+		error =	create_internal_error(p, "reason", "not enough memory to allocate jet element");
 		return error;
 	}
 
-	error = init_state(e, path, value, access, p, routed_request_timeout_s, flags);
+	error = init_element(e, path, value, access, p, routed_request_timeout_s, flags);
 	if (unlikely(error != NULL)) {
 		cjet_free(e);
 		return error;
 	}
 
-	if (unlikely(find_fetchers_for_state(e) != 0)) {
+	if (unlikely(find_fetchers_for_element(e) != 0)) {
 		error = create_internal_error(p, "reason", "Can't notify fetching peer");
-		free_state_or_method(e);
+		free_element(e);
 		return error;
 	}
 
-	if (unlikely(state_table_put(e->path, e) != HASHTABLE_SUCCESS)) {
-		error =	create_internal_error(p, "reason", "state table full");
-		free_state_or_method(e);
+	if (unlikely(element_table_put(e->path, e) != HASHTABLE_SUCCESS)) {
+		error =	create_internal_error(p, "reason", "element table full");
+		free_element(e);
 		return error;
 	}
 
-	list_add_tail(&e->state_list, &p->state_list);
+	list_add_tail(&e->element_list, &p->element_list);
 
 	return NULL;
 }
 
-static void remove_state_or_method(struct element *e)
+static void remove_element(struct element *e)
 {
 	notify_fetchers(e, "remove");
-	list_del(&e->state_list);
-	state_table_remove(e->path);
-	free_state_or_method(e);
+	list_del(&e->element_list);
+	element_table_remove(e->path);
+	free_element(e);
 }
 
-int remove_state_or_method_from_peer(const struct peer *p, const char *path)
+int remove_element_from_peer(const struct peer *p, const char *path)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->state_list)
+	list_for_each_safe(item, tmp, &p->element_list)
 	{
-		struct element *e = list_entry(item, struct element, state_list);
+		struct element *e = list_entry(item, struct element, element_list);
 		if (strcmp(e->path, path) == 0) {
-			remove_state_or_method(e);
+			remove_element(e);
 			return 0;
 		}
 	}
 	return -1;
 }
 
-void remove_all_states_and_methods_from_peer(struct peer *p)
+void remove_all_elements_from_peer(struct peer *p)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->state_list)
+	list_for_each_safe(item, tmp, &p->element_list)
 	{
-		struct element *e = list_entry(item, struct element, state_list);
-		remove_state_or_method(e);
+		struct element *e = list_entry(item, struct element, element_list);
+		remove_element(e);
 	}
 }

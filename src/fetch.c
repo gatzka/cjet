@@ -463,7 +463,7 @@ static int notify_fetching_peer(const struct element *e, const struct fetch *f,
 	}
 	cJSON_AddItemToObject(root, "params", param);
 
-	if (state_is_fetch_only(e)) {
+	if (element_is_fetch_only(e)) {
 		cJSON_AddTrueToObject(param, "fetchOnly");
 	}
 
@@ -531,8 +531,8 @@ static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->state_list) {
-		struct element *e = list_entry(item, struct element, state_list);
+	list_for_each_safe(item, tmp, &p->element_list) {
+		struct element *e = list_entry(item, struct element, element_list);
 		if (unlikely(add_fetch_to_state_and_notify(p, e, f) != 0)) {
 			return -1;
 		}
@@ -580,8 +580,8 @@ static void remove_fetch_from_states_in_peer(const struct peer *p, const struct 
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->state_list) {
-		struct element *e = list_entry(item, struct element, state_list);
+	list_for_each_safe(item, tmp, &p->element_list) {
+		struct element *e = list_entry(item, struct element, element_list);
 		remove_fetch_from_state(e, f);
 	}
 }
@@ -597,7 +597,7 @@ static void remove_fetch_from_states(const struct fetch *f)
 	}
 }
 
-static int find_fetchers_for_state_in_peer(const struct peer *p,
+static int find_fetchers_for_element_in_peer(const struct peer *p,
 	struct element *e) {
 
 	struct list_head *item;
@@ -611,7 +611,7 @@ static int find_fetchers_for_state_in_peer(const struct peer *p,
 	return 0;
 }
 
-int find_fetchers_for_state(struct element *e)
+int find_fetchers_for_element(struct element *e)
 {
 	int ret = 0;
 	struct list_head *item;
@@ -619,7 +619,7 @@ int find_fetchers_for_state(struct element *e)
 	const struct list_head *peer_list = get_peer_list();
 	list_for_each_safe(item, tmp, peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
-		ret = find_fetchers_for_state_in_peer(p, e);
+		ret = find_fetchers_for_element_in_peer(p, e);
 		if (unlikely(ret != 0)) {
 			return ret;
 		}

@@ -175,7 +175,7 @@ struct F {
 		loop.remove = fake_remove;
 
 		init_parser();
-		state_hashtable_create();
+		element_hashtable_create();
 		init_peer(&owner_peer, false, &loop);
 		owner_peer.send_message = send_message;
 		init_peer(&set_peer, false, &loop);
@@ -222,7 +222,7 @@ struct F {
 		free_peer_resources(&fetch_peer);
 		free_peer_resources(&set_peer);
 		free_peer_resources(&owner_peer);
-		state_hashtable_delete();
+		element_hashtable_delete();
 	}
 
 	cJSON *value;
@@ -238,8 +238,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(users));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_state_or_method_to_peer() failed!");
+	cJSON *error = add_element_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_REQUIRE_MESSAGE(error == NULL, "add_element_to_peer() failed!");
 	cJSON_Delete(access);
 
 	error = handle_authentication(&fetch_peer, "user", password);
@@ -262,8 +262,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(admins));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *error = add_state_or_method_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_state_or_method_to_peer() failed!");
+	cJSON *error = add_element_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	BOOST_REQUIRE_MESSAGE(error == NULL, "add_element_to_peer() failed!");
 	cJSON_Delete(access);
 
 	error = handle_authentication(&fetch_peer, "user", password);

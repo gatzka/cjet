@@ -240,7 +240,7 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 		routed_request_timeout = CONFIG_ROUTED_MESSAGES_TIMEOUT;
 	}
 
-	error = add_state_or_method_to_peer(p, path, value, access, flags, routed_request_timeout);
+	error = add_element_to_peer(p, path, value, access, flags, routed_request_timeout);
 
 	return possibly_send_response(json_rpc, error, p);
 }
@@ -260,7 +260,7 @@ static int process_remove(const cJSON *json_rpc, const struct peer *p)
 		return possibly_send_response(json_rpc, error, p);
 	}
 
-	int ret = remove_state_or_method_from_peer(p, path);
+	int ret = remove_element_from_peer(p, path);
 	if (ret == 0) {
 		return possibly_send_response(json_rpc, NULL, p);
 	}

@@ -24,18 +24,18 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_STATE_TABLE_H
-#define CJET_STATE_TABLE_H
+#ifndef CJET_element_table_H
+#define CJET_element_table_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-int state_hashtable_create(void);
-void state_hashtable_delete(void);
-int state_table_put(const char *path, void *value);
-void *state_table_get(const char *path);
-void state_table_remove(const char *path);
+int element_hashtable_create(void);
+void element_hashtable_delete(void);
+int element_table_put(const char *path, void *value);
+void *element_table_get(const char *path);
+void element_table_remove(const char *path);
 
 #ifdef __cplusplus
 }

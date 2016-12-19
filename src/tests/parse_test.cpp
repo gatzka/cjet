@@ -105,7 +105,7 @@ struct F {
 		p.send_message = send_message;
 		init_peer(&set_peer, false, &loop);
 		set_peer.send_message = send_message;
-		state_hashtable_create();
+		element_hashtable_create();
 	}
 
 	~F()
@@ -117,7 +117,7 @@ struct F {
 			events.pop_front();
 			cJSON_Delete(ptr);
 		}
-		state_hashtable_delete();
+		element_hashtable_delete();
 	}
 
 	struct peer p;
@@ -126,7 +126,7 @@ struct F {
 
 static struct element *get_state(const char *path)
 {
-	return (struct element *)state_table_get(path);
+	return (struct element *)element_table_get(path);
 }
 
 static cJSON *create_correct_add_state(const char *path)

@@ -44,9 +44,9 @@ enum {CONFIG_MAX_WRITE_BUFFER_SIZE = ${CONFIG_MAX_WRITE_BUFFER_SIZE}};
 
 /*
  * This parameter configures the maximum amount of states that can be
- * handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
+ * handled in a jet. The number of states is 2^ELEMENT_TABLE_ORDER.
  */
-enum {CONFIG_STATE_TABLE_ORDER = ${CONFIG_STATE_TABLE_ORDER}};
+enum {CONFIG_ELEMENT_TABLE_ORDER = ${CONFIG_ELEMENT_TABLE_ORDER}};
 
 /*
  * This parameter configures the maximum ongoing routed messages per

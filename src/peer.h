@@ -45,7 +45,7 @@ extern "C" {
 #endif
 
 struct peer {
-	struct list_head state_list;
+	struct list_head element_list;
 	struct list_head next_peer;
 	struct list_head fetch_list;
 	void *routing_table;

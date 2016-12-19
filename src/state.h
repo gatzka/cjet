@@ -43,7 +43,7 @@ extern "C" {
  * A struct element represent either a state or a method.
  */
 struct element {
-	struct list_head state_list;
+	struct list_head element_list;
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */
 	cJSON *value; /* NULL if method */
@@ -60,13 +60,13 @@ enum type { STATE, METHOD };
 
 static const int FETCH_ONLY_FLAG = 0x01;
 
-bool state_is_fetch_only(const struct element *e);
+bool element_is_fetch_only(const struct element *e);
 cJSON *change_state(const struct peer *p, const char *path, const cJSON *value);
 cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	const cJSON *timeout, const cJSON *json_rpc, enum type what);
-cJSON *add_state_or_method_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s);
-int remove_state_or_method_from_peer(const struct peer *p, const char *path);
-void remove_all_states_and_methods_from_peer(struct peer *p);
+cJSON *add_element_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s);
+int remove_element_from_peer(const struct peer *p, const char *path);
+void remove_all_elements_from_peer(struct peer *p);
 
 #ifdef __cplusplus
 }

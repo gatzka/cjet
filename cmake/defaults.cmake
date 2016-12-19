@@ -30,11 +30,11 @@ ELSE()
 ENDIF()
 
 # This parameter configures the maximum amount of states that can be
-# handled in a jet. The number of states is 2^STATE_TABLE_ORDER.
-IF(CONFIG_STATE_TABLE_ORDER)
-	SET(CONFIG_STATE_TABLE_ORDER ${CONFIG_STATE_TABLE_ORDER} CACHE STRING "" FORCE)
+# handled in a jet. The number of states is 2^ELEMENT_TABLE_ORDER.
+IF(CONFIG_ELEMENT_TABLE_ORDER)
+	SET(CONFIG_ELEMENT_TABLE_ORDER ${CONFIG_ELEMENT_TABLE_ORDER} CACHE STRING "" FORCE)
 ELSE()
-	SET(CONFIG_STATE_TABLE_ORDER 13)
+	SET(CONFIG_ELEMENT_TABLE_ORDER 13)
 ENDIF()
 
 # This parameter configures the maximum ongoing routed messages per

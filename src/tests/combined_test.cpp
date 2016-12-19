@@ -198,7 +198,7 @@ static void handle_message_for_setter_or_caller(const char *rendered)
 
 static struct element *get_state(const char *path)
 {
-	return (struct element *)state_table_get(path);
+	return (struct element *)element_table_get(path);
 }
 
 int send_message(const struct peer *p, char *rendered, size_t len)
@@ -263,7 +263,7 @@ struct F {
 		loop.remove = fake_remove;
 
 		init_parser();
-		state_hashtable_create();
+		element_hashtable_create();
 		owner_peer = alloc_peer();
 		call_peer = alloc_peer();
 		fetch_peer_1 = alloc_peer();
@@ -280,7 +280,7 @@ struct F {
 		if (fetch_peer_1) free_peer( fetch_peer_1);
 		if (call_peer) free_peer( call_peer);
 		if (owner_peer) free_peer(owner_peer);
-		state_hashtable_delete();
+		element_hashtable_delete();
 	}
 };
 
@@ -340,7 +340,7 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
 
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	cJSON_Delete(value);
@@ -381,7 +381,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	const char *path = "/foo/bar/";
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
@@ -400,7 +400,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *error = add_state_or_method_to_peer(owner_peer, method_no_args_path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *error = add_element_to_peer(owner_peer, method_no_args_path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
@@ -415,7 +415,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 {
 	int state_value = 12345;
 	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_state_or_method_to_peer(owner_peer, read_only_state_path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *error = add_element_to_peer(owner_peer, read_only_state_path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
 	BOOST_CHECK(error == NULL);
 	cJSON_Delete(value);
 
