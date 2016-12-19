@@ -47,7 +47,7 @@ struct element {
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */
 	cJSON *value; /* NULL if method */
-	struct fetch **fetcher_table;
+	const struct fetch **fetcher_table;
 	group_t fetch_groups;
 	group_t set_groups;
 	group_t call_groups;
