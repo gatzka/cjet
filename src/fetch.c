@@ -415,7 +415,8 @@ static int state_matches(struct state_or_method *s, struct fetch *f)
 
 	unsigned int match_array_size = f->number_of_matchers;
 	for (unsigned int i = 0; i < match_array_size; ++i) {
-		int ret = f->matcher[i]->match_function((f->matcher[i]), s->path);
+		const struct path_matcher *pm = f->matcher[i];
+		int ret = pm->match_function(pm, s->path);
 		if (ret == 0) {
 			return 0;
 		}
