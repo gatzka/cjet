@@ -287,6 +287,12 @@ static int process_fetch(const cJSON *json_rpc, struct peer *p)
 	return possibly_send_response(json_rpc, error, p);
 }
 
+static int process_get(const cJSON *json_rpc, struct peer *p)
+{
+	cJSON *error = create_method_not_found_error(p, "reason", "get not implemented yet!");
+	return possibly_send_response(json_rpc, error, p);
+}
+
 static int process_unfetch(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
@@ -369,6 +375,8 @@ static int handle_method(const cJSON *json_rpc, const char *method_name,
 		return process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
 		return process_unfetch(json_rpc, p);
+	} else if (strcmp(method_name, "get") == 0) {
+		return process_get(json_rpc, p);
 	} else if (strcmp(method_name, "config") == 0) {
 		return process_config(json_rpc, p);
 	} else if (strcmp(method_name, "info") == 0) {
