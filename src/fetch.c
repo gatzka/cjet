@@ -60,13 +60,11 @@ static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSO
 {
 	const cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
-		*err =
-			 create_invalid_params_error(p, "reason", "no fetch id given");
+		*err = create_invalid_params_error(p, "reason", "no fetch id given");
 		return NULL;
 	}
 	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number))) {
-		*err = create_invalid_params_error(p, "reason",
-			"fetch ID is neither a string nor a number");
+		*err = create_invalid_params_error(p, "reason", "fetch ID is neither a string nor a number");
 		return NULL;
 	}
 	*err = NULL;
@@ -552,7 +550,7 @@ int notify_fetchers(const struct element *e, const char *event_name)
 	return 0;
 }
 
-cJSON *add_fetch_to_states(struct fetch *f)
+cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -561,10 +559,12 @@ cJSON *add_fetch_to_states(struct fetch *f)
 		const struct peer *p = list_entry(item, struct peer, next_peer);
 		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
-			return create_internal_error(p, "reason", "could not add fetch to state");
+			cJSON *error = create_internal_error(p, "reason", "could not add fetch to state");
+			return create_error_response_from_request(request_peer, request, error);
 		}
 	}
-	return NULL;
+
+	return create_success_response_from_request(request_peer, request);
 }
 
 static void remove_fetch_from_state(const struct element *e, const struct fetch *f)
@@ -627,32 +627,31 @@ int find_fetchers_for_element(struct element *e)
 	return ret;
 }
 
-cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
+cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, const cJSON *params,
 	struct fetch **fetch_return)
 {
-	cJSON *error;
 	const cJSON *matches = cJSON_GetObjectItem(params, "match");
 	if (unlikely(matches != NULL)) {
 		static const char deprecated[] = "No support for deprecated match";
-		error = create_invalid_params_error(p, "reason", deprecated);
 		log_peer_err(p, deprecated);
-		return error;
+		cJSON *error = create_invalid_params_error(p, "reason", deprecated);
+		return create_error_response_from_request(p, request, error);
 	}
 
+	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
-		return error;
+		return create_error_response_from_request(p, request, error);
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
-		error = create_invalid_params_error(p, "reason",
-			"fetch ID already in use");
-		return error;
+		error = create_invalid_params_error(p, "reason", "fetch ID already in use");
+		return create_error_response_from_request(p, request, error);
 	}
 
 	f = create_fetch(p, id, params, &error);
 	if (unlikely(f == NULL)) {
-		return error;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
@@ -660,23 +659,24 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *params,
 	return NULL;
 }
 
-cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *params)
+cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request, const cJSON *params)
 {
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
-		return error;
+		return create_error_response_from_request(p, request, error);
 	}
+
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f == NULL)) {
-		error = create_invalid_params_error(p, "reason",
-			"fetch ID not found for unfetch");
-		return error;
+		error = create_invalid_params_error(p, "reason", "fetch ID not found for unfetch");
+		return create_error_response_from_request(p, request, error);
 	}
+
 	remove_fetch_from_states(f);
 	list_del(&f->next_fetch);
 	free_fetch(f);
-	return NULL;
+	return create_success_response_from_request(p, request);
 }
 
 void remove_all_fetchers_from_peer(struct peer *p)

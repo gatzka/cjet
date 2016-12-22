@@ -35,17 +35,17 @@
 #include "peer.h"
 #include "response.h"
 
-cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
+cJSON *handle_authentication(struct peer *p, const cJSON *request, const char *user, char *passwd)
 {
 	if (unlikely(!list_empty(&p->fetch_list))) {
 		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
-		return error;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	const cJSON *auth = credentials_ok(user, passwd);
 	if (auth == NULL) {
 		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
-		return error;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
@@ -55,5 +55,5 @@ cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 	const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
 	p->call_groups = get_groups(call_groups);
 
-	return NULL;
+	return create_success_response_from_request(p, request);
 }

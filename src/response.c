@@ -132,20 +132,34 @@ cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error
 	return root;
 }
 
-cJSON *create_boolean_success_response(const struct peer *p, const cJSON *id, int true_false)
+cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, cJSON *error)
 {
-	cJSON *root = create_common_response(p, id);
-	if (unlikely(root == NULL)) {
-		return NULL;
+	const cJSON *id = cJSON_GetObjectItem(request, "id");
+	if (id != NULL) {
+		cJSON *response = create_error_response(p, id, error);
+		if (likely(response != NULL)) {
+			return response;
+		}
 	}
-	cJSON *boolean;
-	if (true_false == 0) {
-		boolean = cJSON_CreateFalse();
-	} else {
-		boolean = cJSON_CreateTrue();
+
+	cJSON_Delete(error);
+	return NULL;
+}
+
+cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request)
+{
+	const cJSON *id = cJSON_GetObjectItem(request, "id");
+	if (id != NULL) {
+		cJSON *root = create_common_response(p, id);
+		if (unlikely(root == NULL)) {
+			return NULL;
+		}
+
+		root = add_subobject_to_object(p, root, cJSON_CreateTrue(), "result");
+		return root;
 	}
-	root = add_subobject_to_object(p, root, boolean, "result");
-	return root;
+
+	return NULL;
 }
 
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type)

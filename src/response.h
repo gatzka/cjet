@@ -34,16 +34,16 @@
 extern "C" {
 #endif
 
-static const int TRUE = 1;
-static const int FALSE = 0;
-
 cJSON *create_invalid_request_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_invalid_params_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_internal_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_method_not_found_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error);
-cJSON *create_boolean_success_response(const struct peer *p, const cJSON *id, int true_false);
+cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request);
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type);
+cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, cJSON *error);
+
+//TODO: eliminate unused headers
 
 #ifdef __cplusplus
 }
