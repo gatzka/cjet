@@ -168,6 +168,27 @@ static void free_element(struct element *e)
 	cjet_free(e);
 }
 
+static const char *get_path_from_params(const struct peer *p, const cJSON *json_rpc, const cJSON *params, cJSON **response)
+{
+	cJSON *error;
+	const cJSON *path = cJSON_GetObjectItem(params, "path");
+	if (unlikely(path == NULL)) {
+		error = create_error_object(p, INVALID_PARAMS, "reason", "no path given");
+		goto error;
+	}
+
+	if (unlikely(path->type != cJSON_String)) {
+		error = create_error_object(p, INVALID_PARAMS, "reason", "path is not a string");
+		goto error;
+	}
+
+	return path->valuestring;
+
+error:
+	*response = create_error_response_from_request(p, json_rpc, error);
+	return NULL;
+}
+
 bool element_is_fetch_only(const struct element *e)
 {
 	if ((e->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
@@ -177,40 +198,53 @@ bool element_is_fetch_only(const struct element *e)
 	}
 }
 
-cJSON *change_state(const struct peer *p, const cJSON *request, const char *path, const cJSON *value)
+cJSON *change_state(const struct peer *p, const cJSON *request)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	cJSON *response;
+	const char *path = get_path_from_params(p, request, params, &response);
+	if (unlikely(path == NULL)) {
+		return response;
+	}
+
+	const cJSON *value = cJSON_GetObjectItem(params, "value");
+	if (unlikely(value == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
+		return create_error_response_from_request(p, request, error);
+	}
+
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	if (unlikely(e->peer != p)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "not owner of state", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	if (unlikely(e->value == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "change on method not possible", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (value_copy == NULL) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "not enough memory", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	cJSON_Delete(e->value);
 	e->value = value_copy;
 	if (unlikely(notify_fetchers(e, "change") != 0)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not notify fetching peer", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	return create_success_response_from_request(p, request);

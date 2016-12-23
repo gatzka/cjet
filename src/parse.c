@@ -71,10 +71,12 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 		*err = NULL;
 		return 0;
 	}
+
 	if (fetch_only->type == cJSON_True) {
 		*err = NULL;
 		return FETCH_ONLY_FLAG;
 	}
+
 	cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
 	cJSON *response = create_error_response_from_request(p, request, error);
 	*err = response;
@@ -101,30 +103,6 @@ static int send_response(cJSON *response, const struct peer *p)
 render_error:
 	cJSON_Delete(response);
 	return ret;
-}
-
-static cJSON *process_change(const cJSON *json_rpc, const struct peer *p)
-{
-	cJSON *response;
-
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const char *path = get_path_from_params(p, json_rpc, params, &response);
-	if (unlikely(path == NULL)) {
-		return response;
-	}
-
-	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	return change_state(p, json_rpc, path, value);
 }
 
 static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
@@ -322,7 +300,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
 	if (strcmp(method_name, "change") == 0) {
-		return process_change(json_rpc, p);
+		return change_state(p, json_rpc);
 	} else if (strcmp(method_name, "set") == 0) {
 		return process_set(json_rpc, p);
 	} else if (strcmp(method_name, "call") == 0) {

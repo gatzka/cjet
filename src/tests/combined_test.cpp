@@ -412,9 +412,8 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 
 	request = create_change(path);
 	params = cJSON_GetObjectItem(request, "params");
-	json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *new_value = cJSON_GetObjectItem(params, "value");
-	response = change_state(owner_peer, request, path, new_value);
+
+	response = change_state(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "change_state() failed!");
 	cJSON_Delete(response);
