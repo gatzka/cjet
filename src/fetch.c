@@ -56,18 +56,18 @@ struct supported_matcher {
 	bool has_multiple_path_elements;
 };
 
-static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSON **err)
+static const cJSON *get_fetch_id(const struct peer *p, const cJSON *request, const cJSON *params, cJSON **response)
 {
 	const cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
-		*err = create_error_object(p, INVALID_PARAMS, "reason", "no fetch id given");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no fetch id given");
 		return NULL;
 	}
 	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number))) {
-		*err = create_error_object(p, INVALID_PARAMS, "reason", "fetch id is neither string nor number");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "fetch id is neither string nor number");
 		return NULL;
 	}
-	*err = NULL;
+	*response = NULL;
 	return id;
 }
 
@@ -316,7 +316,7 @@ static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned
 	return f;
 }
 
-static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *params, cJSON **error)
+static struct fetch *create_fetch(struct peer *p, const cJSON *request, const cJSON *id, const cJSON *params, cJSON **response)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
@@ -324,7 +324,7 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	}
 
 	if (unlikely(path->type != cJSON_Object)) {
-		*error = create_error_object(p, INVALID_PARAMS, "reason", "fetch path is not an object");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "fetch path is not an object");
 		return NULL;
 	}
 
@@ -344,22 +344,22 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	}
 
 	if (unlikely(number_of_matchers == 0)) {
-		*error = create_error_object(p, INVALID_PARAMS, "reason", "no matcher in path object");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no matcher in path object");
 		return NULL;
 	}
 	if (unlikely(number_of_matchers > CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH)) {
-		*error = create_error_object(p, INVALID_PARAMS, "reason", "too many matchers in path object");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "too many matchers in path object");
 		return NULL;
 	}
 
 	struct fetch *f = alloc_fetch(p, id, number_of_matchers);
 	if (unlikely(f == NULL)) {
-		*error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to allocate fetch");
+		*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to allocate fetch");
 		return NULL;
 	}
 
 	if (unlikely(add_matchers(f, path, ignore_case) < 0)) {
-		*error = create_error_object(p, INTERNAL_ERROR, "reason", "could not add matchers to fetch");
+		*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not add matchers to fetch");
 		cJSON_Delete(f->fetch_id);
 		cjet_free(f);
 		return NULL;
@@ -642,19 +642,18 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fe
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", deprecated);
 	}
 
-	cJSON *error;
-	const cJSON *id = get_fetch_id(p, params, &error);
+	const cJSON *id = get_fetch_id(p, request, params, &response);
 	if (unlikely(id == NULL)) {
-		return create_error_response_from_request_old(p, request, error);
+		return response;
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "fetch id already in use");
 	}
 
-	f = create_fetch(p, id, params, &error);
+	f = create_fetch(p, request, id, params, &response);
 	if (unlikely(f == NULL)) {
-		return create_error_response_from_request_old(p, request, error);
+		return response;
 	}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
@@ -670,10 +669,9 @@ cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request)
 		return response;
 	}
 
-	cJSON *error;
-	const cJSON *id = get_fetch_id(p, params, &error);
+	const cJSON *id = get_fetch_id(p, request, params, &response);
 	if (unlikely(id == NULL)) {
-		return create_error_response_from_request_old(p, request, error);
+		return response;
 	}
 
 	struct fetch *f = find_fetch(p, id);
