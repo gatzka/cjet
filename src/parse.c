@@ -67,14 +67,8 @@ render_error:
 
 static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 {
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
 	struct fetch *f = NULL;
-	cJSON *response = add_fetch_to_peer(p, json_rpc, params, &f);
+	cJSON *response = add_fetch_to_peer(p, json_rpc, &f);
 	if (likely(response == NULL)) {
 		return add_fetch_to_states(p, json_rpc, f);
 	}

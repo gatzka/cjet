@@ -165,8 +165,7 @@ static void perform_fetch(const char *fetch_path)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch(fetch_path);
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, params, &f);
+	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
 	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(&fetch_peer, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");

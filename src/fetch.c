@@ -628,9 +628,14 @@ int find_fetchers_for_element(struct element *e)
 	return ret;
 }
 
-cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, const cJSON *params,
-	struct fetch **fetch_return)
+cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch_return)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
 	const cJSON *matches = cJSON_GetObjectItem(params, "match");
 	if (unlikely(matches != NULL)) {
 		static const char deprecated[] = "No support for deprecated match";
