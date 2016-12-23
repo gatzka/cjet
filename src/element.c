@@ -423,7 +423,7 @@ static void remove_element(struct element *e)
 
 cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request)
 {
-	cJSON *response;
+	cJSON *response = NULL;
 	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
 		return response;
