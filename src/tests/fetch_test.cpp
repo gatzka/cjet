@@ -441,6 +441,19 @@ static cJSON *create_fetch_params(
 	return root;
 }
 
+static cJSON *create_remove(const char *path)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "remove_request_1");
+	cJSON_AddStringToObject(root, "method", "remove");
+	return root;
+}
+
 static cJSON *create_fetch_with_multiple_matchers(const char *path_contains, unsigned int number_of_contains)
 {
 	cJSON *params = cJSON_CreateObject();
@@ -1098,9 +1111,11 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
+		cJSON_Delete(request);
 		cJSON_Delete(response);
 
-		response = remove_element_from_peer(owner_peer, request, path);
+		request = create_remove(path);
+		response = remove_element_from_peer(owner_peer, request);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "remove_element_from_peer() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "remove_element_from_peer() failed!");
 		cJSON_Delete(response);

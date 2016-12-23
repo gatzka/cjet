@@ -64,7 +64,7 @@ bool element_is_fetch_only(const struct element *e);
 cJSON *change_state(const struct peer *p, const cJSON *request);
 cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what);
 cJSON *add_element_to_peer(struct peer *p, const cJSON *request);
-cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request, const char *path);
+cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request);
 void remove_all_elements_from_peer(struct peer *p);
 
 #ifdef __cplusplus

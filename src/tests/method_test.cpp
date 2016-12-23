@@ -183,7 +183,7 @@ BOOST_FIXTURE_TEST_CASE(delete_nonexisting_method, F)
 	const char path[] = "/foo/bar/";
 	cJSON *request = create_add(path);
 
-	cJSON *response = remove_element_from_peer(&owner_peer, request, path);
+	cJSON *response = remove_element_from_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "remove_element_from_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "remove_element_from_peer() failed!");
 	cJSON_Delete(request);
@@ -273,12 +273,12 @@ BOOST_FIXTURE_TEST_CASE(double_free_method, F)
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(response);
 
-	response = remove_element_from_peer(&owner_peer, request, path);
+	response = remove_element_from_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "remove_element_from_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "remove_element_from_peer() failed!");
 	cJSON_Delete(response);
 
-	response = remove_element_from_peer(&owner_peer, request, path);
+	response = remove_element_from_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "remove_element_from_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "remove_element_from_peer() did not fail!");
 	cJSON_Delete(response);

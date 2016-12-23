@@ -43,27 +43,6 @@
 #include "router.h"
 #include "element.h"
 
-static const char *get_path_from_params(const struct peer *p, const cJSON *json_rpc, const cJSON *params, cJSON **response)
-{
-	cJSON *error;
-	const cJSON *path = cJSON_GetObjectItem(params, "path");
-	if (unlikely(path == NULL)) {
-		error = create_error_object(p, INVALID_PARAMS, "reason", "no path given");
-		goto error;
-	}
-
-	if (unlikely(path->type != cJSON_String)) {
-		error = create_error_object(p, INVALID_PARAMS, "reason", "path is not a string");
-		goto error;
-	}
-
-	return path->valuestring;
-
-error:
-	*response = create_error_response_from_request(p, json_rpc, error);
-	return NULL;
-}
-
 static int send_response(cJSON *response, const struct peer *p)
 {
 	if (response == NULL) {
@@ -84,24 +63,6 @@ static int send_response(cJSON *response, const struct peer *p)
 render_error:
 	cJSON_Delete(response);
 	return ret;
-}
-
-static cJSON *process_remove(const cJSON *json_rpc, const struct peer *p)
-{
-	cJSON *response;
-
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const char *path = get_path_from_params(p, json_rpc, params, &response);
-	if (unlikely(path == NULL)) {
-		return response;
-	}
-
-	return remove_element_from_peer(p, json_rpc, path);
 }
 
 static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
@@ -194,7 +155,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "add") == 0) {
 		return add_element_to_peer(p, json_rpc);
 	} else if (strcmp(method_name, "remove") == 0) {
-		return process_remove(json_rpc, p);
+		return remove_element_from_peer(p, json_rpc);
 	} else if (strcmp(method_name, "fetch") == 0) {
 		return process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {

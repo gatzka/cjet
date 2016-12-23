@@ -459,8 +459,20 @@ static void remove_element(struct element *e)
 	free_element(e);
 }
 
-cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request, const char *path)
+cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	cJSON *response;
+	const char *path = get_path_from_params(p, request, params, &response);
+	if (unlikely(path == NULL)) {
+		return response;
+	}
+
 	struct list_head *item;
 	struct list_head *tmp;
 	list_for_each_safe(item, tmp, &p->element_list)
