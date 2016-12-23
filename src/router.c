@@ -198,15 +198,15 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct routing_request *request)
+cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request)
 {
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			return create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
+			return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
 		} else {
 			if (timeout->valuedouble < 0) {
-				return create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
+				return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
 			} else {
 				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
 			}
@@ -215,20 +215,20 @@ cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct
 		timeout_ns = convert_seconds_to_nsec(e->timeout);
 	}
 
-	if (unlikely(cjet_timer_init(&request->timer, e->peer->loop) < 0)) {
-		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "could not init timer for routing request");
+	if (unlikely(cjet_timer_init(&routing_request->timer, e->peer->loop) < 0)) {
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not init timer for routing request");
 	}
 
-	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
+	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
 	if (unlikely(ret < 0)) {
-		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "could not start timer for routing request");
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
 	}
 
 	struct value_route_table val;
-	val.vals[0] = request;
+	val.vals[0] = routing_request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
-			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "routing table full");
+			routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 	}
 
 	return NULL;

@@ -50,7 +50,7 @@ static bool is_state(const struct element *e)
 }
 
 #define FILL_GROUP(access_groups, json_key) \
-static cJSON *fill_##access_groups(struct element *e, const struct peer *p, const cJSON *access) \
+static cJSON *fill_##access_groups(struct element *e, const struct peer *p, const cJSON *request, const cJSON *access) \
 { \
 	if (access == NULL) { \
 		return NULL; \
@@ -58,8 +58,7 @@ static cJSON *fill_##access_groups(struct element *e, const struct peer *p, cons
 \
 	const cJSON *groups = cJSON_GetObjectItem(access, json_key); \
 	if ((groups != NULL) && (groups->type != cJSON_Array)) { \
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", #access_groups" is not an array"); \
-		return error; \
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", #access_groups" is not an array"); \
 	} \
 \
 	e->access_groups = get_groups(groups); \
@@ -71,20 +70,20 @@ FILL_GROUP(fetch_groups, "fetchGroups")
 FILL_GROUP(set_groups, "setGroups")
 FILL_GROUP(call_groups, "callGroups")
 
-static cJSON *fill_access(struct element *e, const struct peer *p, const cJSON *access)
+static cJSON *fill_access(struct element *e, const cJSON *request, const struct peer *p, const cJSON *access)
 {
-	cJSON *error = fill_fetch_groups(e, p, access);
+	cJSON *error = fill_fetch_groups(e, p, request, access);
 	if (error != NULL) {
 		return error;
 	}
 
 	if (is_state(e)) {
-		error = fill_set_groups(e, p, access);
+		error = fill_set_groups(e, p, request, access);
 		if (error != NULL) {
 			return error;
 		}
 	} else {
-		error = fill_call_groups(e, p, access);
+		error = fill_call_groups(e, p, request, access);
 		if (error != NULL) {
 			return error;
 		}
@@ -93,10 +92,10 @@ static cJSON *fill_access(struct element *e, const struct peer *p, const cJSON *
 	return NULL;
 }
 
-static cJSON *init_element(struct element *e, const char *path, const cJSON *value_object, const cJSON *access,
+static cJSON *init_element(struct element *e, const cJSON *request, const char *path, const cJSON *value_object, const cJSON *access,
 						 struct peer *p, double timeout, int flags)
 {
-	cJSON *error = NULL;
+	cJSON *response = NULL;
 
 	e->flags = flags;
 	e->timeout = timeout;
@@ -104,14 +103,13 @@ static cJSON *init_element(struct element *e, const char *path, const cJSON *val
 	e->fetcher_table = cjet_calloc(e->fetch_table_size, sizeof(struct fetch *));
 	if (e->fetcher_table == NULL) {
 		log_peer_err(p, "Could not allocate memory for fetch table!\n");
-		error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to create fetch table");
-		return error;
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to create fetch table");
 	}
 
 	e->path = duplicate_string(path);
 	if (unlikely(e->path == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
-		error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to copy path");
+		response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to copy path");
 		goto alloc_path_failed;
 	}
 
@@ -119,7 +117,7 @@ static cJSON *init_element(struct element *e, const char *path, const cJSON *val
 		cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 		if (unlikely(value_copy == NULL)) {
 			log_peer_err(p, "Could not copy value object!\n");
-			error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to copy value");
+			response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to copy value");
 			goto value_copy_failed;
 		}
 		e->value = value_copy;
@@ -128,8 +126,8 @@ static cJSON *init_element(struct element *e, const char *path, const cJSON *val
 	INIT_LIST_HEAD(&e->element_list);
 	e->peer = p;
 
-	error = fill_access(e, p, access);
-	if (error != NULL) {
+	response = fill_access(e, request, p, access);
+	if (response != NULL) {
 		log_peer_err(p, "Could not fill access information!\n");
 		goto fill_access_failed;
 	}
@@ -144,7 +142,7 @@ value_copy_failed:
 	cjet_free(e->path);
 alloc_path_failed:
 	cjet_free(e->fetcher_table);
-	return error;
+	return response;
 }
 
 static struct element *alloc_element(const struct peer *p)
@@ -318,9 +316,8 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	}
 
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	cJSON *setup_error = setup_routing_information(e, timeout, routing_request);
-	if (unlikely(setup_error != NULL)) {
-		response = create_error_response_from_request_old(p, request, setup_error);
+	response = setup_routing_information(e, request, timeout, routing_request);
+	if (unlikely(response != NULL)) {
 		goto delete_json;
 	}
 
@@ -398,10 +395,10 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	const cJSON *access = cJSON_GetObjectItem(params, "access");
-	cJSON *error = init_element(e, path, value, access, p, routed_request_timeout_s, flags);
-	if (unlikely(error != NULL)) {
+	response = init_element(e, request, path, value, access, p, routed_request_timeout_s, flags);
+	if (unlikely(response != NULL)) {
 		cjet_free(e);
-		return create_error_response_from_request_old(p, request, error);
+		return response;
 	}
 
 	if (unlikely(find_fetchers_for_element(e) != 0)) {

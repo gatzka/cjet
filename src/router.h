@@ -46,7 +46,7 @@ struct routing_request {
 
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
 	const cJSON *value, const char *id);
-cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct routing_request *request);
+cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request);
 struct routing_request *alloc_routing_request(const struct peer *requesting_peer, const struct peer *owner_peer, const cJSON *origin_request_id);
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p);
