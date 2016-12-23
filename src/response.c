@@ -160,7 +160,7 @@ cJSON *create_success_response_from_request(const struct peer *p, const cJSON *r
 		if (unlikely(root == NULL)) {
 			return NULL;
 		}
-// TODO
+
 		root = add_subobject_to_object(p, root, cJSON_CreateTrue(), "result");
 		return root;
 	}
