@@ -159,14 +159,12 @@ static void request_timeout_handler(void *context, bool cancelled) {
 		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
 		if (likely(ret == HASHTABLE_SUCCESS)) {
 			if (likely(request->origin_request_id != NULL)) {
-				cJSON *response = create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "timeout for routed request");
-				cJSON *result_response = create_result_response(request->requesting_peer, request->origin_request_id, response, "error");
+				cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
 				if (likely(result_response != NULL)) {
 					format_and_send_response(request->requesting_peer, result_response);
 					cJSON_Delete(result_response);
 				} else {
 					log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
-					cJSON_Delete(response);
 				}
 
 				cjet_timer_destroy(&request->timer);
