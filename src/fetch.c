@@ -322,8 +322,9 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	if (path == NULL) {
 		return alloc_fetch(p, id, 1);
 	}
+
 	if (unlikely(path->type != cJSON_Object)) {
-		*error = create_internal_error(p, "reason", "fetch path is not an object");
+		*error = create_error_object(p, INVALID_PARAMS, "reason", "fetch path is not an object");
 		return NULL;
 	}
 
@@ -343,22 +344,22 @@ static struct fetch *create_fetch(struct peer *p, const cJSON *id, const cJSON *
 	}
 
 	if (unlikely(number_of_matchers == 0)) {
-		*error = create_internal_error(p, "reason", "no matcher in path object");
+		*error = create_error_object(p, INVALID_PARAMS, "reason", "no matcher in path object");
 		return NULL;
 	}
 	if (unlikely(number_of_matchers > CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH)) {
-		*error = create_internal_error(p, "reason", "too many matchers in path object");
+		*error = create_error_object(p, INVALID_PARAMS, "reason", "too many matchers in path object");
 		return NULL;
 	}
 
 	struct fetch *f = alloc_fetch(p, id, number_of_matchers);
 	if (unlikely(f == NULL)) {
-		*error = create_internal_error(p, "reason", "not enough memory available");
+		*error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to allocate fetch");
 		return NULL;
 	}
 
 	if (unlikely(add_matchers(f, path, ignore_case) < 0)) {
-		*error = create_internal_error(p, "reason", "could not add matchers to fetch");
+		*error = create_error_object(p, INTERNAL_ERROR, "reason", "could not add matchers to fetch");
 		cJSON_Delete(f->fetch_id);
 		cjet_free(f);
 		return NULL;
@@ -559,7 +560,7 @@ cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request
 		const struct peer *p = list_entry(item, struct peer, next_peer);
 		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
-			cJSON *error = create_internal_error(p, "reason", "could not add fetch to state");
+			cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not add fetch to state");
 			return create_error_response_from_request(request_peer, request, error);
 		}
 	}

@@ -103,14 +103,14 @@ static cJSON *init_element(struct element *e, const char *path, const cJSON *val
 	e->fetcher_table = cjet_calloc(e->fetch_table_size, sizeof(struct fetch *));
 	if (e->fetcher_table == NULL) {
 		log_peer_err(p, "Could not allocate memory for fetch table!\n");
-		error =	create_internal_error(p, "reason", "not enough memory to create fetch table");
+		error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to create fetch table");
 		return error;
 	}
 
 	e->path = duplicate_string(path);
 	if (unlikely(e->path == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "path");
-		error =	create_internal_error(p, "reason", "not enough memory to copy path");
+		error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to copy path");
 		goto alloc_path_failed;
 	}
 
@@ -118,7 +118,7 @@ static cJSON *init_element(struct element *e, const char *path, const cJSON *val
 		cJSON *value_copy = cJSON_Duplicate(value_object, 1);
 		if (unlikely(value_copy == NULL)) {
 			log_peer_err(p, "Could not copy value object!\n");
-			error =	create_internal_error(p, "reason", "not enough memory to copy value");
+			error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to copy value");
 			goto value_copy_failed;
 		}
 		e->value = value_copy;
@@ -265,7 +265,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	cJSON *response;
 	cJSON *routed_message = create_routed_message(p, path, what, value, routing_request->id);
 	if (unlikely(routed_message == NULL)) {
-		cJSON *error = create_internal_error(p, "reason", "could not create routed JSON object");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not create routed JSON object");
 		response = create_error_response_from_request(p, request, error);
 		goto routed_message_creation_failed;
 	}
@@ -279,14 +279,14 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	response = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
-		cJSON *error = create_internal_error(p, "reason","could not render message");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not render message");
 		response = create_error_response_from_request(p, request, error);
 		goto delete_json;
 	}
 
 	if (unlikely(e->peer->send_message(e->peer, rendered_message,
 				 strlen(rendered_message)) != 0)) {
-		cJSON *error = create_internal_error(p, "reason", "could not send routing information");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not send routing information");
 		response = create_error_response_from_request(p, request, error);
 	}
 
@@ -312,7 +312,7 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request, const char *pat
 
 	e = alloc_element(p);
 	if (unlikely(e == NULL)) {
-		cJSON *error =	create_internal_error(p, "reason", "not enough memory to allocate jet element");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to allocate jet element");
 		return create_error_response_from_request(p, request, error);
 	}
 
@@ -323,14 +323,14 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request, const char *pat
 	}
 
 	if (unlikely(find_fetchers_for_element(e) != 0)) {
-		error = create_internal_error(p, "reason", "Can't notify fetching peer");
+		error = create_error_object(p, INTERNAL_ERROR, "reason", "could not notify fetching peer");
 		free_element(e);
 		return create_error_response_from_request(p, request, error);
 	}
 
 	if (unlikely(element_table_put(e->path, e) != HASHTABLE_SUCCESS)) {
 		free_element(e);
-		error =	create_internal_error(p, "reason", "element table full");
+		error = create_error_object(p, INTERNAL_ERROR, "reason", "element table full");
 		return create_error_response_from_request(p, request, error);
 	}
 

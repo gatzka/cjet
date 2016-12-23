@@ -100,7 +100,7 @@ BOOST_FIXTURE_TEST_CASE(internal_error_response, F)
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_internal_error(&p, tag, reason);
+	cJSON *error = create_error_object(&p, INTERNAL_ERROR, tag, reason);
 	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
@@ -126,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE(internal_error_response_wrong_id_type, F)
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateBool(0);
-	cJSON *error = create_internal_error(&p, tag, reason);
+	cJSON *error = create_error_object(&p, INTERNAL_ERROR, tag, reason);
 	cJSON *response = create_error_response(&p, id, error);
 
 	BOOST_CHECK(response == NULL);

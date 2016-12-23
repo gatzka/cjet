@@ -186,7 +186,7 @@ static void request_timeout_handler(void *context, bool cancelled) {
 		struct value_route_table val;
 		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
 		if (likely(ret == HASHTABLE_SUCCESS)) {
-			cJSON *error = create_internal_error(request->requesting_peer, "reason", "timeout for routed request");
+			cJSON *error = create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "timeout for routed request");
 			send_routing_response(request->requesting_peer, request->origin_request_id, error, "error");
 			cJSON_Delete(error);
 			cjet_timer_destroy(&request->timer);
@@ -203,12 +203,10 @@ cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error = create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
-			return error;
+			return create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
 		} else {
 			if (timeout->valuedouble < 0) {
-				cJSON *error = create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
-				return error;
+				return create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
 			} else {
 				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
 			}
@@ -218,25 +216,19 @@ cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct
 	}
 
 	if (unlikely(cjet_timer_init(&request->timer, e->peer->loop) < 0)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "could not init timer for routing request");
-		return error;
+		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "could not init timer for routing request");
 	}
 
 	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
 	if (unlikely(ret < 0)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "could not start timer for routing request");
-		return error;
+		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "could not start timer for routing request");
 	}
 
 	struct value_route_table val;
 	val.vals[0] = request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
 			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "routing table full");
-		return error;
+		return create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "routing table full");
 	}
 
 	return NULL;
@@ -280,10 +272,9 @@ static void send_shutdown_response(const struct peer *p,
 		return;
 	}
 
-	cJSON *error = create_internal_error(p, "reason", "peer shuts down");
+	cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "peer shuts down");
 	if (likely(error != NULL)) {
-		cJSON *error_response =
-			create_error_response(p, origin_request_id, error);
+		cJSON *error_response = create_error_response(p, origin_request_id, error);
 		if (likely(error_response != NULL)) {
 			format_and_send_response(p, error_response);
 			cJSON_Delete(error_response);
