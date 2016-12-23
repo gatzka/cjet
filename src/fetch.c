@@ -665,8 +665,14 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fe
 	return NULL;
 }
 
-cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request, const cJSON *params)
+cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {

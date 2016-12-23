@@ -56,7 +56,7 @@ struct fetch {
 };
 
 cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch_return);
-cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request, const cJSON *params);
+cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request);
 void remove_all_fetchers_from_peer(struct peer *p);
 cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, struct fetch *f);
 int find_fetchers_for_element(struct element *e);

@@ -1163,8 +1163,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_illegal_fetchid, F)
 BOOST_FIXTURE_TEST_CASE(unfetch_illegal_fetchid, F)
 {
 	cJSON *request = create_illegal_unfetch_params();
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = remove_fetch_from_peer(fetch_peer_1, request, params);
+	cJSON *response = remove_fetch_from_peer(fetch_peer_1, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "remove_fetch_from_peer() had no response!");
 	check_invalid_params(response);
 	cJSON_Delete(request);
@@ -1175,15 +1174,13 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_params("bla", "", "", "", "", "", 0);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
 	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
 	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
 
 	request = create_unfetch_params();
-	params = cJSON_GetObjectItem(request, "params");
-	response = remove_fetch_from_peer(fetch_peer_1, request, params);
+	response = remove_fetch_from_peer(fetch_peer_1, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "remove_fetch_from_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "remove_fetch_from_peer() failed!");
 	cJSON_Delete(request);
