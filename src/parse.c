@@ -48,12 +48,12 @@ static const char *get_path_from_params(const struct peer *p, const cJSON *json_
 	cJSON *error;
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
-		error = create_invalid_params_error(p, "reason", "no path given");
+		error = create_error_object(p, INVALID_PARAMS, "reason", "no path given");
 		goto error;
 	}
 
 	if (unlikely(path->type != cJSON_String)) {
-		error = create_invalid_params_error(p, "reason", "path is not a string");
+		error = create_error_object(p, INVALID_PARAMS, "reason", "path is not a string");
 		goto error;
 	}
 
@@ -77,7 +77,7 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 		*err = NULL;
 		return FETCH_ONLY_FLAG;
 	}
-	cJSON *error = create_invalid_params_error(p, "reason", "fetchOnly is not a bool");
+	cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
 	cJSON *response = create_error_response_from_request(p, request, error);
 	*err = response;
 	return 0;
@@ -117,7 +117,7 @@ static cJSON *process_change(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -128,7 +128,7 @@ static cJSON *process_change(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no value given");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -141,7 +141,7 @@ static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -152,7 +152,7 @@ static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no value given");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -167,7 +167,7 @@ static cJSON *process_call(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return response = create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -187,14 +187,14 @@ static cJSON *process_add(const cJSON *json_rpc, struct peer *p)
 
 	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
 		if (!p->is_local_connection) {
-			cJSON *error = create_invalid_request_error(p, "reason", "add only allowed from localhost");
+			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "add only allowed from localhost");
 			return create_error_response_from_request(p, json_rpc, error);
 		}
 	}
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -215,12 +215,12 @@ static cJSON *process_add(const cJSON *json_rpc, struct peer *p)
 	double routed_request_timeout;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error =	create_invalid_params_error(p, "reason", "timeout must be a number");
+			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be a number");
 			return create_error_response_from_request(p, json_rpc, error);
 		} else {
 			routed_request_timeout = timeout->valuedouble;
 			if (unlikely(routed_request_timeout < 0)) {
-				cJSON *error = create_invalid_params_error(p, "reason", "timeout must be positive");
+				cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be positive");
 				return create_error_response_from_request(p, json_rpc, error);
 			}
 		}
@@ -237,7 +237,7 @@ static cJSON *process_remove(const cJSON *json_rpc, const struct peer *p)
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -253,7 +253,7 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -268,7 +268,7 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 
 static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *error = create_method_not_found_error(p, "reason", "get not implemented yet!");
+	cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", "get not implemented yet");
 	return create_error_response_from_request(p, json_rpc, error);
 }
 
@@ -276,7 +276,7 @@ static cJSON *process_unfetch(const cJSON *json_rpc, const struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -287,7 +287,7 @@ static cJSON *process_config(const cJSON *json_rpc, struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -298,29 +298,29 @@ static cJSON *process_authenticate(const cJSON *json_rpc, struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const cJSON *user = cJSON_GetObjectItem(params, "user");
 	if (unlikely(user == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no user given");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no user given");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	if (unlikely(user->type != cJSON_String)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "user is not a string");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "user is not a string");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
 	if (unlikely(passwd == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "no password given");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no password given");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	if (unlikely(passwd->type != cJSON_String)) {
-		cJSON *error = create_invalid_params_error(p, "reason", "password is not a string");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "password is not a string");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
@@ -353,7 +353,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "authenticate") == 0) {
 		return process_authenticate(json_rpc, p);
 	} else {
-		cJSON *error = create_method_not_found_error(p, "reason", method_name);
+		cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", method_name);
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 }
@@ -364,7 +364,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 	if (method != NULL) {
 		cJSON *response;
 		if (unlikely(method->type != cJSON_String)) {
-			cJSON *error = create_invalid_request_error(p, "reason", "method value is not a string");
+			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "method is not a string");
 			response = create_error_response_from_request(p, json_rpc, error);
 		} else {
 			const char *method_name = method->valuestring;
@@ -387,7 +387,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 		return ret;
 	}
 
-	error = create_invalid_request_error(p, "reason", "neither request nor response");
+	error = create_error_object(p, INVALID_REQUEST, "reason", "neither request nor response");
 	cJSON *response = create_error_response_from_request(p, json_rpc, error);
 	return send_response(response, p);
 }
