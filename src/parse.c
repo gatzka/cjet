@@ -83,11 +83,10 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 	return 0;
 }
 
-static int send_response(const cJSON *json_rpc, cJSON *response, const struct peer *p)
+static int send_response(cJSON *response, const struct peer *p)
 {
-	//TODO: eliminate empty parameter
+	//TODO:
 	// eleminate check for ROUTED_MESSAGE
-	(void)json_rpc;
 	if (response == (cJSON *)ROUTED_MESSAGE) {
 		return 0;
 	}
@@ -372,7 +371,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 			response = handle_method(json_rpc, method_name, p);
 		}
 
-		return send_response(json_rpc, response, p);
+		return send_response(response, p);
 	}
 
 	int ret;
@@ -390,7 +389,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 
 	error = create_invalid_request_error(p, "reason", "neither request nor response");
 	cJSON *response = create_error_response_from_request(p, json_rpc, error);
-	return send_response(json_rpc, response, p);
+	return send_response(response, p);
 }
 
 static int parse_json_array(cJSON *root, struct peer *p)
