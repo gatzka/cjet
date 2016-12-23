@@ -180,6 +180,7 @@ cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *resu
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
+
 	cJSON_AddItemToObject(root, result_type, result);
 	return root;
 }
@@ -188,13 +189,7 @@ cJSON *create_result_response_from_request(const struct peer *p, const cJSON *re
 {
 	const cJSON *id = cJSON_GetObjectItem(request, "id");
 	if (id != NULL) {
-		cJSON *response = create_common_response(p, id);
-		if (unlikely(response == NULL)) {
-			return NULL;
-		}
-
-		cJSON_AddItemToObject(response, result_type, result);
-		return response;
+		return create_result_response(p, id, result, result_type);
 	} else {
 		cJSON_Delete(result);
 		return NULL;
