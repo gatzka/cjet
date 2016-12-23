@@ -147,34 +147,6 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	}
 }
 
-static int send_routing_response(const struct peer *p,
-	const cJSON *origin_request_id, const cJSON *response, const char *result_type)
-{
-	if (unlikely(origin_request_id == NULL)) {
-		return 0;
-	}
-
-	cJSON *response_copy = cJSON_Duplicate(response, 1);
-	if (likely(response_copy != NULL)) {
-		cJSON *result_response =
-			create_result_response(p, origin_request_id, response_copy, result_type);
-		if (likely(result_response != NULL)) {
-			int ret = format_and_send_response(p, result_response);
-			cJSON_Delete(result_response);
-			return ret;
-		} else {
-			log_peer_err(p, "Could not create %s response!\n", result_type);
-			cJSON_Delete(response_copy);
-			return -1;
-		}
-	} else {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "response_copy");
-		return -1;
-	}
-
-	return 0;
-}
-
 static uint64_t convert_seconds_to_nsec(double seconds)
 {
 	return (uint64_t)(seconds * 1000000000.0);
@@ -186,11 +158,19 @@ static void request_timeout_handler(void *context, bool cancelled) {
 		struct value_route_table val;
 		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
 		if (likely(ret == HASHTABLE_SUCCESS)) {
-			cJSON *error = create_internal_error(request->requesting_peer, "reason", "timeout for routed request");
-			send_routing_response(request->requesting_peer, request->origin_request_id, error, "error");
-			cJSON_Delete(error);
-			cjet_timer_destroy(&request->timer);
-			cJSON_Delete(request->origin_request_id);
+			if (likely(request->origin_request_id != NULL)) {
+				cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
+				if (likely(result_response != NULL)) {
+					format_and_send_response(request->requesting_peer, result_response);
+					cJSON_Delete(result_response);
+				} else {
+					log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
+				}
+
+				cjet_timer_destroy(&request->timer);
+				cJSON_Delete(request->origin_request_id);
+			}
+
 			cjet_free(request);
 		} else {
 			log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
@@ -198,19 +178,15 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct routing_request *request)
+cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request)
 {
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error = create_invalid_params_error(
-				request->requesting_peer, "reason", "timeout for set/call is not a number");
-			return error;
+			return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
 		} else {
 			if (timeout->valuedouble < 0) {
-				cJSON *error = create_invalid_params_error(
-					request->requesting_peer, "reason", "timeout for set/call is a negative number");
-				return error;
+				return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
 			} else {
 				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
 			}
@@ -219,26 +195,20 @@ cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct
 		timeout_ns = convert_seconds_to_nsec(e->timeout);
 	}
 
-	if (unlikely(cjet_timer_init(&request->timer, e->peer->loop) < 0)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "could not init timer for routing request");
-		return error;
+	if (unlikely(cjet_timer_init(&routing_request->timer, e->peer->loop) < 0)) {
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not init timer for routing request");
 	}
 
-	int ret = request->timer.start(&request->timer, timeout_ns, request_timeout_handler, request);
+	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
 	if (unlikely(ret < 0)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "could not start timer for routing request");
-		return error;
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
 	}
 
 	struct value_route_table val;
-	val.vals[0] = request;
+	val.vals[0] = routing_request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
-			request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		cJSON *error = create_internal_error(
-			request->requesting_peer, "reason", "routing table full");
-		return error;
+			routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 	}
 
 	return NULL;
@@ -267,8 +237,23 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		}
 
 		cjet_timer_destroy(&request->timer);
-		ret = send_routing_response(request->requesting_peer, request->origin_request_id, response, result_type);
-		cJSON_Delete(request->origin_request_id);
+		if (likely(request->origin_request_id != NULL)) {
+			cJSON *response_copy = cJSON_Duplicate(response, 1);
+			if (likely(response_copy != NULL)) {
+				cJSON *result_response = create_result_response(request->requesting_peer, request->origin_request_id, response_copy, result_type);
+				if (likely(result_response != NULL)) {
+					format_and_send_response(request->requesting_peer, result_response);
+					cJSON_Delete(result_response);
+				} else {
+					log_peer_err(request->requesting_peer, "Could not create %s response!\n", result_type);
+					cJSON_Delete(response_copy);
+				}
+			} else {
+				log_peer_err(p, "Could not copy response!\n");
+				ret = -1;
+			}
+			cJSON_Delete(request->origin_request_id);
+		}
 		cjet_free(request);
 	}
 
@@ -282,17 +267,12 @@ static void send_shutdown_response(const struct peer *p,
 		return;
 	}
 
-	cJSON *error = create_internal_error(p, "reason", "peer shuts down");
-	if (likely(error != NULL)) {
-		cJSON *error_response =
-			create_error_response(p, origin_request_id, error);
-		if (likely(error_response != NULL)) {
-			format_and_send_response(p, error_response);
-			cJSON_Delete(error_response);
-		} else {
-			log_peer_err(p, "Could not create %s response!\n", "error");
-			cJSON_Delete(error);
-		}
+	cJSON *error_response = create_error_response(p, origin_request_id, INTERNAL_ERROR, "reason", "peer shuts down");
+	if (likely(error_response != NULL)) {
+		format_and_send_response(p, error_response);
+		cJSON_Delete(error_response);
+	} else {
+		log_peer_err(p, "Could not create %s response!\n", "error");
 	}
 }
 

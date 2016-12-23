@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-cJSON *config_peer(struct peer *p, const cJSON *params);
+cJSON *config_peer(struct peer *p, const cJSON *request);
 
 #ifdef __cplusplus
 }

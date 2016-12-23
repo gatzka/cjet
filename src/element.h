@@ -29,6 +29,7 @@
 
 #include <stdbool.h>
 
+#include "compiler.h"
 #include "fetch.h"
 #include "groups.h"
 #include "json/cJSON.h"
@@ -61,11 +62,10 @@ enum type { STATE, METHOD };
 static const int FETCH_ONLY_FLAG = 0x01;
 
 bool element_is_fetch_only(const struct element *e);
-cJSON *change_state(const struct peer *p, const char *path, const cJSON *value);
-cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
-	const cJSON *timeout, const cJSON *json_rpc, enum type what);
-cJSON *add_element_to_peer(struct peer *p, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s);
-int remove_element_from_peer(const struct peer *p, const char *path);
+cJSON *change_state(const struct peer *p, const cJSON *request);
+cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what);
+cJSON *add_element_to_peer(struct peer *p, const cJSON *request);
+cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request);
 void remove_all_elements_from_peer(struct peer *p);
 
 #ifdef __cplusplus

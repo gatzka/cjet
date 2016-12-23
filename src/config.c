@@ -30,18 +30,25 @@
 #include "config.h"
 #include "json/cJSON.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 
-cJSON *config_peer(struct peer *p, const cJSON *params)
+cJSON *config_peer(struct peer *p, const cJSON *request)
 {
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
+	if (unlikely(params == NULL)) {
+		return response;
+	}
+
 	cJSON *name = cJSON_GetObjectItem(params, "name");
 	if (name != NULL) {
 		if (unlikely(name->type != cJSON_String)) {
-			cJSON *error = create_invalid_params_error(
-				p, "reason", "name is not a string");
-			return error;
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "name is not a string");
 		}
+
 		set_peer_name(p, name->valuestring);
 	}
-	return NULL;
+
+	return create_success_response_from_request(p, request);
 }

@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,39 +24,27 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_ROUTER_H
-#define CJET_ROUTER_H
+#ifndef CJET_REQUEST_H
+#define CJET_REQUEST_H
 
+#include "compiler.h"
 #include "json/cJSON.h"
 #include "peer.h"
-#include "element.h"
-#include "timer.h"
+#include "response.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct routing_request {
-    struct cjet_timer timer;
-	const struct peer *requesting_peer;
-	const struct peer *owner_peer;
-	cJSON *origin_request_id;
-	char id[];
-};
+static inline const cJSON *get_params(const struct peer *p, const cJSON *request, cJSON **response)
+{
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no params found");
+	}
 
-cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
-	const cJSON *value, const char *id);
-cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request);
-struct routing_request *alloc_routing_request(const struct peer *requesting_peer, const struct peer *owner_peer, const cJSON *origin_request_id);
-int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
-	const struct peer *p);
-
-void remove_routing_info_from_peer(const struct peer *p);
-void remove_peer_from_routing_table(const struct peer *p,
-	const struct peer *peer_to_remove);
-
-int add_routing_table(struct peer *p);
-void delete_routing_table(struct peer *p);
+	return params;
+}
 
 #ifdef __cplusplus
 }

@@ -33,19 +33,42 @@
 #include "list.h"
 #include "log.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 
-cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
+cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {
-	if (unlikely(!list_empty(&p->fetch_list))) {
-		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
-		return error;
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
+	if (unlikely(params == NULL)) {
+		return response;
 	}
 
-	const cJSON *auth = credentials_ok(user, passwd);
+	const cJSON *user = cJSON_GetObjectItem(params, "user");
+	if (unlikely(user == NULL)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user given");
+	}
+
+	if (unlikely(user->type != cJSON_String)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user is not a string");
+	}
+
+	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
+	if (unlikely(passwd == NULL)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no password given");
+	}
+
+	if (unlikely(passwd->type != cJSON_String)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password is not a string");
+	}
+
+	if (unlikely(!list_empty(&p->fetch_list))) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "fetched before authenticate", user->valuestring);
+	}
+
+	const cJSON *auth = credentials_ok(user->valuestring, passwd->valuestring);
 	if (auth == NULL) {
-		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
-		return error;
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "invalid credentials", user->valuestring);
 	}
 
 	const cJSON *fetch_groups = cJSON_GetObjectItem(auth, "fetchGroups");
@@ -55,5 +78,5 @@ cJSON *handle_authentication(struct peer *p, const char *user, char *passwd)
 	const cJSON *call_groups = cJSON_GetObjectItem(auth, "callGroups");
 	p->call_groups = get_groups(call_groups);
 
-	return NULL;
+	return create_success_response_from_request(p, request);
 }

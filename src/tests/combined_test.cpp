@@ -284,16 +284,19 @@ struct F {
 	}
 };
 
-static cJSON *create_fetch_params(const char *path_string)
+static cJSON *create_fetch(const char *path_string)
 {
-	cJSON *root = cJSON_CreateObject();
-	BOOST_REQUIRE(root != NULL);
-	cJSON_AddStringToObject(root, "id", "fetch_id_1");
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "id", "fetch_id_1");
 	cJSON *path = cJSON_CreateObject();
 	BOOST_REQUIRE(path != NULL);
-	cJSON_AddItemToObject(root, "path", path);
+	cJSON_AddItemToObject(params, "path", path);
 	cJSON_AddStringToObject(path, "equals", path_string);
 
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "fetch_id_1");
 	return root;
 }
 
@@ -302,7 +305,7 @@ static cJSON *create_call_json_rpc(const char *path_string)
 	cJSON *root = cJSON_CreateObject();
 	BOOST_REQUIRE(root != NULL);
 	cJSON_AddStringToObject(root, "method", "call");
-	cJSON_AddStringToObject(root, "id", "id_1");
+	cJSON_AddStringToObject(root, "id", "call_id_1");
 	cJSON *params = cJSON_CreateObject();
 	BOOST_REQUIRE(params != NULL);
 	cJSON_AddItemToObject(root, "params", params);
@@ -327,45 +330,97 @@ static cJSON *create_set_request(const char *path, const char *request_id)
 	return set_request;
 }
 
-static cJSON *get_value_from_request(const cJSON *set_request)
+static cJSON *create_add(const char *path)
 {
-	cJSON *params = cJSON_GetObjectItem(set_request, "params");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
-	return value;
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+	cJSON_AddItemToObject(params, "value", cJSON_CreateNumber(1234));
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "add_request_1");
+	cJSON_AddStringToObject(root, "method", "add");
+	return root;
+}
+
+static cJSON *create_add_method(const char *path)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "add_request_1");
+	cJSON_AddStringToObject(root, "method", "add");
+	return root;
+}
+
+static bool response_is_error(const cJSON *response)
+{
+	const cJSON *error = cJSON_GetObjectItem(response, "error");
+	return (error != NULL);
+}
+
+static cJSON *create_change(const char *path)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+	cJSON_AddItemToObject(params, "value", cJSON_CreateNumber(4321));
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "change_request_1");
+	cJSON_AddStringToObject(root, "method", "change");
+	return root;
 }
 
 BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 {
 	const char *path = "/foo/bar/";
-	int state_value = 12345;
-	cJSON *value = cJSON_CreateNumber(state_value);
+	cJSON *request = create_add(path);
 
-	cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_CHECK(error == NULL);
-
-	cJSON_Delete(value);
+	cJSON *response = add_element_to_peer(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(response);
 
 	const struct element *e = get_state(path);
-	BOOST_CHECK(e->value->valueint == state_value);
+	cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *value = cJSON_GetObjectItem(params, "value");
+	BOOST_CHECK_MESSAGE(e->value->valueint == value->valueint, "added state does not contain initial value!");
+	cJSON_Delete(request);
 
 	struct fetch *f = NULL;
-	cJSON *params = create_fetch_params(path);
-	error = add_fetch_to_peer(fetch_peer_1, params, &f);
-	BOOST_REQUIRE(error == NULL);
-	error = add_fetch_to_states(f);
-	BOOST_REQUIRE(error == NULL);
-	error = add_fetch_to_peer(fetch_peer_2, params, &f);
-	BOOST_REQUIRE(error == NULL);
-	error = add_fetch_to_states(f);
-	BOOST_REQUIRE(error == NULL);
+	request = create_fetch(path);
+
+	response = add_fetch_to_peer(fetch_peer_1, request, &f);
+	BOOST_REQUIRE(response == NULL);
+	response = add_fetch_to_states(fetch_peer_1, request, f);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
+	cJSON_Delete(response);
+
+	response = add_fetch_to_peer(fetch_peer_2, request, &f);
+	BOOST_REQUIRE(response == NULL);
+	response = add_fetch_to_states(fetch_peer_2, request, f);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	BOOST_CHECK(fetch_peer_1_event == ADD_EVENT);
 	BOOST_CHECK(fetch_peer_2_event == ADD_EVENT);
 
-	cJSON *new_value = cJSON_CreateNumber(4321);
-	error = change_state(owner_peer, path, new_value);
-	BOOST_REQUIRE(error == NULL);
-	cJSON_Delete(new_value);
+	request = create_change(path);
+	params = cJSON_GetObjectItem(request, "params");
+
+	response = change_state(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "change_state() failed!");
+	cJSON_Delete(response);
 
 	BOOST_CHECK(fetch_peer_1_event == CHANGE_EVENT);
 	BOOST_CHECK(fetch_peer_2_event == CHANGE_EVENT);
@@ -373,23 +428,24 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	BOOST_CHECK(!message_for_wrong_peer);
 	remove_all_fetchers_from_peer(fetch_peer_1);
 	remove_all_fetchers_from_peer(fetch_peer_2);
-	cJSON_Delete(params);
+	cJSON_Delete(request);
 }
 
 BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 {
 	const char *path = "/foo/bar/";
-	int state_value = 12345;
-	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_element_to_peer(owner_peer, path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_CHECK(error == NULL);
-	cJSON_Delete(value);
+	cJSON *request = create_add(path);
+
+	cJSON *response = add_element_to_peer(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	cJSON *set_request = create_set_request(path, "request1");
-	cJSON *new_value = get_value_from_request(set_request);
-	error = set_or_call(set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(set_peer, set_request, STATE);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(set_request);
-	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
 
 	free_peer(owner_peer);
 	owner_peer = NULL;
@@ -400,12 +456,17 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *error = add_element_to_peer(owner_peer, method_no_args_path, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_CHECK(error == NULL);
+	cJSON *request = create_add_method(method_no_args_path);
+
+	cJSON *response = add_element_to_peer(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	error = set_or_call(call_peer, method_no_args_path, NULL, NULL, call_json_rpc, METHOD);
-	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+	response = set_or_call(call_peer, call_json_rpc, METHOD);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(call_json_rpc);
 
 	BOOST_CHECK(setter_caller_result == SUCCESS);
@@ -413,17 +474,18 @@ BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 
 BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 {
-	int state_value = 12345;
-	cJSON *value = cJSON_CreateNumber(state_value);
-	cJSON *error = add_element_to_peer(owner_peer, read_only_state_path, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_CHECK(error == NULL);
-	cJSON_Delete(value);
+	cJSON *request = create_add(read_only_state_path);
+
+	cJSON *response = add_element_to_peer(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	cJSON *set_request = create_set_request(read_only_state_path, "request1");
-	cJSON *new_value = get_value_from_request(set_request);
-	error = set_or_call(set_peer, read_only_state_path, new_value, NULL, set_request, STATE);
+	response = set_or_call(set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
-	BOOST_CHECK(error == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 
 	BOOST_CHECK(setter_caller_result == ERROR);
 	BOOST_CHECK(setter_caller_error_code == READ_ONLY_SET_ERROR);

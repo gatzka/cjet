@@ -90,24 +90,8 @@ error:
 	return NULL;
 }
 
-int handle_info(const cJSON *json_rpc, const struct peer *p)
+cJSON *handle_info(const cJSON *json_rpc, const struct peer *p)
 {
-	const cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
-	if (unlikely(id == NULL)) {
-		log_peer_err(p, "no id in response!\n");
-		return -1;
-	}
 	cJSON *info = create_info();
-	cJSON *result = create_result_response(p, id, info, "result");
-
-	char *rendered = cJSON_PrintUnformatted(result);
-	cJSON_Delete(result);
-	if (likely(rendered != NULL)) {
-		int ret = p->send_message(p, rendered, strlen(rendered));
-		cJSON_free(rendered);
-		return ret;
-	} else {
-		log_peer_err(p, "Could not render JSON into a string!\n");
-		return -1;
-	}
+	return create_result_response_from_request(p, json_rpc, info, "result");
 }

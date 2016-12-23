@@ -53,8 +53,6 @@ enum event {
 static struct io_event *timer_ev;
 static struct eventloop loop;
 
-const char path[] = "/foo/bar/";
-
 static const char users[] = "users";
 static const char admins[] = "admin";
 
@@ -125,17 +123,22 @@ static void fake_remove(const void *this_ptr, const struct io_event *ev)
 	return;
 }
 
-static cJSON *create_fetch_params(const char *path_equals_string)
+static cJSON *create_fetch(const char *path_equals_string)
 {
-	cJSON *root = cJSON_CreateObject();
-	BOOST_REQUIRE(root != NULL);
-	cJSON_AddStringToObject(root, "id", "fetch_id_1");
-	cJSON *path = cJSON_CreateObject();
-	BOOST_REQUIRE(path != NULL);
-	cJSON_AddItemToObject(root, "path", path);
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "id", "fetch_id_1");
+	cJSON *fetch_path = cJSON_CreateObject();
+	BOOST_REQUIRE(fetch_path != NULL);
+	cJSON_AddItemToObject(params, "path", fetch_path);
 	if (strlen(path_equals_string)) {
-		cJSON_AddStringToObject(path, "equals", path_equals_string);
+		cJSON_AddStringToObject(fetch_path, "equals", path_equals_string);
 	}
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "fetch_request_1");
+	cJSON_AddStringToObject(root, "method", "fetch");
 	return root;
 }
 
@@ -152,15 +155,52 @@ static enum event get_event_from_json(cJSON *json)
 	return UNKNOWN_EVENT;
 }
 
-static void perform_fetch(const char *path)
+static bool response_is_error(const cJSON *response)
+{
+	const cJSON *error = cJSON_GetObjectItem(response, "error");
+	return (error != NULL);
+}
+
+static void perform_fetch(const char *fetch_path)
 {
 	struct fetch *f = NULL;
-	cJSON *params = create_fetch_params(path);
-	cJSON *error = add_fetch_to_peer(&fetch_peer, params, &f);
-	cJSON_Delete(params);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_fetch_to_peer() failed!");
-	error = add_fetch_to_states(f);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_fetch_to_states() failed!");
+	cJSON *request = create_fetch(fetch_path);
+	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
+	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	response = add_fetch_to_states(&fetch_peer, request, f);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
+	cJSON_Delete(response);
+	cJSON_Delete(request);
+}
+
+static cJSON *create_add_with_access(const char *path, cJSON *access)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+	cJSON_AddItemToObject(params, "value", cJSON_CreateNumber(1234));
+	cJSON_AddItemToObject(params, "access", access);
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "add_request_1");
+	cJSON_AddStringToObject(root, "method", "add");
+	return root;
+}
+
+static cJSON *create_authentication()
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "user", "user");
+	cJSON_AddStringToObject(params, "password", "password");
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "auth_request_1");
+	cJSON_AddStringToObject(root, "method", "authenticate");
+	return root;
 }
 
 struct F {
@@ -178,8 +218,6 @@ struct F {
 		element_hashtable_create();
 		init_peer(&owner_peer, false, &loop);
 		owner_peer.send_message = send_message;
-		init_peer(&set_peer, false, &loop);
-		set_peer.send_message = send_message;
 		init_peer(&fetch_peer, false, &loop);
 		fetch_peer.send_message = send_message;
 
@@ -203,14 +241,12 @@ struct F {
 		cJSON_AddItemToArray(call_groups, cJSON_CreateString(users));
 		cJSON_AddItemToObject(user_auth, "callGroups", call_groups);
 
-		value = cJSON_CreateNumber(1234);
 		password = ::strdup("password");
 	}
 
 	~F()
 	{
 		::free(password);
-		cJSON_Delete(value);
 
 		while (!fetch_events.empty()) {
 			cJSON *ptr = fetch_events.front();
@@ -220,30 +256,37 @@ struct F {
 		cJSON_Delete(user_auth);
 		free_groups();
 		free_peer_resources(&fetch_peer);
-		free_peer_resources(&set_peer);
 		free_peer_resources(&owner_peer);
 		element_hashtable_delete();
 	}
 
-	cJSON *value;
 	char *password;
 	struct peer owner_peer;
-	struct peer set_peer;
 };
 
 BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 {
+	const char path[] = "/foo/bar/";
+
 	cJSON *access = cJSON_CreateObject();
 	cJSON *fetch_groups = cJSON_CreateArray();
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(users));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *error = add_element_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_element_to_peer() failed!");
-	cJSON_Delete(access);
+	cJSON *request = create_add_with_access(path, access);
 
-	error = handle_authentication(&fetch_peer, "user", password);
-	BOOST_CHECK_MESSAGE(error == NULL, "fetch peer authentication failed!");
+	cJSON *response = add_element_to_peer(&owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
+
+	request = create_authentication();
+	response = handle_authentication(&fetch_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "fetch peer authentication failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	perform_fetch(path);
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 1, "Number of emitted events != 1!");
@@ -257,17 +300,27 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 
 BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 {
+	const char path[] = "/foo/bar/";
+
 	cJSON *access = cJSON_CreateObject();
 	cJSON *fetch_groups = cJSON_CreateArray();
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(admins));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *error = add_element_to_peer(&owner_peer, path, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
-	BOOST_REQUIRE_MESSAGE(error == NULL, "add_element_to_peer() failed!");
-	cJSON_Delete(access);
+	cJSON *request = create_add_with_access(path, access);
 
-	error = handle_authentication(&fetch_peer, "user", password);
-	BOOST_CHECK_MESSAGE(error == NULL, "fetch peer authentication failed!");
+	cJSON *response = add_element_to_peer(&owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
+
+	request = create_authentication();
+	response = handle_authentication(&fetch_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "fetch peer authentication failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
 
 	perform_fetch(path);
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 0, "Number of emitted events != 0!");
