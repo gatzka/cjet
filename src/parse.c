@@ -64,25 +64,6 @@ error:
 	return NULL;
 }
 
-static int get_fetch_only_from_params(const struct peer *p, const cJSON *request, const cJSON *params, cJSON **err)
-{
-	const cJSON *fetch_only = cJSON_GetObjectItem(params, "fetchOnly");
-	if (fetch_only == NULL || (fetch_only->type == cJSON_False)) {
-		*err = NULL;
-		return 0;
-	}
-
-	if (fetch_only->type == cJSON_True) {
-		*err = NULL;
-		return FETCH_ONLY_FLAG;
-	}
-
-	cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
-	cJSON *response = create_error_response_from_request(p, request, error);
-	*err = response;
-	return 0;
-}
-
 static int send_response(cJSON *response, const struct peer *p)
 {
 	if (response == NULL) {
@@ -103,56 +84,6 @@ static int send_response(cJSON *response, const struct peer *p)
 render_error:
 	cJSON_Delete(response);
 	return ret;
-}
-
-static cJSON *process_add(const cJSON *json_rpc, struct peer *p)
-{
-	cJSON *response;
-
-	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
-		if (!p->is_local_connection) {
-			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "add only allowed from localhost");
-			return create_error_response_from_request(p, json_rpc, error);
-		}
-	}
-
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const char *path = get_path_from_params(p, json_rpc, params, &response);
-	if (unlikely(path == NULL)) {
-		return response;
-	}
-
-	int flags = get_fetch_only_from_params(p, json_rpc, params, &response);
-	if (unlikely(response != NULL)) {
-		return response;
-	}
-
-	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	const cJSON *access = cJSON_GetObjectItem(params, "access");
-
-	double routed_request_timeout;
-	if (timeout != NULL) {
-		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be a number");
-			return create_error_response_from_request(p, json_rpc, error);
-		} else {
-			routed_request_timeout = timeout->valuedouble;
-			if (unlikely(routed_request_timeout < 0)) {
-				cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be positive");
-				return create_error_response_from_request(p, json_rpc, error);
-			}
-		}
-	} else {
-		routed_request_timeout = CONFIG_ROUTED_MESSAGES_TIMEOUT;
-	}
-
-	return add_element_to_peer(p, json_rpc, path, value, access, flags, routed_request_timeout);
 }
 
 static cJSON *process_remove(const cJSON *json_rpc, const struct peer *p)
@@ -261,7 +192,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "call") == 0) {
 		return set_or_call(p, json_rpc, METHOD);
 	} else if (strcmp(method_name, "add") == 0) {
-		return process_add(json_rpc, p);
+		return add_element_to_peer(p, json_rpc);
 	} else if (strcmp(method_name, "remove") == 0) {
 		return process_remove(json_rpc, p);
 	} else if (strcmp(method_name, "fetch") == 0) {

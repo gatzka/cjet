@@ -263,9 +263,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 	cJSON *request = create_add_with_access(access);
 	cJSON *params = cJSON_GetObjectItem(request, "params");
 	cJSON *json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
 
-	cJSON *response = add_element_to_peer(&owner_peer, request, json_path->valuestring, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(response);
@@ -297,9 +296,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 	cJSON *request = create_add_with_access(access);
 	cJSON *params = cJSON_GetObjectItem(request, "params");
 	cJSON *json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
 
-	cJSON *response = add_element_to_peer(&owner_peer, request, json_path->valuestring, value, access, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(response);

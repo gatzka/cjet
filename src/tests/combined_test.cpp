@@ -344,6 +344,19 @@ static cJSON *create_add(const char *path)
 	return root;
 }
 
+static cJSON *create_add_method(const char *path)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "path", path);
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "add_request_1");
+	cJSON_AddStringToObject(root, "method", "add");
+	return root;
+}
+
 static bool response_is_error(const cJSON *response)
 {
 	const cJSON *error = cJSON_GetObjectItem(response, "error");
@@ -368,16 +381,15 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 {
 	const char *path = "/foo/bar/";
 	cJSON *request = create_add(path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
 
-	cJSON *response = add_element_to_peer(owner_peer, request, json_path->valuestring, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(response);
 
 	const struct element *e = get_state(path);
+	cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *value = cJSON_GetObjectItem(params, "value");
 	BOOST_CHECK_MESSAGE(e->value->valueint == value->valueint, "added state does not contain initial value!");
 	cJSON_Delete(request);
 
@@ -424,11 +436,8 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 {
 	const char *path = "/foo/bar/";
 	cJSON *request = create_add(path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
 
-	cJSON *response = add_element_to_peer(owner_peer, request, json_path->valuestring, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(request);
@@ -448,11 +457,9 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 
 BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 {
-	cJSON *request = create_add(method_no_args_path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
+	cJSON *request = create_add_method(method_no_args_path);
 
-	cJSON *response = add_element_to_peer(owner_peer, request, json_path->valuestring, NULL, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(request);
@@ -469,11 +476,8 @@ BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 {
 	cJSON *request = create_add(read_only_state_path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
 
-	cJSON *response = add_element_to_peer(owner_peer, request, json_path->valuestring, value, NULL, 0x00, CONFIG_ROUTED_MESSAGES_TIMEOUT);
+	cJSON *response = add_element_to_peer(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
 	cJSON_Delete(request);

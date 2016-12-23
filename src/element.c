@@ -189,6 +189,25 @@ error:
 	return NULL;
 }
 
+static int get_fetch_only_from_params(const struct peer *p, const cJSON *request, const cJSON *params, cJSON **err)
+{
+	const cJSON *fetch_only = cJSON_GetObjectItem(params, "fetchOnly");
+	if (fetch_only == NULL || (fetch_only->type == cJSON_False)) {
+		*err = NULL;
+		return 0;
+	}
+
+	if (fetch_only->type == cJSON_True) {
+		*err = NULL;
+		return FETCH_ONLY_FLAG;
+	}
+
+	cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
+	cJSON *response = create_error_response_from_request(p, request, error);
+	*err = response;
+	return 0;
+}
+
 bool element_is_fetch_only(const struct element *e)
 {
 	if ((e->flags & FETCH_ONLY_FLAG) == FETCH_ONLY_FLAG) {
@@ -267,28 +286,24 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-		response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	if (unlikely(element_is_fetch_only(e))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetchOnly", path);
-		response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
 		((what == METHOD) && (e->value != NULL)))) {
 			cJSON *error = create_error_object(p, INVALID_PARAMS, "set/call on element not possible", path);
-			response = create_error_response_from_request(p, request, error);
-			return response;
+			return create_error_response_from_request(p, request, error);
 	}
 
 	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
 		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "request not authorized", path);
-		response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(request, "id");
@@ -296,15 +311,13 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 		((origin_request_id->type != cJSON_String) &&
 		 (origin_request_id->type != cJSON_Number))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "request id is neither string nor number", path);
-		response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	struct routing_request *routing_request = alloc_routing_request(p, e->peer, origin_request_id);
 	if (unlikely(routing_request == NULL)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not create routing request", path);
-		response = create_error_response_from_request(p, request, error);
-		return response;
+		return create_error_response_from_request(p, request, error);
 	}
 
 	const cJSON *value;
@@ -358,8 +371,49 @@ routed_message_creation_failed:
 	return response;
 }
 
-cJSON *add_element_to_peer(struct peer *p, const cJSON *request, const char *path, const cJSON *value, const cJSON *access, int flags, double routed_request_timeout_s)
+cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 {
+	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
+		if (!p->is_local_connection) {
+			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "add only allowed from localhost");
+			return create_error_response_from_request(p, request, error);
+		}
+	}
+
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	cJSON *response;
+	const char *path = get_path_from_params(p, request, params, &response);
+	if (unlikely(path == NULL)) {
+		return response;
+	}
+
+	int flags = get_fetch_only_from_params(p, request, params, &response);
+	if (unlikely(response != NULL)) {
+		return response;
+	}
+
+	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
+	double routed_request_timeout_s;
+	if (timeout != NULL) {
+		if (unlikely(timeout->type != cJSON_Number)) {
+			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be a number");
+			return create_error_response_from_request(p, request, error);
+		} else {
+			routed_request_timeout_s = timeout->valuedouble;
+			if (unlikely(routed_request_timeout_s < 0)) {
+				cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be positive");
+				return create_error_response_from_request(p, request, error);
+			}
+		}
+	} else {
+		routed_request_timeout_s = CONFIG_ROUTED_MESSAGES_TIMEOUT;
+	}
+
 	struct element *e = element_table_get(path);
 	if (unlikely(e != NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "exists", path);
@@ -372,6 +426,8 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request, const char *pat
 		return create_error_response_from_request(p, request, error);
 	}
 
+	const cJSON *value = cJSON_GetObjectItem(params, "value");
+	const cJSON *access = cJSON_GetObjectItem(params, "access");
 	cJSON *error = init_element(e, path, value, access, p, routed_request_timeout_s, flags);
 	if (unlikely(error != NULL)) {
 		cjet_free(e);
