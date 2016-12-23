@@ -147,28 +147,21 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	}
 }
 
-static int send_routing_response(const struct peer *p,
-	const cJSON *origin_request_id, const cJSON *response, const char *result_type)
+static int send_routing_response(const struct peer *p, const cJSON *origin_request_id, cJSON *response, const char *result_type)
 {
 	if (unlikely(origin_request_id == NULL)) {
+		cJSON_Delete(response);
 		return 0;
 	}
 
-	cJSON *response_copy = cJSON_Duplicate(response, 1);
-	if (likely(response_copy != NULL)) {
-		cJSON *result_response =
-			create_result_response(p, origin_request_id, response_copy, result_type);
-		if (likely(result_response != NULL)) {
-			int ret = format_and_send_response(p, result_response);
-			cJSON_Delete(result_response);
-			return ret;
-		} else {
-			log_peer_err(p, "Could not create %s response!\n", result_type);
-			cJSON_Delete(response_copy);
-			return -1;
-		}
+	cJSON *result_response = create_result_response(p, origin_request_id, response, result_type);
+	if (likely(result_response != NULL)) {
+		int ret = format_and_send_response(p, result_response);
+		cJSON_Delete(result_response);
+		return ret;
 	} else {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "response_copy");
+		log_peer_err(p, "Could not create %s response!\n", result_type);
+		cJSON_Delete(response);
 		return -1;
 	}
 
@@ -188,7 +181,7 @@ static void request_timeout_handler(void *context, bool cancelled) {
 		if (likely(ret == HASHTABLE_SUCCESS)) {
 			cJSON *response = create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "timeout for routed request");
 			send_routing_response(request->requesting_peer, request->origin_request_id, response, "error");
-			cJSON_Delete(response);
+			//cJSON_Delete(response);
 			cjet_timer_destroy(&request->timer);
 			cJSON_Delete(request->origin_request_id);
 			cjet_free(request);
@@ -257,7 +250,13 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		}
 
 		cjet_timer_destroy(&request->timer);
-		ret = send_routing_response(request->requesting_peer, request->origin_request_id, response, result_type);
+		cJSON *response_copy = cJSON_Duplicate(response, 1);
+		if (likely(response_copy != NULL)) {
+			ret = send_routing_response(request->requesting_peer, request->origin_request_id, response_copy, result_type);
+		} else {
+			log_peer_err(p, "Could not copy response!\n");
+			ret = -1;
+		}
 		cJSON_Delete(request->origin_request_id);
 		cjet_free(request);
 	}

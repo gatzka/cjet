@@ -178,6 +178,7 @@ cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *resu
 {
 	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
+		cJSON_Delete(result);
 		return NULL;
 	}
 
