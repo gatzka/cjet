@@ -76,74 +76,70 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 	return response;
 }
 
-static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_get(const cJSON *request, struct peer *p)
 {
-	cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", "get not implemented yet");
-	return create_error_response_from_request_old(p, json_rpc, error);
+	return create_error_response_from_request(p, request, METHOD_NOT_FOUND, "reason", "get not implemented yet");
 }
 
-static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
+static cJSON *handle_method(const cJSON *request, const char *method_name,
 	struct peer *p)
 {
 	if (strcmp(method_name, "change") == 0) {
-		return change_state(p, json_rpc);
+		return change_state(p, request);
 	} else if (strcmp(method_name, "set") == 0) {
-		return set_or_call(p, json_rpc, STATE);
+		return set_or_call(p, request, STATE);
 	} else if (strcmp(method_name, "call") == 0) {
-		return set_or_call(p, json_rpc, METHOD);
+		return set_or_call(p, request, METHOD);
 	} else if (strcmp(method_name, "add") == 0) {
-		return add_element_to_peer(p, json_rpc);
+		return add_element_to_peer(p, request);
 	} else if (strcmp(method_name, "remove") == 0) {
-		return remove_element_from_peer(p, json_rpc);
+		return remove_element_from_peer(p, request);
 	} else if (strcmp(method_name, "fetch") == 0) {
-		return process_fetch(json_rpc, p);
+		return process_fetch(request, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
-		return remove_fetch_from_peer(p, json_rpc);
+		return remove_fetch_from_peer(p, request);
 	} else if (strcmp(method_name, "get") == 0) {
-		return process_get(json_rpc, p);
+		return process_get(request, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return config_peer(p, json_rpc);
+		return config_peer(p, request);
 	} else if (strcmp(method_name, "info") == 0) {
-		return handle_info(json_rpc, p);
+		return handle_info(request, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
-		return handle_authentication(p, json_rpc);
+		return handle_authentication(p, request);
 	} else {
-		cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", method_name);
-		return create_error_response_from_request_old(p, json_rpc, error);
+		return create_error_response_from_request(p, request, METHOD_NOT_FOUND, "reason", method_name);
 	}
 }
 
-static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
+static int parse_json_rpc(const cJSON *request, struct peer *p)
 {
-	const cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
+	const cJSON *method = cJSON_GetObjectItem(request, "method");
 	if (method != NULL) {
 		cJSON *response;
 		if (unlikely(method->type != cJSON_String)) {
-			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "method is not a string");
-			response = create_error_response_from_request_old(p, json_rpc, error);
+			response = create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "method is not a string");
 		} else {
 			const char *method_name = method->valuestring;
-			response = handle_method(json_rpc, method_name, p);
+			response = handle_method(request, method_name, p);
 		}
 
 		return send_response(response, p);
 	}
 
 	int ret;
-	const cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
+	const cJSON *result = cJSON_GetObjectItem(request, "result");
 	if (result != NULL) {
-		ret = handle_routing_response(json_rpc, result, "result", p);
+		ret = handle_routing_response(request, result, "result", p);
 		return ret;
 	}
 
-	cJSON *error = cJSON_GetObjectItem(json_rpc, "error");
+	cJSON *error = cJSON_GetObjectItem(request, "error");
 	if (error != NULL) {
-		ret = handle_routing_response(json_rpc, error, "error", p);
+		ret = handle_routing_response(request, error, "error", p);
 		return ret;
 	}
 
-	error = create_error_object(p, INVALID_REQUEST, "reason", "neither request nor response");
-	cJSON *response = create_error_response_from_request_old(p, json_rpc, error);
+	cJSON *response = create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "neither request nor response");
 	return send_response(response, p);
 }
 

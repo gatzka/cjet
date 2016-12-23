@@ -169,25 +169,19 @@ static void free_element(struct element *e)
 	cjet_free(e);
 }
 
-static const char *get_path_from_params(const struct peer *p, const cJSON *json_rpc, const cJSON *params, cJSON **response)
+static const char *get_path_from_params(const struct peer *p, const cJSON *request, const cJSON *params, cJSON **response)
 {
-	cJSON *error;
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (unlikely(path == NULL)) {
-		error = create_error_object(p, INVALID_PARAMS, "reason", "no path given");
-		goto error;
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no path given");
+		return NULL;
 	}
 
 	if (unlikely(path->type != cJSON_String)) {
-		error = create_error_object(p, INVALID_PARAMS, "reason", "path is not a string");
-		goto error;
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "path is not a string");
 	}
 
 	return path->valuestring;
-
-error:
-	*response = create_error_response_from_request_old(p, json_rpc, error);
-	return NULL;
 }
 
 static int get_fetch_only_from_params(const struct peer *p, const cJSON *request, const cJSON *params, cJSON **err)
@@ -203,9 +197,7 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 		return FETCH_ONLY_FLAG;
 	}
 
-	cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
-	cJSON *response = create_error_response_from_request_old(p, request, error);
-	*err = response;
+	*err = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "fetchOnly is not a bool");
 	return 0;
 }
 
@@ -234,37 +226,31 @@ cJSON *change_state(const struct peer *p, const cJSON *request)
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no value found");
 	}
 
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "not exists", path);
 	}
 
 	if (unlikely(e->peer != p)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "not owner of state", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "not owner of state", path);
 	}
 
 	if (unlikely(e->value == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "change on method not possible", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "change on method not possible", path);
 	}
 
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (value_copy == NULL) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "not enough memory", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "not enough memory", path);
 	}
 
 	cJSON_Delete(e->value);
 	e->value = value_copy;
 	if (unlikely(notify_fetchers(e, "change") != 0)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not notify fetching peer", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "could not notify fetching peer", path);
 	}
 
 	return create_success_response_from_request(p, request);
@@ -286,47 +272,40 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "not exists", path);
 	}
 
 	if (unlikely(element_is_fetch_only(e))) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetchOnly", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "fetchOnly", path);
 	}
 
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
 		((what == METHOD) && (e->value != NULL)))) {
-			cJSON *error = create_error_object(p, INVALID_PARAMS, "set/call on element not possible", path);
-			return create_error_response_from_request_old(p, request, error);
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "set/call on element not possible", path);
 	}
 
 	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
 		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "request not authorized", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "request not authorized", path);
 	}
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(request, "id");
 	if ((origin_request_id != NULL) &&
 		((origin_request_id->type != cJSON_String) &&
 		 (origin_request_id->type != cJSON_Number))) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "request id is neither string nor number", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "request id is neither string nor number", path);
 	}
 
 	struct routing_request *routing_request = alloc_routing_request(p, e->peer, origin_request_id);
 	if (unlikely(routing_request == NULL)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not create routing request", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "could not create routing request", path);
 	}
 
 	const cJSON *value;
 	if (what == STATE) {
 		value = cJSON_GetObjectItem(params, "value");
 		if (unlikely(value == NULL)) {
-			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
-			return create_error_response_from_request_old(p, request, error);
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no value found");
 		}
 	} else {
 		value = cJSON_GetObjectItem(params, "args");
@@ -334,8 +313,7 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 
 	cJSON *routed_message = create_routed_message(p, path, what, value, routing_request->id);
 	if (unlikely(routed_message == NULL)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not create routed JSON object");
-		response = create_error_response_from_request_old(p, request, error);
+		response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not create routed JSON object");
 		goto routed_message_creation_failed;
 	}
 
@@ -348,15 +326,13 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not render message");
-		response = create_error_response_from_request_old(p, request, error);
+		response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not render message");
 		goto delete_json;
 	}
 
 	if (unlikely(e->peer->send_message(e->peer, rendered_message,
 				 strlen(rendered_message)) != 0)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not send routing information");
-		response = create_error_response_from_request_old(p, request, error);
+		response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not send routing information");
 	}
 
 	cjet_free(rendered_message);
@@ -375,8 +351,7 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 {
 	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
 		if (!p->is_local_connection) {
-			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "add only allowed from localhost");
-			return create_error_response_from_request_old(p, request, error);
+			return create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "add only allowed from localhost");
 		}
 	}
 
@@ -400,13 +375,11 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 	double routed_request_timeout_s;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be a number");
-			return create_error_response_from_request_old(p, request, error);
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout must be a number");
 		} else {
 			routed_request_timeout_s = timeout->valuedouble;
 			if (unlikely(routed_request_timeout_s < 0)) {
-				cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "timeout must be positive");
-				return create_error_response_from_request_old(p, request, error);
+				return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout must be positive");
 			}
 		}
 	} else {
@@ -415,14 +388,12 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 
 	struct element *e = element_table_get(path);
 	if (unlikely(e != NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "exists", path);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "exists", path);
 	}
 
 	e = alloc_element(p);
 	if (unlikely(e == NULL)) {
-		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "not enough memory to allocate jet element");
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to allocate jet element");
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
@@ -434,15 +405,13 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 	}
 
 	if (unlikely(find_fetchers_for_element(e) != 0)) {
-		error = create_error_object(p, INTERNAL_ERROR, "reason", "could not notify fetching peer");
 		free_element(e);
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not notify fetching peer");
 	}
 
 	if (unlikely(element_table_put(e->path, e) != HASHTABLE_SUCCESS)) {
 		free_element(e);
-		error = create_error_object(p, INTERNAL_ERROR, "reason", "element table full");
-		return create_error_response_from_request_old(p, request, error);
+		return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "element table full");
 	}
 
 	list_add_tail(&e->element_list, &p->element_list);
@@ -482,8 +451,7 @@ cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request)
 		}
 	}
 
-	cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-	return create_error_response_from_request_old(p, request, error);
+	return create_error_response_from_request(p, request, INVALID_PARAMS, "not exists", path);
 }
 
 void remove_all_elements_from_peer(struct peer *p)
