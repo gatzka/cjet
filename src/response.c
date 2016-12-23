@@ -71,36 +71,6 @@ static cJSON *create_common_response(const struct peer *p, const cJSON *id)
 	return root;
 }
 
-cJSON *create_error_object_old(const struct peer *p, const char *message, int code, const char *tag, const char *reason)
-{
-	cJSON *error = cJSON_CreateObject();
-	if (unlikely(error == NULL)) {
-		goto err;
-	}
-	error = add_subobject_to_object(p, error, cJSON_CreateString(message), "message");
-	if (unlikely(error == NULL)) {
-		goto err;
-	}
-	error = add_subobject_to_object(p, error, cJSON_CreateNumber(code), "code");
-	if (unlikely(error == NULL)) {
-		goto err;
-	}
-	if ((tag != NULL) && (reason != NULL)) {
-		cJSON *data = cJSON_CreateObject();
-		if (likely(data != NULL)) {
-			cJSON_AddItemToObject(error, "data", data);
-			if (unlikely(add_subobject_to_object(p, data, cJSON_CreateString(reason), tag) == NULL)) {
-				goto err;
-			}
-		}
-	}
-	return error;
-
-err:
-	log_peer_err(p, "Could not create error JSON object!\n");
-	return NULL;
-}
-
 cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason)
 {
 	cJSON *error = cJSON_CreateObject();
@@ -158,24 +128,14 @@ err:
 	return NULL;
 }
 
-cJSON *create_invalid_request_error(const struct peer *p, const char *tag, const char *reason)
-{
-	return create_error_object_old(p, "Invalid Request", -32600, tag, reason);
-}
-
-cJSON *create_method_not_found_error(const struct peer *p, const char *tag, const char *reason)
-{
-	return create_error_object_old(p, "Method not found", -32601, tag, reason);
-}
-
 cJSON *create_invalid_params_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object_old(p, "Invalid params", -32602, tag, reason);
+	return create_error_object(p, -32602, tag, reason);
 }
 
 cJSON *create_internal_error(const struct peer *p, const char *tag, const char *reason)
 {
-	return create_error_object_old(p, "Internal error", -32603, tag, reason);
+	return create_error_object(p, -32603, tag, reason);
 }
 
 cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error)

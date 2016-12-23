@@ -140,7 +140,7 @@ BOOST_FIXTURE_TEST_CASE(invalid_request_response, F)
 	const char *tag = "reason";
 	const char *reason = "neither request nor response";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_invalid_request_error(&p, tag, reason);
+	cJSON *error = create_error_object(&p, INVALID_REQUEST, tag, reason);
 	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
@@ -166,7 +166,7 @@ BOOST_FIXTURE_TEST_CASE(method_not_found_response, F)
 	const char *tag = "reason";
 	const char *reason = "calling";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_method_not_found_error(&p, tag, reason);
+	cJSON *error = create_error_object(&p, METHOD_NOT_FOUND, tag, reason);
 	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");

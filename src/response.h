@@ -39,16 +39,13 @@ extern "C" {
 #define INVALID_PARAMS -32602
 #define INTERNAL_ERROR -32603
 
-cJSON *create_invalid_request_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_invalid_params_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_internal_error(const struct peer *p, const char *tag, const char *reason);
-cJSON *create_method_not_found_error(const struct peer *p, const char *tag, const char *reason);
 cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error);
 cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request);
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type);
 cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, cJSON *error);
 cJSON *create_result_response_from_request(const struct peer *p, const cJSON *request, cJSON *result, const char *result_type);
-cJSON *create_error_object_old(const struct peer *p, const char *message, int code, const char *tag, const char *reason);
 cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason);
 //TODO: eliminate unused headers
 
