@@ -57,8 +57,6 @@ static const char *get_path_from_params(const struct peer *p, const cJSON *json_
 		goto error;
 	}
 
-	// TODO: necessary?
-	*response = NULL;
 	return path->valuestring;
 
 error:
