@@ -37,7 +37,7 @@ cJSON *config_peer(struct peer *p, const cJSON *request, const cJSON *params)
 	cJSON *name = cJSON_GetObjectItem(params, "name");
 	if (name != NULL) {
 		if (unlikely(name->type != cJSON_String)) {
-			cJSON *error = create_invalid_params_error(p, "reason", "name is not a string");
+			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "name is not a string");
 			return create_error_response_from_request(p, request, error);
 		}
 

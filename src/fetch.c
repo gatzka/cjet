@@ -60,11 +60,11 @@ static const cJSON *get_fetch_id(const struct peer *p, const cJSON *params, cJSO
 {
 	const cJSON *id = cJSON_GetObjectItem(params, "id");
 	if (unlikely(id == NULL)) {
-		*err = create_invalid_params_error(p, "reason", "no fetch id given");
+		*err = create_error_object(p, INVALID_PARAMS, "reason", "no fetch id given");
 		return NULL;
 	}
 	if (unlikely((id->type != cJSON_String) && (id->type != cJSON_Number))) {
-		*err = create_invalid_params_error(p, "reason", "fetch ID is neither a string nor a number");
+		*err = create_error_object(p, INVALID_PARAMS, "reason", "fetch id is neither string nor number");
 		return NULL;
 	}
 	*err = NULL;
@@ -634,7 +634,7 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, const cJSON *para
 	if (unlikely(matches != NULL)) {
 		static const char deprecated[] = "No support for deprecated match";
 		log_peer_err(p, deprecated);
-		cJSON *error = create_invalid_params_error(p, "reason", deprecated);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", deprecated);
 		return create_error_response_from_request(p, request, error);
 	}
 
@@ -645,7 +645,7 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, const cJSON *para
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
-		error = create_invalid_params_error(p, "reason", "fetch ID already in use");
+		error = create_error_object(p, INVALID_PARAMS, "reason", "fetch id already in use");
 		return create_error_response_from_request(p, request, error);
 	}
 
@@ -669,7 +669,7 @@ cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request, const 
 
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f == NULL)) {
-		error = create_invalid_params_error(p, "reason", "fetch ID not found for unfetch");
+		error = create_error_object(p, INVALID_PARAMS, "reason", "fetch id not found for unfetch");
 		return create_error_response_from_request(p, request, error);
 	}
 

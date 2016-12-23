@@ -192,7 +192,7 @@ BOOST_FIXTURE_TEST_CASE(invalid_params_response, F)
 	const char *tag = "not exists";
 	const char *reason = "/foo/bar/";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_invalid_params_error(&p, tag, reason);
+	cJSON *error = create_error_object(&p, INVALID_PARAMS, tag, reason);
 	cJSON *response = create_error_response(&p, id, error);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");

@@ -57,7 +57,7 @@ static cJSON *fill_##access_groups(struct element *e, const struct peer *p, cons
 \
 	const cJSON *groups = cJSON_GetObjectItem(access, json_key); \
 	if ((groups != NULL) && (groups->type != cJSON_Array)) { \
-		cJSON *error = create_invalid_params_error(p, "reason", #access_groups" is not an array"); \
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", #access_groups" is not an array"); \
 		return error; \
 	} \
 \
@@ -181,26 +181,26 @@ cJSON *change_state(const struct peer *p, const cJSON *request, const char *path
 {
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "not exists", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(e->peer != p)) {
-		cJSON *error = create_invalid_params_error(p, "not owner of state", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "not owner of state", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(e->value == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "change on method not possible", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "change on method not possible", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	cJSON *value_copy = cJSON_Duplicate(value, 1);
 	if (value_copy == NULL) {
-		cJSON *error = create_internal_error(p, "reason", "not enough memory");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "not enough memory", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
@@ -208,7 +208,7 @@ cJSON *change_state(const struct peer *p, const cJSON *request, const char *path
 	cJSON_Delete(e->value);
 	e->value = value_copy;
 	if (unlikely(notify_fetchers(e, "change") != 0)) {
-		cJSON *error = create_internal_error(p, "reason", "Can't notify fetching peer");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not notify fetching peer", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
@@ -221,27 +221,27 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 {
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
-		cJSON *error = create_invalid_params_error(p, "not exists", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(element_is_fetch_only(e))) {
-		cJSON *error = create_invalid_params_error(p, "fetchOnly", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetchOnly", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
 		((what == METHOD) && (e->value != NULL)))) {
-			cJSON *error =	create_invalid_params_error(p, "set/call on element not possible", path);
+			cJSON *error = create_error_object(p, INVALID_PARAMS, "set/call on element not possible", path);
 			cJSON *response = create_error_response_from_request(p, request, error);
 			return response;
 	}
 
 	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
 		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
-		cJSON *error = create_invalid_params_error(p, "request not authorized", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "request not authorized", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
@@ -250,14 +250,14 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 	if ((origin_request_id != NULL) &&
 		((origin_request_id->type != cJSON_String) &&
 		 (origin_request_id->type != cJSON_Number))) {
-		cJSON *error = create_invalid_params_error(p, "reason", "request id is neither string nor number");
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "request id is neither string nor number", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	struct routing_request *routing_request = alloc_routing_request(p, e->peer, origin_request_id);
 	if (unlikely(routing_request == NULL)) {
-		cJSON *error = create_internal_error(p, "reason", "could not create routing request");
+		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not create routing request", path);
 		cJSON *response = create_error_response_from_request(p, request, error);
 		return response;
 	}
@@ -306,7 +306,7 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request, const char *pat
 {
 	struct element *e = element_table_get(path);
 	if (unlikely(e != NULL)) {
-		cJSON *error = create_invalid_params_error(p, "exists", path);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "exists", path);
 		return create_error_response_from_request(p, request, error);
 	}
 
@@ -360,7 +360,7 @@ cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request, cons
 		}
 	}
 
-	cJSON *error = create_invalid_params_error(p, "not exists", path);
+	cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
 	return create_error_response_from_request(p, request, error);
 }
 

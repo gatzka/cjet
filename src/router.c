@@ -203,13 +203,11 @@ cJSON *setup_routing_information(struct element *e, const cJSON *timeout, struct
 	uint64_t timeout_ns;
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
-			cJSON *error = create_invalid_params_error(
-				request->requesting_peer, "reason", "timeout for set/call is not a number");
+			cJSON *error = create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
 			return error;
 		} else {
 			if (timeout->valuedouble < 0) {
-				cJSON *error = create_invalid_params_error(
-					request->requesting_peer, "reason", "timeout for set/call is a negative number");
+				cJSON *error = create_error_object(request->requesting_peer, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
 				return error;
 			} else {
 				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);

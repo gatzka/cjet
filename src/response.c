@@ -128,11 +128,6 @@ err:
 	return NULL;
 }
 
-cJSON *create_invalid_params_error(const struct peer *p, const char *tag, const char *reason)
-{
-	return create_error_object(p, -32602, tag, reason);
-}
-
 cJSON *create_internal_error(const struct peer *p, const char *tag, const char *reason)
 {
 	return create_error_object(p, -32603, tag, reason);

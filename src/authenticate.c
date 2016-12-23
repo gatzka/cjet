@@ -38,13 +38,13 @@
 cJSON *handle_authentication(struct peer *p, const cJSON *request, const char *user, char *passwd)
 {
 	if (unlikely(!list_empty(&p->fetch_list))) {
-		cJSON *error = create_invalid_params_error(p, "fetched before authenticate", user);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetched before authenticate", user);
 		return create_error_response_from_request(p, request, error);
 	}
 
 	const cJSON *auth = credentials_ok(user, passwd);
 	if (auth == NULL) {
-		cJSON *error = create_invalid_params_error(p, "invalid credentials", user);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "invalid credentials", user);
 		return create_error_response_from_request(p, request, error);
 	}
 
