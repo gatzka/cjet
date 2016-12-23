@@ -85,12 +85,6 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 
 static int send_response(cJSON *response, const struct peer *p)
 {
-	//TODO:
-	// eleminate check for ROUTED_MESSAGE
-	if (response == (cJSON *)ROUTED_MESSAGE) {
-		return 0;
-	}
-
 	if (response == NULL) {
 		return 0;
 	}
@@ -137,14 +131,13 @@ static cJSON *process_change(const cJSON *json_rpc, const struct peer *p)
 
 static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
 {
-	cJSON *response;
-
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, json_rpc, error);
 	}
 
+	cJSON *response;
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
 		return response;

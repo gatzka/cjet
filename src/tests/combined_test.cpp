@@ -445,7 +445,7 @@ BOOST_FIXTURE_TEST_CASE(owner_shutdown_before_set_response, F)
 	cJSON *set_request = create_set_request(path, "request1");
 	cJSON *new_value = get_value_from_request(set_request);
 	response = set_or_call(set_peer, path, new_value, NULL, set_request, STATE);
-	BOOST_CHECK(response == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(set_request);
 
 	free_peer(owner_peer);
@@ -469,7 +469,7 @@ BOOST_FIXTURE_TEST_CASE(method_call_no_args, F)
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
 	response = set_or_call(call_peer, method_no_args_path, NULL, NULL, call_json_rpc, METHOD);
-	BOOST_CHECK(response == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(call_json_rpc);
 
 	BOOST_CHECK(setter_caller_result == SUCCESS);
@@ -492,7 +492,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_error, F)
 	cJSON *new_value = get_value_from_request(set_request);
 	response = set_or_call(set_peer, read_only_state_path, new_value, NULL, set_request, STATE);
 	cJSON_Delete(set_request);
-	BOOST_CHECK(response == (cJSON *)ROUTED_MESSAGE);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 
 	BOOST_CHECK(setter_caller_result == ERROR);
 	BOOST_CHECK(setter_caller_error_code == READ_ONLY_SET_ERROR);

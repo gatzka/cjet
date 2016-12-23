@@ -36,8 +36,6 @@
 extern "C" {
 #endif
 
-#define ROUTED_MESSAGE -1
-
 struct routing_request {
     struct cjet_timer timer;
 	const struct peer *requesting_peer;

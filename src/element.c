@@ -262,7 +262,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		return response;
 	}
 
-	cJSON *response;
+	cJSON *response = NULL;
 	cJSON *routed_message = create_routed_message(p, path, what, value, routing_request->id);
 	if (unlikely(routed_message == NULL)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not create routed JSON object");
@@ -276,7 +276,6 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto delete_json;
 	}
 
-	response = (cJSON *)ROUTED_MESSAGE;
 	char *rendered_message = cJSON_PrintUnformatted(routed_message);
 	if (unlikely(rendered_message == NULL)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not render message");

@@ -314,7 +314,7 @@ BOOST_FIXTURE_TEST_CASE(correct_call, F)
 	cJSON *call_json_rpc = create_call_json_rpc(path);
 	response = set_or_call(&call_peer, path, NULL, NULL, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
-	BOOST_CHECK_MESSAGE(response == (cJSON *)ROUTED_MESSAGE, "call() did not return ROUTED_MESSAGE!");
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(request);
 }
 
