@@ -112,116 +112,101 @@ render_error:
 	return ret;
 }
 
-static int process_change(const cJSON *json_rpc, const struct peer *p)
+static cJSON *process_change(const cJSON *json_rpc, const struct peer *p)
 {
 	cJSON *response;
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
-		goto sending;
+		return response;
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no value given");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
-	response = change_state(p, json_rpc, path, value);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return change_state(p, json_rpc, path, value);
 }
 
-static int process_set(const cJSON *json_rpc, const struct peer *p)
+static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
 {
 	cJSON *response;
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
-		goto sending;
+		return response;
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
 	if (unlikely(value == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no value given");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	response = set_or_call(p, path, value, timeout, json_rpc, STATE);
 
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return set_or_call(p, path, value, timeout, json_rpc, STATE);
 }
 
-static int process_call(const cJSON *json_rpc, const struct peer *p)
+static cJSON *process_call(const cJSON *json_rpc, const struct peer *p)
 {
 	cJSON *response;
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return response = create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
-		goto sending;
+		return response;
 	}
 
 	const cJSON *args = cJSON_GetObjectItem(params, "args");
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	response = set_or_call(p, path, args, timeout, json_rpc, METHOD);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return set_or_call(p, path, args, timeout, json_rpc, METHOD);
 }
 
-static int process_add(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_add(const cJSON *json_rpc, struct peer *p)
 {
 	cJSON *response;
 
 	if (CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST) {
 		if (!p->is_local_connection) {
 			cJSON *error = create_invalid_request_error(p, "reason", "add only allowed from localhost");
-			response = create_error_response_from_request(p, json_rpc, error);
-			goto sending;
+			return create_error_response_from_request(p, json_rpc, error);
 		}
 	}
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
-		goto sending;
+		return response;
 	}
 
 	int flags = get_fetch_only_from_params(p, json_rpc, params, &response);
 	if (unlikely(response != NULL)) {
-		goto sending;
+		return response;
 	}
 
 	const cJSON *value = cJSON_GetObjectItem(params, "value");
@@ -232,184 +217,150 @@ static int process_add(const cJSON *json_rpc, struct peer *p)
 	if (timeout != NULL) {
 		if (unlikely(timeout->type != cJSON_Number)) {
 			cJSON *error =	create_invalid_params_error(p, "reason", "timeout must be a number");
-			response = create_error_response_from_request(p, json_rpc, error);
-			goto sending;
+			return create_error_response_from_request(p, json_rpc, error);
 		} else {
 			routed_request_timeout = timeout->valuedouble;
 			if (unlikely(routed_request_timeout < 0)) {
 				cJSON *error = create_invalid_params_error(p, "reason", "timeout must be positive");
-				response = create_error_response_from_request(p, json_rpc, error);
-				goto sending;
+				return create_error_response_from_request(p, json_rpc, error);
 			}
 		}
 	} else {
 		routed_request_timeout = CONFIG_ROUTED_MESSAGES_TIMEOUT;
 	}
 
-	response = add_element_to_peer(p, json_rpc, path, value, access, flags, routed_request_timeout);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return add_element_to_peer(p, json_rpc, path, value, access, flags, routed_request_timeout);
 }
 
-static int process_remove(const cJSON *json_rpc, const struct peer *p)
+static cJSON *process_remove(const cJSON *json_rpc, const struct peer *p)
 {
 	cJSON *response;
 
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const char *path = get_path_from_params(p, json_rpc, params, &response);
 	if (unlikely(path == NULL)) {
-		goto sending;
+		return response;
 	}
 
-	response = remove_element_from_peer(p, json_rpc, path);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return remove_element_from_peer(p, json_rpc, path);
 }
 
-static int process_fetch(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *response;
-
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	struct fetch *f = NULL;
-	response = add_fetch_to_peer(p, json_rpc, params, &f);
+	cJSON *response = add_fetch_to_peer(p, json_rpc, params, &f);
 	if (likely(response == NULL)) {
-		response = add_fetch_to_states(p, json_rpc, f);
+		return add_fetch_to_states(p, json_rpc, f);
 	}
 
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return response;
 }
 
-static int process_get(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
 {
 	cJSON *error = create_method_not_found_error(p, "reason", "get not implemented yet!");
-	cJSON *response = create_error_response_from_request(p, json_rpc, error);
-	return possibly_send_response(json_rpc, response, p);
+	return create_error_response_from_request(p, json_rpc, error);
 }
 
-static int process_unfetch(const cJSON *json_rpc, const struct peer *p)
+static cJSON *process_unfetch(const cJSON *json_rpc, const struct peer *p)
 {
-	cJSON *response;
-
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
-	response = remove_fetch_from_peer(p, json_rpc, params);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return remove_fetch_from_peer(p, json_rpc, params);
 }
 
-static int process_config(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_config(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *response;
-
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
-	response = config_peer(p, json_rpc, params);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return config_peer(p, json_rpc, params);
 }
 
-static int process_authenticate(const cJSON *json_rpc, struct peer *p)
+static cJSON *process_authenticate(const cJSON *json_rpc, struct peer *p)
 {
-	cJSON *response;
-
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no params found");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const cJSON *user = cJSON_GetObjectItem(params, "user");
 	if (unlikely(user == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no user given");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	if (unlikely(user->type != cJSON_String)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "user is not a string");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
 	if (unlikely(passwd == NULL)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "no password given");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
 	if (unlikely(passwd->type != cJSON_String)) {
 		cJSON *error = create_invalid_params_error(p, "reason", "password is not a string");
-		response = create_error_response_from_request(p, json_rpc, error);
-		goto sending;
+		return create_error_response_from_request(p, json_rpc, error);
 	}
 
-	response = handle_authentication(p, json_rpc, user->valuestring, passwd->valuestring);
-
-sending:
-	return possibly_send_response(json_rpc, response, p);
+	return handle_authentication(p, json_rpc, user->valuestring, passwd->valuestring);
 }
 
 static int handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
-	// TODO send responses only here
+	cJSON *response;
+
 	if (strcmp(method_name, "change") == 0) {
-		return process_change(json_rpc, p);
+		response = process_change(json_rpc, p);
 	} else if (strcmp(method_name, "set") == 0) {
-		return process_set(json_rpc, p);
+		response = process_set(json_rpc, p);
 	} else if (strcmp(method_name, "call") == 0) {
-		return process_call(json_rpc, p);
+		response = process_call(json_rpc, p);
 	} else if (strcmp(method_name, "add") == 0) {
-		return process_add(json_rpc, p);
+		response = process_add(json_rpc, p);
 	} else if (strcmp(method_name, "remove") == 0) {
-		return process_remove(json_rpc, p);
+		response = process_remove(json_rpc, p);
 	} else if (strcmp(method_name, "fetch") == 0) {
-		return process_fetch(json_rpc, p);
+		response = process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
-		return process_unfetch(json_rpc, p);
+		response = process_unfetch(json_rpc, p);
 	} else if (strcmp(method_name, "get") == 0) {
-		return process_get(json_rpc, p);
+		response = process_get(json_rpc, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return process_config(json_rpc, p);
+		response = process_config(json_rpc, p);
 	} else if (strcmp(method_name, "info") == 0) {
-		return handle_info(json_rpc, p);
+		response = handle_info(json_rpc, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
-		return process_authenticate(json_rpc, p);
+		response = process_authenticate(json_rpc, p);
 	} else {
 		cJSON *error = create_method_not_found_error(p, "reason", method_name);
-		cJSON *response = create_error_response_from_request(p, json_rpc, error);
-		return possibly_send_response(json_rpc, response, p);
+		response = create_error_response_from_request(p, json_rpc, error);
 	}
+
+	return possibly_send_response(json_rpc, response, p);
 }
 
 static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)

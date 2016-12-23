@@ -92,18 +92,18 @@ static cJSON *create_correct_info_method()
 
 BOOST_AUTO_TEST_CASE(test_info_without_id)
 {
-	cJSON *root = cJSON_CreateObject();
-	BOOST_REQUIRE(root != NULL);
-	cJSON_AddStringToObject(root, "method", "info");
+	cJSON *request = cJSON_CreateObject();
+	BOOST_REQUIRE(request != NULL);
+	cJSON_AddStringToObject(request, "method", "info");
 
 	cJSON *params = cJSON_CreateObject();
 	BOOST_REQUIRE(params != NULL);
-	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddItemToObject(request, "params", params);
 
 	struct peer *p = alloc_peer();
-	int ret = handle_info(root, p);
-	cJSON_Delete(root);
-	BOOST_CHECK(ret == -1);
+	cJSON *response = handle_info(request, p);
+	cJSON_Delete(request);
+	BOOST_CHECK_MESSAGE(response == NULL, "Info response returned despite not id in request!");
 
 	free_peer(p);
 }
@@ -113,19 +113,11 @@ BOOST_AUTO_TEST_CASE(create_info)
 	struct peer *p = alloc_peer();
 	p->send_message = send_message;
 	cJSON *json_rpc = create_correct_info_method();
-	int ret = handle_info(json_rpc, p);
+	cJSON *response = handle_info(json_rpc, p);
 	cJSON_Delete(json_rpc);
-	BOOST_CHECK(ret == 0);
+	BOOST_CHECK_MESSAGE(response != NULL, "Got no info response!");
 
-	char *ptr = readback_buffer;
-	ptr += 4;
-	cJSON *root = cJSON_Parse(ptr);
-	if (root == NULL) {
-		BOOST_FAIL("No root object");
-		return;
-	}
-
-	cJSON *result = cJSON_GetObjectItem(root, "result");
+	cJSON *result = cJSON_GetObjectItem(response, "result");
 	if (result == NULL) {
 		BOOST_FAIL("No result object");
 		return;
@@ -182,7 +174,7 @@ BOOST_AUTO_TEST_CASE(create_info)
 	BOOST_CHECK(fetch->type == cJSON_String);
 	BOOST_CHECK((::strcmp(fetch->valuestring, "full") == 0) || (::strcmp(fetch->valuestring, "simple")));
 
-	cJSON_Delete(root);
+	cJSON_Delete(response);
 
 	free_peer(p);
 }

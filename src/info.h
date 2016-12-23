@@ -34,7 +34,7 @@
 extern "C" {
 #endif
 
-int handle_info(const cJSON *json_rpc, const struct peer *p);
+cJSON *handle_info(const cJSON *json_rpc, const struct peer *p);
 
 #ifdef __cplusplus
 }

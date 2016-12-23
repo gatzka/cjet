@@ -42,6 +42,7 @@ cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error
 cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request);
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type);
 cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, cJSON *error);
+cJSON *create_result_response_from_request(const struct peer *p, const cJSON *request, cJSON *result, const char *result_type);
 
 //TODO: eliminate unused headers
 
