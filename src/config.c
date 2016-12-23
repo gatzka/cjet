@@ -28,9 +28,9 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "element.h"
 #include "json/cJSON.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 
 cJSON *config_peer(struct peer *p, const cJSON *request)

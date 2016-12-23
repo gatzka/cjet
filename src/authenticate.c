@@ -28,12 +28,12 @@
 
 #include "authenticate.h"
 #include "compiler.h"
-#include "element.h"
 #include "groups.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 
 cJSON *handle_authentication(struct peer *p, const cJSON *request)

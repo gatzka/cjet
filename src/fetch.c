@@ -30,7 +30,6 @@
 
 #include "alloc.h"
 #include "compiler.h"
-#include "element.h"
 #include "fetch.h"
 #include "groups.h"
 #include "jet_string.h"
@@ -39,6 +38,7 @@
 #include "list.h"
 #include "log.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))

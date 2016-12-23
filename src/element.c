@@ -29,6 +29,7 @@
 
 #include "alloc.h"
 #include "compiler.h"
+#include "element.h"
 #include "generated/cjet_config.h"
 #include "groups.h"
 #include "hashtable.h"
@@ -37,9 +38,9 @@
 #include "linux/linux_io.h"
 #include "list.h"
 #include "peer.h"
+#include "request.h"
 #include "response.h"
 #include "router.h"
-#include "element.h"
 #include "table.h"
 #include "uuid.h"
 
