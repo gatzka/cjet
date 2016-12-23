@@ -41,7 +41,7 @@ static inline const cJSON *get_params(const struct peer *p, const cJSON *request
 	const cJSON *params = cJSON_GetObjectItem(request, "params");
 	if (unlikely(params == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		*response = create_error_response_from_request(p, request, error);
+		*response = create_error_response_from_request_old(p, request, error);
 	}
 
 	return params;

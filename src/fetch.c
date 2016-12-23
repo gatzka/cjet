@@ -561,7 +561,7 @@ cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request
 		int ret = add_fetch_to_states_in_peer(p, f);
 		if (unlikely(ret != 0)) {
 			cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not add fetch to state");
-			return create_error_response_from_request(request_peer, request, error);
+			return create_error_response_from_request_old(request_peer, request, error);
 		}
 	}
 
@@ -641,23 +641,23 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fe
 		static const char deprecated[] = "No support for deprecated match";
 		log_peer_err(p, deprecated);
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", deprecated);
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
 		error = create_error_object(p, INVALID_PARAMS, "reason", "fetch id already in use");
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 
 	f = create_fetch(p, id, params, &error);
 	if (unlikely(f == NULL)) {
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
@@ -676,13 +676,13 @@ cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request)
 	cJSON *error;
 	const cJSON *id = get_fetch_id(p, params, &error);
 	if (unlikely(id == NULL)) {
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f == NULL)) {
 		error = create_error_object(p, INVALID_PARAMS, "reason", "fetch id not found for unfetch");
-		return create_error_response_from_request(p, request, error);
+		return create_error_response_from_request_old(p, request, error);
 	}
 
 	remove_fetch_from_states(f);

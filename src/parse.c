@@ -79,7 +79,7 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
 {
 	cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", "get not implemented yet");
-	return create_error_response_from_request(p, json_rpc, error);
+	return create_error_response_from_request_old(p, json_rpc, error);
 }
 
 static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
@@ -109,7 +109,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 		return handle_authentication(p, json_rpc);
 	} else {
 		cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", method_name);
-		return create_error_response_from_request(p, json_rpc, error);
+		return create_error_response_from_request_old(p, json_rpc, error);
 	}
 }
 
@@ -120,7 +120,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 		cJSON *response;
 		if (unlikely(method->type != cJSON_String)) {
 			cJSON *error = create_error_object(p, INVALID_REQUEST, "reason", "method is not a string");
-			response = create_error_response_from_request(p, json_rpc, error);
+			response = create_error_response_from_request_old(p, json_rpc, error);
 		} else {
 			const char *method_name = method->valuestring;
 			response = handle_method(json_rpc, method_name, p);
@@ -143,7 +143,7 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 	}
 
 	error = create_error_object(p, INVALID_REQUEST, "reason", "neither request nor response");
-	cJSON *response = create_error_response_from_request(p, json_rpc, error);
+	cJSON *response = create_error_response_from_request_old(p, json_rpc, error);
 	return send_response(response, p);
 }
 

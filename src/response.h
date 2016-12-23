@@ -42,7 +42,8 @@ extern "C" {
 cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error);
 cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request);
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type);
-cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, cJSON *error);
+cJSON *create_error_response_from_request_old(const struct peer *p, const cJSON *request, cJSON *error);
+cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, int code, const char *tag, const char *reason);
 cJSON *create_result_response_from_request(const struct peer *p, const cJSON *request, cJSON *result, const char *result_type);
 cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason);
 //TODO: eliminate unused headers
