@@ -28,6 +28,7 @@
 
 #include "authenticate.h"
 #include "compiler.h"
+#include "element.h"
 #include "groups.h"
 #include "json/cJSON.h"
 #include "list.h"
@@ -37,10 +38,10 @@
 
 cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
 	const cJSON *user = cJSON_GetObjectItem(params, "user");

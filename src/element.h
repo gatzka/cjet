@@ -29,11 +29,13 @@
 
 #include <stdbool.h>
 
+#include "compiler.h"
 #include "fetch.h"
 #include "groups.h"
 #include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
+#include "response.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,6 +68,17 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what);
 cJSON *add_element_to_peer(struct peer *p, const cJSON *request);
 cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request);
 void remove_all_elements_from_peer(struct peer *p);
+
+static inline const cJSON *get_params(const struct peer *p, const cJSON *request, cJSON **response)
+{
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		*response = create_error_response_from_request(p, request, error);
+	}
+
+	return params;
+}
 
 #ifdef __cplusplus
 }

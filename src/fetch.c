@@ -30,6 +30,7 @@
 
 #include "alloc.h"
 #include "compiler.h"
+#include "element.h"
 #include "fetch.h"
 #include "groups.h"
 #include "jet_string.h"
@@ -39,7 +40,6 @@
 #include "log.h"
 #include "peer.h"
 #include "response.h"
-#include "element.h"
 
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
@@ -630,10 +630,10 @@ int find_fetchers_for_element(struct element *e)
 
 cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch_return)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
 	const cJSON *matches = cJSON_GetObjectItem(params, "match");
@@ -667,10 +667,10 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fe
 
 cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
 	cJSON *error;

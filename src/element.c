@@ -219,13 +219,13 @@ bool element_is_fetch_only(const struct element *e)
 
 cJSON *change_state(const struct peer *p, const cJSON *request)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
-	cJSON *response;
 	const char *path = get_path_from_params(p, request, params, &response);
 	if (unlikely(path == NULL)) {
 		return response;
@@ -271,13 +271,12 @@ cJSON *change_state(const struct peer *p, const cJSON *request)
 
 cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
-	cJSON *response;
 	const char *path = get_path_from_params(p, request, params, &response);
 	if (unlikely(path == NULL)) {
 		return response;
@@ -380,13 +379,12 @@ cJSON *add_element_to_peer(struct peer *p, const cJSON *request)
 		}
 	}
 
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
-	cJSON *response;
 	const char *path = get_path_from_params(p, request, params, &response);
 	if (unlikely(path == NULL)) {
 		return response;
@@ -461,13 +459,12 @@ static void remove_element(struct element *e)
 
 cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request)
 {
-	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, request, error);
+		return response;
 	}
 
-	cJSON *response;
 	const char *path = get_path_from_params(p, request, params, &response);
 	if (unlikely(path == NULL)) {
 		return response;
