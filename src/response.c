@@ -160,18 +160,7 @@ cJSON *create_error_response_from_request(const struct peer *p, const cJSON *req
 
 cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request)
 {
-	const cJSON *id = cJSON_GetObjectItem(request, "id");
-	if (id != NULL) {
-		cJSON *root = create_common_response(p, id);
-		if (unlikely(root == NULL)) {
-			return NULL;
-		}
-
-		root = add_subobject_to_object(p, root, cJSON_CreateTrue(), "result");
-		return root;
-	}
-
-	return NULL;
+	return create_result_response_from_request(p, request, cJSON_CreateTrue(), "result");
 }
 
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type)
