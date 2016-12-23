@@ -100,8 +100,7 @@ BOOST_FIXTURE_TEST_CASE(internal_error_response, F)
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_error_object(&p, INTERNAL_ERROR, tag, reason);
-	cJSON *response = create_error_response(&p, id, error);
+	cJSON *response = create_error_response(&p, id, INTERNAL_ERROR, tag, reason);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -126,13 +125,12 @@ BOOST_FIXTURE_TEST_CASE(internal_error_response_wrong_id_type, F)
 	const char *tag = "reason";
 	const char *reason = "not enough memory";
 	cJSON *id = cJSON_CreateBool(0);
-	cJSON *error = create_error_object(&p, INTERNAL_ERROR, tag, reason);
-	cJSON *response = create_error_response(&p, id, error);
+	cJSON *response = create_error_response(&p, id, INTERNAL_ERROR, tag, reason);
 
 	BOOST_CHECK(response == NULL);
 
 	cJSON_Delete(id);
-	cJSON_Delete(error);
+	cJSON_Delete(response);
 }
 
 BOOST_FIXTURE_TEST_CASE(invalid_request_response, F)
@@ -140,8 +138,7 @@ BOOST_FIXTURE_TEST_CASE(invalid_request_response, F)
 	const char *tag = "reason";
 	const char *reason = "neither request nor response";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_error_object(&p, INVALID_REQUEST, tag, reason);
-	cJSON *response = create_error_response(&p, id, error);
+	cJSON *response = create_error_response(&p, id, INVALID_REQUEST, tag, reason);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -166,8 +163,7 @@ BOOST_FIXTURE_TEST_CASE(method_not_found_response, F)
 	const char *tag = "reason";
 	const char *reason = "calling";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_error_object(&p, METHOD_NOT_FOUND, tag, reason);
-	cJSON *response = create_error_response(&p, id, error);
+	cJSON *response = create_error_response(&p, id, METHOD_NOT_FOUND, tag, reason);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);
@@ -192,8 +188,7 @@ BOOST_FIXTURE_TEST_CASE(invalid_params_response, F)
 	const char *tag = "not exists";
 	const char *reason = "/foo/bar/";
 	cJSON *id = cJSON_CreateString("request1");
-	cJSON *error = create_error_object(&p, INVALID_PARAMS, tag, reason);
-	cJSON *response = create_error_response(&p, id, error);
+	cJSON *response = create_error_response(&p, id, INVALID_PARAMS, tag, reason);
 
 	cJSON *err = cJSON_GetObjectItem(response, "error");
 	BOOST_CHECK(err->type == cJSON_Object);

@@ -39,11 +39,11 @@ extern "C" {
 #define INVALID_PARAMS -32602
 #define INTERNAL_ERROR -32603
 
-cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error);
 cJSON *create_success_response_from_request(const struct peer *p, const cJSON *request);
 cJSON *create_result_response(const struct peer *p, const cJSON *id, cJSON *result, const char *result_type);
-cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, int code, const char *tag, const char *reason);
 cJSON *create_result_response_from_request(const struct peer *p, const cJSON *request, cJSON *result, const char *result_type);
+cJSON *create_error_response(const struct peer *p, const cJSON *id, int code, const char *tag, const char *reason);
+cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, int code, const char *tag, const char *reason);
 
 
 // TODO weg?

@@ -186,9 +186,9 @@ static void request_timeout_handler(void *context, bool cancelled) {
 		struct value_route_table val;
 		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
 		if (likely(ret == HASHTABLE_SUCCESS)) {
-			cJSON *error = create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "timeout for routed request");
-			send_routing_response(request->requesting_peer, request->origin_request_id, error, "error");
-			cJSON_Delete(error);
+			cJSON *response = create_error_object(request->requesting_peer, INTERNAL_ERROR, "reason", "timeout for routed request");
+			send_routing_response(request->requesting_peer, request->origin_request_id, response, "error");
+			cJSON_Delete(response);
 			cjet_timer_destroy(&request->timer);
 			cJSON_Delete(request->origin_request_id);
 			cjet_free(request);
@@ -272,16 +272,12 @@ static void send_shutdown_response(const struct peer *p,
 		return;
 	}
 
-	cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "peer shuts down");
-	if (likely(error != NULL)) {
-		cJSON *error_response = create_error_response(p, origin_request_id, error);
-		if (likely(error_response != NULL)) {
-			format_and_send_response(p, error_response);
-			cJSON_Delete(error_response);
-		} else {
-			log_peer_err(p, "Could not create %s response!\n", "error");
-			cJSON_Delete(error);
-		}
+	cJSON *error_response = create_error_response(p, origin_request_id, INTERNAL_ERROR, "reason", "peer shuts down");
+	if (likely(error_response != NULL)) {
+		format_and_send_response(p, error_response);
+		cJSON_Delete(error_response);
+	} else {
+		log_peer_err(p, "Could not create %s response!\n", "error");
 	}
 }
 

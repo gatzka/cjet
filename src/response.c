@@ -128,28 +128,30 @@ err:
 	return NULL;
 }
 
-cJSON *create_error_response(const struct peer *p, const cJSON *id, cJSON *error)
+cJSON *create_error_response(const struct peer *p, const cJSON *id, int code, const char *tag, const char *reason)
 {
 	cJSON *root = create_common_response(p, id);
 	if (unlikely(root == NULL)) {
 		return NULL;
 	}
-	cJSON_AddItemToObject(root, "error", error);
-	return root;
+
+	cJSON *error = create_error_object(p, code, tag, reason);
+	if (likely(error != NULL)) {
+		cJSON_AddItemToObject(root, "error", error);
+		return root;
+	} else {
+		cJSON_Delete(root);
+		return NULL;
+	}
 }
 
 cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, int code, const char *tag, const char *reason)
 {
 	const cJSON *id = cJSON_GetObjectItem(request, "id");
 	if (id != NULL) {
-		cJSON *error = create_error_object(p, code, tag, reason);
-		if (likely(error != NULL)) {
-			cJSON *response = create_error_response(p, id, error);
-			if (likely(response != NULL)) {
-				return response;
-			} else {
-				cJSON_Delete(error);
-			}
+		cJSON *response = create_error_response(p, id, code, tag, reason);
+		if (likely(response != NULL)) {
+			return response;
 		}
 	}
 
