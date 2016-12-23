@@ -71,7 +71,7 @@ static cJSON *create_common_response(const struct peer *p, const cJSON *id)
 	return root;
 }
 
-cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason)
+static cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason)
 {
 	cJSON *error = cJSON_CreateObject();
 	if (unlikely(error == NULL)) {

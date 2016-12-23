@@ -45,10 +45,6 @@ cJSON *create_result_response_from_request(const struct peer *p, const cJSON *re
 cJSON *create_error_response(const struct peer *p, const cJSON *id, int code, const char *tag, const char *reason);
 cJSON *create_error_response_from_request(const struct peer *p, const cJSON *request, int code, const char *tag, const char *reason);
 
-
-// TODO weg?
-cJSON *create_error_object(const struct peer *p, int code, const char *tag, const char *reason);
-
 #ifdef __cplusplus
 }
 #endif
