@@ -82,39 +82,6 @@ static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
 	return create_error_response_from_request(p, json_rpc, error);
 }
 
-static cJSON *process_authenticate(const cJSON *json_rpc, struct peer *p)
-{
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const cJSON *user = cJSON_GetObjectItem(params, "user");
-	if (unlikely(user == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no user given");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	if (unlikely(user->type != cJSON_String)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "user is not a string");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
-	if (unlikely(passwd == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no password given");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	if (unlikely(passwd->type != cJSON_String)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "password is not a string");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	return handle_authentication(p, json_rpc, user->valuestring, passwd->valuestring);
-}
-
 static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
@@ -139,7 +106,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "info") == 0) {
 		return handle_info(json_rpc, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
-		return process_authenticate(json_rpc, p);
+		return handle_authentication(p, json_rpc);
 	} else {
 		cJSON *error = create_error_object(p, METHOD_NOT_FOUND, "reason", method_name);
 		return create_error_response_from_request(p, json_rpc, error);

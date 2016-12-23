@@ -35,16 +35,44 @@
 #include "peer.h"
 #include "response.h"
 
-cJSON *handle_authentication(struct peer *p, const cJSON *request, const char *user, char *passwd)
+cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {
-	if (unlikely(!list_empty(&p->fetch_list))) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetched before authenticate", user);
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
 		return create_error_response_from_request(p, request, error);
 	}
 
-	const cJSON *auth = credentials_ok(user, passwd);
+	const cJSON *user = cJSON_GetObjectItem(params, "user");
+	if (unlikely(user == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no user given");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	if (unlikely(user->type != cJSON_String)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "user is not a string");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
+	if (unlikely(passwd == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no password given");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	if (unlikely(passwd->type != cJSON_String)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "password is not a string");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	if (unlikely(!list_empty(&p->fetch_list))) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetched before authenticate", user->valuestring);
+		return create_error_response_from_request(p, request, error);
+	}
+
+	const cJSON *auth = credentials_ok(user->valuestring, passwd->valuestring);
 	if (auth == NULL) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "invalid credentials", user);
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "invalid credentials", user->valuestring);
 		return create_error_response_from_request(p, request, error);
 	}
 

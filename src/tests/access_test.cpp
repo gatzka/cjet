@@ -174,10 +174,8 @@ static void perform_fetch(const char *fetch_path)
 	cJSON_Delete(request);
 }
 
-static cJSON *create_add_with_access(cJSON *access)
+static cJSON *create_add_with_access(const char *path, cJSON *access)
 {
-	const char path[] = "/foo/bar/";
-
 	cJSON *params = cJSON_CreateObject();
 	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "path", path);
@@ -188,6 +186,20 @@ static cJSON *create_add_with_access(cJSON *access)
 	cJSON_AddItemToObject(root, "params", params);
 	cJSON_AddStringToObject(root, "id", "add_request_1");
 	cJSON_AddStringToObject(root, "method", "add");
+	return root;
+}
+
+static cJSON *create_authentication()
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON_AddStringToObject(params, "user", "user");
+	cJSON_AddStringToObject(params, "password", "password");
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "auth_request_1");
+	cJSON_AddStringToObject(root, "method", "authenticate");
 	return root;
 }
 
@@ -254,26 +266,29 @@ struct F {
 
 BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 {
+	const char path[] = "/foo/bar/";
+
 	cJSON *access = cJSON_CreateObject();
 	cJSON *fetch_groups = cJSON_CreateArray();
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(users));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *request = create_add_with_access(access);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
+	cJSON *request = create_add_with_access(path, access);
 
 	cJSON *response = add_element_to_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
 	cJSON_Delete(response);
 
-	response = handle_authentication(&fetch_peer, request, "user", password);
+	request = create_authentication();
+	response = handle_authentication(&fetch_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "fetch peer authentication failed!");
+	cJSON_Delete(request);
 	cJSON_Delete(response);
 
-	perform_fetch(json_path->valuestring);
+	perform_fetch(path);
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 1, "Number of emitted events != 1!");
 	cJSON *json = fetch_events.front();
 	fetch_events.pop_front();
@@ -281,36 +296,35 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_allowed, F)
 	BOOST_CHECK_MESSAGE(event == ADD_EVENT, "Emitted event is not an ADD event!");
 	cJSON_Delete(json);
 	remove_all_fetchers_from_peer(&fetch_peer);
-
-	cJSON_Delete(request);
 }
 
 BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 {
+	const char path[] = "/foo/bar/";
+
 	cJSON *access = cJSON_CreateObject();
 	cJSON *fetch_groups = cJSON_CreateArray();
 	cJSON_AddItemToArray(fetch_groups, cJSON_CreateString(admins));
 	cJSON_AddItemToObject(access, "fetchGroups", fetch_groups);
 
-	cJSON *request = create_add_with_access(access);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
+	cJSON *request = create_add_with_access(path, access);
 
 	cJSON *response = add_element_to_peer(&owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
 	cJSON_Delete(response);
 
-	response = handle_authentication(&fetch_peer, request, "user", password);
+	request = create_authentication();
+	response = handle_authentication(&fetch_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "fetch peer authentication failed!");
+	cJSON_Delete(request);
 	cJSON_Delete(response);
 
-	perform_fetch(json_path->valuestring);
+	perform_fetch(path);
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 0, "Number of emitted events != 0!");
 	remove_all_fetchers_from_peer(&fetch_peer);
-
-	cJSON_Delete(request);
 }
 
 
