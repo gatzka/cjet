@@ -32,8 +32,14 @@
 #include "peer.h"
 #include "response.h"
 
-cJSON *config_peer(struct peer *p, const cJSON *request, const cJSON *params)
+cJSON *config_peer(struct peer *p, const cJSON *request)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
 	cJSON *name = cJSON_GetObjectItem(params, "name");
 	if (name != NULL) {
 		if (unlikely(name->type != cJSON_String)) {

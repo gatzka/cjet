@@ -110,8 +110,7 @@ BOOST_FIXTURE_TEST_CASE(config_name, F)
 {
 	const char *peer_name = "test_peer";
 	cJSON *request = create_config_request_with_name(peer_name);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = config_peer(&p, request, params);
+	cJSON *response = config_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "No response for config request!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "config_peer() failed!");
 	BOOST_CHECK_MESSAGE(::strcmp(peer_name, p.name) == 0, "Peer name was not set!");
@@ -123,8 +122,7 @@ BOOST_FIXTURE_TEST_CASE(config_no_name, F)
 {
 	const char *peer_name = NULL;
 	cJSON *request = create_config_request_with_no_name();
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = config_peer(&p, request, params);
+	cJSON *response = config_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "No response for config request!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "config_peer() failed!");
 	BOOST_CHECK_MESSAGE(peer_name == NULL, "Peer name was set via no name request!");
@@ -136,8 +134,7 @@ BOOST_FIXTURE_TEST_CASE(config_wrong_type_of_name, F)
 {
 	const char *peer_name = NULL;
 	cJSON *request = create_config_request_with_name_of_wrong_type();
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = config_peer(&p, request, params);
+	cJSON *response = config_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "No response for config request!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "config_peer() did not fail!");
 	BOOST_CHECK_MESSAGE(peer_name == NULL, "Peer name was set via illegal request!");
@@ -149,8 +146,7 @@ BOOST_FIXTURE_TEST_CASE(config_name_twice, F)
 {
 	const char *peer_name1 = "test_peer";
 	cJSON *request = create_config_request_with_name(peer_name1);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *response = config_peer(&p, request, params);
+	cJSON *response = config_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "No response for config request!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "config_peer() failed!");
 	BOOST_CHECK_MESSAGE(::strcmp(peer_name1, p.name) == 0, "Peer name was not set!");
@@ -159,8 +155,7 @@ BOOST_FIXTURE_TEST_CASE(config_name_twice, F)
 
 	const char *peer_name2 = "peer_test";
 	request = create_config_request_with_name(peer_name2);
-	params = cJSON_GetObjectItem(request, "params");
-	response = config_peer(&p, request, params);
+	response = config_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "No response for config request!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "config_peer() failed!");
 	BOOST_CHECK_MESSAGE(::strcmp(peer_name2, p.name) == 0, "Peer name was not set!");

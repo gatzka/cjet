@@ -82,17 +82,6 @@ static cJSON *process_get(const cJSON *json_rpc, struct peer *p)
 	return create_error_response_from_request(p, json_rpc, error);
 }
 
-static cJSON *process_config(const cJSON *json_rpc, struct peer *p)
-{
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	return config_peer(p, json_rpc, params);
-}
-
 static cJSON *process_authenticate(const cJSON *json_rpc, struct peer *p)
 {
 	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
@@ -146,7 +135,7 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	} else if (strcmp(method_name, "get") == 0) {
 		return process_get(json_rpc, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		return process_config(json_rpc, p);
+		return config_peer(p, json_rpc);
 	} else if (strcmp(method_name, "info") == 0) {
 		return handle_info(json_rpc, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
