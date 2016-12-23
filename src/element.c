@@ -250,33 +250,44 @@ cJSON *change_state(const struct peer *p, const cJSON *request)
 	return create_success_response_from_request(p, request);
 }
 
-cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
-		const cJSON *timeout, const cJSON *request, enum type what)
+cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 {
+	const cJSON *params = cJSON_GetObjectItem(request, "params");
+	if (unlikely(params == NULL)) {
+		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
+		return create_error_response_from_request(p, request, error);
+	}
+
+	cJSON *response;
+	const char *path = get_path_from_params(p, request, params, &response);
+	if (unlikely(path == NULL)) {
+		return response;
+	}
+
 	struct element *e = element_table_get(path);
 	if (unlikely(e == NULL)) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "not exists", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
+		response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(element_is_fetch_only(e))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "fetchOnly", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
+		response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
 		((what == METHOD) && (e->value != NULL)))) {
 			cJSON *error = create_error_object(p, INVALID_PARAMS, "set/call on element not possible", path);
-			cJSON *response = create_error_response_from_request(p, request, error);
+			response = create_error_response_from_request(p, request, error);
 			return response;
 	}
 
 	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
 		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "request not authorized", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
+		response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
@@ -285,18 +296,29 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		((origin_request_id->type != cJSON_String) &&
 		 (origin_request_id->type != cJSON_Number))) {
 		cJSON *error = create_error_object(p, INVALID_PARAMS, "request id is neither string nor number", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
+		response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
 	struct routing_request *routing_request = alloc_routing_request(p, e->peer, origin_request_id);
 	if (unlikely(routing_request == NULL)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "could not create routing request", path);
-		cJSON *response = create_error_response_from_request(p, request, error);
+		response = create_error_response_from_request(p, request, error);
 		return response;
 	}
 
-	cJSON *response = NULL;
+	const cJSON *value;
+	if (what == STATE) {
+		value = cJSON_GetObjectItem(params, "value");
+		if (unlikely(value == NULL)) {
+			cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
+			return create_error_response_from_request(p, request, error);
+		}
+	} else {
+		value = cJSON_GetObjectItem(params, "args");
+	}
+
+	response = NULL;
 	cJSON *routed_message = create_routed_message(p, path, what, value, routing_request->id);
 	if (unlikely(routed_message == NULL)) {
 		cJSON *error = create_error_object(p, INTERNAL_ERROR, "reason", "could not create routed JSON object");
@@ -304,6 +326,7 @@ cJSON *set_or_call(const struct peer *p, const char *path, const cJSON *value,
 		goto routed_message_creation_failed;
 	}
 
+	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
 	cJSON *setup_error = setup_routing_information(e, timeout, routing_request);
 	if (unlikely(setup_error != NULL)) {
 		response = create_error_response_from_request(p, request, setup_error);

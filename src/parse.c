@@ -105,51 +105,6 @@ render_error:
 	return ret;
 }
 
-static cJSON *process_set(const cJSON *json_rpc, const struct peer *p)
-{
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	cJSON *response;
-	const char *path = get_path_from_params(p, json_rpc, params, &response);
-	if (unlikely(path == NULL)) {
-		return response;
-	}
-
-	const cJSON *value = cJSON_GetObjectItem(params, "value");
-	if (unlikely(value == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no value found");
-		return create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-
-	return set_or_call(p, path, value, timeout, json_rpc, STATE);
-}
-
-static cJSON *process_call(const cJSON *json_rpc, const struct peer *p)
-{
-	cJSON *response;
-
-	const cJSON *params = cJSON_GetObjectItem(json_rpc, "params");
-	if (unlikely(params == NULL)) {
-		cJSON *error = create_error_object(p, INVALID_PARAMS, "reason", "no params found");
-		return response = create_error_response_from_request(p, json_rpc, error);
-	}
-
-	const char *path = get_path_from_params(p, json_rpc, params, &response);
-	if (unlikely(path == NULL)) {
-		return response;
-	}
-
-	const cJSON *args = cJSON_GetObjectItem(params, "args");
-	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	return set_or_call(p, path, args, timeout, json_rpc, METHOD);
-}
-
 static cJSON *process_add(const cJSON *json_rpc, struct peer *p)
 {
 	cJSON *response;
@@ -302,9 +257,9 @@ static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	if (strcmp(method_name, "change") == 0) {
 		return change_state(p, json_rpc);
 	} else if (strcmp(method_name, "set") == 0) {
-		return process_set(json_rpc, p);
+		return set_or_call(p, json_rpc, STATE);
 	} else if (strcmp(method_name, "call") == 0) {
-		return process_call(json_rpc, p);
+		return set_or_call(p, json_rpc, METHOD);
 	} else if (strcmp(method_name, "add") == 0) {
 		return process_add(json_rpc, p);
 	} else if (strcmp(method_name, "remove") == 0) {

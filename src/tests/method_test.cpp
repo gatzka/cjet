@@ -204,7 +204,7 @@ BOOST_FIXTURE_TEST_CASE(call_wrong_path, F)
 	cJSON_Delete(response);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	response = set_or_call(&owner_peer, "/bar/foo", NULL, NULL, call_json_rpc, METHOD);
+	response = set_or_call(&owner_peer, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call() had no response!");
 	check_invalid_params(response);
@@ -266,7 +266,7 @@ BOOST_FIXTURE_TEST_CASE(call_on_state, F)
 	cJSON_Delete(response);
 
 	cJSON *call_json_rpc = create_call_json_rpc(method_no_args_path);
-	response = set_or_call(&call_peer, path, NULL, NULL, call_json_rpc, METHOD);
+	response = set_or_call(&call_peer, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call) had no response!");
@@ -312,7 +312,7 @@ BOOST_FIXTURE_TEST_CASE(correct_call, F)
 	cJSON_Delete(response);
 
 	cJSON *call_json_rpc = create_call_json_rpc(path);
-	response = set_or_call(&call_peer, path, NULL, NULL, call_json_rpc, METHOD);
+	response = set_or_call(&call_peer, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(request);
@@ -331,7 +331,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 	cJSON_Delete(response);
 
 	cJSON *call_json_rpc = create_call_json_rpc_wrong_id_type(path);
-	response = set_or_call(&call_peer, path, NULL, NULL, call_json_rpc, METHOD);
+	response = set_or_call(&call_peer, call_json_rpc, METHOD);
 	cJSON_Delete(call_json_rpc);
 
 	BOOST_REQUIRE_MESSAGE(response == NULL, "set_or_call() had a response despite illegal request id!");

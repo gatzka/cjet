@@ -114,20 +114,6 @@ static cJSON *create_set_request_with_timeout(const char *request_id, const char
 	return set_request;
 }
 
-static cJSON *get_value_from_request(const cJSON *set_request)
-{
-	cJSON *params = cJSON_GetObjectItem(set_request, "params");
-	cJSON *value = cJSON_GetObjectItem(params, "value");
-	return value;
-}
-
-static cJSON *get_timeout_from_request(const cJSON *set_request)
-{
-	cJSON *params = cJSON_GetObjectItem(set_request, "params");
-	cJSON *value = cJSON_GetObjectItem(params, "timeout");
-	return value;
-}
-
 static cJSON *get_result_from_response(const cJSON *response)
 {
 	cJSON *result = cJSON_GetObjectItem(response, "result");
@@ -511,8 +497,7 @@ BOOST_FIXTURE_TEST_CASE(set_on_method, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
 	check_invalid_params(response);
@@ -533,8 +518,7 @@ BOOST_FIXTURE_TEST_CASE(set_on_fetchonly, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call() had no response!");
 	check_invalid_params(response);
@@ -556,8 +540,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	BOOST_CHECK(timer_ev != NULL);
@@ -590,9 +573,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_correct_timeout, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request_with_timeout("request1", path, timeout_s);
-	cJSON *new_value = get_value_from_request(set_request);
-	cJSON *timeout = get_timeout_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	BOOST_CHECK(timer_ev != NULL);
@@ -625,9 +606,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_negative_timeout, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request_with_timeout("request1", path, timeout_s);
-	cJSON *new_value = get_value_from_request(set_request);
-	cJSON *timeout = get_timeout_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call() had no response!");
 	check_invalid_params(response);
 	cJSON_Delete(set_request);
@@ -653,9 +632,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
 	cJSON *set_request = create_set_request("request1", path);
 	params = cJSON_GetObjectItem(set_request, "params");
 	cJSON_AddStringToObject(params, "timeout", "hello");
-	cJSON *new_value = get_value_from_request(set_request);
-	cJSON *timeout = get_timeout_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, timeout, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call() had no response!");
 	check_invalid_params(response);
 	cJSON_Delete(set_request);
@@ -680,8 +657,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_path, F)
 
 	const char set_path[] = "/bar/foo/";
 	cJSON *set_request = create_set_request("request1", set_path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, set_path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE((response != NULL) && (response_is_error(response)), "no error object created for set request with negative timeout");
 	cJSON_Delete(response);
@@ -702,9 +678,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_without_response, F)
 	cJSON_Delete(response);
 
 	cJSON *set_request = create_set_request(NULL, path);
-	cJSON *new_value = get_value_from_request(set_request);
-
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 	cJSON_Delete(response);
@@ -734,7 +708,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 	cJSON_AddItemToObject(params, "value", new_value);
 	cJSON_AddItemToObject(set_request, "params", params);
 
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 
 	BOOST_CHECK_MESSAGE(response == NULL, "Got response despite wrong request id type!");
@@ -756,8 +730,7 @@ BOOST_FIXTURE_TEST_CASE(set_without_id_with_response, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request(NULL, path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 
@@ -787,8 +760,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&set_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 
@@ -830,8 +802,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_destroy_before_response, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	cJSON *new_value = get_value_from_request(set_request);
-	response = set_or_call(&setter_peer, path, new_value, NULL, set_request, STATE);
+	response = set_or_call(&setter_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
 
