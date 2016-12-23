@@ -328,39 +328,35 @@ static cJSON *process_authenticate(const cJSON *json_rpc, struct peer *p)
 	return handle_authentication(p, json_rpc, user->valuestring, passwd->valuestring);
 }
 
-static int handle_method(const cJSON *json_rpc, const char *method_name,
+static cJSON *handle_method(const cJSON *json_rpc, const char *method_name,
 	struct peer *p)
 {
-	cJSON *response;
-
 	if (strcmp(method_name, "change") == 0) {
-		response = process_change(json_rpc, p);
+		return process_change(json_rpc, p);
 	} else if (strcmp(method_name, "set") == 0) {
-		response = process_set(json_rpc, p);
+		return process_set(json_rpc, p);
 	} else if (strcmp(method_name, "call") == 0) {
-		response = process_call(json_rpc, p);
+		return process_call(json_rpc, p);
 	} else if (strcmp(method_name, "add") == 0) {
-		response = process_add(json_rpc, p);
+		return process_add(json_rpc, p);
 	} else if (strcmp(method_name, "remove") == 0) {
-		response = process_remove(json_rpc, p);
+		return process_remove(json_rpc, p);
 	} else if (strcmp(method_name, "fetch") == 0) {
-		response = process_fetch(json_rpc, p);
+		return process_fetch(json_rpc, p);
 	} else if (strcmp(method_name, "unfetch") == 0) {
-		response = process_unfetch(json_rpc, p);
+		return process_unfetch(json_rpc, p);
 	} else if (strcmp(method_name, "get") == 0) {
-		response = process_get(json_rpc, p);
+		return process_get(json_rpc, p);
 	} else if (strcmp(method_name, "config") == 0) {
-		response = process_config(json_rpc, p);
+		return process_config(json_rpc, p);
 	} else if (strcmp(method_name, "info") == 0) {
-		response = handle_info(json_rpc, p);
+		return handle_info(json_rpc, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
-		response = process_authenticate(json_rpc, p);
+		return process_authenticate(json_rpc, p);
 	} else {
 		cJSON *error = create_method_not_found_error(p, "reason", method_name);
-		response = create_error_response_from_request(p, json_rpc, error);
+		return create_error_response_from_request(p, json_rpc, error);
 	}
-
-	return possibly_send_response(json_rpc, response, p);
 }
 
 static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
@@ -368,14 +364,16 @@ static int parse_json_rpc(const cJSON *json_rpc, struct peer *p)
 	int ret;
 	const cJSON *method = cJSON_GetObjectItem(json_rpc, "method");
 	if (method != NULL) {
+		cJSON *response;
 		if (unlikely(method->type != cJSON_String)) {
 			cJSON *error = create_invalid_request_error(p, "reason", "method value is not a string");
-			cJSON *response = create_error_response_from_request(p, json_rpc, error);
-			return possibly_send_response(json_rpc, response, p);
+			response = create_error_response_from_request(p, json_rpc, error);
+		} else {
+			const char *method_name = method->valuestring;
+			response = handle_method(json_rpc, method_name, p);
 		}
-		const char *method_name = method->valuestring;
-		ret = handle_method(json_rpc, method_name, p);
-		return ret;
+
+		return possibly_send_response(json_rpc, response, p);
 	}
 
 	const cJSON *result = cJSON_GetObjectItem(json_rpc, "result");
