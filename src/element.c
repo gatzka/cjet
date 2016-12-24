@@ -338,7 +338,8 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	if (what == STATE) {
 		value = cJSON_GetObjectItem(params, "value");
 		if (unlikely(value == NULL)) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no value found");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no value found");
+			goto no_value_found;
 		}
 	} else {
 		value = cJSON_GetObjectItem(params, "args");
@@ -374,6 +375,7 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 delete_json:
 	cJSON_Delete(routed_message);
 routed_message_creation_failed:
+no_value_found:
 	cJSON_Delete(routing_request->origin_request_id);
 	cjet_free(routing_request);
 	return response;
