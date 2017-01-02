@@ -797,6 +797,15 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 
 	{
 		struct fetch *f = NULL;
+		cJSON *request = create_fetch_params("", "", "", "", "", "[true, \"ar\"]", 0);
+		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
+		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() did not fail despite wrong path matchers!");
+		cJSON_Delete(request);
+		cJSON_Delete(response);
+	}
+
+	{
+		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[\"oo\", \"ar\"]", 0);
 		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
 		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
