@@ -373,6 +373,22 @@ static cJSON *create_fetch_with_fetchid(unsigned int fetch_id, const char *path_
 	return root;
 }
 
+static cJSON *create_get(const char *path_string)
+{
+	cJSON *params = cJSON_CreateObject();
+	BOOST_REQUIRE(params != NULL);
+	cJSON *path = cJSON_CreateObject();
+	BOOST_REQUIRE(path != NULL);
+	cJSON_AddItemToObject(params, "path", path);
+	cJSON_AddStringToObject(path, "equals", path_string);
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "get_request_1");
+	cJSON_AddStringToObject(root, "method", "get");
+	return root;
+}
+
 static cJSON *create_fetch_with_no_fetchid()
 {
 	cJSON *params = cJSON_CreateObject();
@@ -655,6 +671,23 @@ BOOST_FIXTURE_TEST_CASE(multiple_fetches_before_state_add, F)
 	remove_all_fetchers_from_peer(fetch_peer_1);
 
 	cJSON_Delete(request);
+	cJSON_Delete(response);
+}
+
+BOOST_FIXTURE_TEST_CASE(get_with_no_states, F)
+{
+	const char *path = "foo/bar";
+
+	cJSON *request = create_get(path);
+	cJSON *response = get_elements(request, fetch_peer_1);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "get_elements() did not returned a response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "get_elements() failed!");
+	cJSON_Delete(request);
+
+	cJSON *result = cJSON_GetObjectItem(response, "result");
+	BOOST_REQUIRE_MESSAGE(result != NULL, "response did not contain a result!");
+	BOOST_REQUIRE_MESSAGE(result ->type == cJSON_Array, "result of get is not an array");
+	BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 0, "result array is not empty");
 	cJSON_Delete(response);
 }
 
