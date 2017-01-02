@@ -76,11 +76,6 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 	return response;
 }
 
-static cJSON *process_get(const cJSON *request, struct peer *p)
-{
-	return create_error_response_from_request(p, request, METHOD_NOT_FOUND, "reason", "get not implemented yet");
-}
-
 static cJSON *handle_method(const cJSON *request, const char *method_name,
 	struct peer *p)
 {
@@ -99,7 +94,7 @@ static cJSON *handle_method(const cJSON *request, const char *method_name,
 	} else if (strcmp(method_name, "unfetch") == 0) {
 		return remove_fetch_from_peer(p, request);
 	} else if (strcmp(method_name, "get") == 0) {
-		return process_get(request, p);
+		return get_elements(request, p);
 	} else if (strcmp(method_name, "config") == 0) {
 		return config_peer(p, request);
 	} else if (strcmp(method_name, "info") == 0) {

@@ -307,16 +307,18 @@ static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned
 	INIT_LIST_HEAD(&f->next_fetch);
 	f->peer = p;
 	f->number_of_matchers = number_of_matchers;
-	f->fetch_id = cJSON_Duplicate(id, 1);
-	if (unlikely(f->fetch_id == NULL)) {
-		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
-		cjet_free(f);
-		return NULL;
+	if (id != NULL) {
+		f->fetch_id = cJSON_Duplicate(id, 1);
+		if (unlikely(f->fetch_id == NULL)) {
+			log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
+			cjet_free(f);
+			return NULL;
+		}
 	}
 	return f;
 }
 
-static struct fetch *create_fetch(struct peer *p, const cJSON *request, const cJSON *id, const cJSON *params, cJSON **response)
+static struct fetch *create_fetch(const struct peer *p, const cJSON *request, const cJSON *id, const cJSON *params, cJSON **response)
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
@@ -526,7 +528,42 @@ static int add_fetch_to_state_and_notify(const struct peer *p, struct element *e
 	return 0;
 }
 
-static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
+static cJSON *get_element(const struct peer *p, const struct cJSON *request, const struct element *e, const struct fetch *f, cJSON *states)
+{
+	if (!has_access(e->fetch_groups, f->peer->fetch_groups)) {
+		return NULL;
+	}
+
+	if (state_matches(e, f)) {
+		if (e->value != NULL) {
+			cJSON *root = cJSON_CreateObject();
+			if (unlikely(root == NULL)) {
+				return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not allocate memory for state object");
+			}
+
+			cJSON *path = cJSON_CreateString(e->path);
+			if (unlikely(path == NULL)) {
+				cJSON_Delete(root);
+				return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not allocate memory for path object");
+			}
+			cJSON_AddItemToObject(root, "path", path);
+
+			cJSON *value = cJSON_Duplicate(e->value, 1);
+			if (unlikely(value == NULL)) {
+				cJSON_Delete(root);
+				return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not allocate memory for value");
+			}
+
+			cJSON_AddItemToObject(root, "value", value);
+
+			cJSON_AddItemReferenceToArray(states, root);
+		}
+	}
+
+	return NULL;
+}
+
+static int add_fetch_to_states_in_peer(const struct peer *p, const struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -536,7 +573,23 @@ static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
 			return -1;
 		}
 	}
+
 	return 0;
+}
+
+static cJSON *get_elements_in_peer(const struct peer *p, const cJSON *request, const struct fetch *f, cJSON *states)
+{
+	struct list_head *item;
+	struct list_head *tmp;
+	list_for_each_safe(item, tmp, &p->element_list) {
+		struct element *e = list_entry(item, struct element, element_list);
+		cJSON *response = get_element(p, request, e, f, states);
+		if (unlikely(response != NULL)) {
+			return response;
+		}
+	}
+
+	return NULL;
 }
 
 int notify_fetchers(const struct element *e, const char *event_name)
@@ -551,7 +604,7 @@ int notify_fetchers(const struct element *e, const char *event_name)
 	return 0;
 }
 
-cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, struct fetch *f)
+cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, const struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -646,6 +699,7 @@ cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fe
 	if (unlikely(id == NULL)) {
 		return response;
 	}
+
 	struct fetch *f = find_fetch(p, id);
 	if (unlikely(f != NULL)) {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "fetch id already in use");
@@ -695,4 +749,34 @@ void remove_all_fetchers_from_peer(struct peer *p)
 		list_del(&f->next_fetch);
 		free_fetch(f);
 	}
+}
+
+cJSON *get_elements(const cJSON *request, const struct peer *request_peer)
+{
+	cJSON *response;
+	const cJSON *params = get_params(request_peer, request, &response);
+	if (unlikely(params == NULL)) {
+		return response;
+	}
+
+	struct fetch *f = create_fetch(request_peer, request, NULL, params, &response);
+	if (unlikely(f == NULL)) {
+		return response;
+	}
+
+	cJSON *states = cJSON_CreateArray();
+
+	struct list_head *item;
+	struct list_head *tmp;
+	const struct list_head *peer_list = get_peer_list();
+	list_for_each_safe(item, tmp, peer_list) {
+		const struct peer *p = list_entry(item, struct peer, next_peer);
+		response = get_elements_in_peer(p, request, f, states);
+		if (unlikely(response != NULL)) {
+			cJSON_Delete(states);
+			return response;
+		}
+	}
+
+	return create_result_response_from_request(request_peer, request, states, "result");
 }
