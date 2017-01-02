@@ -526,7 +526,7 @@ static int add_fetch_to_state_and_notify(const struct peer *p, struct element *e
 	return 0;
 }
 
-static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
+static int add_fetch_to_states_in_peer(const struct peer *p, const struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -551,7 +551,7 @@ int notify_fetchers(const struct element *e, const char *event_name)
 	return 0;
 }
 
-cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, struct fetch *f)
+cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, const struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -695,4 +695,9 @@ void remove_all_fetchers_from_peer(struct peer *p)
 		list_del(&f->next_fetch);
 		free_fetch(f);
 	}
+}
+
+cJSON *get_elements(const cJSON *request, const struct peer *p)
+{
+	return create_error_response_from_request(p, request, METHOD_NOT_FOUND, "reason", "get not implemented yet");
 }
