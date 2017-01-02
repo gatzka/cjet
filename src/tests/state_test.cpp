@@ -405,6 +405,30 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	cJSON_Delete(response);
 }
 
+BOOST_FIXTURE_TEST_CASE(change_no_params, F)
+{
+	const char path[] = "/foo/bar/";
+
+	cJSON *request = create_add(path);
+
+	cJSON *response = add_element_to_peer(&p, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(response);
+	cJSON_Delete(request);
+
+	request = cJSON_CreateObject();
+	cJSON_AddStringToObject(request, "id", "change_request_1");
+	cJSON_AddStringToObject(request, "method", "change");
+
+	response = change_state(&p, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
+	BOOST_CHECK_MESSAGE(response_is_error(response), "change_state() with no params did not fail!");
+
+	cJSON_Delete(request);
+	cJSON_Delete(response);
+}
+
 BOOST_FIXTURE_TEST_CASE(change_not_by_owner, F)
 {
 	const char path[] = "/foo/bar/";
