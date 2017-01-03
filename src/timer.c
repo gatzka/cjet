@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,52 +24,35 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_HANDLE_STATE_H
-#define CJET_HANDLE_STATE_H
-
-#include <stdbool.h>
+#include <stdint.h>
 
 #include "compiler.h"
-#include "fetch.h"
-#include "groups.h"
 #include "json/cJSON.h"
-#include "list.h"
-#include "peer.h"
+#include "response.h"
+#include "timer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+static const double MIN_TIMEOUT_IN_S = 0.001;
 
-/*
- * A struct element represent either a state or a method.
- */
-struct element {
-	struct list_head element_list;
-	char *path;
-	struct peer *peer; /*The peer the state belongs to */
-	cJSON *value; /* NULL if method */
-	const struct fetch **fetcher_table;
-	group_t fetch_groups;
-	group_t set_groups;
-	group_t call_groups;
-	int flags;
-	uint64_t timeout_nsec;
-	unsigned int fetch_table_size;
-};
-
-enum type { STATE, METHOD };
-
-static const int FETCH_ONLY_FLAG = 0x01;
-
-bool element_is_fetch_only(const struct element *e);
-cJSON *change_state(const struct peer *p, const cJSON *request);
-cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what);
-cJSON *add_element_to_peer(struct peer *p, const cJSON *request);
-cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request);
-void remove_all_elements_from_peer(struct peer *p);
-
-#ifdef __cplusplus
+uint64_t convert_seconds_to_nsec(double seconds)
+{
+	return (uint64_t)(seconds * 1000000000.0);
 }
-#endif
 
-#endif
+uint64_t get_timeout_in_nsec(const struct peer *p, const cJSON *request, const cJSON *timeout, cJSON **response, uint64_t default_timeout)
+{
+	if (timeout != NULL) {
+		if (unlikely(timeout->type != cJSON_Number)) {
+			*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout is not a number");
+			return 0;
+		} else {
+			if (timeout->valuedouble < MIN_TIMEOUT_IN_S) {
+				*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout value is too small");
+				return 0;
+			} else {
+				return convert_seconds_to_nsec(timeout->valuedouble);
+			}
+		}
+	} else {
+		return default_timeout;
+	}
+}

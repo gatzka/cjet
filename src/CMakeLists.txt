@@ -73,6 +73,7 @@ SET(CJET_FILES
         sha1/sha1.c
         socket_peer.c
         table.c
+        timer.c
         websocket.c
         websocket_peer.c
 )

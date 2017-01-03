@@ -61,6 +61,7 @@ MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 add_library(jet STATIC 
 	../authenticate.c
 	../config.c
+ 	../element.c
  	../fetch.c
  	../groups.c
  	../info.c
@@ -71,8 +72,8 @@ add_library(jet STATIC
  	../peer.c
  	../response.c
  	../router.c
- 	../element.c
  	../table.c
+ 	../timer.c
 )
 
 SET(INFO_TEST

@@ -594,6 +594,11 @@ static cJSON *create_correct_info_method_without_params()
 	return root;
 }
 
+static double convert_nsecs_to_seconds(uint64_t nsecs)
+{
+	return (double)nsecs / 1000000000.0;
+}
+
 BOOST_FIXTURE_TEST_CASE(parse_correct_json, F)
 {
 	cJSON *correct_json = create_correct_add_state("/foo/bar/state");
@@ -616,7 +621,23 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_timeout, F)
 	BOOST_CHECK(ret == 0);
 
 	struct element *e = get_state(path);
-	BOOST_CHECK_CLOSE(e->timeout, timeout_s, 0.1);
+	BOOST_CHECK_CLOSE(convert_nsecs_to_seconds(e->timeout_nsec), timeout_s, 0.1);
+}
+
+BOOST_FIXTURE_TEST_CASE(parse_add_state_with_small_timeout, F)
+{
+	double timeout_s = 0.0009;
+	const char path[] = "/foo/bar/state";
+	cJSON *correct_json = create_correct_add_state_with_timeout(path, timeout_s);
+	char *unformatted_json = cJSON_PrintUnformatted(correct_json);
+	int ret = parse_message(unformatted_json, strlen(unformatted_json), &p);
+	cJSON_free(unformatted_json);
+	cJSON_Delete(correct_json);
+	BOOST_CHECK(ret == 0);
+
+	struct element *e = get_state(path);
+	BOOST_CHECK_MESSAGE(e == NULL, "State added despite small timeout value!");
+	check_invalid_params_error();
 }
 
 BOOST_FIXTURE_TEST_CASE(parse_add_state_with_negative_timeout, F)
@@ -631,7 +652,7 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_negative_timeout, F)
 	BOOST_CHECK(ret == 0);
 
 	struct element *e = get_state(path);
-	BOOST_CHECK_MESSAGE(e == NULL, "State added even with negative timeout!");
+	BOOST_CHECK_MESSAGE(e == NULL, "State added despite negative timeout value!");
 	check_invalid_params_error();
 }
 

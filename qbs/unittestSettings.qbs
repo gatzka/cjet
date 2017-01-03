@@ -122,6 +122,7 @@ StaticLibrary {
         "response.c",
         "router.c",
         "table.c",
+        "timer.c",
         "linux/uuid.c",
         "tests/log.cpp"
     ]

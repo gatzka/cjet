@@ -147,11 +147,6 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	}
 }
 
-static uint64_t convert_seconds_to_nsec(double seconds)
-{
-	return (uint64_t)(seconds * 1000000000.0);
-}
-
 static void request_timeout_handler(void *context, bool cancelled) {
 	struct routing_request *request = (struct routing_request *)context;
 	if (unlikely(!cancelled)) {
@@ -180,19 +175,10 @@ static void request_timeout_handler(void *context, bool cancelled) {
 
 cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request)
 {
-	uint64_t timeout_ns;
-	if (timeout != NULL) {
-		if (unlikely(timeout->type != cJSON_Number)) {
-			return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is not a number");
-		} else {
-			if (timeout->valuedouble < 0) {
-				return create_error_response_from_request(routing_request->requesting_peer, request, INVALID_PARAMS, "reason", "timeout for set/call is a negative number");
-			} else {
-				timeout_ns = convert_seconds_to_nsec(timeout->valuedouble);
-			}
-		}
-	} else {
-		timeout_ns = convert_seconds_to_nsec(e->timeout);
+	cJSON *response = NULL;
+	uint64_t timeout_ns = get_timeout_in_nsec(routing_request->requesting_peer, request, timeout, &response, e->timeout_nsec);
+	if (unlikely(timeout_ns == 0)) {
+		return response;
 	}
 
 	if (unlikely(cjet_timer_init(&routing_request->timer, e->peer->loop) < 0)) {

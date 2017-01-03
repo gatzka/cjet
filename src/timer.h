@@ -31,6 +31,8 @@
 #include <stdint.h>
 
 #include "eventloop.h"
+#include "json/cJSON.h"
+#include "peer.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,6 +50,8 @@ struct cjet_timer {
 
 int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop);
 void cjet_timer_destroy(struct cjet_timer *timer);
+uint64_t get_timeout_in_nsec(const struct peer *p, const cJSON *request, const cJSON *timeout, cJSON **response, uint64_t default_timeout);
+uint64_t convert_seconds_to_nsec(double seconds);
 
 #ifdef __cplusplus
 }
