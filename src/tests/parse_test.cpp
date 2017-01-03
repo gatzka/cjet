@@ -594,6 +594,11 @@ static cJSON *create_correct_info_method_without_params()
 	return root;
 }
 
+static double convert_nsecs_to_seconds(uint64_t nsecs)
+{
+	return (double)nsecs / 1000000000.0;
+}
+
 BOOST_FIXTURE_TEST_CASE(parse_correct_json, F)
 {
 	cJSON *correct_json = create_correct_add_state("/foo/bar/state");
@@ -616,7 +621,7 @@ BOOST_FIXTURE_TEST_CASE(parse_add_state_with_timeout, F)
 	BOOST_CHECK(ret == 0);
 
 	struct element *e = get_state(path);
-	BOOST_CHECK_CLOSE(e->timeout, timeout_s, 0.1);
+	BOOST_CHECK_CLOSE(convert_nsecs_to_seconds(e->timeout_nsec), timeout_s, 0.1);
 }
 
 BOOST_FIXTURE_TEST_CASE(parse_add_state_with_negative_timeout, F)

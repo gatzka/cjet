@@ -53,7 +53,7 @@ struct element {
 	group_t set_groups;
 	group_t call_groups;
 	int flags;
-	double timeout;
+	uint64_t timeout_nsec;
 	unsigned int fetch_table_size;
 };
 

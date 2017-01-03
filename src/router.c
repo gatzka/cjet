@@ -192,7 +192,7 @@ cJSON *setup_routing_information(struct element *e, const cJSON *request, const 
 			}
 		}
 	} else {
-		timeout_ns = convert_seconds_to_nsec(e->timeout);
+		timeout_ns = e->timeout_nsec;
 	}
 
 	if (unlikely(cjet_timer_init(&routing_request->timer, e->peer->loop) < 0)) {
