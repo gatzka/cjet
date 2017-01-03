@@ -31,6 +31,8 @@
 #include "response.h"
 #include "timer.h"
 
+static const double MIN_TIMEOUT_IN_S = 0.001;
+
 uint64_t convert_seconds_to_nsec(double seconds)
 {
 	return (uint64_t)(seconds * 1000000000.0);
@@ -43,8 +45,8 @@ uint64_t get_timeout_in_nsec(const struct peer *p, const cJSON *request, const c
 			*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout is not a number");
 			return 0;
 		} else {
-			if (timeout->valuedouble < 0) {
-				*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout is a negative number");
+			if (timeout->valuedouble < MIN_TIMEOUT_IN_S) {
+				*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout value is too small");
 				return 0;
 			} else {
 				return convert_seconds_to_nsec(timeout->valuedouble);
