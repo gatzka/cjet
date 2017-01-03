@@ -773,12 +773,13 @@ cJSON *get_elements(const cJSON *request, const struct peer *request_peer)
 		const struct peer *p = list_entry(item, struct peer, next_peer);
 		response = get_elements_in_peer(p, request, f, states);
 		if (unlikely(response != NULL)) {
-			free_fetch(f);
 			cJSON_Delete(states);
-			return response;
+			goto out;
 		}
 	}
 
+	response = create_result_response_from_request(request_peer, request, states, "result");
+out:
 	free_fetch(f);
-	return create_result_response_from_request(request_peer, request, states, "result");
+	return response;
 }
