@@ -556,7 +556,7 @@ static cJSON *get_element(const struct peer *p, const struct cJSON *request, con
 
 			cJSON_AddItemToObject(root, "value", value);
 
-			cJSON_AddItemReferenceToArray(states, root);
+			cJSON_AddItemToArray(states, root);
 		}
 	}
 
