@@ -124,11 +124,6 @@ static int get_fetch_only_from_params(const struct peer *p, const cJSON *request
 	return 0;
 }
 
-static uint64_t convert_seconds_to_nsec(double seconds)
-{
-	return (uint64_t)(seconds * 1000000000.0);
-}
-
 static cJSON *init_element(struct element *e, const cJSON *request, struct peer *p)
 {
 
@@ -149,18 +144,11 @@ static cJSON *init_element(struct element *e, const cJSON *request, struct peer 
 	}
 
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	double routed_request_timeout_s;
-	if (timeout != NULL) {
-		if (unlikely(timeout->type != cJSON_Number)) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout must be a number");
-		} else {
-			routed_request_timeout_s = timeout->valuedouble;
-			if (unlikely(routed_request_timeout_s < 0)) {
-				return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout must be positive");
-			}
-		}
-	} else {
-		routed_request_timeout_s = CONFIG_ROUTED_MESSAGES_TIMEOUT;
+	uint64_t timeout_nsec = get_timeout_in_nsec(p, request, timeout, &response, convert_seconds_to_nsec(CONFIG_ROUTED_MESSAGES_TIMEOUT));
+	if (unlikely(timeout_nsec == 0)) {
+		return response;
+	} else  {
+		e->timeout_nsec = timeout_nsec;
 	}
 
 	if (unlikely(element_table_get(path) != NULL)) {
@@ -170,7 +158,6 @@ static cJSON *init_element(struct element *e, const cJSON *request, struct peer 
 	const cJSON *access = cJSON_GetObjectItem(params, "access");
 
 	e->flags = flags;
-	e->timeout_nsec = convert_seconds_to_nsec(routed_request_timeout_s);
 	e->fetch_table_size = CONFIG_INITIAL_FETCH_TABLE_SIZE;
 	e->fetcher_table = cjet_calloc(e->fetch_table_size, sizeof(struct fetch *));
 	if (e->fetcher_table == NULL) {

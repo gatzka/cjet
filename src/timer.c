@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,37 +24,33 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_TIMER_H
-#define CJET_TIMER_H
-
-#include <stdbool.h>
 #include <stdint.h>
 
-#include "eventloop.h"
+#include "compiler.h"
 #include "json/cJSON.h"
-#include "peer.h"
+#include "response.h"
+#include "timer.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-typedef void(*timer_handler)(void *context, bool cancelled);
-
-struct cjet_timer {
-	struct io_event ev;
-	int (*start)(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context);
-	int (*cancel)(void *this_ptr);
-	timer_handler handler;
-	void *handler_context;
-};
-
-int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop);
-void cjet_timer_destroy(struct cjet_timer *timer);
-uint64_t get_timeout_in_nsec(const struct peer *p, const cJSON *request, const cJSON *timeout, cJSON **response, uint64_t default_timeout);
-uint64_t convert_seconds_to_nsec(double seconds);
-
-#ifdef __cplusplus
+uint64_t convert_seconds_to_nsec(double seconds)
+{
+	return (uint64_t)(seconds * 1000000000.0);
 }
-#endif
 
-#endif
+uint64_t get_timeout_in_nsec(const struct peer *p, const cJSON *request, const cJSON *timeout, cJSON **response, uint64_t default_timeout)
+{
+	if (timeout != NULL) {
+		if (unlikely(timeout->type != cJSON_Number)) {
+			*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout is not a number");
+			return 0;
+		} else {
+			if (timeout->valuedouble < 0) {
+				*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "timeout is a negative number");
+				return 0;
+			} else {
+				return convert_seconds_to_nsec(timeout->valuedouble);
+			}
+		}
+	} else {
+		return default_timeout;
+	}
+}
