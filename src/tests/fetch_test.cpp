@@ -691,6 +691,19 @@ BOOST_FIXTURE_TEST_CASE(get_with_no_states, F)
 	cJSON_Delete(response);
 }
 
+BOOST_FIXTURE_TEST_CASE(get_with_no_params, F)
+{
+	cJSON *request = cJSON_CreateObject();
+	cJSON_AddStringToObject(request, "id", "get_request_1");
+	cJSON_AddStringToObject(request, "method", "get");
+
+	cJSON *response = get_elements(request, fetch_peer_1);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "get_elements() did not returned a response!");
+	BOOST_CHECK_MESSAGE(response_is_error(response), "get_elements() did not fail for request without params!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
+}
+
 BOOST_FIXTURE_TEST_CASE(get_with_one_state, F)
 {
 	const char *path = "foo/bar";
