@@ -691,6 +691,38 @@ BOOST_FIXTURE_TEST_CASE(get_with_no_states, F)
 	cJSON_Delete(response);
 }
 
+BOOST_FIXTURE_TEST_CASE(get_with_one_state, F)
+{
+	const char *path = "foo/bar";
+
+	cJSON *request = create_add(path);
+	cJSON *response = add_element_to_peer(owner_peer, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(request);
+	cJSON_Delete(response);
+
+	request = create_get(path);
+	response = get_elements(request, fetch_peer_1);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "get_elements() did not returned a response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "get_elements() failed!");
+	cJSON_Delete(request);
+
+	cJSON *result = cJSON_GetObjectItem(response, "result");
+	BOOST_REQUIRE_MESSAGE(result != NULL, "response did not contain a result!");
+	BOOST_REQUIRE_MESSAGE(result->type == cJSON_Array, "result of get is not an array");
+	BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 1, "result array does not contain single element");
+	cJSON *state = cJSON_GetArrayItem(result, 0);
+	BOOST_REQUIRE_MESSAGE(state != NULL, "element at position 0 is NULL!");
+	BOOST_REQUIRE_MESSAGE(state->type == cJSON_Object, "element at position 0 is not an object!");
+	cJSON *path_object = cJSON_GetObjectItem(state, "path");
+	BOOST_REQUIRE_MESSAGE(path_object != NULL, "element at position 0 has no path!");
+	BOOST_REQUIRE_MESSAGE(path_object->type == cJSON_String, "path is not a string");
+	BOOST_CHECK_MESSAGE(::strcmp(path, path_object->valuestring) == 0, "path object does not contain original path");
+	BOOST_CHECK_MESSAGE(cJSON_GetObjectItem(state, "value") != NULL, "element at position 0 has no value");
+	cJSON_Delete(response);
+}
+
 BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 {
 	const char *path = "foo/bar";
