@@ -194,3 +194,10 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 
 	return auth;
 }
+
+cJSON *change_password(const char *user, const char *passwd)
+{
+	(void)user;
+	(void)passwd;
+	return NULL;
+}

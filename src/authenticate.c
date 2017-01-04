@@ -80,3 +80,32 @@ cJSON *handle_authentication(struct peer *p, const cJSON *request)
 
 	return create_success_response_from_request(p, request);
 }
+
+cJSON *handle_change_password(const struct peer *p, const cJSON *request)
+{
+	cJSON *response;
+	const cJSON *params = get_params(p, request, &response);
+	if (unlikely(params == NULL)) {
+		return response;
+	}
+
+	const cJSON *user = cJSON_GetObjectItem(params, "user");
+	if (unlikely(user == NULL)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user given");
+	}
+
+	if (unlikely(user->type != cJSON_String)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user is not a string");
+	}
+
+	const cJSON *passwd = cJSON_GetObjectItem(params, "password");
+	if (unlikely(passwd == NULL)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no password given");
+	}
+
+	if (unlikely(passwd->type != cJSON_String)) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password is not a string");
+	}
+
+	return change_password(user->valuestring, passwd->valuestring);
+}
