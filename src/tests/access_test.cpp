@@ -74,6 +74,13 @@ extern "C" {
 		return NULL;
 	}
 
+	cJSON *change_password(const char *user, const char *passwd)
+	{
+		(void)user;
+		(void)passwd;
+		return NULL;
+	}
+
 	ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;

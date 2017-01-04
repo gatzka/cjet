@@ -36,5 +36,12 @@ extern "C" {
 		(void)passwd;
 		return NULL;
 	}
+
+	cJSON *change_password(const char *user, const char *passwd)
+	{
+		(void)user;
+		(void)passwd;
+		return NULL;
+	}
 }
 
