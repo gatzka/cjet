@@ -40,6 +40,7 @@
 #include "groups.h"
 #include "json/cJSON.h"
 #include "log.h"
+#include "response.h"
 
 static cJSON *user_data = NULL;
 static const cJSON *users = NULL;
@@ -195,10 +196,29 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 	return auth;
 }
 
-cJSON *change_password(const char *current_user, const char *user, const char *passwd)
+static bool is_readonly(const char *user)
 {
-	(void)current_user;
 	(void)user;
+	return false;
+}
+
+static bool is_admin(const char *user)
+{
+	(void)user;
+	return false;
+}
+
+cJSON *change_password(const struct peer *p, const cJSON *request, const char *user, const char *passwd)
+{
+	if (p->user_name == NULL) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "non-authenticated peer can't change any passwords");
+	}
+
+	if (!is_readonly(user) && ((strcmp(p->user_name, user) == 0) || (is_admin(user)))) {
+
+	} else {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not allowed to change password");
+	}
 	(void)passwd;
 	return NULL;
 }
