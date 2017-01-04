@@ -113,5 +113,5 @@ cJSON *handle_change_password(const struct peer *p, const cJSON *request)
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password is not a string");
 	}
 
-	return change_password(user->valuestring, passwd->valuestring);
+	return change_password(p->user_name, user->valuestring, passwd->valuestring);
 }
