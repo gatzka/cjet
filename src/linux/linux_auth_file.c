@@ -29,6 +29,7 @@
 #include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -44,6 +45,7 @@
 
 static cJSON *user_data = NULL;
 static const cJSON *users = NULL;
+static int password_file = -1;
 
 int load_passwd_data(const char *passwd_file)
 {
@@ -60,7 +62,7 @@ int load_passwd_data(const char *passwd_file)
 		goto realpath_failed;
 	}
 
-	int fd = open(rp, O_RDONLY);
+	int fd = open(rp, O_RDWR);
 	if (fd == -1) {
 		log_err("Cannot open passwd file: %s\n", passwd_file);
 		goto open_failed;
@@ -115,13 +117,14 @@ int load_passwd_data(const char *passwd_file)
 				}
 			}
 		}
+
 		user = user->next;
 	}
 
 	munmap(p, size);
-	close(fd);
 	free(rp);
 
+	password_file = fd;
 	return 0;
 
 add_call_groups_failed:
@@ -148,6 +151,8 @@ void free_passwd_data(void)
 	}
 
 	free_groups();
+
+	close(password_file);
 }
 
 const cJSON *credentials_ok(const char *user_name, char *passwd)
@@ -208,17 +213,77 @@ static bool is_admin(const char *user)
 	return false;
 }
 
-cJSON *change_password(const struct peer *p, const cJSON *request, const char *user, const char *passwd)
+static void write_user_data()
 {
+	ftruncate(password_file, 0);
+	lseek(password_file, 0, SEEK_SET);
+	char *data = cJSON_Print(user_data);
+	if (data != NULL) {
+		cJSON_free(data);
+	}
+
+	//TODO while loop
+	write(password_file, data, strlen(data));
+}
+
+static void get_salt_from_passwd(char *salt, const char *passwd)
+{
+		// TODO: provide a good salt
+	if (passwd[0] == '$') {
+		const char *found = passwd;
+		found++;
+		found = strchr(found, '$');
+		found++;
+		found = strchr(found, '$');
+		found++;
+		strncpy(salt, passwd, found - passwd);
+	} else {
+		strncpy(salt, passwd, 2);
+	}
+}
+
+cJSON *change_password(const struct peer *p, const cJSON *request, const char *user_name, const char *passwd)
+{
+	// TODO: zero out passwd after leaving this function
 	if (p->user_name == NULL) {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "non-authenticated peer can't change any passwords");
 	}
 
-	if (!is_readonly(user) && ((strcmp(p->user_name, user) == 0) || (is_admin(user)))) {
+	if (!is_readonly(user_name) && ((strcmp(p->user_name, user_name) == 0) || (is_admin(user_name)))) {
+		if (unlikely(user_data == NULL)) {
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user database available");
+		}
+
+		cJSON *user = cJSON_GetObjectItem(users, user_name);
+		if (user == NULL) {
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not in password database");
+		}
+
+		cJSON *password = cJSON_GetObjectItem(user, "password");
+		if (password == NULL) {
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no password for user in password database");
+		}
+
+		if (password->type != cJSON_String) {
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password for user in password database is not a string");
+		}
+
+		char salt[16];
+		get_salt_from_passwd(salt, password->valuestring);
+
+		struct crypt_data data;
+		data.initialized = 0;
+		char *encrypted = crypt_r(passwd, salt, &data);
+		if (encrypted == NULL) {
+			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "could not encrypt password");
+		}
+
+		cJSON_ReplaceItemInObject(user, "password", cJSON_CreateString(encrypted));
+		write_user_data();
 
 	} else {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not allowed to change password");
 	}
-	(void)passwd;
-	return NULL;
+
+	return create_success_response_from_request(p, request);
 }
