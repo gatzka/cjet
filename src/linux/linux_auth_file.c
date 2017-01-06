@@ -164,38 +164,38 @@ static void clear_password(char *passwd)
 
 const cJSON *credentials_ok(const char *user_name, char *passwd)
 {
+	const cJSON *auth = NULL;
+
 	if (unlikely(user_data == NULL)) {
-		return NULL;
+		goto out;
 	}
 
 	cJSON *user = cJSON_GetObjectItem(users, user_name);
 	if (user == NULL) {
-		return NULL;
+		goto out;
 	}
 
 	cJSON *password = cJSON_GetObjectItem(user, "password");
 	if (password == NULL) {
 		log_err("No password for user %s in password file!\n", user_name);
-		return NULL;
+		goto out;
 	}
 
 	if (password->type != cJSON_String) {
 		log_err("password for user %s in password file is not a string!\n", user_name);
-		return NULL;
+		goto out;
 	}
 
 	struct crypt_data data;
 	data.initialized = 0;
 
 	char *encrypted = crypt_r(passwd, password->valuestring, &data);
-	clear_password(passwd);
 
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
-		return NULL;
+		goto out;
 	}
 
-	const cJSON *auth = NULL;
 	if (strcmp(password->valuestring, encrypted) == 0) {
 		auth = cJSON_GetObjectItem(user, "auth");
 		if (auth == NULL) {
@@ -203,6 +203,8 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		}
 	}
 
+out:
+	clear_password(passwd);
 	return auth;
 }
 
