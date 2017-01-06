@@ -99,7 +99,6 @@ struct websocket {
 	} sub_protocol;
 };
 
-int websocket_init_random(void);
 void websocket_fill_mask_randomly(uint8_t mask[4]);
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol);
