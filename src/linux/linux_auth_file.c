@@ -155,6 +155,13 @@ void free_passwd_data(void)
 	close(password_file);
 }
 
+static void clear_password(char *passwd)
+{
+	for (char *p = passwd; *p != '\0'; p++) {
+		*p = '\0';
+	}
+}
+
 const cJSON *credentials_ok(const char *user_name, char *passwd)
 {
 	if (unlikely(user_data == NULL)) {
@@ -181,9 +188,7 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 	data.initialized = 0;
 
 	char *encrypted = crypt_r(passwd, password->valuestring, &data);
-	for (char *p = passwd; *p != '\0'; p++) {
-		*p = '\0';
-	}
+	clear_password(passwd);
 
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
@@ -252,30 +257,35 @@ static void get_salt_from_passwd(char *salt, const char *passwd)
 	}
 }
 
-cJSON *change_password(const struct peer *p, const cJSON *request, const char *user_name, const char *passwd)
+cJSON *change_password(const struct peer *p, const cJSON *request, const char *user_name, char *passwd)
 {
-	// TODO: zero out passwd after leaving this function
+	cJSON *response = NULL;
 	if (p->user_name == NULL) {
-		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "non-authenticated peer can't change any passwords");
+		response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "non-authenticated peer can't change any passwords");
+		goto out;
 	}
 
 	if (!is_readonly(user_name) && ((strcmp(p->user_name, user_name) == 0) || (is_admin(user_name)))) {
 		if (unlikely(user_data == NULL)) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user database available");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user database available");
+			goto out;
 		}
 
 		cJSON *user = cJSON_GetObjectItem(users, user_name);
 		if (user == NULL) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not in password database");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not in password database");
+			goto out;
 		}
 
 		cJSON *password = cJSON_GetObjectItem(user, "password");
 		if (password == NULL) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no password for user in password database");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no password for user in password database");
+			goto out;
 		}
 
 		if (password->type != cJSON_String) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password for user in password database is not a string");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "password for user in password database is not a string");
+			goto out;
 		}
 
 		char salt[16];
@@ -285,16 +295,22 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 		data.initialized = 0;
 		char *encrypted = crypt_r(passwd, salt, &data);
 		if (encrypted == NULL) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "could not encrypt password");
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "could not encrypt password");
+			goto out;
 		}
 
 		cJSON_ReplaceItemInObject(user, "password", cJSON_CreateString(encrypted));
 		if (write_user_data() < 0) {
-			return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "Could not write password file");
+			response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "Could not write password file");
+			goto out;
 		}
 	} else {
-		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not allowed to change password");
+		response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not allowed to change password");
+		goto out;
 	}
 
-	return create_success_response_from_request(p, request);
+	response = create_success_response_from_request(p, request);
+out:
+	clear_password(passwd);
+	return response;
 }

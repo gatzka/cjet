@@ -74,7 +74,7 @@ extern "C" {
 		return NULL;
 	}
 
-	cJSON *change_password(const struct peer *p, const cJSON *request, const char *user, const char *passwd)
+	cJSON *change_password(const struct peer *p, const cJSON *request, const char *user, char *passwd)
 	{
 		(void)p;
 		(void)request;
