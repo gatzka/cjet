@@ -213,7 +213,7 @@ static bool is_admin(const char *user)
 	return false;
 }
 
-static void write_user_data()
+static int write_user_data()
 {
 	ftruncate(password_file, 0);
 	lseek(password_file, 0, SEEK_SET);
@@ -222,8 +222,18 @@ static void write_user_data()
 		cJSON_free(data);
 	}
 
-	//TODO while loop
-	write(password_file, data, strlen(data));
+	ssize_t written = 0;
+	ssize_t to_write = strlen(data);
+	while (written < to_write) {
+		written = write(password_file, data, to_write);
+		if (written < 0) {
+			log_err("Could not write password file\n");
+			return -1;
+		}
+		to_write -= written;
+	}
+
+	return 0;
 }
 
 static void get_salt_from_passwd(char *salt, const char *passwd)
@@ -279,8 +289,9 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 		}
 
 		cJSON_ReplaceItemInObject(user, "password", cJSON_CreateString(encrypted));
-		write_user_data();
-
+		if (write_user_data() < 0) {
+			return create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "Could not write password file");
+		}
 	} else {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not allowed to change password");
 	}
