@@ -43,9 +43,27 @@
 #include "log.h"
 #include "response.h"
 
+#ifndef ARRAY_SIZE
+ #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#endif
+
 static cJSON *user_data = NULL;
 static const cJSON *users = NULL;
 static int password_file = -1;
+
+struct crypt_method {
+	const char *prefix; /* salt prefix */
+	const unsigned int minlen; /* minimum salt length */
+	const unsigned int maxlen; /* maximum salt length */
+	const unsigned int rounds; /* supports a variable number of rounds */
+};
+
+static const struct crypt_method methods[] = {
+	{"", 2, 2, 0}, /* DES */
+	{"$1$", 8, 8, 0}, /* MD5 */
+	{"$5$", 8, 16, 1}, /* SHA-256 */
+	{"$6$", 8, 16, 1} /* SHA-512 */
+};
 
 int load_passwd_data(const char *passwd_file)
 {
@@ -222,7 +240,11 @@ static bool is_admin(const char *user)
 
 static int write_user_data()
 {
-	ftruncate(password_file, 0);
+	if (ftruncate(password_file, 0) < 0){
+		log_err("Could not truncate password file\n");
+		return -1;
+	}
+
 	lseek(password_file, 0, SEEK_SET);
 	char *data = cJSON_Print(user_data);
 	if (data != NULL) {
@@ -243,20 +265,58 @@ static int write_user_data()
 	return 0;
 }
 
-static void get_salt_from_passwd(char *salt, const char *passwd)
+static void fill_salt(char *buf, unsigned int salt_len)
 {
-		// TODO: provide a good salt
+	static const char valid_salts[] = "abcdefghijklmnopqrstuvwxyz"
+		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
+
+	unsigned int i;
+	for (i = 0; i < salt_len; i++)
+		buf[i] = valid_salts[rand() % (sizeof valid_salts - 1)];
+	buf[i++] = '$';
+	buf[i] = '\0';
+}
+
+static int get_salt_from_passwd(char *salt, const char *passwd)
+{
+	const char *method = NULL;
+	int method_index = -1;
 	if (passwd[0] == '$') {
 		const char *found = passwd;
 		found++;
 		found = strchr(found, '$');
 		found++;
-		found = strchr(found, '$');
-		found++;
-		strncpy(salt, passwd, found - passwd);
+		unsigned int num_methods = ARRAY_SIZE(methods);
+		for (unsigned int i = 0; i < num_methods; i++) {
+			const struct crypt_method *crypt_method = &methods[i];
+			if (strncmp(passwd, crypt_method->prefix, found - passwd) == 0) {
+				method_index = i;
+				break;
+			}
+		}
 	} else {
-		strncpy(salt, passwd, 2);
+		method_index = 0;
 	}
+
+	if (method_index < 0) {
+		log_err("password salt method not supported\n");
+		return -1;
+	}
+
+	method = methods[method_index].prefix;
+	unsigned int salt_minlen = methods[method_index].minlen;
+	unsigned int salt_maxlen = methods[method_index].maxlen;
+
+	unsigned int salt_len = salt_maxlen;
+	if (salt_minlen != salt_maxlen) {
+		salt_len = rand() % (salt_maxlen - salt_minlen + 1) + salt_minlen;
+	}
+
+	salt[0] = '\0';
+	strcat(salt, method);
+	fill_salt(salt + strlen(salt), salt_len);
+
+	return 0;
 }
 
 cJSON *change_password(const struct peer *p, const cJSON *request, const char *user_name, char *passwd)
@@ -290,8 +350,11 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 			goto out;
 		}
 
-		char salt[16];
-		get_salt_from_passwd(salt, password->valuestring);
+		char salt[22];
+		if (get_salt_from_passwd(salt, password->valuestring) < 0) {
+			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "can't create salt for new password");
+			goto out;
+		}
 
 		struct crypt_data data;
 		data.initialized = 0;
