@@ -8,6 +8,24 @@
         "callGroups": ["users"]
       }
     },
+    "john-ro": {
+	  "readonly": true,
+      "password": "$6$QieAoprju2Gf$WwQCVJeZ7YBUK42QG4Idx8DstfUpaFwjSNDrtbUmsDFtg7/to2sx1ClJRqR051.sJ2uquembKq6O6BweUfpzs1",
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": ["users"]
+      }
+    },
+    "john-admin": {
+	  "admin": true,
+      "password": "$6$QieAoprju2Gf$WwQCVJeZ7YBUK42QG4Idx8DstfUpaFwjSNDrtbUmsDFtg7/to2sx1ClJRqR051.sJ2uquembKq6O6BweUfpzs1",
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": ["users"]
+      }
+    },
     "bob": {
       "password": "$6$C2ThIFi2ie4$G3nDGp97ijI1NSWG5kflmdk.Q9yIpCZOCELAVsLTaeNmnoQKj7PMn6DxKU17JYgMay2yWx.m0fDTJOiWJwwyH/",
       "auth": {
