@@ -226,9 +226,17 @@ out:
 	return auth;
 }
 
-static bool is_readonly(const char *user)
+static bool is_readonly(const cJSON *user)
 {
-	(void)user;
+	cJSON *readonly = cJSON_GetObjectItem(user, "readonly");
+	if (readonly == NULL) {
+		return false;
+	}
+
+	if (readonly->type == cJSON_True) {
+		return true;
+	}
+
 	return false;
 }
 
@@ -327,15 +335,15 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 		goto out;
 	}
 
-	if (!is_readonly(user_name) && ((strcmp(p->user_name, user_name) == 0) || (is_admin(user_name)))) {
+	cJSON *user = cJSON_GetObjectItem(users, user_name);
+	if (user == NULL) {
+		response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not in password database");
+		goto out;
+	}
+
+	if (!is_readonly(user) && ((strcmp(p->user_name, user_name) == 0) || (is_admin(user_name)))) {
 		if (unlikely(user_data == NULL)) {
 			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "no user database available");
-			goto out;
-		}
-
-		cJSON *user = cJSON_GetObjectItem(users, user_name);
-		if (user == NULL) {
-			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "user not in password database");
 			goto out;
 		}
 
