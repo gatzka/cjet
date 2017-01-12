@@ -32,19 +32,15 @@
 #include <boost/test/unit_test.hpp>
 
 #include "info.h"
+#include "json/cJSON.h"
 #include "peer.h"
-
-static char readback_buffer[10000];
 
 extern "C" {
 	int send_message(const struct peer *p, char *rendered, size_t len)
 	{
 		(void)p;
-		char *ptr = readback_buffer;
-		uint32_t message_length = htonl(len);
-		memcpy(ptr, &message_length, sizeof(message_length));
-		ptr += 4;
-		memcpy(ptr, rendered, len);
+		(void)rendered;
+		(void)len;
 		return 0;
 	}
 
