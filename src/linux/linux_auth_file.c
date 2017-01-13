@@ -244,7 +244,7 @@ static bool is_admin(const char *current_user)
 {
 	cJSON *user = cJSON_GetObjectItem(users, current_user);
 	if (user == NULL) {
-		false;
+		return false;
 	}
 
 	cJSON *admin = cJSON_GetObjectItem(user, "admin");
