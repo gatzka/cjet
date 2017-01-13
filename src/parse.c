@@ -101,6 +101,8 @@ static cJSON *handle_method(const cJSON *request, const char *method_name,
 		return handle_info(request, p);
 	} else if (strcmp(method_name, "authenticate") == 0) {
 		return handle_authentication(p, request);
+	} else if (strcmp(method_name, "passwd") == 0) {
+		return handle_change_password(p, request);
 	} else {
 		return create_error_response_from_request(p, request, METHOD_NOT_FOUND, "reason", method_name);
 	}

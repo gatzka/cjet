@@ -74,6 +74,15 @@ extern "C" {
 		return NULL;
 	}
 
+	cJSON *change_password(const struct peer *p, const cJSON *request, const char *user, char *passwd)
+	{
+		(void)p;
+		(void)request;
+		(void)user;
+		(void)passwd;
+		return NULL;
+	}
+
 	ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;

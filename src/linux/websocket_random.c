@@ -31,24 +31,6 @@
 
 #include "websocket.h"
 
-int websocket_init_random(void)
-{
-	unsigned int seed;
-	FILE* urandom = fopen("/dev/urandom", "r");
-	if (urandom == NULL) {
-		return -1;
-	}
-
-	int ret = -1;
-	int len = fread(&seed, 1, sizeof(seed), urandom);
-	if (len == sizeof(seed)) {
-		srand(seed);
-		ret = 0;
-	}
-	fclose(urandom);
-	return ret;
-}
-
 void websocket_fill_mask_randomly(uint8_t mask[4])
 {
 	for (unsigned int i = 0; i < 4; i++) {

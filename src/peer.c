@@ -80,6 +80,10 @@ void free_peer_resources(struct peer *p)
 		cjet_free(p->name);
 	}
 
+	if (p->user_name != NULL) {
+		cjet_free(p->user_name);
+	}
+
 	--number_of_peers;
 }
 
@@ -89,6 +93,7 @@ int init_peer(struct peer *p, bool is_local_connection, struct eventloop *loop)
 		return -1;
 	}
 	p->name = NULL;
+	p->user_name = NULL;
 	p->is_local_connection = is_local_connection;
 	p->loop = loop;
 	INIT_LIST_HEAD(&p->next_peer);

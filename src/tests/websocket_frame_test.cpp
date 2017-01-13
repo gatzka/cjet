@@ -354,8 +354,6 @@ struct F {
 
 	F(bool is_server, uint32_t buffer_length)
 	{
-		websocket_init_random();
-
 		br_close_called = false;
 		got_error = false;
 		text_message_received_called = false;

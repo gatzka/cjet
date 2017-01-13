@@ -56,6 +56,7 @@ struct peer {
 	group_t fetch_groups;
 	group_t set_groups;
 	group_t call_groups;
+	char *user_name;
 	bool is_local_connection;
 };
 
