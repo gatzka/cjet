@@ -32,7 +32,7 @@ function patchVersion(inputs, output, product)
   cmd.sourceCode = function() {
     var gitRevParse = new Process();
     gitRevParse.setWorkingDirectory(product.sourceDirectory);
-    gitRevParse.exec("git", ["rev-parse","--verify","HEAD"], true);
+    gitRevParse.exec("git", ["rev-parse","--short","HEAD"], true);
     var hash = gitRevParse.readLine();
     gitRevParse.close();
 
@@ -46,7 +46,7 @@ function patchVersion(inputs, output, product)
     }
     var dirty;
     if (isDirty) {
-      dirty = "+dirty";
+      dirty = ".dirty";
     } else {
       dirty = "";
     }
@@ -57,17 +57,19 @@ function patchVersion(inputs, output, product)
     var ret = gitDescribe.exec("git", ["describe","--exact-match","--tags", "HEAD"], false);
     gitDescribe.close();
     var isTag = (ret === 0  && (isDirty === false));
-    var last;
+    var preRelease;
     if (isTag) {
-      last = "";
+      preRelease = "";
     } else {
-      last = "-";
+      preRelease = "-";
       var gitCount = new Process();
       gitCount.setWorkingDirectory(product.sourceDirectory);
       gitCount.exec("git", ["rev-list","HEAD","--count"], true)
-      last = last + gitCount.readLine();
+      preRelease = preRelease + gitCount.readLine();
       gitCount.close();
     }
+
+	var buildInfo = "+" + hash + dirty;
 
     var versionFile = new TextFile(inputs["version_file"][0].filePath);
     var versionString = versionFile.readAll().trim();
@@ -77,7 +79,7 @@ function patchVersion(inputs, output, product)
     var content = file.readAll();
     file.close()
     content = content.replace(/\${CJET_VERSION}/g, versionString);
-    content = content.replace(/\${CJET_LAST}/g, last+dirty);
+    content = content.replace(/\${CJET_LAST}/g, preRelease + buildInfo);
     content = content.replace(/\${PROJECT_NAME}/g, product.name);
     file = new TextFile(output.filePath,  TextFile.WriteOnly);
     file.truncate();
