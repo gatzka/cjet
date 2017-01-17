@@ -33,6 +33,7 @@
 #include <cstring>
 #include <list>
 
+#include "generated/cjet_config.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"

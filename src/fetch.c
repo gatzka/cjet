@@ -31,6 +31,7 @@
 #include "alloc.h"
 #include "compiler.h"
 #include "fetch.h"
+#include "generated/cjet_config.h"
 #include "groups.h"
 #include "jet_string.h"
 #include "json/cJSON.h"

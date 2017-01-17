@@ -29,6 +29,7 @@
 #include "alloc.h"
 #include "compiler.h"
 #include "hashtable.h"
+#include "generated/cjet_config.h"
 #include "json/cJSON.h"
 #include "linux/linux_io.h"
 #include "peer.h"

@@ -34,8 +34,6 @@
 
 #include "groups.h"
 #include "eventloop.h"
-#include "generated/cjet_config.h"
-#include "generated/os_config.h"
 #include "http-parser/http_parser.h"
 #include "json/cJSON.h"
 #include "list.h"
