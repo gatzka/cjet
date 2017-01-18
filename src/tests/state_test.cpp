@@ -760,7 +760,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
 	cJSON_Delete(error_message);
 
 	int ret = handle_routing_response(response, result, "result", &p);
-	BOOST_CHECK(ret == -1);
+	BOOST_CHECK_MESSAGE(ret == 0, "Response after timeout not silently ignored!");
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
@@ -793,7 +793,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_destroy_before_response, F)
 	free_peer_resources(&setter_peer);
 
 	int ret = handle_routing_response(response, result, "result", &p);
-	BOOST_CHECK(ret == -1);
+	BOOST_CHECK_MESSAGE(ret == 0, "Response after timeout/destroy not silently ignored!");
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
