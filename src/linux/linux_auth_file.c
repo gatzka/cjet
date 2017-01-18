@@ -170,7 +170,9 @@ void free_passwd_data(void)
 
 	free_groups();
 
-	close(password_file);
+	if (password_file != -1) {
+		close(password_file);
+	}
 }
 
 static void clear_password(char *passwd)
