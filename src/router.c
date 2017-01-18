@@ -240,10 +240,12 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 			}
 			cJSON_Delete(request->origin_request_id);
 		}
-		cjet_free(request);
-	}
 
-	return ret;
+		cjet_free(request);
+		return ret;
+	} else {
+		return 0;
+	}
 }
 
 static void send_shutdown_response(const struct peer *p,
