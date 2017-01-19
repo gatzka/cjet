@@ -198,18 +198,22 @@ static cJSON *create_add_with_access(const char *path, cJSON *access)
 	return root;
 }
 
+static cJSON *create_authentication_with_params(cJSON *params){
+
+	cJSON *root = cJSON_CreateObject();
+	cJSON_AddItemToObject(root, "params", params);
+	cJSON_AddStringToObject(root, "id", "auth_request");
+	cJSON_AddStringToObject(root, "method", "authenticate");
+	return root;
+}
+
 static cJSON *create_authentication()
 {
 	cJSON *params = cJSON_CreateObject();
 	BOOST_REQUIRE(params != NULL);
 	cJSON_AddStringToObject(params, "user", "user");
 	cJSON_AddStringToObject(params, "password", "password");
-
-	cJSON *root = cJSON_CreateObject();
-	cJSON_AddItemToObject(root, "params", params);
-	cJSON_AddStringToObject(root, "id", "auth_request_1");
-	cJSON_AddStringToObject(root, "method", "authenticate");
-	return root;
+	return create_authentication_with_params(params);
 }
 
 struct F {
