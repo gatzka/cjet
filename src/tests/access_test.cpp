@@ -216,6 +216,21 @@ static cJSON *create_authentication()
 	return create_authentication_with_params(params);
 }
 
+const char *extract_error_message(const cJSON *request_error){
+
+	const cJSON *error = cJSON_GetObjectItem(request_error, "error");
+	BOOST_REQUIRE_MESSAGE(error != NULL, "No error object given!");
+
+	const cJSON *error_data = cJSON_GetObjectItem(error,"data");
+	BOOST_REQUIRE_MESSAGE(error_data != NULL, "No data object within given error message!");
+
+	const cJSON *error_string = cJSON_GetObjectItem(error_data,"reason");
+	BOOST_REQUIRE_MESSAGE(error_string != NULL, "No reason object within given error message");
+	BOOST_REQUIRE_MESSAGE(error_string ->type == cJSON_String, "Given error reason is no String");
+
+	return error_string ->valuestring;
+}
+
 struct F {
 	F()
 	{
