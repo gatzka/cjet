@@ -224,12 +224,20 @@ char *extract_error_message(const cJSON *request_error){
 	const cJSON *error_data = cJSON_GetObjectItem(error, "data");
 	BOOST_REQUIRE_MESSAGE(error_data != NULL, "No data object within given error message!");
 
+<<<<<<< HEAD
 	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data, "reason");
+=======
+	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data,"reason");
+>>>>>>> 42334c5... access_test: added test cases to check all error paths
 	if(error_string_reason != NULL){
 		BOOST_REQUIRE_MESSAGE(error_string_reason ->type == cJSON_String, "Given reason is no string!");
 		return error_string_reason ->valuestring;
 	} else {
+<<<<<<< HEAD
 		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
+=======
+		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data,"fetched before authenticate");
+>>>>>>> 42334c5... access_test: added test cases to check all error paths
 		BOOST_REQUIRE_MESSAGE(error_string_auth != NULL, "No object reason given within error message!");
 		return error_string_auth->string;
 	}
