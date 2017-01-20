@@ -839,3 +839,52 @@ BOOST_FIXTURE_TEST_CASE(second_set_before_first_response, F)
 	cJSON_Delete(routed_message2);
 	cJSON_Delete(response2);
 }
+
+BOOST_FIXTURE_TEST_CASE(two_sets_with_first_timeout, F)
+{
+	double timeout_s = 2.22;
+	const char path[] = "/foo/bar/";
+	cJSON *request = create_add(path);
+
+	cJSON *response = add_element_to_peer(&p, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(response);
+	cJSON_Delete(request);
+
+	cJSON *set_request1 = create_set_request_with_timeout("request1", path, timeout_s);
+	response = set_or_call(&set_peer, set_request1, STATE);
+	cJSON_Delete(set_request1);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
+
+	cJSON *routed_message1 = parse_send_buffer();
+	cJSON *response1 = create_response_from_message(routed_message1);
+	cJSON *result1 = get_result_from_response(response1);
+
+	enum eventloop_return el_ret = timer_ev->read_function(timer_ev);
+	BOOST_CHECK_MESSAGE(el_ret == EL_CONTINUE_LOOP, "timer read function did not returned EL_CONTINUE_LOOP");
+	BOOST_CHECK_MESSAGE(timer_ev == NULL, "timer was not removed from eventloop");
+	cJSON *error_message = parse_send_buffer();
+	BOOST_REQUIRE_MESSAGE(error_message != NULL, "Error message does not contain an error object!");
+	check_internal_error(error_message);
+	cJSON_Delete(error_message);
+
+	cJSON *set_request2 = create_set_request_with_timeout("request2", path, timeout_s);
+	response = set_or_call(&set_peer, set_request2, STATE);
+	cJSON_Delete(set_request2);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
+
+	cJSON *routed_message2 = parse_send_buffer();
+	cJSON *response2 = create_response_from_message(routed_message1);
+	cJSON *result2 = get_result_from_response(response1);
+
+	int ret = handle_routing_response(response1, result1, "result", &p);
+	BOOST_CHECK_MESSAGE(ret == 0, "Response after timeout not silently ignored!");
+	cJSON_Delete(routed_message1);
+	cJSON_Delete(response1);
+
+	ret = handle_routing_response(response2, result2, "result", &p);
+	BOOST_CHECK(ret == 0);
+	cJSON_Delete(routed_message2);
+	cJSON_Delete(response2);
+}
