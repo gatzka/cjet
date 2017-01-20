@@ -29,6 +29,7 @@
 #define BOOST_TEST_MODULE state
 
 #include <boost/test/unit_test.hpp>
+#include <list>
 
 #include "json/cJSON.h"
 #include "parse.h"
@@ -39,7 +40,7 @@
 
 static char send_buffer[100000];
 
-struct io_event *timer_ev;
+static std::list<struct io_event *> timer_evs;
 
 extern "C" {
 	ssize_t socket_read(socket_type sock, void *buf, size_t count)
@@ -130,7 +131,7 @@ static cJSON *get_result_from_response(const cJSON *response)
 static enum eventloop_return fake_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
-	timer_ev = (struct io_event *)ev;
+	timer_evs.push_back((struct io_event *)ev);
 	return EL_CONTINUE_LOOP;
 }
 
@@ -138,7 +139,7 @@ static void fake_remove(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;
-	timer_ev = NULL;
+	timer_evs.remove((struct io_event *)ev);
 	return;
 }
 
@@ -147,7 +148,7 @@ static struct eventloop loop;
 struct F {
 	F()
 	{
-		timer_ev = NULL;
+		timer_evs.clear();
 		loop.this_ptr = NULL;
 		loop.init = NULL;
 		loop.destroy = NULL;
@@ -548,7 +549,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
-	BOOST_CHECK(timer_ev != NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 1, "No timer_ev was registered!");
 
 	cJSON *routed_message = parse_send_buffer();
 	response = create_response_from_message(routed_message);
@@ -556,7 +557,7 @@ BOOST_FIXTURE_TEST_CASE(set, F)
 
 	int ret = handle_routing_response(response, result, "result", &p);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(timer_ev == NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 0, "timer_ev was not deregistered!");
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
@@ -578,7 +579,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_correct_timeout, F)
 	response = set_or_call(&set_peer, set_request, STATE);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
-	BOOST_CHECK(timer_ev != NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 1, "No timer_ev was registered!");
 
 	cJSON *routed_message = parse_send_buffer();
 	response = create_response_from_message(routed_message);
@@ -586,7 +587,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_correct_timeout, F)
 
 	int ret = handle_routing_response(response, result, "result", &p);
 	BOOST_CHECK(ret == 0);
-	BOOST_CHECK(timer_ev == NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 0, "timer_ev was not deregistered!");
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
@@ -611,7 +612,8 @@ BOOST_FIXTURE_TEST_CASE(set_with_negative_timeout, F)
 	cJSON_Delete(set_request);
 	cJSON_Delete(response);
 	BOOST_CHECK_MESSAGE(response != NULL, "no error object created for set request with negative timeout");
-	BOOST_CHECK(timer_ev == NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 0, "timer_ev was registered for set request with negative timeout!");
+
 }
 
 BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
@@ -634,7 +636,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
 	check_invalid_params(response);
 	cJSON_Delete(set_request);
 	BOOST_CHECK_MESSAGE((response != NULL) && (response_is_error(response)), "no error object created for set request with negative timeout");
-	BOOST_CHECK(timer_ev == NULL);
+	BOOST_CHECK_MESSAGE(timer_evs.size() == 0, "timer_ev was registered for set request with illegal timeout object!");
 	cJSON_Delete(response);
 }
 
@@ -751,9 +753,11 @@ BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
 	response = create_response_from_message(routed_message);
 	cJSON *result = get_result_from_response(response);
 
+	BOOST_REQUIRE_MESSAGE(timer_evs.size() == 1, "No timer ev was registered!");
+	struct io_event *timer_ev = timer_evs.front();
 	enum eventloop_return el_ret = timer_ev->read_function(timer_ev);
 	BOOST_CHECK_MESSAGE(el_ret == EL_CONTINUE_LOOP, "timer read function did not returned EL_CONTINUE_LOOP");
-	BOOST_CHECK_MESSAGE(timer_ev == NULL, "timer was not removed from eventloop");
+	BOOST_REQUIRE_MESSAGE(timer_evs.size() == 0, "timer was not remove from eventloop!");
 	cJSON *error_message = parse_send_buffer();
 	BOOST_REQUIRE_MESSAGE(error_message != NULL, "Error message does not contain an error object!");
 	check_internal_error(error_message);
@@ -861,9 +865,12 @@ BOOST_FIXTURE_TEST_CASE(two_sets_with_first_timeout, F)
 	cJSON *response1 = create_response_from_message(routed_message1);
 	cJSON *result1 = get_result_from_response(response1);
 
+	BOOST_REQUIRE_MESSAGE(timer_evs.size() == 1, "No timer ev was registered!");
+	struct io_event *timer_ev = timer_evs.front();
 	enum eventloop_return el_ret = timer_ev->read_function(timer_ev);
 	BOOST_CHECK_MESSAGE(el_ret == EL_CONTINUE_LOOP, "timer read function did not returned EL_CONTINUE_LOOP");
-	BOOST_CHECK_MESSAGE(timer_ev == NULL, "timer was not removed from eventloop");
+	BOOST_REQUIRE_MESSAGE(timer_evs.size() == 0, "timer was not remove from eventloop!");
+
 	cJSON *error_message = parse_send_buffer();
 	BOOST_REQUIRE_MESSAGE(error_message != NULL, "Error message does not contain an error object!");
 	check_internal_error(error_message);
