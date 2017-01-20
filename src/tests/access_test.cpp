@@ -67,7 +67,7 @@ extern "C" {
 	{
 		(void)passwd;
 
-		if (::strcmp(user_name, "user") == 0) {
+		if (std::strcmp(user_name, "user") == 0) {
 			return user_auth;
 		}
 
@@ -158,9 +158,9 @@ static enum event get_event_from_json(cJSON *json)
 	cJSON *event = cJSON_GetObjectItem(params, "event");
 	if (event == NULL) return UNKNOWN_EVENT;
 	if (event->type != cJSON_String) return UNKNOWN_EVENT;
-	if (strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
-	if (strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
-	if (strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
+	if (std::strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
+	if (std::strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
+	if (std::strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
 	return UNKNOWN_EVENT;
 }
 
@@ -221,15 +221,15 @@ char *extract_error_message(const cJSON *request_error){
 	const cJSON *error = cJSON_GetObjectItem(request_error, "error");
 	BOOST_REQUIRE_MESSAGE(error != NULL, "No error object given!");
 
-	const cJSON *error_data = cJSON_GetObjectItem(error,"data");
+	const cJSON *error_data = cJSON_GetObjectItem(error, "data");
 	BOOST_REQUIRE_MESSAGE(error_data != NULL, "No data object within given error message!");
 
-	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data,"reason");
+	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data, "reason");
 	if(error_string_reason != NULL){
 		BOOST_REQUIRE_MESSAGE(error_string_reason ->type == cJSON_String, "Given reason is no string!");
 		return error_string_reason ->valuestring;
 	} else {
-		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data,"fetched before authenticate");
+		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
 		BOOST_REQUIRE_MESSAGE(error_string_auth != NULL, "No object reason given within error message!");
 		return error_string_auth->string;
 	}
@@ -304,12 +304,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "Fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without giving any parameters.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no params found"),"The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no params found"),"The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -327,12 +327,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param_user, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without providing a username.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no user given"),"The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no user given"),"The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -351,12 +351,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_with_param_int_user, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even with int as username");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"user is not a string"),"The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"user is not a string"), "The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"user is not a string"),"The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"user is not a string"), "The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -374,12 +374,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param_password, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without providing a password.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no password given"),"The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"no password given"),"The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -399,12 +399,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_with_param_int_password, F)
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even with int as password");
 
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"password is not a string"),"The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "password is not a string"), "The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"password is not a string"),"The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"password is not a string"), "The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -423,8 +423,7 @@ BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F){
 
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even after peer added fetches.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!strcmp(error_message,"fetched before authenticate"),"The expected error is: \"fetched before authenticate\", but was: \"" <<error_message<<"\".");
-
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "fetched before authenticate"), "The expected error is: \"fetched before authenticate\", but was: \"" <<error_message<<"\".");
 
 	cJSON_Delete(request);
 	cJSON_Delete(auth);
