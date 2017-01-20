@@ -31,7 +31,7 @@ Project {
 
   property bool runAnalyzer: false
 
-  name: "cjet"
+  name: "cjet document creation"
   minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"
