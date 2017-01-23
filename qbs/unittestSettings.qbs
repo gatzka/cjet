@@ -50,7 +50,7 @@ StaticLibrary {
     cpp.treatWarningsAsErrors: false
     cpp.includePaths: ["../src/", product.buildDirectory]
     cpp.defines: ["_GNU_SOURCE", "BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
-    cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov"]
+    cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov","crypt"]
     cpp.cLanguageVersion: "c99"
     cpp.driverFlags: ["--coverage"]
   	cpp.cFlags: [
