@@ -370,4 +370,20 @@ Project {
             "http-parser/test.c",
         ]
     }
+
+    CppApplication {
+        name: "linux_auth_file_test"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends { name: "unittestSettings" }
+
+        files: [
+            "linux/socket.c",
+            "linux/alloc.c",
+            "linux/timer_linux.c",
+            "linux/linux_auth_file.c",
+            "tests/linux_auth_file_test.cpp",
+        ]
+    }
 }
