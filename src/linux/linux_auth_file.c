@@ -149,6 +149,7 @@ add_call_groups_failed:
 add_set_groups_failed:
 add_fetch_groups_failed:
 get_users_failed:
+	cJSON_Delete(user_data);
 parse_failed:
 	munmap(p, size);
 mmap_failed:
