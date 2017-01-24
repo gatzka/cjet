@@ -30,7 +30,7 @@ import qbs.Process
 import '../../patchVersions.js' as Patch
 
 Module {
-  property bool create_graphs: false
+  property bool createGraphs: false
 
   Rule {
     inputs: ["doxy_version_patched", "source"];
@@ -76,10 +76,10 @@ Module {
   	    var file = new TextFile(input.filePath);
   	    var content = file.readAll();
   	    file.close()
-        var create_graphs = (input.moduleProperty("generateDoxygen","create_graphs") == true)? "YES" : "NO";
-        content = content.replace("<SET_HAVE_DOT>", create_graphs);
-        content = content.replace("<SET_CALL_GRAPH>", create_graphs);
-        content = content.replace("<SET_CALLER_GRAPH>", create_graphs);
+        var createGraphs = (input.moduleProperty("generateDoxygen","createGraphs") == true)? "YES" : "NO";
+        content = content.replace("<SET_HAVE_DOT>", createGraphs);
+        content = content.replace("<SET_CALL_GRAPH>", createGraphs);
+        content = content.replace("<SET_CALLER_GRAPH>", createGraphs);
   	    file = new TextFile(output.filePath,  TextFile.WriteOnly);
   	    file.truncate();
   	    file.write(content);
