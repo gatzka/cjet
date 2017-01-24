@@ -80,7 +80,13 @@ qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjet_unit_tests.build
 If you have clang and clang-analyzer installed, you can run the static
 code analyzer with
 ```
-qbs -f ~/workspace/cjet/all.qbs release profile:clang cjet.runAnalyzer:true
+qbs -f <path/to/cjet-sources>/all.qbs release profile:clang cjet.runAnalyzer:true
+```
+
+You can generate call- and caller-graphs for the documentation with Doxygen. This
+requires Graphviz to be installed on your system. It can be switched on with:
+```
+qbs -f <path/to/cjet-sources>/all.qbs generateDoxygen.create_graphs:true
 ```
 
 ## Howto run
