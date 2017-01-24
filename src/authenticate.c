@@ -38,7 +38,7 @@
 
 cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {
-	cJSON *response;
+	cJSON *response = NULL;
 	const cJSON *params = get_params(p, request, &response);
 	if (unlikely(params == NULL)) {
 		return response;
