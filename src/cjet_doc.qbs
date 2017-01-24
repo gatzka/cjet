@@ -33,9 +33,8 @@ Project {
   minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"
-  
+
   Product {
-  
 
     name: "cjet-docs";
     type: "docs";
@@ -48,7 +47,7 @@ Project {
         "Doxyfile.in"
       ]
       fileTags: ["doxy_input"]
-    }  
+    }
 
     Group {
       name: "version file"

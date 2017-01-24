@@ -69,24 +69,24 @@ Module {
     }
 
     prepare: {
-  	  var cmd = new JavaScriptCommand();
-  	  cmd.description = "Processing '" + input.fileName + "'";
-  	  cmd.highlight = "codegen";
-  	  cmd.sourceCode = function() {
-  	    var file = new TextFile(input.filePath);
-  	    var content = file.readAll();
-  	    file.close()
+      var cmd = new JavaScriptCommand();
+      cmd.description = "Processing '" + input.fileName + "'";
+      cmd.highlight = "codegen";
+      cmd.sourceCode = function() {
+        var file = new TextFile(input.filePath);
+        var content = file.readAll();
+        file.close()
         var createGraphs = (input.moduleProperty("generateDoxygen","createGraphs") == true)? "YES" : "NO";
         content = content.replace("<SET_HAVE_DOT>", createGraphs);
         content = content.replace("<SET_CALL_GRAPH>", createGraphs);
         content = content.replace("<SET_CALLER_GRAPH>", createGraphs);
-  	    file = new TextFile(output.filePath,  TextFile.WriteOnly);
-  	    file.truncate();
-  	    file.write(content);
-  	    file.close();
-  	  }
-  	  return  cmd;
-      }
+        file = new TextFile(output.filePath,  TextFile.WriteOnly);
+        file.truncate();
+        file.write(content);
+        file.close();
+        }
+      return  cmd;
+    }
   }
 
   Rule {
