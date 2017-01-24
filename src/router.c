@@ -174,31 +174,33 @@ static void request_timeout_handler(void *context, bool cancelled) {
 	}
 }
 
-cJSON *setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request)
+int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response)
 {
-	cJSON *response = NULL;
-	uint64_t timeout_ns = get_timeout_in_nsec(routing_request->requesting_peer, request, timeout, &response, e->timeout_nsec);
+	uint64_t timeout_ns = get_timeout_in_nsec(routing_request->requesting_peer, request, timeout, response, e->timeout_nsec);
 	if (unlikely(timeout_ns == 0)) {
-		return response;
+		return -1;
 	}
 
 	if (unlikely(cjet_timer_init(&routing_request->timer, e->peer->loop) < 0)) {
-		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not init timer for routing request");
+		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not init timer for routing request");
+		return -1;
 	}
 
 	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
 	if (unlikely(ret < 0)) {
-		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
+		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
+		return -1;
 	}
 
 	struct value_route_table val;
 	val.vals[0] = routing_request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
 			routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		return create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
+		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
+		return -1;
 	}
 
-	return NULL;
+	return 0;
 }
 
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,

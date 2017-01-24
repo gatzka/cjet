@@ -344,8 +344,7 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	}
 
 	const cJSON *timeout = cJSON_GetObjectItem(params, "timeout");
-	response = setup_routing_information(e, request, timeout, routing_request);
-	if (unlikely(response != NULL)) {
+	if (unlikely(setup_routing_information(e, request, timeout, routing_request, &response) < 0)) {
 		goto delete_json;
 	}
 
