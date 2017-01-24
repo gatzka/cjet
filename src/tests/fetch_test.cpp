@@ -585,8 +585,9 @@ BOOST_FIXTURE_TEST_CASE(deprecated_match, F)
 	cJSON_AddStringToObject(request, "id", "fetch_request_1");
 
 	struct fetch *f = NULL;
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	check_invalid_params(response);
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -597,8 +598,10 @@ BOOST_FIXTURE_TEST_CASE(fetch_with_unknown_match, F)
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_with_unknown_match("foobar");
 
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
+
 	check_internal_error(response);
 
 	cJSON_Delete(request);
@@ -626,8 +629,9 @@ BOOST_FIXTURE_TEST_CASE(lots_of_fetches_to_single_state, F)
 		struct fetch *f = NULL;
 		request = create_fetch_with_fetchid(i, path);
 		params = cJSON_GetObjectItem(request, "params");
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -647,8 +651,9 @@ BOOST_FIXTURE_TEST_CASE(multiple_fetches_before_state_add, F)
 	for (i = 0; i < 10; i++) {
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_with_fetchid(i, path);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -762,8 +767,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path_upper, "", "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -777,8 +783,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path, "", "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -797,8 +804,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", path_upper, "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -817,8 +825,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", path_startsWith, "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -837,8 +846,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", path_endsWith, "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -857,8 +867,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", path_contains, "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -877,8 +888,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[true, \"ar\"]", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() did not fail despite wrong path matchers!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() did not fail despite wrong path matchers!");
 		cJSON_Delete(request);
 		cJSON_Delete(response);
 	}
@@ -886,8 +898,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[\"oo\", \"ar\"]", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -906,8 +919,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[\"OO\", \"ar\"]", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -921,8 +935,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path, "", "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -964,8 +979,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path_upper, "", "", "", "", "", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -984,8 +1000,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "xxx", "", "", "", "", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1004,8 +1021,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", path_startsWith, "", "", "", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1024,8 +1042,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", path_endsWith, "", "", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1044,8 +1063,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", path_contains, "", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1064,8 +1084,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[\"Oo\", \"aR\"]", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1084,8 +1105,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_matchers_ignoring_case, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params("", "", "", "", "", "[\"bla\", \"aR\"]", 1);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1105,8 +1127,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		/// does not fetch anything because nothing does match
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path, "", "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1134,8 +1157,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 	{
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path, "", "", "", "", "", 0);
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1173,8 +1197,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		struct fetch *f = NULL;
 		cJSON *request = create_fetch_params(path, "", "", "", "", "", 0);
 
-		cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-		BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+		cJSON *response;
+		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 		response = add_fetch_to_states(fetch_peer_1, request, f);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 		BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1208,8 +1233,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_path_without_elements, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_params("", "", "", "", "", "", 0);
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "add_fetch_to_peer() did not fail!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -1219,8 +1245,9 @@ BOOST_FIXTURE_TEST_CASE(too_many_matcher, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_with_multiple_matchers("bla", CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH + 1);
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "add_fetch_to_peer() did not fail!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -1230,8 +1257,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_null_fetchid, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_with_no_fetchid();
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "add_fetch_to_peer() did not fail!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -1241,8 +1269,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_illegal_fetchid, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_with_illegal_fetchid();
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "add_fetch_to_peer() did not fail!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -1262,8 +1291,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_unfetch, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_params("bla", "", "", "", "", "", 0);
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	cJSON_Delete(request);
 	cJSON_Delete(response);
 
@@ -1279,12 +1309,13 @@ BOOST_FIXTURE_TEST_CASE(double_fetch, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch_params("bla", "", "", "", "", "", 0);
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	cJSON_Delete(response);
 
-	response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_peer() had no response!");
+	ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE((ret < 0) && (response != NULL), "add_fetch_to_peer() had no response!");
 	check_invalid_params(response);
 	cJSON_Delete(request);
 	cJSON_Delete(response);
@@ -1392,8 +1423,8 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
 
 	struct fetch *f = NULL;
 	request = create_fetch_params(path, "", "", "", "", "", 0);
-	response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(fetch_peer_1, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -1449,8 +1480,9 @@ BOOST_FIXTURE_TEST_CASE(fetch_all, F)
 	cJSON_AddStringToObject(request, "method", "fetch");
 
 	struct fetch *f = NULL;
-	cJSON *response = add_fetch_to_peer(fetch_peer_1, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(fetch_peer_1, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");

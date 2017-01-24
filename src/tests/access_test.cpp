@@ -174,8 +174,9 @@ static void perform_fetch(const char *fetch_path)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch(fetch_path);
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(&fetch_peer, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(&fetch_peer, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -413,8 +414,9 @@ BOOST_FIXTURE_TEST_CASE(authenticate_with_param_int_password, F)
 BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F){
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch("foo/bar");
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(&fetch_peer, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 
 	cJSON *auth = create_authentication();
 
