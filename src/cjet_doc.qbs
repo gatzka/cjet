@@ -29,14 +29,14 @@ import '../qbs/versions.js' as Versions
 
 Project {
 
-  property bool runAnalyzer: false
-
-  name: "cjet document creation"
+  name: "cjet_document_creation"
   minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"
-
+  
   Product {
+  
+
     name: "cjet-docs";
     type: "docs";
 
@@ -48,7 +48,7 @@ Project {
         "Doxyfile.in"
       ]
       fileTags: ["doxy_input"]
-    }
+    }  
 
     Group {
       name: "version file"

@@ -30,6 +30,8 @@ import qbs.Process
 import '../../patchVersions.js' as Patch
 
 Module {
+  property bool create_graphs: false
+
   Rule {
     inputs: ["doxy_version_patched", "source"];
     multiplex: "true";
@@ -46,7 +48,7 @@ Module {
           print(product.sourceDirectory)
           proc.exec("doxygen", [file], true);
           proc.close();
-        } 
+        }
       }
       return cmd;
     }
@@ -62,8 +64,8 @@ Module {
     inputs:  ["doxy_input"]
 
     Artifact {
-      filePath: "generated/Doxyfile.src.in"
-      fileTags: ["version_file_patched"]
+      filePath: "generated/Doxyfile.src.graph.in"
+      fileTags: ["doxy_graph_option_patched"]
     }
 
     prepare: {
@@ -74,14 +76,44 @@ Module {
   	    var file = new TextFile(input.filePath);
   	    var content = file.readAll();
   	    file.close()
-  	    content = content.replace(/\${CJET_BUILD_DIR}/g, product.buildDirectory);
+        var create_graphs = (input.moduleProperty("generateDoxygen","create_graphs") == true)? "YES" : "NO";
+        content = content.replace("<SET_HAVE_DOT>", create_graphs);
+        content = content.replace("<SET_CALL_GRAPH>", create_graphs);
+        content = content.replace("<SET_CALLER_GRAPH>", create_graphs);
   	    file = new TextFile(output.filePath,  TextFile.WriteOnly);
   	    file.truncate();
   	    file.write(content);
   	    file.close();
   	  }
   	  return  cmd;
-	  }
+      }
+  }
+
+  Rule {
+    id: doxy_graph_option_patcher
+    inputs:  ["doxy_graph_option_patched"]
+
+    Artifact {
+      filePath: "generated/Doxyfile.src.in"
+      fileTags: ["version_file_patched"]
+    }
+
+    prepare: {
+      var cmd = new JavaScriptCommand();
+      cmd.description = "Processing '" + input.fileName + "'";
+      cmd.highlight = "codegen";
+      cmd.sourceCode = function() {
+        var file = new TextFile(input.filePath);
+        var content = file.readAll();
+        file.close()
+        content = content.replace(/\${CJET_BUILD_DIR}/g, product.buildDirectory);
+        file = new TextFile(output.filePath,  TextFile.WriteOnly);
+        file.truncate();
+        file.write(content);
+        file.close();
+      }
+      return  cmd;
+      }
   }
 
   Rule {
@@ -97,4 +129,3 @@ Module {
     prepare: Patch.patchVersion(inputs, output, product)
   }
 }
-
