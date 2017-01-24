@@ -1,0 +1,12 @@
+{
+  "users": {
+    "john": {
+      "password": "$6$QieAoprju2Gf$WwQCVJeZ7YBUK42QG4Idx8DstfUpaFwjSNDrtbUmsDFtg7/to2sx1ClJRqR051.sJ2uquembKq6O6BweUfpzs1",
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": "no array"
+      }
+    }
+  }
+}
