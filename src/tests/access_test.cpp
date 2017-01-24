@@ -149,9 +149,9 @@ static enum event get_event_from_json(cJSON *json)
 	cJSON *event = cJSON_GetObjectItem(params, "event");
 	if (event == NULL) return UNKNOWN_EVENT;
 	if (event->type != cJSON_String) return UNKNOWN_EVENT;
-	if (strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
-	if (strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
-	if (strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
+	if (std::strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
+	if (std::strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
+	if (std::strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
 	return UNKNOWN_EVENT;
 }
 
@@ -165,8 +165,9 @@ static void perform_fetch(const char *fetch_path)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch(fetch_path);
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(&fetch_peer, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(&fetch_peer, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");

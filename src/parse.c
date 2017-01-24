@@ -68,12 +68,12 @@ render_error:
 static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 {
 	struct fetch *f = NULL;
-	cJSON *response = add_fetch_to_peer(p, json_rpc, &f);
-	if (likely(response == NULL)) {
-		return add_fetch_to_states(p, json_rpc, f);
+	cJSON *response;
+	if (unlikely(add_fetch_to_peer(p, json_rpc, &f, &response) < 0)) {
+		return response;
 	}
 
-	return response;
+	return add_fetch_to_states(p, json_rpc, f);
 }
 
 static cJSON *handle_method(const cJSON *request, const char *method_name,
