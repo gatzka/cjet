@@ -84,7 +84,7 @@ Module {
         file.truncate();
         file.write(content);
         file.close();
-        }
+      }
       return  cmd;
     }
   }
@@ -113,7 +113,7 @@ Module {
         file.close();
       }
       return  cmd;
-      }
+    }
   }
 
   Rule {
