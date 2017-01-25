@@ -29,32 +29,30 @@
 #define BOOST_TEST_MODULE linux auth test
 
 #include <boost/test/unit_test.hpp>
-#include <iostream> //todo: kann final wieder raus
 #include <crypt.h>
+#include <iostream> //todo: kann final wieder raus
 #include <stdio.h>
 
 #include "authenticate.h"
 #include "json/cJSON.h"
 
-
 struct F {
 	F()
 	{
 		//TODO Ordner anpassen
-		int response = load_passwd_data("/home/ballenthin/Documents/cjet/passwd.json");
-		BOOST_REQUIRE_MESSAGE(response == 0,"Loading password file failed.");
+		int response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd.json");
+		BOOST_REQUIRE_MESSAGE(response == 0, "Loading password file failed.");
 	}
 
 	~F()
 	{
 		free_passwd_data();
-//		std::cout << "mach mal pause ^^";
-
+		//		std::cout << "mach mal pause ^^";
 	}
-
 };
 
-BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths){
+BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
+{
 	int response = load_passwd_data(NULL);
 	BOOST_CHECK_MESSAGE(response == 0, "Expected 0 as return value when calling load_passwd_data(NULL).");
 
@@ -64,32 +62,31 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths){
 	response = load_passwd_data("some_non_existing_file_641587976.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non-existing file.");
 
-	response =load_passwd_data("/home/ballenthin/Documents/cjet/LICENSE");
+	response = load_passwd_data("/home/ballenthin/Documents/cjet/LICENSE");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non JSON file.");
 
 	//TODO Ordner anpassen
-	response =load_passwd_data("/home/ballenthin/Documents/cjet/passwd_no_user_data.json");
+	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_no_user_data.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without user data.");
 
 	//TODO Ordner anpassen
-	response =load_passwd_data("/home/ballenthin/Documents/cjet/passwd_fetch_group_no_array.json");
+	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_fetch_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as fetch group.");
 
 	//TODO Ordner anpassen
-	response =load_passwd_data("/home/ballenthin/Documents/cjet/passwd_set_group_no_array.json");
+	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_set_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as set group.");
 
 	//TODO Ordner anpassen
-	response =load_passwd_data("/home/ballenthin/Documents/cjet/passwd_call_group_no_array.json");
+	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_call_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as callgroup.");
-
 }
 
-BOOST_AUTO_TEST_CASE(check_clear_password){
-//	clear_password(NULL);
+BOOST_AUTO_TEST_CASE(check_clear_password)
+{
+	//	clear_password(NULL);
 }
 
 BOOST_FIXTURE_TEST_CASE(my_name, F)
 {
-
 }
