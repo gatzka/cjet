@@ -39,7 +39,7 @@
 struct F {
 	F()
 	{
-		//TODO Ordner anpassen
+		// TODO Ordner anpassen
 		int response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd.json");
 		BOOST_REQUIRE_MESSAGE(response == 0, "Loading password file failed.");
 	}
@@ -47,7 +47,6 @@ struct F {
 	~F()
 	{
 		free_passwd_data();
-		//		std::cout << "mach mal pause ^^";
 	}
 };
 
@@ -65,19 +64,19 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 	response = load_passwd_data("/home/ballenthin/Documents/cjet/LICENSE");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non JSON file.");
 
-	//TODO Ordner anpassen
+	// TODO Ordner anpassen
 	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_no_user_data.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without user data.");
 
-	//TODO Ordner anpassen
+	// TODO Ordner anpassen
 	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_fetch_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as fetch group.");
 
-	//TODO Ordner anpassen
+	// TODO Ordner anpassen
 	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_set_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as set group.");
 
-	//TODO Ordner anpassen
+	// TODO Ordner anpassen
 	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_call_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as callgroup.");
 }
@@ -87,6 +86,18 @@ BOOST_AUTO_TEST_CASE(check_clear_password)
 	//	clear_password(NULL);
 }
 
-BOOST_FIXTURE_TEST_CASE(my_name, F)
+BOOST_FIXTURE_TEST_CASE(check_credentials, F)
 {
+	char username[] = "john";
+	char passwd[] = "doe";
+
+	const cJSON *response1 = credentials_ok(NULL, NULL);
+	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user_name nor passwd is provided.");
+
+	const cJSON *response2 = credentials_ok(username, NULL);
+	BOOST_CHECK_MESSAGE(response2 == NULL, "Response should be NULL when no passwd is provided.");
+
+	const cJSON *response3 = credentials_ok(NULL, passwd);
+	BOOST_CHECK_MESSAGE(response3 == NULL, "Response should be NULL when no user_name is provided.");
+	BOOST_CHECK_MESSAGE(std::strcmp(passwd, "\0\0\0"), "The password has not been zeroed. Instead it was:\"" << passwd << "\".");
 }
