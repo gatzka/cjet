@@ -188,7 +188,11 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 	const cJSON *auth = NULL;
 
 	if (unlikely(passwd == NULL)) {
-		goto no_passwd_given;
+		goto no_credentials_given;
+	}
+
+	if (unlikely(user_name == NULL)) {
+		goto no_credentials_given;
 	}
 
 	if (unlikely(user_data == NULL)) {
@@ -230,7 +234,7 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 
 out:
 	clear_password(passwd);
-no_passwd_given:
+no_credentials_given:
 	return auth;
 }
 
