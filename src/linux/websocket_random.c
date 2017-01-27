@@ -34,7 +34,7 @@
 void websocket_fill_mask_randomly(uint8_t mask[4])
 {
 	for (unsigned int i = 0; i < 4; i++) {
-		int x = rand() & 0xff;
+		int x = random() & 0xff;
 		mask[i] = (uint8_t)x;
 	}
 }

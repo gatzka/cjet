@@ -297,7 +297,7 @@ static void fill_salt(char *buf, unsigned int salt_len)
 
 	unsigned int i;
 	for (i = 0; i < salt_len; i++)
-		buf[i] = valid_salts[rand() % (sizeof valid_salts - 1)];
+		buf[i] = valid_salts[random() % (sizeof valid_salts - 1)];
 	buf[i++] = '$';
 	buf[i] = '\0';
 }
@@ -334,7 +334,7 @@ static int get_salt_from_passwd(char *salt, const char *passwd)
 
 	unsigned int salt_len = salt_maxlen;
 	if (salt_minlen != salt_maxlen) {
-		salt_len = rand() % (salt_maxlen - salt_minlen + 1) + salt_minlen;
+		salt_len = random() % (salt_maxlen - salt_minlen + 1) + salt_minlen;
 	}
 
 	salt[0] = '\0';
