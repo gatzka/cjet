@@ -87,30 +87,16 @@ Project {
     }
 
     Group {
-      name: "cJSON"
+      name: "third party"
+      cpp.cLanguageVersion: "c99"
       files: [
         "json/*.c",
         "json/*.h",
-      ]
-      cpp.cLanguageVersion: "c99"
-    }
-
-    Group {
-      name: "http-parser"
-      files: [
         "http-parser/http_parser.c",
         "http-parser/http_parser.h",
-      ]
-      cpp.cLanguageVersion: "c99"
-    }
-
-    Group {
-      name: "sha1"
-      files: [
         "sha1/sha1.c",
         "sha1/sha1.h"
       ]
-      cpp.cLanguageVersion: "c99"
     }
 
     Group {
