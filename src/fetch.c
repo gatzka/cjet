@@ -295,7 +295,7 @@ error:
 	return -1;
 }
 
-static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned int number_of_matchers)
+static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned int number_of_matchers, const cJSON *request, cJSON **response)
 {
 	struct fetch *f;
 	size_t matcher_size = sizeof(f->matcher);
@@ -303,6 +303,7 @@ static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned
 	f = cjet_calloc(1, sizeof(*f) + (matcher_size * (number_of_matchers - 1)));
 	if (unlikely(f == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch");
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "Could not allocated memory for fetch object!");
 		return NULL;
 	}
 	INIT_LIST_HEAD(&f->next_fetch);
@@ -311,6 +312,7 @@ static struct fetch *alloc_fetch(const struct peer *p, const cJSON *id, unsigned
 	if (id != NULL) {
 		f->fetch_id = cJSON_Duplicate(id, 1);
 		if (unlikely(f->fetch_id == NULL)) {
+			*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "Could not allocated memory for fetch ID object!");
 			log_peer_err(p, "Could not allocate memory for %s object!\n", "fetch ID");
 			cjet_free(f);
 			return NULL;
@@ -323,7 +325,7 @@ static struct fetch *create_fetch(const struct peer *p, const cJSON *request, co
 {
 	const cJSON *path = cJSON_GetObjectItem(params, "path");
 	if (path == NULL) {
-		return alloc_fetch(p, id, 1);
+		return alloc_fetch(p, id, 1, request, response);
 	}
 
 	if (unlikely(path->type != cJSON_Object)) {
@@ -355,7 +357,7 @@ static struct fetch *create_fetch(const struct peer *p, const cJSON *request, co
 		return NULL;
 	}
 
-	struct fetch *f = alloc_fetch(p, id, number_of_matchers);
+	struct fetch *f = alloc_fetch(p, id, number_of_matchers, request, response);
 	if (unlikely(f == NULL)) {
 		*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to allocate fetch");
 		return NULL;
