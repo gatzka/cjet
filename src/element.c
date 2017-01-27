@@ -103,6 +103,11 @@ static const char *get_path_from_params(const struct peer *p, const cJSON *reque
 
 	if (unlikely(path->type != cJSON_String)) {
 		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "path is not a string");
+		return NULL;
+	}
+
+	if (unlikely(path->valuestring == NULL)) {
+		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "path is an empty string");
 	}
 
 	return path->valuestring;
@@ -179,8 +184,8 @@ static int init_element(struct element *e, const cJSON *request, struct peer *p,
 	if (value != NULL) {
 		cJSON *value_copy = cJSON_Duplicate(value, 1);
 		if (unlikely(value_copy == NULL)) {
-			log_peer_err(p, "Could not copy value object!\n");
-			*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "not enough memory to copy value");
+			log_peer_err(p, "could not copy value object\n");
+			*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not copy value object");
 			goto value_copy_failed;
 		}
 		e->value = value_copy;
@@ -190,7 +195,8 @@ static int init_element(struct element *e, const cJSON *request, struct peer *p,
 	e->peer = p;
 
 	if (fill_access(e, request, p, access, response) < 0) {
-		log_peer_err(p, "Could not fill access information!\n");
+		log_peer_err(p, "could not fill access information\n");
+		*response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not fill access information");
 		goto fill_access_failed;
 	}
 
