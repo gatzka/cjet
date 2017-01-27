@@ -39,19 +39,16 @@
 #include "authenticate.h"
 #include "json/cJSON.h"
 
-static std::string create_temp_copy_of_file(char filename[])
+static std::string create_temp_copy_of_file(std::string filename)
 {
-	char source_filename[4095];
-	char destination_filename[4095];
+	std::string source_filename("/home/ballenthin/dokumente/projekte/cjet/");
+	source_filename.append(filename);
 
-	strcpy(source_filename, "/home/ballenthin/dokumente/projekte/cjet/");
-	strcat(source_filename, filename);
+	std::string destination_filename(source_filename);
+	destination_filename.append("_temp_weekend");
 
-	strcpy(destination_filename, source_filename);
-	strcat(destination_filename, "_tmp2017");
-
-	std::ifstream source(source_filename, std::ios::binary);
-	std::ofstream dest(destination_filename, std::ios::binary);
+	std::ifstream source(source_filename.c_str(), std::ios::binary);
+	std::ofstream dest(destination_filename.c_str(), std::ios::binary);
 
 	BOOST_REQUIRE_MESSAGE(source != NULL, "Can't open source file: ");
 	BOOST_REQUIRE_MESSAGE(dest != NULL, "Can't open destination file: ");
@@ -79,9 +76,9 @@ struct F {
 
 BOOST_AUTO_TEST_CASE(test_copying)
 {
-	char filename[] = "passwd.json";
+	std::string filename("passwd.json");
 	std::string temporarily_file = create_temp_copy_of_file(filename);
-	std::cout << temporarily_file;
+	std::cout << temporarily_file.c_str();
 }
 
 BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
