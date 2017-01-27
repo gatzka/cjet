@@ -39,7 +39,7 @@
 #include "authenticate.h"
 #include "json/cJSON.h"
 
-static void create_temp_copy_of_file(char filename[])
+static std::string create_temp_copy_of_file(char filename[])
 {
 	char source_filename[4095];
 	char destination_filename[4095];
@@ -59,6 +59,8 @@ static void create_temp_copy_of_file(char filename[])
 
 	source.close();
 	dest.close();
+
+	return destination_filename;
 }
 
 struct F {
@@ -78,7 +80,8 @@ struct F {
 BOOST_AUTO_TEST_CASE(test_copying)
 {
 	char filename[] = "passwd.json";
-	create_temp_copy_of_file(filename);
+	std::string temporarily_file = create_temp_copy_of_file(filename);
+	std::cout << temporarily_file;
 }
 
 BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
