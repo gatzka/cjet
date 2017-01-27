@@ -158,7 +158,7 @@ Project {
     }
 
     Properties {
-      condition: cpp.compilerName.contains("clang") && runAnalyzer;
+      condition: cpp.compilerName.contains("clang") && project.runAnalyzer;
       cpp.compilerWrapper: ["scan-build", "--view"];
     }
 
