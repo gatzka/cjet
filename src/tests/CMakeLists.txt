@@ -308,6 +308,7 @@ SET(WEBSOCKET_TEST
     ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
+    ../posix/posix_random.c
     ../sha1/sha1.c
     ../tests/websocket_test.cpp
     ../tests/log.cpp
@@ -328,6 +329,7 @@ SET(WEBSOCKET_FRAME_TEST
 	../linux/alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
+    ../posix/posix_random.c
     ../sha1/sha1.c
     ../tests/websocket_frame_test.cpp
     ../tests/log.cpp
@@ -349,6 +351,7 @@ SET(WEBSOCKET_PEER_TEST
     ../http_server.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
+    ../posix/posix_random.c
     ../sha1/sha1.c
     ../websocket.c
     ../websocket_peer.c

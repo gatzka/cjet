@@ -93,6 +93,10 @@ SET(CJET_LINUX_FILES
         linux/websocket_random.c
 )
 
+SET(CJET_POSIX_FILES
+        posix/posix_random.c
+)
+
 FOREACH(_file ${CJET_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
@@ -106,9 +110,16 @@ FOREACH(_file ${CJET_LINUX_FILES})
         SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_GNU_SOURCE -std=gnu99")
 ENDFOREACH()
 
+FOREACH(_file ${CJET_POSIX_FILES})
+        FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+        STRING(SUBSTRING ${checksum} 0 8 checksum)
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE")
+ENDFOREACH()
+
 ADD_EXECUTABLE(cjet
         ${CJET_FILES}
         ${CJET_LINUX_FILES}
+        ${CJET_POSIX_FILES}
 )
 
 TARGET_LINK_LIBRARIES(

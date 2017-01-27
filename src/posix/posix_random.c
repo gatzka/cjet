@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,15 +24,11 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
+#include <stdlib.h>
 
 #include "jet_random.h"
-#include "websocket.h"
 
-void websocket_fill_mask_randomly(uint8_t mask[4])
+int cjet_random(void)
 {
-	for (unsigned int i = 0; i < 4; i++) {
-		int x = cjet_random() & 0xff;
-		mask[i] = (uint8_t)x;
-	}
+	return (int)lrand48();
 }

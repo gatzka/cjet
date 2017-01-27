@@ -148,6 +148,17 @@ Project {
 
     Group {
       condition: qbs.targetOS.contains("linux")
+      name: "posix specific"
+      prefix: "posix/"
+      files: [
+        "*.c",
+        "*.h"
+      ]
+      cpp.defines: "_XOPEN_SOURCE"
+    }
+
+    Group {
+      condition: qbs.targetOS.contains("linux")
       name: "linux specific"
       prefix: "linux/"
       files: [
