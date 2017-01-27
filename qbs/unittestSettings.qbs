@@ -110,6 +110,7 @@ StaticLibrary {
     prefix: "../src/"
     cpp.cLanguageVersion: "c99"
     files: [
+        "alloc.c",
         "authenticate.c",
         "config.c",
         "element.c",

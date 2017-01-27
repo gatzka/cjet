@@ -54,6 +54,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 INCLUDE(hardening)
 
 SET(CJET_FILES
+        alloc.c
         authenticate.c
         base64.c
         buffered_socket.c
@@ -79,7 +80,6 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-        linux/alloc.c
 		linux/linux_auth_file.c
         linux/buffered_socket_alloc.c
         linux/eventloop_epoll.c
