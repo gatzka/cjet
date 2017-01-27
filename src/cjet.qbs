@@ -78,7 +78,7 @@ Project {
     }
 
     Group {
-      name: "platform independent"
+      name: "ANSI C conformant"
       files: [
         "*.c",
         "*.h"
