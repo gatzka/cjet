@@ -270,8 +270,9 @@ static int write_user_data()
 
 	lseek(password_file, 0, SEEK_SET);
 	char *data = cJSON_Print(user_data);
-	if (data != NULL) {
-		cJSON_free(data);
+	if (data == NULL) {
+		log_err("Could not serialize user data!");
+		return -1;
 	}
 
 	ssize_t written = 0;
@@ -285,6 +286,7 @@ static int write_user_data()
 		to_write -= written;
 	}
 
+	cJSON_free(data);
 	return 0;
 }
 
