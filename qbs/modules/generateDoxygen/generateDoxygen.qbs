@@ -77,9 +77,9 @@ Module {
         var content = file.readAll();
         file.close()
         var createGraphs = (input.moduleProperty("generateDoxygen","createGraphs") == true)? "YES" : "NO";
-        content = content.replace("<SET_HAVE_DOT>", createGraphs);
-        content = content.replace("<SET_CALL_GRAPH>", createGraphs);
-        content = content.replace("<SET_CALLER_GRAPH>", createGraphs);
+        content = content.replace("\${CJET_HAVE_DOT}", createGraphs);
+        content = content.replace("\${CJET_SET_CALL_GRAPH}", createGraphs);
+        content = content.replace("\${CJET_SET_CALLER_GRAPH}", createGraphs);
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
