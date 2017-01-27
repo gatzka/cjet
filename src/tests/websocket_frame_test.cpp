@@ -371,6 +371,15 @@ struct F {
 		connection->br.writev = writev;
 		connection->br.read_exactly = read_exactly;
 		connection->br.close = close;
+		ws.protocol_requested = false;
+		ws.binary_frame_received = NULL;
+		ws.text_frame_received = NULL;
+		ws.on_error = NULL;
+		ws.connection = NULL;
+		ws.length = 0;
+		ws.ws_flags.fin = 0;
+		ws.ws_flags.mask = 0;
+		ws.ws_flags.opcode = 0;
 		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
