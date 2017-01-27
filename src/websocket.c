@@ -33,6 +33,7 @@
 #include "compiler.h"
 #include "http_connection.h"
 #include "jet_endian.h"
+#include "jet_random.h"
 #include "jet_string.h"
 #include "log.h"
 #include "sha1/sha1.h"
@@ -472,6 +473,14 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 			 start++;
 			 length--;
 		}
+	}
+}
+
+static void websocket_fill_mask_randomly(uint8_t mask[4])
+{
+	for (unsigned int i = 0; i < 4; i++) {
+		int x = cjet_random() & 0xff;
+		mask[i] = (uint8_t)x;
 	}
 }
 

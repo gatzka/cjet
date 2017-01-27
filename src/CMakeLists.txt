@@ -90,7 +90,6 @@ SET(CJET_LINUX_FILES
         linux/socket.c
         linux/timer_linux.c
         linux/uuid.c
-        linux/websocket_random.c
 )
 
 SET(CJET_POSIX_FILES

@@ -99,8 +99,6 @@ struct websocket {
 	} sub_protocol;
 };
 
-void websocket_fill_mask_randomly(uint8_t mask[4]);
-
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol);
 void websocket_close(struct websocket *ws, enum ws_status_code status_code);
 enum bs_read_callback_return websocket_read_header_line(void *context, uint8_t *buf, size_t len);
