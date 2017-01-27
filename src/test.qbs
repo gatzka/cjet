@@ -35,7 +35,7 @@ Project {
 
     property bool buildHttpParserTest: true
 
-    CppApplication {
+/*    CppApplication {
         name: "info_test"
         type: ["application", "unittest"]
         consoleApplication: true
@@ -167,7 +167,7 @@ Project {
         name: "state_test"
         type: ["application", "unittest"]
         consoleApplication: true
-  
+
         Depends { name: "unittestSettings" }
 
         files: [
@@ -208,7 +208,7 @@ Project {
             "tests/log.cpp",
             "tests/auth_stub.cpp",
             "tests/combined_test.cpp",
-        ] 
+        ]
     }
 
     CppApplication {
@@ -253,7 +253,7 @@ Project {
             "tests/alloc_test.cpp",
         ]
     }
-
+*/
     CppApplication {
         name: "access_test"
         type: ["application", "unittest"]
@@ -267,7 +267,7 @@ Project {
             "tests/access_test.cpp",
         ]
     }
-
+/*
     CppApplication {
         name: "buffered_socket_test"
         type: ["application", "unittest"]
@@ -359,7 +359,7 @@ Project {
         consoleApplication: true
 
         condition: buildHttpParserTest
-  
+
         Depends {
           name: "unittestSettings"
         }
@@ -370,7 +370,7 @@ Project {
             "http-parser/test.c",
         ]
     }
-
+*/
     CppApplication {
         name: "linux_auth_file_test"
         type: ["application", "unittest"]

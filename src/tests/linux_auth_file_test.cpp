@@ -30,11 +30,36 @@
 
 #include <boost/test/unit_test.hpp>
 #include <crypt.h>
-#include <iostream> //todo: kann final wieder raus
+#include <fstream>
+#include <iostream>
+#include <sstream>
 #include <stdio.h>
+#include <string>
 
 #include "authenticate.h"
 #include "json/cJSON.h"
+
+static void create_temp_copy_of_file(char filename[])
+{
+	char source_filename[4095];
+	char destination_filename[4095];
+
+	strcpy(source_filename, "/home/ballenthin/dokumente/projekte/cjet/");
+	strcat(source_filename, filename);
+
+	strcpy(destination_filename, source_filename);
+	strcat(destination_filename, "_tmp2017");
+
+	std::ifstream source(source_filename, std::ios::binary);
+	std::ofstream dest(destination_filename, std::ios::binary);
+
+	BOOST_REQUIRE_MESSAGE(source != NULL, "Can't open source file: ");
+	BOOST_REQUIRE_MESSAGE(dest != NULL, "Can't open destination file: ");
+	dest << source.rdbuf();
+
+	source.close();
+	dest.close();
+}
 
 struct F {
 	F()
@@ -49,6 +74,12 @@ struct F {
 		free_passwd_data();
 	}
 };
+
+BOOST_AUTO_TEST_CASE(test_copying)
+{
+	char filename[] = "passwd.json";
+	create_temp_copy_of_file(filename);
+}
 
 BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 {
@@ -79,17 +110,20 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 	// TODO Ordner anpassen
 	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_call_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as callgroup.");
-}
 
-BOOST_AUTO_TEST_CASE(check_clear_password)
-{
-	//	clear_password(NULL);
+	// TODO Ordner anpassen
+	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_no_json_data.json");
+	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without any JSON.");
 }
 
 BOOST_FIXTURE_TEST_CASE(check_credentials, F)
 {
 	char username[] = "john";
 	char passwd[] = "doe";
+	char passwd_to_null[] = "doe";
+	char user_no_passwd[] = "john-no_passwd";
+	char user_passwd_no_string[] = "john-pw_no_string";
+	char unknown_user[] = "mister_x";
 
 	const cJSON *response1 = credentials_ok(NULL, NULL);
 	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user_name nor passwd is provided.");
@@ -97,7 +131,28 @@ BOOST_FIXTURE_TEST_CASE(check_credentials, F)
 	const cJSON *response2 = credentials_ok(username, NULL);
 	BOOST_CHECK_MESSAGE(response2 == NULL, "Response should be NULL when no passwd is provided.");
 
-	const cJSON *response3 = credentials_ok(NULL, passwd);
+	const cJSON *response3 = credentials_ok(NULL, passwd_to_null);
 	BOOST_CHECK_MESSAGE(response3 == NULL, "Response should be NULL when no user_name is provided.");
-	BOOST_CHECK_MESSAGE(std::strcmp(passwd, "\0\0\0"), "The password has not been zeroed. Instead it was:\"" << passwd << "\".");
+	BOOST_CHECK_MESSAGE(std::strcmp(passwd_to_null, "\0\0\0"), "The password has not been zeroed. Instead it was:\"" << passwd << "\".");
+
+	const cJSON *response4 = credentials_ok(user_no_passwd, passwd_to_null);
+	BOOST_CHECK_MESSAGE(response4 == NULL, "Response should be NULL when no password is given in the user database.");
+
+	const cJSON *response5 = credentials_ok(user_passwd_no_string, passwd_to_null);
+	BOOST_CHECK_MESSAGE(response5 == NULL, "Response should be NULL when password in database is not a string.");
+
+	const cJSON *response6 = credentials_ok(unknown_user, passwd_to_null);
+	BOOST_CHECK_MESSAGE(response6 == NULL, "Response should be NULL when password in database is not a string.");
+
+	const cJSON *response7 = credentials_ok(username, passwd);
+	BOOST_REQUIRE_MESSAGE(response7 != NULL, "User authentication failed even with correct credentials.");
+}
+
+BOOST_AUTO_TEST_CASE(check_credentials_no_user_data_loaded)
+{
+	char username[] = "john";
+	char passwd[] = "doe";
+
+	const cJSON *response1 = credentials_ok(username, passwd);
+	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user data is loaded in before.");
 }
