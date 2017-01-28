@@ -35,30 +35,12 @@
 #include "authenticate.h"
 #include "cmdline_config.h"
 #include "generated/version.h"
+#include "jet_random.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "log.h"
 #include "parse.h"
 #include "table.h"
-
-static int init_random(void)
-{
-	unsigned int seed;
-	FILE* urandom = fopen("/dev/urandom", "r");
-	if (urandom == NULL) {
-		return -1;
-	}
-
-	int ret = -1;
-	int len = fread(&seed, 1, sizeof(seed), urandom);
-	if (len == sizeof(seed)) {
-		srand(seed);
-		ret = 0;
-	}
-	fclose(urandom);
-	return ret;
-}
-
 
 int main(int argc, char **argv)
 {

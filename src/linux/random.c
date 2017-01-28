@@ -24,18 +24,28 @@
  * SOFTWARE.
  */
 
-#ifndef JET_RANDOM_H
-#define JET_RANDOM_H
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "jet_random.h"
 
-int init_random(void);
-int cjet_random(void);
+int init_random(void)
+{
+	long int seed;
+	FILE* urandom = fopen("/dev/urandom", "r");
+	if (urandom == NULL) {
+		return -1;
+	}
 
-#ifdef __cplusplus
+	int ret = -1;
+	int len = fread(&seed, 1, sizeof(seed), urandom);
+	if (len == sizeof(seed)) {
+		srand48(seed);
+		ret = 0;
+	}
+
+	fclose(urandom);
+	return ret;
 }
-#endif
 
-#endif
