@@ -27,14 +27,17 @@
 #include <stddef.h>
 #include <string.h>
 
+#include "alloc.h"
+#include "compiler.h"
 #include "jet_string.h"
 
-const char *jet_strcasestr(const char *haystack, const char *needle)
+char *duplicate_string(const char *s)
 {
-	return strcasestr(haystack, needle);
-}
+	char *ptr = cjet_malloc(strlen(s) + 1);
+	if (unlikely(ptr == NULL)) {
+		return NULL;
+	}
 
-void *jet_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen)
-{
-	return memmem(haystack, haystacklen, needle, needlelen);
+	strcpy(ptr, s);
+	return ptr;
 }

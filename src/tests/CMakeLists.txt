@@ -66,11 +66,13 @@ add_library(jet STATIC
  	../fetch.c
  	../groups.c
  	../info.c
+ 	../jet_string.c
  	../json/cJSON.c
  	../linux/jet_string.c
  	../linux/uuid.c
  	../parse.c
  	../peer.c
+ 	../posix/jet_string.c
  	../response.c
  	../router.c
  	../table.c

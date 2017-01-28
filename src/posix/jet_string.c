@@ -25,16 +25,16 @@
  */
 
 #include <stddef.h>
-#include <string.h>
+#include <strings.h>
 
 #include "jet_string.h"
 
-const char *jet_strcasestr(const char *haystack, const char *needle)
+int jet_strcasecmp(const char *s1, const char *s2)
 {
-	return strcasestr(haystack, needle);
+	return strcasecmp(s1, s2);
 }
 
-void *jet_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen)
+int jet_strncasecmp(const char *s1, const char *s2, size_t n)
 {
-	return memmem(haystack, haystacklen, needle, needlelen);
+	return strncasecmp(s1, s2, n);
 }

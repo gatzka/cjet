@@ -66,6 +66,7 @@ SET(CJET_FILES
         http_connection.c
         http_server.c
         info.c
+        jet_string.c
         json/cJSON.c
         parse.c
         peer.c
@@ -92,6 +93,7 @@ SET(CJET_LINUX_FILES
 )
 
 SET(CJET_POSIX_FILES
+        posix/jet_string.c
         posix/posix_random.c
 )
 
