@@ -25,7 +25,6 @@
  */
 
 #include <stddef.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -50,7 +49,7 @@ void close_random(void)
 	}
 }
 
-void cjet_get_random_bytes(uint8_t *bytes, size_t num_bytes)
+void cjet_get_random_bytes(void *bytes, size_t num_bytes)
 {
 	int ret = fread(bytes, 1, num_bytes, dev_urandom);
 	/* Ignore return value deliberately.

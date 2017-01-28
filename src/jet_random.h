@@ -28,7 +28,6 @@
 #define JET_RANDOM_H
 
 #include <stddef.h>
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -36,7 +35,7 @@ extern "C" {
 
 int init_random(void);
 void close_random(void);
-void cjet_get_random_bytes(uint8_t *bytes, size_t num_bytes);
+void cjet_get_random_bytes(void *bytes, size_t num_bytes);
 
 #ifdef __cplusplus
 }

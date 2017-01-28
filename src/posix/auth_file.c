@@ -334,9 +334,9 @@ static int get_salt_from_passwd(char *salt, const char *passwd)
 
 	unsigned int salt_len = salt_maxlen;
 	if (salt_minlen != salt_maxlen) {
-		uint8_t random_byte;
-		cjet_get_random_bytes(&random_byte, 1);
-		salt_len = random_byte % (salt_maxlen - salt_minlen + 1) + salt_minlen;
+		unsigned int random_int;
+		cjet_get_random_bytes(&random_int, sizeof(random_int));
+		salt_len = random_int % (salt_maxlen - salt_minlen + 1) + salt_minlen;
 	}
 
 	salt[0] = '\0';
