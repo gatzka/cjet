@@ -81,7 +81,6 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-		linux/linux_auth_file.c
         linux/eventloop_epoll.c
         linux/jet_endian.c
         linux/jet_string.c
@@ -91,6 +90,7 @@ SET(CJET_LINUX_FILES
 )
 
 SET(CJET_POSIX_FILES
+		posix/auth_file.c
         posix/jet_string.c
         posix/posix_random.c
         posix/socket.c
@@ -112,7 +112,7 @@ ENDFOREACH()
 FOREACH(_file ${CJET_POSIX_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
-        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE -std=c99")
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
 ENDFOREACH()
 
 ADD_EXECUTABLE(cjet

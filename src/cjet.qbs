@@ -67,7 +67,6 @@ Project {
     cpp.includePaths: [".", buildDirectory]
     cpp.visibility: "hidden"
     cpp.useRPaths: false
-    cpp.cLanguageVersion: "c99"
     cpp.dynamicLibraries: ["m", "crypt"]
 
     Group {
@@ -135,17 +134,19 @@ Project {
     Group {
       condition: qbs.targetOS.contains("linux")
       name: "posix specific"
+      cpp.cLanguageVersion: "c99"
       prefix: "posix/"
       files: [
         "*.c",
         "*.h"
       ]
-      cpp.defines: "_XOPEN_SOURCE"
+      cpp.defines: "_XOPEN_SOURCE=500"
     }
 
     Group {
       condition: qbs.targetOS.contains("linux")
       name: "linux specific"
+      cpp.cLanguageVersion: "c99"
       prefix: "linux/"
       files: [
         "*.c",
