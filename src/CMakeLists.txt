@@ -87,13 +87,13 @@ SET(CJET_LINUX_FILES
         linux/jet_string.c
         linux/linux_io.c
         linux/main.c
-        linux/socket.c
         linux/timer_linux.c
 )
 
 SET(CJET_POSIX_FILES
         posix/jet_string.c
         posix/posix_random.c
+        posix/socket.c
 )
 
 FOREACH(_file ${CJET_FILES})
