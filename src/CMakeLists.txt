@@ -81,7 +81,6 @@ SET(CJET_FILES
 
 SET(CJET_LINUX_FILES
 		linux/linux_auth_file.c
-        linux/buffered_socket_alloc.c
         linux/eventloop_epoll.c
         linux/jet_endian.c
         linux/jet_string.c

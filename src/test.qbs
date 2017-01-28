@@ -301,7 +301,6 @@ Project {
             "http-parser/http_parser.c",
             "http_connection.c",
             "http_server.c",
-            "linux/buffered_socket_alloc.c",
             "linux/jet_endian.c",
             "posix/posix_random.c",
             "sha1/sha1.c",
