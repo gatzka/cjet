@@ -132,7 +132,7 @@ Project {
     }
 
     Group {
-      condition: qbs.targetOS.contains("linux")
+      condition: qbs.targetOS.contains("unix")
       name: "posix specific"
       cpp.cLanguageVersion: "c99"
       prefix: "posix/"
