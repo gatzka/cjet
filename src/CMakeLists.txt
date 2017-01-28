@@ -85,7 +85,6 @@ SET(CJET_LINUX_FILES
         linux/jet_endian.c
         linux/jet_string.c
         linux/linux_io.c
-        linux/main.c
         linux/random.c
         linux/timer_linux.c
 )
@@ -93,6 +92,7 @@ SET(CJET_LINUX_FILES
 SET(CJET_POSIX_FILES
 		posix/auth_file.c
         posix/jet_string.c
+        posix/main.c
         posix/random.c
         posix/socket.c
 )
