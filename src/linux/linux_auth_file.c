@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include <crypt.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
@@ -207,10 +206,7 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		goto out;
 	}
 
-	struct crypt_data data;
-	data.initialized = 0;
-
-	char *encrypted = crypt_r(passwd, password->valuestring, &data);
+	char *encrypted = crypt(passwd, password->valuestring);
 
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
@@ -382,9 +378,7 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 			goto out;
 		}
 
-		struct crypt_data data;
-		data.initialized = 0;
-		char *encrypted = crypt_r(passwd, salt, &data);
+		char *encrypted = crypt(passwd, salt);
 		if (encrypted == NULL) {
 			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "could not encrypt password");
 			goto out;
