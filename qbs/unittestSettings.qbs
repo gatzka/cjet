@@ -119,7 +119,6 @@ StaticLibrary {
         "info.c",
         "jet_string.c",
         "linux/jet_string.c",
-        "linux/uuid.c",
         "parse.c",
         "peer.c",
         "posix/jet_string.c",

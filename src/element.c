@@ -42,7 +42,6 @@
 #include "response.h"
 #include "router.h"
 #include "table.h"
-#include "uuid.h"
 
 static bool is_state(const struct element *e)
 {

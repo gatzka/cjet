@@ -69,7 +69,6 @@ add_library(jet STATIC
  	../jet_string.c
  	../json/cJSON.c
  	../linux/jet_string.c
- 	../linux/uuid.c
  	../parse.c
  	../peer.c
  	../posix/jet_string.c

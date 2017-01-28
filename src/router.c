@@ -25,6 +25,7 @@
  */
 
 #include <stddef.h>
+#include <stdio.h>
 
 #include "alloc.h"
 #include "compiler.h"
@@ -36,7 +37,26 @@
 #include "response.h"
 #include "router.h"
 #include "timer.h"
-#include "uuid.h"
+
+static unsigned int uuid = 0;
+
+static size_t calculate_size_for_routed_request_id(const void *address, const cJSON *origin_request_id)
+{
+	if (origin_request_id != NULL) {
+		return snprintf(NULL, 0, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+	} else {
+		return snprintf(NULL, 0, "%x_%p", uuid, address);
+	}
+}
+
+static void fill_routed_request_id(char *buf, size_t buf_size, const void *address, const cJSON *origin_request_id)
+{
+	if (origin_request_id != NULL) {
+		snprintf(buf, buf_size, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
+	} else {
+		snprintf(buf, buf_size, "%x_%p", uuid, address);
+	}
+}
 
 DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
 

@@ -89,7 +89,6 @@ SET(CJET_LINUX_FILES
         linux/main.c
         linux/socket.c
         linux/timer_linux.c
-        linux/uuid.c
 )
 
 SET(CJET_POSIX_FILES
