@@ -93,7 +93,7 @@ SET(CJET_LINUX_FILES
 SET(CJET_POSIX_FILES
 		posix/auth_file.c
         posix/jet_string.c
-        posix/posix_random.c
+        posix/random.c
         posix/socket.c
 )
 
