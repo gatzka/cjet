@@ -25,27 +25,37 @@
  */
 
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "jet_random.h"
 
+static FILE *dev_urandom = NULL;
+
 int init_random(void)
 {
-	long int seed;
-	FILE* urandom = fopen("/dev/urandom", "r");
-	if (urandom == NULL) {
+	dev_urandom = fopen("/dev/urandom", "r");
+	if (dev_urandom == NULL) {
 		return -1;
+	} else {
+		return 0;
 	}
-
-	int ret = -1;
-	int len = fread(&seed, 1, sizeof(seed), urandom);
-	if (len == sizeof(seed)) {
-		srand48(seed);
-		ret = 0;
-	}
-
-	fclose(urandom);
-	return ret;
 }
 
+void close_random(void)
+{
+	if (dev_urandom != NULL) {
+		fclose(dev_urandom);
+	}
+}
+
+void cjet_get_random_bytes(uint8_t *bytes, size_t num_bytes)
+{
+	int ret = fread(bytes, 1, num_bytes, dev_urandom);
+	/* Ignore return value deliberately.
+	 * There is no good error handling when this call fails
+	 * besides shutting down cjet completely.
+	 */
+	(void)ret;
+}

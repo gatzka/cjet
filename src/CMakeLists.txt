@@ -93,7 +93,6 @@ SET(CJET_POSIX_FILES
 		posix/auth_file.c
         posix/jet_string.c
         posix/main.c
-        posix/random.c
         posix/socket.c
 )
 

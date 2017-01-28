@@ -476,14 +476,6 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 	}
 }
 
-static void websocket_fill_mask_randomly(uint8_t mask[4])
-{
-	for (unsigned int i = 0; i < 4; i++) {
-		int x = cjet_random() & 0xff;
-		mask[i] = (uint8_t)x;
-	}
-}
-
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
@@ -562,7 +554,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 	if (s->is_server == false) {
 		first_len |= WS_MASK_SET;
 		uint8_t mask[4];
-		websocket_fill_mask_randomly(mask);
+		cjet_get_random_bytes(mask, sizeof(mask));
 		memcpy(&ws_header[header_index], &mask, sizeof(mask));
 		header_index += sizeof(mask);
 		unmask_payload(payload, length, mask);

@@ -27,12 +27,16 @@
 #ifndef JET_RANDOM_H
 #define JET_RANDOM_H
 
+#include <stddef.h>
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int init_random(void);
-int cjet_random(void);
+void close_random(void);
+void cjet_get_random_bytes(uint8_t *bytes, size_t num_bytes);
 
 #ifdef __cplusplus
 }

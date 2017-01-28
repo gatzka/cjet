@@ -293,8 +293,11 @@ static void fill_salt(char *buf, unsigned int salt_len)
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
 
 	unsigned int i;
-	for (i = 0; i < salt_len; i++)
-		buf[i] = valid_salts[cjet_random() % (sizeof valid_salts - 1)];
+	for (i = 0; i < salt_len; i++) {
+		uint8_t random_byte;
+		cjet_get_random_bytes(&random_byte, 1);
+		buf[i] = valid_salts[random_byte % (sizeof valid_salts - 1)];
+	}
 	buf[i++] = '$';
 	buf[i] = '\0';
 }
@@ -331,7 +334,9 @@ static int get_salt_from_passwd(char *salt, const char *passwd)
 
 	unsigned int salt_len = salt_maxlen;
 	if (salt_minlen != salt_maxlen) {
-		salt_len = cjet_random() % (salt_maxlen - salt_minlen + 1) + salt_minlen;
+		uint8_t random_byte;
+		cjet_get_random_bytes(&random_byte, 1);
+		salt_len = random_byte % (salt_maxlen - salt_minlen + 1) + salt_minlen;
 	}
 
 	salt[0] = '\0';

@@ -34,6 +34,7 @@
 
 #include "buffered_reader.h"
 #include "http_connection.h"
+#include "jet_random.h"
 #include "websocket.h"
 
 #ifndef ARRAY_SIZE
@@ -354,6 +355,8 @@ struct F {
 
 	F(bool is_server, uint32_t buffer_length)
 	{
+		init_random();
+
 		br_close_called = false;
 		got_error = false;
 		text_message_received_called = false;
@@ -392,6 +395,7 @@ struct F {
 	~F()
 	{
 		free(read_buffer);
+		close_random();
 	}
 
 	struct websocket ws;
