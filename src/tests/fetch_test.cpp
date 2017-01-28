@@ -1451,7 +1451,7 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
 
 BOOST_FIXTURE_TEST_CASE(fetch_all, F)
 {
-	static const int number_of_paths = 11;
+	static const unsigned int number_of_paths = 11;
 
 	for (unsigned int i = 0; i < number_of_paths; i++) {
 		std::ostringstream oss;
