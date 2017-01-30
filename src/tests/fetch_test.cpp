@@ -628,7 +628,6 @@ BOOST_FIXTURE_TEST_CASE(lots_of_fetches_to_single_state, F)
 	for (i = 0; i <= CONFIG_INITIAL_FETCH_TABLE_SIZE; i++) {
 		struct fetch *f = NULL;
 		request = create_fetch_with_fetchid(i, path);
-		params = cJSON_GetObjectItem(request, "params");
 		cJSON *response;
 		int ret = add_fetch_to_peer(fetch_peer_1, request, &f, &response);
 		BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
@@ -1174,7 +1173,6 @@ BOOST_FIXTURE_TEST_CASE(fetch_and_change_and_remove, F)
 		cJSON_Delete(request);
 
 		request = create_change(path);
-		params = cJSON_GetObjectItem(request, "params");
 
 		response = change_state(owner_peer, request);
 		BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
