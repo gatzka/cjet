@@ -159,9 +159,11 @@ static void mask_payload(uint8_t *ptr, size_t length, uint8_t mask[4])
 
 static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
-	::memcpy(ptr, payload, length);
-	if (shall_mask) {
-		mask_payload(ptr, length, mask);
+	if (length > 0) {
+		std::memcpy(ptr, payload, length);
+		if (shall_mask) {
+			mask_payload(ptr, length, mask);
+		}
 	}
 }
 
