@@ -382,8 +382,6 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	const char path[] = "/foo/bar/";
 
 	cJSON *request = create_add(path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
-	cJSON *json_path = cJSON_GetObjectItem(params, "path");
 
 	cJSON *response = add_element_to_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
@@ -392,8 +390,8 @@ BOOST_FIXTURE_TEST_CASE(change, F)
 	cJSON_Delete(request);
 
 	request = create_change(path);
-	params = cJSON_GetObjectItem(request, "params");
-	json_path = cJSON_GetObjectItem(params, "path");
+	cJSON *params = cJSON_GetObjectItem(request, "params");
+	cJSON *json_path = cJSON_GetObjectItem(params, "path");
 	cJSON *new_value = cJSON_GetObjectItem(params, "value");
 
 	response = change_state(&p, request);
@@ -620,7 +618,6 @@ BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *request = create_add(path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
 
 	cJSON *response = add_element_to_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
@@ -629,7 +626,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_illegal_timeout_object, F)
 	cJSON_Delete(request);
 
 	cJSON *set_request = create_set_request("request1", path);
-	params = cJSON_GetObjectItem(set_request, "params");
+	cJSON *params = cJSON_GetObjectItem(set_request, "params");
 	cJSON_AddStringToObject(params, "timeout", "hello");
 	response = set_or_call(&set_peer, set_request, STATE);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "set_or_call() had no response!");
@@ -681,7 +678,6 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 {
 	const char path[] = "/foo/bar/";
 	cJSON *request = create_add(path);
-	cJSON *params = cJSON_GetObjectItem(request, "params");
 
 	cJSON *response = add_element_to_peer(&p, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
@@ -693,7 +689,7 @@ BOOST_FIXTURE_TEST_CASE(set_wrong_id_type, F)
 	cJSON_AddStringToObject(set_request, "method", "set");
 	cJSON_AddTrueToObject(set_request, "id");
 
-	params = cJSON_CreateObject();
+	cJSON *params = cJSON_CreateObject();
 	cJSON_AddStringToObject(params, "path", path);
 	cJSON *new_value = cJSON_CreateNumber(4321);
 	cJSON_AddItemToObject(params, "value", new_value);

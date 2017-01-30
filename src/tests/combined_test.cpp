@@ -415,7 +415,6 @@ BOOST_FIXTURE_TEST_CASE(two_fetch_and_change, F)
 	BOOST_CHECK(fetch_peer_2_event == ADD_EVENT);
 
 	request = create_change(path);
-	params = cJSON_GetObjectItem(request, "params");
 
 	response = change_state(owner_peer, request);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "change_state() had no response!");
