@@ -1435,15 +1435,19 @@ BOOST_FIXTURE_TEST_CASE(fetch_of_method, F)
 	BOOST_CHECK(event == ADD_EVENT);
 
 	cJSON *event_params = cJSON_GetObjectItem(json, "params");
-	BOOST_REQUIRE_MESSAGE(event_params != NULL, "event params must be non null");
-
-	cJSON *event_path = cJSON_GetObjectItem(event_params, "path");
-	BOOST_REQUIRE_MESSAGE(event_path != NULL, "Event path must be non null");
-	BOOST_REQUIRE_MESSAGE(event_path->type == cJSON_String, "Event path must be a string");
-	BOOST_CHECK_MESSAGE(::strcmp(event_path->valuestring, path) == 0, "Add event path does not equals to method path!");
-	cJSON *event_value = cJSON_GetObjectItem(event_params, "value");
-	BOOST_CHECK_MESSAGE(event_value == NULL, "Add event for a method must not have a value!");
-
+	if (event_params == NULL) {
+		BOOST_FAIL("event params must not be NULL");
+	} else {
+		cJSON *event_path = cJSON_GetObjectItem(event_params, "path");
+		if (event_path == NULL) {
+			BOOST_FAIL("event path must not be NULL");
+		} else {
+			BOOST_REQUIRE_MESSAGE(event_path->type == cJSON_String, "Event path must be a string");
+			BOOST_CHECK_MESSAGE(::strcmp(event_path->valuestring, path) == 0, "Add event path does not equals to method path!");
+			cJSON *event_value = cJSON_GetObjectItem(event_params, "value");
+			BOOST_CHECK_MESSAGE(event_value == NULL, "Add event for a method must not have a value!");
+		}
+	}
 	remove_all_fetchers_from_peer(fetch_peer_1);
 }
 
