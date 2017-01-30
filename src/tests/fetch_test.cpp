@@ -691,8 +691,12 @@ BOOST_FIXTURE_TEST_CASE(get_with_no_states, F)
 
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	BOOST_REQUIRE_MESSAGE(result != NULL, "response did not contain a result!");
-	BOOST_REQUIRE_MESSAGE(result ->type == cJSON_Array, "result of get is not an array");
-	BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 0, "result array is not empty");
+	if (result == NULL) {
+		BOOST_FAIL("response did not contain a result");
+	} else {
+		BOOST_REQUIRE_MESSAGE(result ->type == cJSON_Array, "result of get is not an array");
+		BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 0, "result array is not empty");
+	}
 	cJSON_Delete(response);
 }
 
@@ -728,16 +732,28 @@ BOOST_FIXTURE_TEST_CASE(get_with_one_state, F)
 
 	cJSON *result = cJSON_GetObjectItem(response, "result");
 	BOOST_REQUIRE_MESSAGE(result != NULL, "response did not contain a result!");
-	BOOST_REQUIRE_MESSAGE(result->type == cJSON_Array, "result of get is not an array");
-	BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 1, "result array does not contain single element");
-	cJSON *state = cJSON_GetArrayItem(result, 0);
-	BOOST_REQUIRE_MESSAGE(state != NULL, "element at position 0 is NULL!");
-	BOOST_REQUIRE_MESSAGE(state->type == cJSON_Object, "element at position 0 is not an object!");
-	cJSON *path_object = cJSON_GetObjectItem(state, "path");
-	BOOST_REQUIRE_MESSAGE(path_object != NULL, "element at position 0 has no path!");
-	BOOST_REQUIRE_MESSAGE(path_object->type == cJSON_String, "path is not a string");
-	BOOST_CHECK_MESSAGE(::strcmp(path, path_object->valuestring) == 0, "path object does not contain original path");
-	BOOST_CHECK_MESSAGE(cJSON_GetObjectItem(state, "value") != NULL, "element at position 0 has no value");
+	if (result == NULL) {
+		BOOST_FAIL("response did not contain a result");
+	} else {
+		BOOST_REQUIRE_MESSAGE(result->type == cJSON_Array, "result of get is not an array");
+		BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 1, "result array does not contain single element");
+		cJSON *state = cJSON_GetArrayItem(result, 0);
+		BOOST_REQUIRE_MESSAGE(state != NULL, "element at position 0 is NULL!");
+		if (state == NULL) {
+			BOOST_FAIL("element at position 0 is NULL");
+		} else {
+			BOOST_REQUIRE_MESSAGE(state->type == cJSON_Object, "element at position 0 is not an object!");
+			cJSON *path_object = cJSON_GetObjectItem(state, "path");
+			if (path_object == NULL) {
+				BOOST_FAIL("element at position 0 has no path");
+			} else {
+				BOOST_REQUIRE_MESSAGE(path_object->type == cJSON_String, "path is not a string");
+				BOOST_CHECK_MESSAGE(::strcmp(path, path_object->valuestring) == 0, "path object does not contain original path");
+				BOOST_CHECK_MESSAGE(cJSON_GetObjectItem(state, "value") != NULL, "element at position 0 has no value");
+			}
+		}
+	}
+
 	cJSON_Delete(response);
 }
 

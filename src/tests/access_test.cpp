@@ -231,8 +231,12 @@ char *extract_error_message(const cJSON *request_error){
 		return error_string_reason ->valuestring;
 	} else {
 		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
-		BOOST_REQUIRE_MESSAGE(error_string_auth != NULL, "No object reason given within error message!");
-		return error_string_auth->string;
+		if (error_string_auth == NULL) {
+			BOOST_FAIL("no object reason given within error message");
+			return NULL;
+		} else {
+			return error_string_auth->string;
+		}
 	}
 }
 
