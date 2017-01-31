@@ -39,19 +39,16 @@
 #include "authenticate.h"
 #include "json/cJSON.h"
 
-static std::string create_temp_copy_of_file(std::string filename)
+static std::string create_temp_copy_of_file(std::string source_filename, std::string filename_apendix)
 {
-	std::string source_filename("/home/ballenthin/dokumente/projekte/cjet/");
-	source_filename.append(filename);
-
 	std::string destination_filename(source_filename);
-	destination_filename.append("_temp_weekend");
+	destination_filename.append(filename_apendix);
 
 	std::ifstream source(source_filename.c_str(), std::ios::binary);
 	std::ofstream dest(destination_filename.c_str(), std::ios::binary);
 
-	BOOST_REQUIRE_MESSAGE(source != NULL, "Can't open source file: ");
-	BOOST_REQUIRE_MESSAGE(dest != NULL, "Can't open destination file: ");
+	BOOST_REQUIRE_MESSAGE(source != NULL, "Can't open source file: " << source_filename);
+	BOOST_REQUIRE_MESSAGE(dest != NULL, "Can't open destination file: " << destination_filename);
 	dest << source.rdbuf();
 
 	source.close();
@@ -63,8 +60,7 @@ static std::string create_temp_copy_of_file(std::string filename)
 struct F {
 	F()
 	{
-		// TODO Ordner anpassen
-		int response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd.json");
+		int response = load_passwd_data("input_data/passwd_std.json");
 		BOOST_REQUIRE_MESSAGE(response == 0, "Loading password file failed.");
 	}
 
@@ -73,13 +69,6 @@ struct F {
 		free_passwd_data();
 	}
 };
-
-BOOST_AUTO_TEST_CASE(test_copying)
-{
-	std::string filename("passwd.json");
-	std::string temporarily_file = create_temp_copy_of_file(filename);
-	std::cout << temporarily_file.c_str();
-}
 
 BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 {
@@ -92,27 +81,22 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 	response = load_passwd_data("some_non_existing_file_641587976.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non-existing file.");
 
-	response = load_passwd_data("/home/ballenthin/Documents/cjet/LICENSE");
+	response = load_passwd_data("input_data/no_json.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non JSON file.");
 
-	// TODO Ordner anpassen
-	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_no_user_data.json");
+	response = load_passwd_data("input_data/passwd_no_user_data.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without user data.");
 
-	// TODO Ordner anpassen
-	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_fetch_group_no_array.json");
+	response = load_passwd_data("input_data/passwd_fetch_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as fetch group.");
 
-	// TODO Ordner anpassen
-	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_set_group_no_array.json");
+	response = load_passwd_data("input_data/passwd_set_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as set group.");
 
-	// TODO Ordner anpassen
-	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_call_group_no_array.json");
+	response = load_passwd_data("input_data/passwd_call_group_no_array.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without array as callgroup.");
 
-	// TODO Ordner anpassen
-	response = load_passwd_data("/home/ballenthin/dokumente/projekte/cjet/passwd_no_json_data.json");
+	response = load_passwd_data("input_data/passwd_no_json_data.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening passwd file without any JSON.");
 }
 
@@ -155,4 +139,9 @@ BOOST_AUTO_TEST_CASE(check_credentials_no_user_data_loaded)
 
 	const cJSON *response1 = credentials_ok(username, passwd);
 	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user data is loaded in before.");
+}
+
+BOOST_AUTO_TEST_CASE(test_copying)
+{
+	std::string temporarily_file = create_temp_copy_of_file("input_data/passwd_std.json", "_temp");
 }

@@ -25,6 +25,7 @@
  */
 
 import qbs 1.0
+import qbs.File
 
 Project {
     name: "cjet_unit_tests"
@@ -35,7 +36,7 @@ Project {
 
     property bool buildHttpParserTest: true
 
-/*    CppApplication {
+      CppApplication {
         name: "info_test"
         type: ["application", "unittest"]
         consoleApplication: true
@@ -253,7 +254,7 @@ Project {
             "tests/alloc_test.cpp",
         ]
     }
-*/
+
     CppApplication {
         name: "access_test"
         type: ["application", "unittest"]
@@ -267,7 +268,7 @@ Project {
             "tests/access_test.cpp",
         ]
     }
-/*
+
     CppApplication {
         name: "buffered_socket_test"
         type: ["application", "unittest"]
@@ -370,10 +371,10 @@ Project {
             "http-parser/test.c",
         ]
     }
-*/
+
     CppApplication {
         name: "linux_auth_file_test"
-        type: ["application", "unittest"]
+        type: ["application", "unittest","passwd_test_files"]
         consoleApplication: true
 
         Depends { name: "unittestSettings" }
@@ -385,5 +386,29 @@ Project {
             "linux/linux_auth_file.c",
             "tests/linux_auth_file_test.cpp",
         ]
+
+        Group {
+          name: "authenticate json files"
+          files: ["tests/input_data/*.json"]
+          fileTags: ["auth_test_source_files"]
+        }
+
+        Rule {
+          id: test_file_copy
+          inputs: ["auth_test_source_files"]
+          Artifact {
+            filePath: "input_data/" + input.fileName
+            fileTags: ["passwd_test_files"]
+          }
+          prepare: {
+            var cmd = new JavaScriptCommand();
+            cmd.description = "Copying '" + input.fileName + "'";
+            cmd.highlight = "codegen";
+            cmd.sourceCode = function() {
+              var success = File.copy(input.filePath, output.filePath);
+            }
+            return [cmd];
+          }
+        }
     }
 }
