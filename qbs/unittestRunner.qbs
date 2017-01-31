@@ -77,6 +77,9 @@ Product {
         var cmd = new Command(fullCommandLine[0], fullCommandLine.slice(1));
         cmd.description = "Running test " + inputs.application[i].fileName;
         cmd.environment = product.environment;
+        var workingDir = inputs.application[i].filePath;
+        workingDir = workingDir.substring(0, workingDir.lastIndexOf("/"));
+        cmd.workingDirectory = workingDir;
         cmds.push(cmd);
       }
 
@@ -92,7 +95,6 @@ Product {
       var cmd = new Command("lcov", args);
       cmd.description = "Collecting coverage data...";
       cmds.push(cmd);
-
 
       if ((product.lcovRemovePatterns.length > 0) || (product.lcovExtractPatterns.length > 0)) {
         var args = [];
