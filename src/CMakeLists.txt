@@ -80,7 +80,7 @@ SET(CJET_FILES
 
 SET(CJET_LINUX_FILES
         linux/alloc.c
-		linux/linux_auth_file.c
+        linux/linux_auth_file.c
         linux/buffered_socket_alloc.c
         linux/eventloop_epoll.c
         linux/jet_endian.c
@@ -114,7 +114,7 @@ ADD_EXECUTABLE(cjet
 TARGET_LINK_LIBRARIES(
         cjet
         m
-		crypt
+        crypt
 )
 
 INSTALL(TARGETS cjet RUNTIME DESTINATION bin)
