@@ -58,22 +58,53 @@ ENDIF()
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
-add_library(jet STATIC 
+add_library(jet STATIC
 	../authenticate.c
 	../config.c
- 	../element.c
- 	../fetch.c
- 	../groups.c
- 	../info.c
- 	../json/cJSON.c
- 	../linux/jet_string.c
- 	../linux/uuid.c
- 	../parse.c
- 	../peer.c
- 	../response.c
- 	../router.c
- 	../table.c
- 	../timer.c
+	../element.c
+	../fetch.c
+	../groups.c
+	../info.c
+	../json/cJSON.c
+	../linux/jet_string.c
+	../linux/uuid.c
+	../parse.c
+	../peer.c
+	../response.c
+	../router.c
+	../table.c
+	../timer.c
+)
+
+
+SET(CJET_TEST_INPUT_FILES
+        input_data/no_json.json
+        input_data/passwd_call_group_no_array.json
+        input_data/passwd_fetch_group_no_array.json
+        input_data/passwd_no_json_data.json
+        input_data/passwd_no_user_data.json
+        input_data/passwd_set_group_no_array.json
+        input_data/passwd_std.json
+)
+
+FOREACH(_file ${CJET_TEST_INPUT_FILES})
+        configure_file(${PROJECT_SOURCE_DIR}/${_file}  ${CMAKE_CURRENT_BINARY_DIR}/${_file}  COPYONLY)
+ENDFOREACH()
+
+SET(LINUX_AUTH_FILE_TEST
+	../linux/socket.c
+	../linux/alloc.c
+	../linux/timer_linux.c
+	../linux/linux_auth_file.c
+	linux_auth_file_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(linux_auth_file_test.bin ${LINUX_AUTH_FILE_TEST})
+TARGET_LINK_LIBRARIES(
+	linux_auth_file_test.bin
+	crypt
+	jet
+	${Boost_LIBRARIES}
 )
 
 SET(INFO_TEST
@@ -141,13 +172,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(HTTP_CONNECTION_TEST
-    ../http-parser/http_parser.c
-    ../http_connection.c
-    ../http_server.c
-	../linux/alloc.c
-    ../linux/jet_string.c
-	log.cpp
-    http_connection_test.cpp
+        ../http-parser/http_parser.c
+        ../http_connection.c
+        ../http_server.c
+        ../linux/alloc.c
+        ../linux/jet_string.c
+        log.cpp
+        http_connection_test.cpp
 )
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
 TARGET_LINK_LIBRARIES(
@@ -304,7 +335,7 @@ SET(WEBSOCKET_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-	../linux/alloc.c
+    ../linux/alloc.c
     ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
@@ -325,7 +356,7 @@ SET(WEBSOCKET_FRAME_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-	../linux/alloc.c
+    ../linux/alloc.c
     ../linux/jet_endian.c
     ../linux/websocket_random.c
     ../sha1/sha1.c
@@ -341,8 +372,8 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(WEBSOCKET_PEER_TEST
-	../linux/alloc.c
-	../linux/timer_linux.c
+    ../linux/alloc.c
+    ../linux/timer_linux.c
     ../base64.c
     ../http-parser/http_parser.c
     ../http_connection.c
@@ -352,14 +383,13 @@ SET(WEBSOCKET_PEER_TEST
     ../sha1/sha1.c
     ../websocket.c
     ../websocket_peer.c
-	auth_stub.cpp
+    auth_stub.cpp
     log.cpp
     websocket_peer_test.cpp
 )
 ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(
-	websocket_peer_test.bin
-	jet
-	${Boost_LIBRARIES}
+    websocket_peer_test.bin
+    jet
+    ${Boost_LIBRARIES}
 )
-
