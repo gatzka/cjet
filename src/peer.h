@@ -34,7 +34,6 @@
 
 #include "groups.h"
 #include "eventloop.h"
-#include "http-parser/http_parser.h"
 #include "json/cJSON.h"
 #include "list.h"
 

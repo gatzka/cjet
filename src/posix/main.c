@@ -35,30 +35,12 @@
 #include "authenticate.h"
 #include "cmdline_config.h"
 #include "generated/version.h"
+#include "jet_random.h"
 #include "linux/eventloop_epoll.h"
 #include "linux/linux_io.h"
 #include "log.h"
 #include "parse.h"
 #include "table.h"
-
-static int init_random(void)
-{
-	unsigned int seed;
-	FILE* urandom = fopen("/dev/urandom", "r");
-	if (urandom == NULL) {
-		return -1;
-	}
-
-	int ret = -1;
-	int len = fread(&seed, 1, sizeof(seed), urandom);
-	if (len == sizeof(seed)) {
-		srand(seed);
-		ret = 0;
-	}
-	fclose(urandom);
-	return ret;
-}
-
 
 int main(int argc, char **argv)
 {
@@ -72,9 +54,12 @@ int main(int argc, char **argv)
 
 	if (init_random() < 0) {
 		log_err("Could not initialize random seed!\n");
+		return EXIT_FAILURE;
 	}
 
 	init_parser();
+
+	int ret = EXIT_SUCCESS;
 
 	int c;
 
@@ -97,19 +82,20 @@ int main(int argc, char **argv)
 				break;
 			case '?':
 				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>]\n", argv[0]);
-				return EXIT_FAILURE;
+				ret = EXIT_FAILURE;
+				goto getopt_failed;
 				break;
 		}
 	}
 
 	if (load_passwd_data(config.passwd_file) < 0) {
 		log_err("Cannot load password file!\n");
-		return EXIT_FAILURE;
+		ret = EXIT_FAILURE;
+		goto load_passwd_data_failed;
 	}
 
 	signal(SIGPIPE, SIG_IGN);
 
-	int ret = EXIT_SUCCESS;
 	if ((element_hashtable_create()) == -1) {
 		log_err("Cannot allocate hashtable for states!\n");
 		ret = EXIT_FAILURE;
@@ -140,5 +126,8 @@ run_io_failed:
 	element_hashtable_delete();
 element_hashtable_create_failed:
 	free_passwd_data();
+load_passwd_data_failed:
+getopt_failed:
+	close_random();
 	return ret;
 }

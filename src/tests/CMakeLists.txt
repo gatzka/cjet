@@ -58,24 +58,25 @@ ENDIF()
 MESSAGE(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 MESSAGE(STATUS "Target Processor: ${CMAKE_SYSTEM_PROCESSOR}")
 
-add_library(jet STATIC
+add_library(jet STATIC 
+	../alloc.c
 	../authenticate.c
 	../config.c
-	../element.c
-	../fetch.c
-	../groups.c
-	../info.c
-	../json/cJSON.c
-	../linux/jet_string.c
-	../linux/uuid.c
-	../parse.c
-	../peer.c
-	../response.c
-	../router.c
-	../table.c
-	../timer.c
+ 	../element.c
+ 	../fetch.c
+ 	../groups.c
+ 	../info.c
+ 	../jet_string.c
+ 	../json/cJSON.c
+ 	../linux/jet_string.c
+ 	../parse.c
+ 	../peer.c
+ 	../posix/jet_string.c
+ 	../response.c
+ 	../router.c
+ 	../table.c
+ 	../timer.c
 )
-
 
 SET(CJET_TEST_INPUT_FILES
         input_data/no_json.json
@@ -108,7 +109,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(INFO_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	info_test.cpp
 	log.cpp
@@ -121,7 +121,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(RESPONSE_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	log.cpp
 	response_test.cpp
@@ -134,7 +133,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ROUTER_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	log.cpp
 	router_test.cpp
@@ -147,7 +145,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STRING_TEST
-	../linux/alloc.c
+	../alloc.c
 	../linux/jet_string.c
 	log.cpp
 	string_test.cpp
@@ -159,8 +157,8 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(BUFFEREDSOCKET_TEST
+	../alloc.c
 	../buffered_socket.c
-	../linux/alloc.c
 	../linux/jet_string.c
 	buffered_socket_test.cpp
 	log.cpp
@@ -172,13 +170,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(HTTP_CONNECTION_TEST
-        ../http-parser/http_parser.c
-        ../http_connection.c
-        ../http_server.c
-        ../linux/alloc.c
-        ../linux/jet_string.c
-        log.cpp
-        http_connection_test.cpp
+    ../alloc.c
+    ../http-parser/http_parser.c
+    ../http_connection.c
+    ../http_server.c
+    ../linux/jet_string.c
+    log.cpp
+    http_connection_test.cpp
 )
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
 TARGET_LINK_LIBRARIES(
@@ -187,7 +185,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(CONFIG_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	config_test.cpp
 	log.cpp
@@ -200,7 +197,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(PEER_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	log.cpp
 	peer_test.cpp
@@ -213,7 +209,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(JSON_PARSE_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	auth_stub.cpp
 	log.cpp
@@ -227,7 +222,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(STATE_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	auth_stub.cpp
 	log.cpp
@@ -241,7 +235,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(METHOD_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	auth_stub.cpp
 	log.cpp
@@ -255,7 +248,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(COMBINED_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	auth_stub.cpp
 	log.cpp
@@ -269,7 +261,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(FETCH_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	auth_stub.cpp
 	log.cpp
@@ -283,7 +274,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ALLOC_TEST
-	../linux/alloc.c
+	../alloc.c
 	log.cpp
 	alloc_test.cpp
 )
@@ -294,7 +285,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(ACCESS_TEST
-	../linux/alloc.c
 	../linux/timer_linux.c
 	access_test.cpp
 	log.cpp
@@ -307,7 +297,6 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(BASE64_TEST
-	../linux/alloc.c
 	../base64.c
 	log.cpp
 	base64_test.cpp
@@ -321,7 +310,6 @@ TARGET_LINK_LIBRARIES(
 SET(HTTP_PARSER_TEST
 	../http-parser/http_parser.c
 	../http-parser/test.c
-	../linux/alloc.c
 	log.cpp
 )
 ADD_EXECUTABLE(http_parser_test.bin ${HTTP_PARSER_TEST})
@@ -335,10 +323,8 @@ SET(WEBSOCKET_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-    ../linux/alloc.c
-    ../linux/buffered_socket_alloc.c
     ../linux/jet_endian.c
-    ../linux/websocket_random.c
+    ../linux/random.c
     ../sha1/sha1.c
     ../tests/websocket_test.cpp
     ../tests/log.cpp
@@ -356,9 +342,8 @@ SET(WEBSOCKET_FRAME_TEST
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
-    ../linux/alloc.c
     ../linux/jet_endian.c
-    ../linux/websocket_random.c
+    ../linux/random.c
     ../sha1/sha1.c
     ../tests/websocket_frame_test.cpp
     ../tests/log.cpp
@@ -372,14 +357,13 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(WEBSOCKET_PEER_TEST
-    ../linux/alloc.c
     ../linux/timer_linux.c
     ../base64.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
     ../linux/jet_endian.c
-    ../linux/websocket_random.c
+    ../linux/random.c
     ../sha1/sha1.c
     ../websocket.c
     ../websocket_peer.c

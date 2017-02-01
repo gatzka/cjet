@@ -34,6 +34,7 @@
 
 #include "buffered_reader.h"
 #include "http_connection.h"
+#include "jet_random.h"
 #include "websocket.h"
 
 #ifndef ARRAY_SIZE
@@ -288,9 +289,11 @@ static enum websocket_callback_return pong_received(struct websocket *s, uint8_t
 
 static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, bool shall_mask, uint8_t mask[4])
 {
-	::memcpy(ptr, payload, length);
-	if (shall_mask) {
-		mask_payload(ptr, length, mask);
+	if (length > 0) {
+		std::memcpy(ptr, payload, length);
+		if (shall_mask) {
+			mask_payload(ptr, length, mask);
+		}
 	}
 }
 
@@ -354,6 +357,8 @@ struct F {
 
 	F(bool is_server, uint32_t buffer_length)
 	{
+		init_random();
+
 		br_close_called = false;
 		got_error = false;
 		text_message_received_called = false;
@@ -371,6 +376,15 @@ struct F {
 		connection->br.writev = writev;
 		connection->br.read_exactly = read_exactly;
 		connection->br.close = close;
+		ws.protocol_requested = false;
+		ws.binary_frame_received = NULL;
+		ws.text_frame_received = NULL;
+		ws.on_error = NULL;
+		ws.connection = NULL;
+		ws.length = 0;
+		ws.ws_flags.fin = 0;
+		ws.ws_flags.mask = 0;
+		ws.ws_flags.opcode = 0;
 		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
@@ -383,6 +397,7 @@ struct F {
 	~F()
 	{
 		free(read_buffer);
+		close_random();
 	}
 
 	struct websocket ws;

@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,17 +24,17 @@
  * SOFTWARE.
  */
 
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>
+#include <strings.h>
 
-#include "websocket.h"
+#include "jet_string.h"
 
-void websocket_fill_mask_randomly(uint8_t mask[4])
+int jet_strcasecmp(const char *s1, const char *s2)
 {
-	for (unsigned int i = 0; i < 4; i++) {
-		int x = rand() & 0xff;
-		mask[i] = (uint8_t)x;
-	}
+	return strcasecmp(s1, s2);
+}
+
+int jet_strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	return strncasecmp(s1, s2, n);
 }

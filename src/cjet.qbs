@@ -67,7 +67,6 @@ Project {
     cpp.includePaths: [".", buildDirectory]
     cpp.visibility: "hidden"
     cpp.useRPaths: false
-    cpp.cLanguageVersion: "c99"
     cpp.dynamicLibraries: ["m", "crypt"]
 
     Group {
@@ -78,7 +77,7 @@ Project {
     }
 
     Group {
-      name: "platform independent"
+      name: "ANSI C conformant"
       files: [
         "*.c",
         "*.h"
@@ -87,30 +86,16 @@ Project {
     }
 
     Group {
-      name: "cJSON"
+      name: "third party"
+      cpp.cLanguageVersion: "c99"
       files: [
         "json/*.c",
         "json/*.h",
-      ]
-      cpp.cLanguageVersion: "c99"
-    }
-
-    Group {
-      name: "http-parser"
-      files: [
         "http-parser/http_parser.c",
         "http-parser/http_parser.h",
-      ]
-      cpp.cLanguageVersion: "c99"
-    }
-
-    Group {
-      name: "sha1"
-      files: [
         "sha1/sha1.c",
         "sha1/sha1.h"
       ]
-      cpp.cLanguageVersion: "c99"
     }
 
     Group {
@@ -147,8 +132,21 @@ Project {
     }
 
     Group {
+      condition: qbs.targetOS.contains("unix")
+      name: "posix specific"
+      cpp.cLanguageVersion: "c99"
+      prefix: "posix/"
+      files: [
+        "*.c",
+        "*.h"
+      ]
+      cpp.defines: "_XOPEN_SOURCE=500"
+    }
+
+    Group {
       condition: qbs.targetOS.contains("linux")
       name: "linux specific"
+      cpp.cLanguageVersion: "c99"
       prefix: "linux/"
       files: [
         "*.c",
@@ -158,7 +156,7 @@ Project {
     }
 
     Properties {
-      condition: cpp.compilerName.contains("clang") && runAnalyzer;
+      condition: cpp.compilerName.contains("clang") && project.runAnalyzer;
       cpp.compilerWrapper: ["scan-build", "--view"];
     }
 

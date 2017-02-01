@@ -60,7 +60,7 @@ static cJSON *user_auth;
 
 static struct peer fetch_peer;
 
-static std::list<cJSON *> fetch_events;
+static std::list<cJSON*> fetch_events;
 
 extern "C" {
 	const cJSON *credentials_ok(const char *user_name, char *passwd)
@@ -154,19 +154,13 @@ static cJSON *create_fetch(const char *path_equals_string)
 static enum event get_event_from_json(cJSON *json)
 {
 	cJSON *params = cJSON_GetObjectItem(json, "params");
-	if (params == NULL)
-		return UNKNOWN_EVENT;
+	if (params == NULL) return UNKNOWN_EVENT;
 	cJSON *event = cJSON_GetObjectItem(params, "event");
-	if (event == NULL)
-		return UNKNOWN_EVENT;
-	if (event->type != cJSON_String)
-		return UNKNOWN_EVENT;
-	if (std::strcmp(event->valuestring, "add") == 0)
-		return ADD_EVENT;
-	if (std::strcmp(event->valuestring, "change") == 0)
-		return CHANGE_EVENT;
-	if (std::strcmp(event->valuestring, "remove") == 0)
-		return REMOVE_EVENT;
+	if (event == NULL) return UNKNOWN_EVENT;
+	if (event->type != cJSON_String) return UNKNOWN_EVENT;
+	if (std::strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
+	if (std::strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
+	if (std::strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
 	return UNKNOWN_EVENT;
 }
 
@@ -180,8 +174,9 @@ static void perform_fetch(const char *fetch_path)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch(fetch_path);
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(&fetch_peer, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 	response = add_fetch_to_states(&fetch_peer, request, f);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "add_fetch_to_states() had no response!");
 	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_fetch_to_states() failed!");
@@ -206,6 +201,7 @@ static cJSON *create_add_with_access(const char *path, cJSON *access)
 
 static cJSON *create_authentication_with_params(cJSON *params)
 {
+
 	cJSON *root = cJSON_CreateObject();
 	cJSON_AddItemToObject(root, "params", params);
 	cJSON_AddStringToObject(root, "id", "auth_request");
@@ -224,6 +220,7 @@ static cJSON *create_authentication()
 
 char *extract_error_message(const cJSON *request_error)
 {
+
 	const cJSON *error = cJSON_GetObjectItem(request_error, "error");
 	BOOST_REQUIRE_MESSAGE(error != NULL, "No error object given!");
 
@@ -236,8 +233,12 @@ char *extract_error_message(const cJSON *request_error)
 		return error_string_reason->valuestring;
 	} else {
 		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
-		BOOST_REQUIRE_MESSAGE(error_string_auth != NULL, "No object reason given within error message!");
-		return error_string_auth->string;
+		if (error_string_auth == NULL) {
+			BOOST_FAIL("no object reason given within error message");
+			return NULL;
+		} else {
+			return error_string_auth->string;
+		}
 	}
 }
 
@@ -420,8 +421,9 @@ BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F)
 {
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch("foo/bar");
-	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
-	BOOST_REQUIRE_MESSAGE(response == NULL, "add_fetch_to_peer() failed!");
+	cJSON *response;
+	int ret = add_fetch_to_peer(&fetch_peer, request, &f, &response);
+	BOOST_REQUIRE_MESSAGE(ret == 0, "add_fetch_to_peer() failed!");
 
 	cJSON *auth = create_authentication();
 

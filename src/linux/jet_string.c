@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -25,36 +25,13 @@
  */
 
 #include <stddef.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "alloc.h"
-#include "compiler.h"
 #include "jet_string.h"
-
-char *duplicate_string(const char *s)
-{
-	char *ptr = cjet_malloc(strlen(s) + 1);
-	if (unlikely(ptr == NULL)) {
-		return NULL;
-	}
-	strcpy(ptr, s);
-	return ptr;
-}
 
 const char *jet_strcasestr(const char *haystack, const char *needle)
 {
 	return strcasestr(haystack, needle);
-}
-
-int jet_strcasecmp(const char *s1, const char *s2)
-{
-	return strcasecmp(s1, s2);
-}
-
-int jet_strncasecmp(const char *s1, const char *s2, size_t n)
-{
-	return strncasecmp(s1, s2, n);
 }
 
 void *jet_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen)

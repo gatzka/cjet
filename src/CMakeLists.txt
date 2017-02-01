@@ -54,6 +54,7 @@ INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
 INCLUDE(hardening)
 
 SET(CJET_FILES
+        alloc.c
         authenticate.c
         base64.c
         buffered_socket.c
@@ -65,6 +66,7 @@ SET(CJET_FILES
         http_connection.c
         http_server.c
         info.c
+        jet_string.c
         json/cJSON.c
         parse.c
         peer.c
@@ -79,36 +81,44 @@ SET(CJET_FILES
 )
 
 SET(CJET_LINUX_FILES
-        linux/alloc.c
-        linux/linux_auth_file.c
-        linux/buffered_socket_alloc.c
         linux/eventloop_epoll.c
         linux/jet_endian.c
         linux/jet_string.c
         linux/linux_io.c
-        linux/main.c
-        linux/socket.c
+        linux/random.c
         linux/timer_linux.c
-        linux/uuid.c
-        linux/websocket_random.c
+)
+
+SET(CJET_POSIX_FILES
+		posix/auth_file.c
+        posix/jet_string.c
+        posix/main.c
+        posix/socket.c
 )
 
 FOREACH(_file ${CJET_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
-        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -std=gnu99")
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -std=c99")
 ENDFOREACH()
 
 FOREACH(_file ${CJET_LINUX_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
-        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_GNU_SOURCE -std=gnu99")
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_GNU_SOURCE -std=c99")
+ENDFOREACH()
+
+FOREACH(_file ${CJET_POSIX_FILES})
+        FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+        STRING(SUBSTRING ${checksum} 0 8 checksum)
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
 ENDFOREACH()
 
 ADD_EXECUTABLE(cjet
         ${CJET_FILES}
         ${CJET_LINUX_FILES}
+        ${CJET_POSIX_FILES}
 )
 
 TARGET_LINK_LIBRARIES(

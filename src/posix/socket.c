@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2016> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,31 +24,42 @@
  * SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
 
-#include "alloc.h"
 #include "compiler.h"
-#include "json/cJSON.h"
-#include "uuid.h"
+#include "socket.h"
 
-static unsigned int uuid = 0;
-
-size_t calculate_size_for_routed_request_id(const void *address, const cJSON *origin_request_id)
+ssize_t socket_read(socket_type sock, void *buf, size_t count)
 {
-	if (origin_request_id != NULL) {
-		return snprintf(NULL, 0, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
-	} else {
-		return snprintf(NULL, 0, "%x_%p", uuid, address);
-	}
+	return read(sock, buf, count);
 }
 
-void fill_routed_request_id(char *buf, size_t buf_size, const void *address, const cJSON *origin_request_id)
+ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 {
+	struct iovec iov[count];
 
-	if (origin_request_id != NULL) {
-		snprintf(buf, buf_size, "%s_%x_%p", origin_request_id->valuestring, uuid, address);
-	} else {
-		snprintf(buf, buf_size, "%x_%p", uuid, address);
+	if (unlikely(count == 0)) {
+		return 0;
 	}
+
+/*
+ * This pragma is used because iov_base is not declared const.
+ * Nevertheless, I want to have the parameter io_vec const. Therefore I
+ * selectively disabled the cast-qual warning.
+ */
+_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
+	for (unsigned int i = 0; i < count; i++) {
+		iov[i].iov_base = (void *)io_vec[i].iov_base;
+		iov[i].iov_len = io_vec[i].iov_len;
+	}
+_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
+	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
+}
+
+int socket_close(socket_type sock)
+{
+	return close(sock);
 }

@@ -66,21 +66,27 @@ qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:fal
 
 In addition, there is also a qbs project for building cjet and running all unit tests:
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [unittest-runner.showCoverageData:true]...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [unittestRunner.showCoverageData:true]...
 ```
 You can specify as many additional parallel builds by adding more
-profiles. If `unittest-runner.showCoverageData:true` is given, the
+profiles. If `unittestRunner.showCoverageData:true` is given, the
 coverage data is directly displayed in a web browser.
 
 If you don't like waiting for the http-parse-tests to complete you can
 disable them;
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjet_unit_tests.buildHttpParserTest:false]...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjetUnitTests.buildHttpParserTest:false]...
 ```
 If you have clang and clang-analyzer installed, you can run the static
 code analyzer with
 ```
-qbs -f ~/workspace/cjet/all.qbs release profile:clang cjet.runAnalyzer:true
+qbs -f <path/to/cjet-sources>/all.qbs release profile:clang cjet.runAnalyzer:true
+```
+
+You can generate call- and caller-graphs for the documentation with Doxygen. This
+requires Graphviz to be installed on your system. It can be switched on with:
+```
+qbs -f <path/to/cjet-sources>/all.qbs generateDoxygen.createGraphs:true
 ```
 
 ## Howto run

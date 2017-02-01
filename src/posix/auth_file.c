@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include <crypt.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
@@ -39,6 +38,7 @@
 #include "authenticate.h"
 #include "compiler.h"
 #include "groups.h"
+#include "jet_random.h"
 #include "json/cJSON.h"
 #include "log.h"
 #include "response.h"
@@ -215,10 +215,7 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 		goto out;
 	}
 
-	struct crypt_data data;
-	data.initialized = 0;
-
-	char *encrypted = crypt_r(passwd, password->valuestring, &data);
+	char *encrypted = crypt(passwd, password->valuestring);
 
 	if (encrypted == NULL) {
 		log_err("Error decrypting passwords\n");
@@ -273,15 +270,16 @@ static bool is_admin(const char *current_user)
 
 static int write_user_data()
 {
-	if (ftruncate(password_file, 0) < 0){
+	if (ftruncate(password_file, 0) < 0) {
 		log_err("Could not truncate password file\n");
 		return -1;
 	}
 
 	lseek(password_file, 0, SEEK_SET);
 	char *data = cJSON_Print(user_data);
-	if (data != NULL) {
-		cJSON_free(data);
+	if (data == NULL) {
+		log_err("Could not serialize user data!");
+		return -1;
 	}
 
 	ssize_t written = 0;
@@ -295,6 +293,7 @@ static int write_user_data()
 		to_write -= written;
 	}
 
+	cJSON_free(data);
 	return 0;
 }
 
@@ -304,8 +303,11 @@ static void fill_salt(char *buf, unsigned int salt_len)
 		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
 
 	unsigned int i;
-	for (i = 0; i < salt_len; i++)
-		buf[i] = valid_salts[rand() % (sizeof valid_salts - 1)];
+	for (i = 0; i < salt_len; i++) {
+		uint8_t random_byte;
+		cjet_get_random_bytes(&random_byte, 1);
+		buf[i] = valid_salts[random_byte % (sizeof valid_salts - 1)];
+	}
 	buf[i++] = '$';
 	buf[i] = '\0';
 }
@@ -342,7 +344,9 @@ static int get_salt_from_passwd(char *salt, const char *passwd)
 
 	unsigned int salt_len = salt_maxlen;
 	if (salt_minlen != salt_maxlen) {
-		salt_len = rand() % (salt_maxlen - salt_minlen + 1) + salt_minlen;
+		unsigned int random_int;
+		cjet_get_random_bytes(&random_int, sizeof(random_int));
+		salt_len = (random_int % (salt_maxlen - salt_minlen + 1)) + salt_minlen;
 	}
 
 	salt[0] = '\0';
@@ -389,9 +393,7 @@ cJSON *change_password(const struct peer *p, const cJSON *request, const char *u
 			goto out;
 		}
 
-		struct crypt_data data;
-		data.initialized = 0;
-		char *encrypted = crypt_r(passwd, salt, &data);
+		char *encrypted = crypt(passwd, salt);
 		if (encrypted == NULL) {
 			response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", "could not encrypt password");
 			goto out;

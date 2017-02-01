@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,13 +24,37 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_UUID_H
-#define CJET_UUID_H
-
 #include <stddef.h>
-#include "json/cJSON.h"
+#include <stdio.h>
+#include <stdlib.h>
 
-size_t calculate_size_for_routed_request_id(const void *address, const cJSON *origin_request_id);
-void fill_routed_request_id(char *buf, size_t buf_size, const void *address, const cJSON *origin_request_id);
+#include "jet_random.h"
 
-#endif
+static FILE *dev_urandom = NULL;
+
+int init_random(void)
+{
+	dev_urandom = fopen("/dev/urandom", "r");
+	if (dev_urandom == NULL) {
+		return -1;
+	} else {
+		return 0;
+	}
+}
+
+void close_random(void)
+{
+	if (dev_urandom != NULL) {
+		fclose(dev_urandom);
+	}
+}
+
+void cjet_get_random_bytes(void *bytes, size_t num_bytes)
+{
+	int ret = fread(bytes, 1, num_bytes, dev_urandom);
+	/* Ignore return value deliberately.
+	 * There is no good error handling when this call fails
+	 * besides shutting down cjet completely.
+	 */
+	(void)ret;
+}

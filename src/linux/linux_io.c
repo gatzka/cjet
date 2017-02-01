@@ -237,6 +237,7 @@ static enum eventloop_return accept_common(struct io_event *ev, void (*peer_func
 {
 	while (1) {
 		struct sockaddr_storage addr;
+		memset(&addr, 0, sizeof(addr));
 		socklen_t addrlen = sizeof(addr);
 		int peer_fd = accept(ev->sock, (struct sockaddr *)&addr, &addrlen);
 		if (peer_fd == -1) {

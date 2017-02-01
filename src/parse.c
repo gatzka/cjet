@@ -68,12 +68,12 @@ render_error:
 static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 {
 	struct fetch *f = NULL;
-	cJSON *response = add_fetch_to_peer(p, json_rpc, &f);
-	if (likely(response == NULL)) {
-		return add_fetch_to_states(p, json_rpc, f);
+	cJSON *response;
+	if (unlikely(add_fetch_to_peer(p, json_rpc, &f, &response) < 0)) {
+		return response;
 	}
 
-	return response;
+	return add_fetch_to_states(p, json_rpc, f);
 }
 
 static cJSON *handle_method(const cJSON *request, const char *method_name,
@@ -110,33 +110,33 @@ static cJSON *handle_method(const cJSON *request, const char *method_name,
 
 static int parse_json_rpc(const cJSON *request, struct peer *p)
 {
+	cJSON *response;
+
 	const cJSON *method = cJSON_GetObjectItem(request, "method");
 	if (method != NULL) {
-		cJSON *response;
 		if (unlikely(method->type != cJSON_String)) {
 			response = create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "method is not a string");
 		} else {
 			const char *method_name = method->valuestring;
 			response = handle_method(request, method_name, p);
 		}
+	} else {
+		int ret;
+		const cJSON *result = cJSON_GetObjectItem(request, "result");
+		if (result != NULL) {
+			ret = handle_routing_response(request, result, "result", p);
+			return ret;
+		}
 
-		return send_response(response, p);
+		cJSON *error = cJSON_GetObjectItem(request, "error");
+		if (error != NULL) {
+			ret = handle_routing_response(request, error, "error", p);
+			return ret;
+		}
+
+		response = create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "neither request nor response");
 	}
 
-	int ret;
-	const cJSON *result = cJSON_GetObjectItem(request, "result");
-	if (result != NULL) {
-		ret = handle_routing_response(request, result, "result", p);
-		return ret;
-	}
-
-	cJSON *error = cJSON_GetObjectItem(request, "error");
-	if (error != NULL) {
-		ret = handle_routing_response(request, error, "error", p);
-		return ret;
-	}
-
-	cJSON *response = create_error_response_from_request(p, request, INVALID_REQUEST, "reason", "neither request nor response");
 	return send_response(response, p);
 }
 

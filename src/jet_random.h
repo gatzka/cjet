@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,15 +24,21 @@
  * SOFTWARE.
  */
 
-#include "alloc.h"
-#include "buffered_socket.h"
+#ifndef JET_RANDOM_H
+#define JET_RANDOM_H
 
-struct buffered_socket *buffered_socket_acquire(void)
-{
-	return (struct buffered_socket *)cjet_malloc(sizeof(struct buffered_socket));
-}
+#include <stddef.h>
 
-void buffered_socket_release(void *this_ptr)
-{
-	cjet_free(this_ptr);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int init_random(void);
+void close_random(void);
+void cjet_get_random_bytes(void *bytes, size_t num_bytes);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

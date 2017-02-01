@@ -55,7 +55,7 @@ struct fetch {
 	struct path_matcher *matcher[1];
 };
 
-cJSON *add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch_return);
+int add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch_return, cJSON **response);
 cJSON *get_elements(const cJSON *request, const struct peer *request_peer);
 cJSON *remove_fetch_from_peer(const struct peer *p, const cJSON *request);
 void remove_all_fetchers_from_peer(struct peer *p);

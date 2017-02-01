@@ -110,21 +110,23 @@ StaticLibrary {
     prefix: "../src/"
     cpp.cLanguageVersion: "c99"
     files: [
+        "alloc.c",
         "authenticate.c",
         "config.c",
         "element.c",
         "fetch.c",
         "groups.c",
         "info.c",
+        "jet_string.c",
         "linux/jet_string.c",
         "parse.c",
         "peer.c",
+        "posix/jet_string.c",
         "response.c",
         "router.c",
         "table.c",
+        "tests/log.cpp",
         "timer.c",
-        "linux/uuid.c",
-        "tests/log.cpp"
     ]
   }
 }

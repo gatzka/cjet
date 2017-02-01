@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2016> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,42 +24,20 @@
  * SOFTWARE.
  */
 
-#include <unistd.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/uio.h>
+#include <stddef.h>
+#include <string.h>
 
+#include "alloc.h"
 #include "compiler.h"
-#include "socket.h"
+#include "jet_string.h"
 
-ssize_t socket_read(socket_type sock, void *buf, size_t count)
+char *duplicate_string(const char *s)
 {
-	return read(sock, buf, count);
-}
-
-ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
-{
-	struct iovec iov[count];
-
-	if (unlikely(count == 0)) {
-		return 0;
+	char *ptr = cjet_malloc(strlen(s) + 1);
+	if (unlikely(ptr == NULL)) {
+		return NULL;
 	}
 
-/*
- * This pragma is used because iov_base is not declared const.
- * Nevertheless, I want to have the parameter io_vec const. Therefore I
- * selectively disabled the cast-qual warning.
- */
-_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
-	for (unsigned int i = 0; i < count; i++) {
-		iov[i].iov_base = (void *)io_vec[i].iov_base;
-		iov[i].iov_len = io_vec[i].iov_len;
-	}
-_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
-	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
-}
-
-int socket_close(socket_type sock)
-{
-	return close(sock);
+	strcpy(ptr, s);
+	return ptr;
 }

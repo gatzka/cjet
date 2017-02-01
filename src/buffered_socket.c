@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "buffered_socket.h"
 #include "compiler.h"
 #include "eventloop.h"
@@ -283,6 +284,16 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_so
 			}
 		}
 	}
+}
+
+void buffered_socket_release(void *this_ptr)
+{
+	cjet_free(this_ptr);
+}
+
+struct buffered_socket *buffered_socket_acquire(void)
+{
+	return (struct buffered_socket *)cjet_malloc(sizeof(struct buffered_socket));
 }
 
 void buffered_socket_set_error(void *this_ptr, void (*error)(void *error_context), void *error_context)

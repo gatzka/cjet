@@ -33,6 +33,7 @@
 #include "compiler.h"
 #include "http_connection.h"
 #include "jet_endian.h"
+#include "jet_random.h"
 #include "jet_string.h"
 #include "log.h"
 #include "sha1/sha1.h"
@@ -553,7 +554,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 	if (s->is_server == false) {
 		first_len |= WS_MASK_SET;
 		uint8_t mask[4];
-		websocket_fill_mask_randomly(mask);
+		cjet_get_random_bytes(mask, sizeof(mask));
 		memcpy(&ws_header[header_index], &mask, sizeof(mask));
 		header_index += sizeof(mask);
 		unmask_payload(payload, length, mask);
