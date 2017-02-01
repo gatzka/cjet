@@ -26,7 +26,7 @@
 
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
-#define BOOST_TEST_MODULE state/method access tests
+#define BOOST_TEST_MODULE state / method access tests
 
 #include <boost/test/unit_test.hpp>
 #include <list>
@@ -34,11 +34,11 @@
 #include <stdio.h>
 
 #include "authenticate.h"
+#include "element.h"
 #include "eventloop.h"
 #include "fetch.h"
 #include "json/cJSON.h"
 #include "parse.h"
-#include "element.h"
 #include "table.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
@@ -60,7 +60,7 @@ static cJSON *user_auth;
 
 static struct peer fetch_peer;
 
-static std::list<cJSON*> fetch_events;
+static std::list<cJSON *> fetch_events;
 
 extern "C" {
 	const cJSON *credentials_ok(const char *user_name, char *passwd)
@@ -154,13 +154,19 @@ static cJSON *create_fetch(const char *path_equals_string)
 static enum event get_event_from_json(cJSON *json)
 {
 	cJSON *params = cJSON_GetObjectItem(json, "params");
-	if (params == NULL) return UNKNOWN_EVENT;
+	if (params == NULL)
+		return UNKNOWN_EVENT;
 	cJSON *event = cJSON_GetObjectItem(params, "event");
-	if (event == NULL) return UNKNOWN_EVENT;
-	if (event->type != cJSON_String) return UNKNOWN_EVENT;
-	if (std::strcmp(event->valuestring, "add") == 0) return ADD_EVENT;
-	if (std::strcmp(event->valuestring, "change") == 0) return CHANGE_EVENT;
-	if (std::strcmp(event->valuestring, "remove") == 0) return REMOVE_EVENT;
+	if (event == NULL)
+		return UNKNOWN_EVENT;
+	if (event->type != cJSON_String)
+		return UNKNOWN_EVENT;
+	if (std::strcmp(event->valuestring, "add") == 0)
+		return ADD_EVENT;
+	if (std::strcmp(event->valuestring, "change") == 0)
+		return CHANGE_EVENT;
+	if (std::strcmp(event->valuestring, "remove") == 0)
+		return REMOVE_EVENT;
 	return UNKNOWN_EVENT;
 }
 
@@ -198,8 +204,8 @@ static cJSON *create_add_with_access(const char *path, cJSON *access)
 	return root;
 }
 
-static cJSON *create_authentication_with_params(cJSON *params){
-
+static cJSON *create_authentication_with_params(cJSON *params)
+{
 	cJSON *root = cJSON_CreateObject();
 	cJSON_AddItemToObject(root, "params", params);
 	cJSON_AddStringToObject(root, "id", "auth_request");
@@ -216,8 +222,8 @@ static cJSON *create_authentication()
 	return create_authentication_with_params(params);
 }
 
-char *extract_error_message(const cJSON *request_error){
-
+char *extract_error_message(const cJSON *request_error)
+{
 	const cJSON *error = cJSON_GetObjectItem(request_error, "error");
 	BOOST_REQUIRE_MESSAGE(error != NULL, "No error object given!");
 
@@ -225,9 +231,9 @@ char *extract_error_message(const cJSON *request_error){
 	BOOST_REQUIRE_MESSAGE(error_data != NULL, "No data object within given error message!");
 
 	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data, "reason");
-	if(error_string_reason != NULL){
-		BOOST_REQUIRE_MESSAGE(error_string_reason ->type == cJSON_String, "Given reason is no string!");
-		return error_string_reason ->valuestring;
+	if (error_string_reason != NULL) {
+		BOOST_REQUIRE_MESSAGE(error_string_reason->type == cJSON_String, "Given reason is no string!");
+		return error_string_reason->valuestring;
 	} else {
 		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
 		BOOST_REQUIRE_MESSAGE(error_string_auth != NULL, "No object reason given within error message!");
@@ -304,12 +310,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "Fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without giving any parameters.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no params found"), "The expected error is: \"no params found\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -327,12 +333,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param_user, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without providing a username.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no user given"), "The expected error is: \"no user given\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -351,12 +357,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_with_param_int_user, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even with int as username");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"user is not a string"), "The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "user is not a string"), "The expected error is: \"user is not a string\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"user is not a string"), "The expected error is: \"user is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "user is not a string"), "The expected error is: \"user is not a string\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -374,12 +380,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_without_param_password, F)
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even without providing a password.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "no password given"), "The expected error is: \"no password given\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
@@ -399,18 +405,19 @@ BOOST_FIXTURE_TEST_CASE(authenticate_with_param_int_password, F)
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even with int as password");
 
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "password is not a string"), "The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "password is not a string"), "The expected error is: \"password is not a string\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(response);
 	response = handle_change_password(&fetch_peer, auth);
 	error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message,"password is not a string"), "The expected error is: \"password is not a string\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "password is not a string"), "The expected error is: \"password is not a string\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(auth);
 	cJSON_Delete(response);
 }
 
-BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F){
+BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F)
+{
 	struct fetch *f = NULL;
 	cJSON *request = create_fetch("foo/bar");
 	cJSON *response = add_fetch_to_peer(&fetch_peer, request, &f);
@@ -418,12 +425,12 @@ BOOST_FIXTURE_TEST_CASE(authenticate_after_fetch, F){
 
 	cJSON *auth = create_authentication();
 
-	response = handle_authentication(&fetch_peer, auth );
+	response = handle_authentication(&fetch_peer, auth);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "fetch peer authentication had no response!");
 
 	BOOST_CHECK_MESSAGE(response_is_error(response), "No error returned and successfully authenticated, even after peer added fetches.");
 	char *error_message = extract_error_message(response);
-	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "fetched before authenticate"), "The expected error is: \"fetched before authenticate\", but was: \"" <<error_message<<"\".");
+	BOOST_CHECK_MESSAGE(!std::strcmp(error_message, "fetched before authenticate"), "The expected error is: \"fetched before authenticate\", but was: \"" << error_message << "\".");
 
 	cJSON_Delete(request);
 	cJSON_Delete(auth);
@@ -492,7 +499,6 @@ BOOST_FIXTURE_TEST_CASE(fetch_state_not_allowed, F)
 	BOOST_REQUIRE_MESSAGE(fetch_events.size() == 0, "Number of emitted events != 0!");
 	remove_all_fetchers_from_peer(&fetch_peer);
 }
-
 
 BOOST_AUTO_TEST_CASE(add_group_twice)
 {
