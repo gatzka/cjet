@@ -130,7 +130,6 @@ BOOST_FIXTURE_TEST_CASE(check_credentials, F)
 	char user_no_passwd[] = "john-no_passwd";
 	char user_passwd_no_string[] = "john-pw_no_string";
 
-
 	const cJSON *response1 = credentials_ok(NULL, NULL);
 	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user_name nor passwd is provided.");
 
@@ -167,4 +166,3 @@ BOOST_AUTO_TEST_CASE(test_copying)
 {
 	std::string temporarily_file = create_temp_copy_of_file("input_data/passwd_std.json", "_temp");
 }
-
