@@ -93,10 +93,7 @@ FOREACH(_file ${CJET_TEST_INPUT_FILES})
 ENDFOREACH()
 
 SET(LINUX_AUTH_FILE_TEST
-	../linux/socket.c
-	../linux/alloc.c
-	../linux/timer_linux.c
-	../linux/linux_auth_file.c
+	../posix/auth_file.c
 	linux_auth_file_test.cpp
 	log.cpp
 )
