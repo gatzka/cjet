@@ -359,10 +359,7 @@ Project {
         Depends { name: "unittestSettings" }
 
         files: [
-            "linux/socket.c",
-            "linux/alloc.c",
-            "linux/timer_linux.c",
-            "linux/linux_auth_file.c",
+            "posix/auth_file.c",
             "tests/linux_auth_file_test.cpp",
         ]
 
