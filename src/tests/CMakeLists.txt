@@ -92,14 +92,14 @@ FOREACH(_file ${CJET_TEST_INPUT_FILES})
         configure_file(${PROJECT_SOURCE_DIR}/${_file}  ${CMAKE_CURRENT_BINARY_DIR}/${_file}  COPYONLY)
 ENDFOREACH()
 
-SET(LINUX_AUTH_FILE_TEST
+SET(AUTH_FILE_TEST
 	../posix/auth_file.c
-	linux_auth_file_test.cpp
+	auth_file_test.cpp
 	log.cpp
 )
-ADD_EXECUTABLE(linux_auth_file_test.bin ${LINUX_AUTH_FILE_TEST})
+ADD_EXECUTABLE(auth_file_test.bin ${AUTH_FILE_TEST})
 TARGET_LINK_LIBRARIES(
-	linux_auth_file_test.bin
+	auth_file_test.bin
 	crypt
 	jet
 	${Boost_LIBRARIES}

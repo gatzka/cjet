@@ -352,7 +352,7 @@ Project {
     }
 
     CppApplication {
-        name: "linux_auth_file_test"
+        name: "auth_file_test"
         type: ["application", "unittest","passwd_test_files"]
         consoleApplication: true
 
@@ -360,7 +360,7 @@ Project {
 
         files: [
             "posix/auth_file.c",
-            "tests/linux_auth_file_test.cpp",
+            "tests/auth_file_test.cpp",
         ]
 
         Group {
