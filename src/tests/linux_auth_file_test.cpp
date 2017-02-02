@@ -39,6 +39,25 @@
 #include "authenticate.h"
 #include "json/cJSON.h"
 
+extern "C" {
+	int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop){
+		(void) timer;
+		(void) loop;
+		return 0;
+	}
+
+	void cjet_timer_destroy(struct cjet_timer *timer){
+		(void) timer;
+	}
+
+	void cjet_get_random_bytes(void *bytes, size_t num_bytes)
+	{
+		BOOST_REQUIRE_MESSAGE(false,"the cjet_get_random_bytes function needs to be implemented, when it is actually used.");
+		(void) bytes;
+		(void) num_bytes;
+	}
+}
+
 static std::string create_temp_copy_of_file(std::string source_filename, std::string filename_apendix)
 {
 	std::string destination_filename(source_filename);
@@ -75,8 +94,8 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 	int response = load_passwd_data(NULL);
 	BOOST_CHECK_MESSAGE(response == 0, "Expected 0 as return value when calling load_passwd_data(NULL).");
 
-	response = load_passwd_data("*/___/");
-	BOOST_CHECK_MESSAGE(response == -1, "Error expected when calling realpath with '*/___/'.");
+	response = load_passwd_data("* /___/"); //TODO - leerzeichen
+	BOOST_CHECK_MESSAGE(response == -1, "Error expected when calling realpath with '* /___/'.");
 
 	response = load_passwd_data("some_non_existing_file_641587976.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non-existing file.");
@@ -104,10 +123,13 @@ BOOST_FIXTURE_TEST_CASE(check_credentials, F)
 {
 	char username[] = "john";
 	char passwd[] = "doe";
+
+	char unknown_user[] = "mister_x";
 	char passwd_to_null[] = "doe";
+
 	char user_no_passwd[] = "john-no_passwd";
 	char user_passwd_no_string[] = "john-pw_no_string";
-	char unknown_user[] = "mister_x";
+
 
 	const cJSON *response1 = credentials_ok(NULL, NULL);
 	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user_name nor passwd is provided.");
@@ -145,3 +167,4 @@ BOOST_AUTO_TEST_CASE(test_copying)
 {
 	std::string temporarily_file = create_temp_copy_of_file("input_data/passwd_std.json", "_temp");
 }
+
