@@ -36,7 +36,7 @@ Project {
 
     property bool buildHttpParserTest: true
 
-      CppApplication {
+    CppApplication {
         name: "info_test"
         type: ["application", "unittest"]
         consoleApplication: true
