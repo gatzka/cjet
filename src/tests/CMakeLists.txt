@@ -78,6 +78,33 @@ add_library(jet STATIC
  	../timer.c
 )
 
+SET(CJET_TEST_INPUT_FILES
+        input_data/no_json.json
+        input_data/passwd_call_group_no_array.json
+        input_data/passwd_fetch_group_no_array.json
+        input_data/passwd_no_json_data.json
+        input_data/passwd_no_user_data.json
+        input_data/passwd_set_group_no_array.json
+        input_data/passwd_std.json
+)
+
+FOREACH(_file ${CJET_TEST_INPUT_FILES})
+        configure_file(${PROJECT_SOURCE_DIR}/${_file}  ${CMAKE_CURRENT_BINARY_DIR}/${_file}  COPYONLY)
+ENDFOREACH()
+
+SET(AUTH_FILE_TEST
+	../posix/auth_file.c
+	auth_file_test.cpp
+	log.cpp
+)
+ADD_EXECUTABLE(auth_file_test.bin ${AUTH_FILE_TEST})
+TARGET_LINK_LIBRARIES(
+	auth_file_test.bin
+	crypt
+	jet
+	${Boost_LIBRARIES}
+)
+
 SET(INFO_TEST
 	../linux/timer_linux.c
 	info_test.cpp
@@ -140,12 +167,12 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(HTTP_CONNECTION_TEST
-	../alloc.c
+    ../alloc.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
     ../linux/jet_string.c
-	log.cpp
+    log.cpp
     http_connection_test.cpp
 )
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
@@ -327,7 +354,7 @@ TARGET_LINK_LIBRARIES(
 )
 
 SET(WEBSOCKET_PEER_TEST
-	../linux/timer_linux.c
+    ../linux/timer_linux.c
     ../base64.c
     ../http-parser/http_parser.c
     ../http_connection.c
@@ -337,14 +364,13 @@ SET(WEBSOCKET_PEER_TEST
     ../sha1/sha1.c
     ../websocket.c
     ../websocket_peer.c
-	auth_stub.cpp
+    auth_stub.cpp
     log.cpp
     websocket_peer_test.cpp
 )
 ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(
-	websocket_peer_test.bin
-	jet
-	${Boost_LIBRARIES}
+    websocket_peer_test.bin
+    jet
+    ${Boost_LIBRARIES}
 )
-

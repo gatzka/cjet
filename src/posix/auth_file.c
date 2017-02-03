@@ -149,6 +149,7 @@ add_call_groups_failed:
 add_set_groups_failed:
 add_fetch_groups_failed:
 get_users_failed:
+	cJSON_Delete(user_data);
 parse_failed:
 	munmap(p, size);
 mmap_failed:
@@ -186,6 +187,14 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 {
 	const cJSON *auth = NULL;
 
+	if (unlikely(passwd == NULL)) {
+		goto no_credentials_given;
+	}
+
+	if (unlikely(user_name == NULL)) {
+		goto no_credentials_given;
+	}
+
 	if (unlikely(user_data == NULL)) {
 		goto out;
 	}
@@ -222,6 +231,7 @@ const cJSON *credentials_ok(const char *user_name, char *passwd)
 
 out:
 	clear_password(passwd);
+no_credentials_given:
 	return auth;
 }
 
@@ -260,7 +270,7 @@ static bool is_admin(const char *current_user)
 
 static int write_user_data()
 {
-	if (ftruncate(password_file, 0) < 0){
+	if (ftruncate(password_file, 0) < 0) {
 		log_err("Could not truncate password file\n");
 		return -1;
 	}

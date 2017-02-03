@@ -17,6 +17,7 @@ if(FEATURE_POST_BUILD_UNITTEST)
 
   ADD_TEST(NAME access_test COMMAND access_test.bin)
   ADD_TEST(NAME alloc_test COMMAND alloc_test.bin)
+  ADD_TEST(NAME auth_file_test WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/src/tests COMMAND auth_file_test.bin)
   ADD_TEST(NAME base64_test COMMAND base64_test.bin)
   ADD_TEST(NAME buffered_socket_test COMMAND buffered_socket_test.bin)
   ADD_TEST(NAME combined_test COMMAND combined_test.bin)

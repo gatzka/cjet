@@ -29,7 +29,9 @@ import '../qbs/versions.js' as Versions
 
 Project {
 
-  name: "cjet_document_creation"
+  name: "cjet document creation"
+
+  property bool runAnalyzer: false
   minimumQbsVersion: "1.6.0"
 
   qbsSearchPaths: "../qbs/"

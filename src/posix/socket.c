@@ -24,10 +24,10 @@
  * SOFTWARE.
  */
 
-#include <unistd.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <sys/uio.h>
+#include <unistd.h>
 
 #include "compiler.h"
 #include "socket.h"
