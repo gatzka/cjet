@@ -45,6 +45,7 @@ Project {
       "--show-leak-kinds=all",
       "--leak-check=full",
       "--error-exitcode=1",
+      //"--gen-suppressions=all",
       "--suppressions=" + sourceDirectory + "/../valgrind/valgrind.supp"
     ]
   }
