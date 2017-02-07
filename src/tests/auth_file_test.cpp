@@ -34,28 +34,39 @@
 #include <iostream>
 #include <sstream>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string>
+#include <time.h>
 
 #include "authenticate.h"
+#include "peer.h"
 #include "json/cJSON.h"
 
 extern "C" {
-	int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop){
-		(void) timer;
-		(void) loop;
-		return 0;
-	}
+int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
+{
+	(void)timer;
+	(void)loop;
+	return 0;
+}
 
-	void cjet_timer_destroy(struct cjet_timer *timer){
-		(void) timer;
-	}
+void cjet_timer_destroy(struct cjet_timer *timer)
+{
+	(void)timer;
+}
 
-	void cjet_get_random_bytes(void *bytes, size_t num_bytes)
-	{
-		BOOST_REQUIRE_MESSAGE(false,"the cjet_get_random_bytes function needs to be implemented, when it is actually used.");
-		(void) bytes;
-		(void) num_bytes;
+void cjet_get_random_bytes(void *bytes, size_t num_bytes)
+{
+	uint8_t *buffer = (uint8_t *)bytes;
+	srand(time(NULL));
+	int random_number;
+
+	for (size_t i = 0; i < num_bytes; i++) {
+		random_number = rand();
+		*buffer = random_number & 0xff;
+		buffer++;
 	}
+}
 }
 
 static std::string create_temp_copy_of_file(std::string source_filename, std::string filename_apendix)
@@ -76,10 +87,25 @@ static std::string create_temp_copy_of_file(std::string source_filename, std::st
 	return destination_filename;
 }
 
+static struct eventloop loop;
+
+struct peer *alloc_peer()
+{
+	struct peer *p = (struct peer *)::malloc(sizeof(*p));
+	init_peer(p, false, &loop);
+	p->send_message = NULL;
+	return p;
+}
+
+void free_peer(struct peer *p) { ::free(p); }
+
 struct F {
 	F()
 	{
-		int response = load_passwd_data("input_data/passwd_std.json");
+		std::string temporarily_file = create_temp_copy_of_file(
+		    "input_data/passwd_std.json", "_temp");
+		int response =
+		    load_passwd_data("input_data/passwd_std.json_temp");
 		BOOST_REQUIRE_MESSAGE(response == 0, "Loading password file failed.");
 	}
 
@@ -162,7 +188,18 @@ BOOST_AUTO_TEST_CASE(check_credentials_no_user_data_loaded)
 	BOOST_CHECK_MESSAGE(response1 == NULL, "Response should be NULL when no user data is loaded in before.");
 }
 
-BOOST_AUTO_TEST_CASE(test_copying)
+BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 {
-	std::string temporarily_file = create_temp_copy_of_file("input_data/passwd_std.json", "_temp");
+	char username[] = "john";
+	char old_passwd[] = "doe";
+	char new_passwd[] = "secret";
+
+	cJSON *fake_request = cJSON_CreateObject();
+	peer *test_peer = alloc_peer();
+	test_peer->user_name = username;
+
+	cJSON *response = change_password(test_peer, fake_request, username, new_passwd);
+
+	cJSON_Delete(fake_request);
+	free_peer(test_peer);
 }
