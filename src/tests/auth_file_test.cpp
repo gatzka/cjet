@@ -94,8 +94,8 @@ BOOST_AUTO_TEST_CASE(check_load_passwd_data_error_paths)
 	int response = load_passwd_data(NULL);
 	BOOST_CHECK_MESSAGE(response == 0, "Expected 0 as return value when calling load_passwd_data(NULL).");
 
-	response = load_passwd_data("* /___/"); //TODO - leerzeichen
-	BOOST_CHECK_MESSAGE(response == -1, "Error expected when calling realpath with '* /___/'.");
+	response = load_passwd_data("*/___/");
+	BOOST_CHECK_MESSAGE(response == -1, "Error expected when calling realpath with '*/___/'.");
 
 	response = load_passwd_data("some_non_existing_file_641587976.json");
 	BOOST_CHECK_MESSAGE(response == -1, "Error expected when opening non-existing file.");
