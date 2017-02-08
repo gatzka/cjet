@@ -215,6 +215,9 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	char username[] = "john";
 	char username_ro[] = "john-ro";
 	char username_admin[] = "john-admin";
+	char username_not_in_db[] = "mister_x";
+	char username_no_password[] = "bob_read_only";
+	char username_pw_no_string[] = "john-pw_no_string";
 	char username_bob[] = "bob";
 	char old_passwd[] = "doe";
 	char new_passwd[] = "secret";
@@ -228,6 +231,27 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	cJSON *response = change_password(test_peer, fake_request, username, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "Peer could change password, even without beeing authenticated.");
+	cJSON_Delete(response);
+
+	strcpy(new_passwd, "secret");
+	test_peer->user_name = username_not_in_db;
+	response = change_password(test_peer, fake_request, username_not_in_db, new_passwd);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
+	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, without beeing stored in database.");
+	cJSON_Delete(response);
+
+	strcpy(new_passwd, "secret");
+	test_peer->user_name = username_pw_no_string;
+	response = change_password(test_peer, fake_request, username_pw_no_string, new_passwd);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
+	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, even if it is not a string.");
+	cJSON_Delete(response);
+
+	strcpy(new_passwd, "secret");
+	test_peer->user_name = username_no_password;
+	response = change_password(test_peer, fake_request, username_no_password, new_passwd);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
+	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, without having a password assigned.");
 	cJSON_Delete(response);
 
 	strcpy(new_passwd, "secret");
