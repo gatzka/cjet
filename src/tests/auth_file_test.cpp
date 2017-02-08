@@ -87,12 +87,43 @@ static std::string create_temp_copy_of_file(std::string source_filename, std::st
 	return destination_filename;
 }
 
-static struct eventloop loop;
+static bool response_is_error(const cJSON *response)
+{
+	const cJSON *error = cJSON_GetObjectItem(response, "error");
+	return (error != NULL);
+}
+
+char *extract_error_message(const cJSON *request_error)
+{
+
+	const cJSON *error = cJSON_GetObjectItem(request_error, "error");
+	BOOST_REQUIRE_MESSAGE(error != NULL, "No error object given!");
+
+	const cJSON *error_data = cJSON_GetObjectItem(error, "data");
+	BOOST_REQUIRE_MESSAGE(error_data != NULL, "No data object within given error message!");
+
+	const cJSON *error_string_reason = cJSON_GetObjectItem(error_data, "reason");
+	if (error_string_reason != NULL) {
+		BOOST_REQUIRE_MESSAGE(error_string_reason->type == cJSON_String, "Given reason is no string!");
+		return error_string_reason->valuestring;
+	} else {
+		const cJSON *error_string_auth = cJSON_GetObjectItem(error_data, "fetched before authenticate");
+		if (error_string_auth == NULL) {
+			BOOST_FAIL("no object reason given within error message");
+			return NULL;
+		} else {
+			return error_string_auth->string;
+		}
+	}
+}
 
 struct peer *alloc_peer()
 {
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));
-	init_peer(p, false, &loop);
+	p->name = NULL;
+	p->user_name = NULL;
+	p->is_local_connection = false;
+	p->loop = NULL;
 	p->send_message = NULL;
 	return p;
 }
@@ -191,14 +222,68 @@ BOOST_AUTO_TEST_CASE(check_credentials_no_user_data_loaded)
 BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 {
 	char username[] = "john";
+	char username_ro[] = "john-ro";
+	char username_admin[] = "john-admin";
+	char username_bob[] = "bob";
 	char old_passwd[] = "doe";
 	char new_passwd[] = "secret";
 
 	cJSON *fake_request = cJSON_CreateObject();
+	cJSON *id = cJSON_CreateNumber(123);
+	cJSON_AddItemToObject(fake_request, "id", id);
 	peer *test_peer = alloc_peer();
 	test_peer->user_name = username;
 
 	cJSON *response = change_password(test_peer, fake_request, username, new_passwd);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
+
+	if (response_is_error(response)) {
+		BOOST_CHECK_MESSAGE(false, "Changing password failed. Error message: " << extract_error_message(response));
+	}
+	cJSON_Delete(response);
+
+	const cJSON *response1 = credentials_ok(username, old_passwd);
+	BOOST_REQUIRE_MESSAGE(response1 == NULL, "User authentication did not fail with old credentials, even after changing password.");
+
+	strcpy(new_passwd, "secret");
+	const cJSON *response2 = credentials_ok(username, new_passwd);
+	BOOST_REQUIRE_MESSAGE(response2 != NULL, "User Authentication failed after changing password.");
+
+	strcpy(old_passwd, "doe");
+	strcpy(new_passwd, "secret");
+	response = change_password(test_peer, fake_request, username_ro, new_passwd);
+	if (!response_is_error(response)) {
+		BOOST_CHECK_MESSAGE(false, "Read only user was able to change password");
+	}
+
+	strcpy(old_passwd, "doe");
+	strcpy(new_passwd, "secret");
+	response = change_password(test_peer, fake_request, username_bob, new_passwd);
+	if (!response_is_error(response)) {
+		BOOST_CHECK_MESSAGE(false, "User john was able to change bob's password, even without beeing admin.");
+	}
+	cJSON_Delete(response);
+
+	strcpy(old_passwd, "doe");
+	strcpy(new_passwd, "secret");
+	test_peer->user_name = username_admin;
+	response = change_password(test_peer, fake_request, username_bob, new_passwd);
+	if (response_is_error(response)) {
+		BOOST_CHECK_MESSAGE(false, "Admin couldn't change other users password." << extract_error_message(response));
+	} else {
+		strcpy(new_passwd, "secret");
+		const cJSON *response3 = credentials_ok(username_bob, new_passwd);
+		BOOST_CHECK_MESSAGE(response3 != NULL, "User Authentication failed after admin changed password.");
+	}
+	cJSON_Delete(response);
+
+	strcpy(old_passwd, "doe");
+	strcpy(new_passwd, "secret");
+	response = change_password(test_peer, fake_request, username_ro, new_passwd);
+	if (!response_is_error(response)) {
+		BOOST_CHECK_MESSAGE(false, "Admin could change password of read_only user.");
+	}
+	cJSON_Delete(response);
 
 	cJSON_Delete(fake_request);
 	free_peer(test_peer);
