@@ -29,14 +29,7 @@
 #define BOOST_TEST_MODULE linux auth test
 
 #include <boost/test/unit_test.hpp>
-#include <crypt.h>
 #include <fstream>
-#include <iostream>
-#include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string>
-#include <time.h>
 
 #include "authenticate.h"
 #include "peer.h"
@@ -255,6 +248,7 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	if (!response_is_error(response)) {
 		BOOST_CHECK_MESSAGE(false, "Read only user was able to change password");
 	}
+	cJSON_Delete(response);
 
 	strcpy(old_passwd, "doe");
 	strcpy(new_passwd, "secret");
