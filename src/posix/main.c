@@ -24,12 +24,19 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include "windows/wglobals.h"
+#include "windows/getopt/getopt.h"
+#include <io.h>
+#else 
+#include <unistd.h>
 #include <getopt.h>
+#endif
+
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 #include "alloc.h"
 #include "authenticate.h"

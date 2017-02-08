@@ -46,7 +46,11 @@ char *get_log_buffer(void);
 
 #else
 
+#if defined(_MSC_VER)
+#include "windows/syslog/syslog.h"
+#else
 #include <syslog.h>
+#endif
 
 #define log_err(...) syslog(LOG_ERR, __VA_ARGS__)
 #define log_warn(...) syslog(LOG_WARNING, __VA_ARGS__)

@@ -24,10 +24,17 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include "windows/wglobals.h"
+#include <time.h>
+#include <windows.h>
+#else 
+#include <sys/timerfd.h>
+#endif
+
 #include <fcntl.h>
 #include <math.h>
 #include <string.h>
-#include <sys/timerfd.h>
 
 #include "compiler.h"
 #include "eventloop.h"
@@ -37,6 +44,7 @@
 
 static const unsigned long NSECONDS_IN_SECONDS = 1000000000;
 
+/*
 static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 {
 	struct itimerspec ts;
@@ -49,6 +57,7 @@ static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 	ts.it_value.tv_nsec = nanos;
 	return ts;
 }
+*/
 
 static enum eventloop_return timer_read(struct io_event *ev)
 {
@@ -72,6 +81,7 @@ static enum eventloop_return timer_error(struct io_event *ev)
 	return EL_CONTINUE_LOOP;
 }
 
+/*
 static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context)
 {
 	struct cjet_timer *timer = (struct cjet_timer *)this_ptr;
@@ -121,6 +131,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 		return 0;
 	}
 }
+*/
 
 void cjet_timer_destroy(struct cjet_timer *timer)
 {

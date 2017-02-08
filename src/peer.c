@@ -24,12 +24,17 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include <Winsock2.h>
+#include <io.h>
+#else
 #include <arpa/inet.h>
+#include <unistd.h>
+#endif
 
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "alloc.h"
 #include "compiler.h"
@@ -133,7 +138,9 @@ void destroy_all_peers(void)
 }
 
 #define LOG_BUFFER_SIZE 100
+#if !defined(_MSC_VER)
 __attribute__((format(printf, 2, 3)))
+#endif
 void log_peer_err(const struct peer *p, const char *fmt, ...)
 {
 	int written;
@@ -148,7 +155,9 @@ void log_peer_err(const struct peer *p, const char *fmt, ...)
 	log_err("%s", buffer);
 }
 
+#if !defined(_MSC_VER)
 __attribute__((format(printf, 2, 3)))
+#endif
 void log_peer_info(const struct peer *p, const char *fmt, ...)
 {
 	int written;

@@ -24,9 +24,14 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include <Winsock2.h>
+#include <io.h>
+#else
 #include <arpa/inet.h>
-#include <stdint.h>
 #include <unistd.h>
+#endif
+#include <stdint.h>
 
 #include "alloc.h"
 #include "buffered_reader.h"

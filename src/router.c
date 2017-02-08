@@ -58,7 +58,11 @@ static void fill_routed_request_id(char *buf, size_t buf_size, const void *addre
 	}
 }
 
+#if defined(_MSC_VER)
+//TODO
+#else
 DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
+#endif
 
 int add_routing_table(struct peer *p)
 {
@@ -169,6 +173,7 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 }
 
 static void request_timeout_handler(void *context, bool cancelled) {
+	/*
 	struct routing_request *request = (struct routing_request *)context;
 	if (unlikely(!cancelled)) {
 		struct value_route_table val;
@@ -192,6 +197,7 @@ static void request_timeout_handler(void *context, bool cancelled) {
 			log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
 		}
 	}
+	*/
 }
 
 int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response)
@@ -212,6 +218,7 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		return -1;
 	}
 
+	/*
 	struct value_route_table val;
 	val.vals[0] = routing_request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
@@ -219,7 +226,7 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 		return -1;
 	}
-
+	*/
 	return 0;
 }
 
@@ -237,6 +244,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		return -1;
 	}
 
+	/*
 	struct value_route_table val;
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
@@ -269,6 +277,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 	} else {
 		return 0;
 	}
+	*/
 }
 
 static void send_shutdown_response(const struct peer *p,
@@ -287,6 +296,7 @@ static void send_shutdown_response(const struct peer *p,
 	}
 }
 
+/*
 static void clear_routing_entry(struct value_route_table *val)
 {
 	struct routing_request *request = val->vals[0];
@@ -299,10 +309,12 @@ static void clear_routing_entry(struct value_route_table *val)
 	cJSON_Delete(request->origin_request_id);
 	cjet_free(request);
 }
+*/
 
 void remove_peer_from_routing_table(const struct peer *p,
 	const struct peer *peer_to_remove)
 {
+	/*
 	struct hashtable_string *table = p->routing_table;
 	for (unsigned int i = 0; i < table_size_route_table; ++i) {
 		struct hashtable_string *entry = &(table[i]);
@@ -317,10 +329,12 @@ void remove_peer_from_routing_table(const struct peer *p,
 			}
 		}
 	}
+	*/
 }
 
 void remove_routing_info_from_peer(const struct peer *p)
 {
+	/*
 	struct hashtable_string *table = p->routing_table;
 	for (unsigned int i = 0; i < table_size_route_table; ++i) {
 		struct hashtable_string *entry = &(table[i]);
@@ -333,4 +347,5 @@ void remove_routing_info_from_peer(const struct peer *p)
 			}
 		}
 	}
+	*/
 }

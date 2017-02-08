@@ -333,7 +333,12 @@ int buffered_socket_close(void *context)
 int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
+	#if defined(_MSC_VER)
+	struct socket_io_vector iov[1024 + 1];
+	//TODO
+	#else
 	struct socket_io_vector iov[count + 1];
+	#endif
 	size_t to_write = bs->to_write;
 	iov[0].iov_base = bs->write_buffer;
 	iov[0].iov_len = bs->to_write;

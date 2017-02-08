@@ -24,15 +24,24 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include "windows/mman/mman.h"
+#include <io.h>
+#include <stdio.h>
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else 
+#include <sys/mman.h>
+#include <unistd.h>
+#endif
+
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 #include "alloc.h"
 #include "authenticate.h"

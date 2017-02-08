@@ -24,10 +24,15 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include <io.h>
+#include <Winsock2.h>
+#else 
 #include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/uio.h>
 #include <unistd.h>
+#include <sys/uio.h>
+#endif
+#include <sys/types.h>
 
 #include "compiler.h"
 #include "socket.h"
@@ -39,7 +44,11 @@ ssize_t socket_read(socket_type sock, void *buf, size_t count)
 
 ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 {
+	#if defined(_MSC_VER)
+	//TODO
+	#else 
 	struct iovec iov[count];
+	#endif
 
 	if (unlikely(count == 0)) {
 		return 0;
@@ -50,13 +59,19 @@ ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigne
  * Nevertheless, I want to have the parameter io_vec const. Therefore I
  * selectively disabled the cast-qual warning.
  */
-_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
+	/*
+	#if !defined(_MSC_VER)
+	_Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
+	#endif
 	for (unsigned int i = 0; i < count; i++) {
 		iov[i].iov_base = (void *)io_vec[i].iov_base;
 		iov[i].iov_len = io_vec[i].iov_len;
 	}
-_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
+	#if !defined(_MSC_VER)
+	_Pragma("GCC diagnostic error \"-Wcast-qual\"")
+	#endif
 	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
+	*/
 }
 
 int socket_close(socket_type sock)

@@ -28,6 +28,11 @@
 #ifndef CJET_SOCKET_H
 #define CJET_SOCKET_H
 
+#if defined(_MSC_VER)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#endif
+
 #include <stddef.h>
 #include <sys/types.h>
 
