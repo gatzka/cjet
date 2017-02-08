@@ -225,7 +225,7 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	cJSON *fake_request = cJSON_CreateObject();
 	cJSON *id = cJSON_CreateNumber(123);
 	cJSON_AddItemToObject(fake_request, "id", id);
-	peer *test_peer = alloc_peer();
+	struct peer *test_peer = alloc_peer();
 
 	test_peer->user_name = NULL;
 	cJSON *response = change_password(test_peer, fake_request, username, new_passwd);
@@ -233,28 +233,28 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	BOOST_CHECK_MESSAGE(response_is_error(response), "Peer could change password, even without beeing authenticated.");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	test_peer->user_name = username_not_in_db;
 	response = change_password(test_peer, fake_request, username_not_in_db, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, without beeing stored in database.");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	test_peer->user_name = username_pw_no_string;
 	response = change_password(test_peer, fake_request, username_pw_no_string, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, even if it is not a string.");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	test_peer->user_name = username_no_password;
 	response = change_password(test_peer, fake_request, username_no_password, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
 	BOOST_CHECK_MESSAGE(response_is_error(response), "User can change password, without having a password assigned.");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	test_peer->user_name = username;
 	response = change_password(test_peer, fake_request, username, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response != NULL, "The response for changing a password should never be null.");
@@ -266,22 +266,22 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	const cJSON *response1 = credentials_ok(username, old_passwd);
 	BOOST_REQUIRE_MESSAGE(response1 == NULL, "User authentication did not fail with old credentials, even after changing password.");
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	const cJSON *response2 = credentials_ok(username, new_passwd);
 	BOOST_REQUIRE_MESSAGE(response2 != NULL, "User Authentication failed after changing password.");
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	response = change_password(test_peer, fake_request, username_ro, new_passwd);
 	BOOST_CHECK_MESSAGE(response_is_error(response), "Read only user was able to change password");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	response = change_password(test_peer, fake_request, username_bob, new_passwd);
 
 	BOOST_CHECK_MESSAGE(response_is_error(response), "User john was able to change bob's password, even without beeing admin.");
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	test_peer->user_name = username_admin;
 	response = change_password(test_peer, fake_request, username_bob, new_passwd);
 	if (response_is_error(response)) {
@@ -293,7 +293,7 @@ BOOST_FIXTURE_TEST_CASE(change_credentials, F)
 	}
 	cJSON_Delete(response);
 
-	strcpy(new_passwd, "secret");
+	std::strcpy(new_passwd, "secret");
 	response = change_password(test_peer, fake_request, username_ro, new_passwd);
 	BOOST_CHECK_MESSAGE(response_is_error(response), "Admin could change password of read_only user.");
 	cJSON_Delete(response);
