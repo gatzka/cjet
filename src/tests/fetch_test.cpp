@@ -690,13 +690,17 @@ BOOST_FIXTURE_TEST_CASE(get_with_no_states, F)
 	cJSON_Delete(request);
 
 	cJSON *result = cJSON_GetObjectItem(response, "result");
-	BOOST_REQUIRE_MESSAGE(result != NULL, "response did not contain a result!");
 	if (result == NULL) {
-		BOOST_FAIL("response did not contain a result");
+		BOOST_FAIL("response did not contain a result!");
+		return;
 	} else {
-		BOOST_REQUIRE_MESSAGE(result->type == cJSON_Array, "result of get is not an array");
-		BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 0, "result array is not empty");
+		if (result->type != cJSON_Array) {
+			BOOST_FAIL("result of get is not an array");
+		} else {
+			BOOST_CHECK_MESSAGE(cJSON_GetArraySize(result) == 0, "result array is not empty");
+		}
 	}
+
 	cJSON_Delete(response);
 }
 
