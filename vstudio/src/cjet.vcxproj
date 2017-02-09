@@ -116,7 +116,7 @@
     </Midl>
     <Link>
       <AdditionalOptions> -Wl,--hash-style=gnu,--as-needed -Wl,-z,relro,-z,now -Wl,-O0 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Ws2_32.lib;$(MSBuildStartupDirectory)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;ws2_32.lib;$(SolutionDir)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -160,7 +160,7 @@
     </Midl>
     <Link>
       <AdditionalOptions> -Wl,--hash-style=gnu,--as-needed -Wl,-z,relro,-z,now -Wstrict-overflow=2 -Wl,-O3,--gc-sections,-s %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Ws2_32.lib;$(MSBuildStartupDirectory)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;ws2_32.lib;$(SolutionDir)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -207,7 +207,7 @@
     </Midl>
     <Link>
       <AdditionalOptions> -Wl,--hash-style=gnu,--as-needed -Wl,-z,relro,-z,now %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Ws2_32.lib;$(MSBuildStartupDirectory)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;ws2_32.lib;$(SolutionDir)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>No</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -253,7 +253,7 @@
     </Midl>
     <Link>
       <AdditionalOptions> -Wl,--hash-style=gnu,--as-needed -Wl,-z,relro,-z,now %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;Ws2_32.lib;$(MSBuildStartupDirectory)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;ws2_32.lib;$(SolutionDir)\..\src\windows\crypt\lib\libcrypt.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>Debug</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -324,16 +324,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\posix\auth_file.c" />
-    <ClCompile Include="..\..\src\posix\main.c" />
-    <ClCompile Include="..\..\src\posix\socket.c" />
     <ClCompile Include="..\..\src\windows\epoll\epoll.c" />
     <ClCompile Include="..\..\src\windows\eventloop_epoll.c" />
     <ClCompile Include="..\..\src\windows\getopt.c" />
     <ClCompile Include="..\..\src\windows\jet_endian.c" />
     <ClCompile Include="..\..\src\windows\memmem.c" />
     <ClCompile Include="..\..\src\windows\mman.c" />
+    <ClCompile Include="..\..\src\windows\posix\auth_file.c" />
     <ClCompile Include="..\..\src\windows\posix\jet_string.c" />
+    <ClCompile Include="..\..\src\windows\posix\main.c" />
+    <ClCompile Include="..\..\src\windows\posix\socket.c" />
     <ClCompile Include="..\..\src\windows\random.c" />
     <ClCompile Include="..\..\src\windows\strcasestr.c" />
     <ClCompile Include="..\..\src\windows\syslogc.c" />
@@ -370,16 +370,16 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x68f12a82 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\element.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x17a5449f -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x17a5449f -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x17a5449f -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x17a5449f -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x733477cc -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x733477cc -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x733477cc -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x733477cc -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\fetch.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x1a5d7a93 -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x1a5d7a93 -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x1a5d7a93 -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x1a5d7a93 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x52953d68 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x52953d68 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x52953d68 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x52953d68 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\groups.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x7a640dcb -std=c99 %(AdditionalOptions)</AdditionalOptions>
@@ -406,10 +406,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0xd6020125 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\info.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x0c8e4faa -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x0c8e4faa -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x0c8e4faa -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x0c8e4faa -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x5ae19926 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x5ae19926 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x5ae19926 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x5ae19926 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\jet_string.c">
       <ObjectFileName>$(IntDir)/jet_string.c.obj</ObjectFileName>
@@ -425,10 +425,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x1e23b725 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\parse.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0xea67866a -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0xea67866a -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0xea67866a -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0xea67866a -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x5924f972 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x5924f972 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x5924f972 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x5924f972 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\peer.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x1e791bcc -std=c99 %(AdditionalOptions)</AdditionalOptions>
@@ -443,10 +443,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x30e526a0 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\router.c">
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0xd508c0ea -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0xd508c0ea -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0xd508c0ea -std=c99 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0xd508c0ea -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x49265365 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'"> -frandom-seed=0x49265365 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|Win32'"> -frandom-seed=0x49265365 -std=c99 %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|Win32'"> -frandom-seed=0x49265365 -std=c99 %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\sha1\sha1.c">
       <AdditionalOptions Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'"> -frandom-seed=0x2663b309 -std=c99 %(AdditionalOptions)</AdditionalOptions>

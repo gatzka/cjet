@@ -1,0 +1,13 @@
+# CMake generation dependency list for this directory.
+C:/Git/cjet/src/CMakeLists.txt
+C:/Git/cjet/cmake/version.cmake
+C:/Git/cjet/cmake/defaults.cmake
+C:/Git/cjet/cmake/generate_doxygen.cmake
+C:/Program Files/CMake/share/cmake-3.7/Modules/FindDoxygen.cmake
+C:/Program Files/CMake/share/cmake-3.7/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.7/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.7/Modules/CMakeParseArguments.cmake
+C:/Git/cjet/src/linux/config/os_config.h.in
+C:/Git/cjet/src/cjet_config.h.in
+C:/Git/cjet/src/version.h.in
+C:/Git/cjet/cmake/hardening.cmake

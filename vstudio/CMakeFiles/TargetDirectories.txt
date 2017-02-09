@@ -1,0 +1,6 @@
+C:/Git/cjet/vstudio/CMakeFiles/INSTALL.dir
+C:/Git/cjet/vstudio/CMakeFiles/ALL_BUILD.dir
+C:/Git/cjet/vstudio/CMakeFiles/ZERO_CHECK.dir
+C:/Git/cjet/vstudio/src/CMakeFiles/cjet.dir
+C:/Git/cjet/vstudio/src/CMakeFiles/INSTALL.dir
+C:/Git/cjet/vstudio/src/CMakeFiles/ALL_BUILD.dir

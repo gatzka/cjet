@@ -36,24 +36,18 @@ ssize_t socket_read(socket_type sock, void *buf, size_t count)
 
 ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 {
+	/* TODO
 	struct iovec iov[count];
 
 	if (unlikely(count == 0)) {
 		return 0;
 	}
-
-	/*
-	* This pragma is used because iov_base is not declared const.
-	* Nevertheless, I want to have the parameter io_vec const. Therefore I
-	* selectively disabled the cast-qual warning.
+	for (unsigned int i = 0; i < count; i++) {
+		iov[i].iov_base = (void *)io_vec[i].iov_base;
+		iov[i].iov_len = io_vec[i].iov_len;
+	}
+	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
 	*/
-	_Pragma("GCC diagnostic ignored \"-Wcast-qual\"")
-		for (unsigned int i = 0; i < count; i++) {
-			iov[i].iov_base = (void *)io_vec[i].iov_base;
-			iov[i].iov_len = io_vec[i].iov_len;
-		}
-	_Pragma("GCC diagnostic error \"-Wcast-qual\"")
-		return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
 }
 
 int socket_close(socket_type sock)
