@@ -24,24 +24,16 @@
  * SOFTWARE.
  */
 
-#if defined(_MSC_VER)
-#include "windows/mman/mman.h"
-#include <io.h>
-#include <stdio.h>
 #include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
-#else 
-#include <sys/mman.h>
-#include <unistd.h>
-#endif
-
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
+#include <windows/mman.h>
+#include <io.h>
+#include <stdio.h>
+#include <windows.h>
 
 #include "alloc.h"
 #include "authenticate.h"
@@ -56,6 +48,7 @@ typedef SSIZE_T ssize_t;
  #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+typedef SSIZE_T ssize_t;
 static cJSON *user_data = NULL;
 static const cJSON *users = NULL;
 static int password_file = -1;
@@ -84,7 +77,9 @@ int load_passwd_data(const char *passwd_file)
 		return -1;
 	}
 
-	char *rp = realpath(passwd_file, NULL);
+	/* todo */
+	char *rp;
+	DWORD retval = GetFullPathName(passwd_file, 0, NULL, &rp);
 	if (rp == NULL) {
 		goto realpath_failed;
 	}
@@ -279,7 +274,8 @@ static bool is_admin(const char *current_user)
 
 static int write_user_data()
 {
-	if (ftruncate(password_file, 0) < 0) {
+	/* file open? todo */
+	if (_chsize_s(password_file, 0) < 0) {
 		log_err("Could not truncate password file\n");
 		return -1;
 	}

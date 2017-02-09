@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka and Mathieu Borchardt>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,27 +24,21 @@
  * SOFTWARE.
  */
 
-#if defined(_MSC_VER)
-#include "windows/wglobals.h"
-#include "windows/getopt/getopt.h"
 #include <io.h>
-#else 
-#include <unistd.h>
-#include <getopt.h>
-#endif
-
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "windows/sigpipe.h"
+#include "windows/getopt.h"
+#include "windows/eventloop_epoll.h"
+#include "windows/windows_io.h"
 #include "alloc.h"
 #include "authenticate.h"
 #include "cmdline_config.h"
 #include "generated/version.h"
 #include "jet_random.h"
-#include "linux/eventloop_epoll.h"
-#include "linux/linux_io.h"
 #include "log.h"
 #include "parse.h"
 #include "table.h"

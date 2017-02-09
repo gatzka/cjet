@@ -24,9 +24,7 @@
  * SOFTWARE.
  */
 
-#if !defined(_MSC_VER)
 #include <endian.h>
-#endif
 #include <stdint.h>
 
 #include "jet_endian.h"

@@ -26,11 +26,16 @@
 
 #include <stddef.h>
 
+#if defined(_MSC_VER)
+#include "windows/windows_io.h"
+#else
+#include "linux/linux_io.h"
+#endif
+
 #include "compiler.h"
 #include "generated/version.h"
 #include "info.h"
 #include "json/cJSON.h"
-#include "linux/linux_io.h"
 #include "peer.h"
 #include "response.h"
 

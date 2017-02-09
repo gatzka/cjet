@@ -25,9 +25,6 @@
     <ClCompile Include="C:\Git\cjet\src\groups.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\http-parser\http_parser.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\http_connection.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -40,9 +37,6 @@
     <ClCompile Include="C:\Git\cjet\src\jet_string.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\json\cJSON.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\parse.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -53,9 +47,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\router.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\sha1\sha1.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="C:\Git\cjet\src\socket_peer.c">
@@ -73,44 +64,59 @@
     <ClCompile Include="C:\Git\cjet\src\websocket_peer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\eventloop_epoll.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\eventloop_epoll.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\jet_endian.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\getopt.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\jet_string.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\jet_endian.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\linux_io.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\memmem.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\random.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\mman.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\linux\timer_linux.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\random.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\posix\auth_file.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\strcasestr.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\posix\jet_string.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\syslogc.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\posix\main.c">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="..\..\src\windows\timer_windows.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
-    <ClCompile Include="C:\Git\cjet\src\posix\socket.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\windows\syslog\syslogc.c">
-      <Filter>Source Files\windows\syslog</Filter>
+    <ClCompile Include="..\..\src\windows\windows_io.c">
+      <Filter>Source Files\windows</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\windows\epoll\epoll.c">
       <Filter>Source Files\windows\epoll</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\windows\mman\mman.c">
-      <Filter>Source Files\windows\mman</Filter>
+    <ClCompile Include="C:\Git\cjet\src\json\cJSON.c">
+      <Filter>Source Files\json</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Git\cjet\src\http-parser\http_parser.c">
+      <Filter>Source Files\http-parser</Filter>
+    </ClCompile>
+    <ClCompile Include="C:\Git\cjet\src\sha1\sha1.c">
+      <Filter>Source Files\sha1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\posix\auth_file.c">
+      <Filter>Source Files\windows\posix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\posix\main.c">
+      <Filter>Source Files\windows\posix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\posix\socket.c">
+      <Filter>Source Files\windows\posix</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\windows\posix\jet_string.c">
+      <Filter>Source Files\windows\posix</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -121,16 +127,22 @@
       <UniqueIdentifier>{7494ED14-100E-3711-BDF6-17BC638077D5}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\windows">
-      <UniqueIdentifier>{444d257a-062b-41c6-b236-18d76a1d90bc}</UniqueIdentifier>
+      <UniqueIdentifier>{c65b2b7f-c659-4210-8309-fb9b5b1e6026}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\windows\syslog">
-      <UniqueIdentifier>{e69838c7-57ba-41a4-bf18-5d9faacdd3d8}</UniqueIdentifier>
+    <Filter Include="Source Files\json">
+      <UniqueIdentifier>{087014e5-f6ec-44c4-af46-747d26019183}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\http-parser">
+      <UniqueIdentifier>{6de743cb-00b7-43a2-8bc3-bc437f882426}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\sha1">
+      <UniqueIdentifier>{ea84386c-5983-44bf-80e9-e05d2e62fae6}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\windows\epoll">
-      <UniqueIdentifier>{8998bdf7-ce34-4a75-be41-6d4bf1c51c8c}</UniqueIdentifier>
+      <UniqueIdentifier>{aed5461e-97ae-4985-acf6-4e087f425113}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\windows\mman">
-      <UniqueIdentifier>{50ffa66e-eb58-401f-bed3-eca56ca9779a}</UniqueIdentifier>
+    <Filter Include="Source Files\windows\posix">
+      <UniqueIdentifier>{32bcaacf-918b-44d0-aa8b-d517dabd0e8f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

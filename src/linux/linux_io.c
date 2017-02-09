@@ -24,31 +24,21 @@
  * SOFTWARE.
  */
 
-
-#if defined(_MSC_VER)
-#include "windows/wglobals.h"
-#include <WS2tcpip.h>
-#include <Winsock2.h>
-#include <io.h>
-#else
+#include <errno.h>
+#include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <pwd.h>
-#include <unistd.h>
-#include <sys/socket.h>
-#endif
-
-#include <errno.h>
-#include <fcntl.h>
-
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 #include <sys/types.h>
+#include <unistd.h>
 
 #include "alloc.h"
 #include "buffered_reader.h"
@@ -461,7 +451,6 @@ static int drop_privileges(const char *user_name)
 		log_err("user name \"%s\" not available!\n", user_name);
 		return -1;
 	}
-	/*
 	if (setgid(passwd->pw_gid) == -1) {
 		log_err("Can't set process' gid to gid of \"%s\"!\n", user_name);
 		return -1;
@@ -470,7 +459,6 @@ static int drop_privileges(const char *user_name)
 		log_err("Can't set process' uid to uid of \"%s\"!\n", user_name);
 		return -1;
 	}
-	*/
 	return 0;
 }
 

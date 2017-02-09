@@ -25,9 +25,7 @@
  */
 
 #include <stddef.h>
-#if !defined(_MSC_VER)
 #include <strings.h>
-#endif
 
 #include "jet_string.h"
 

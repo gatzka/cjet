@@ -24,17 +24,10 @@
  * SOFTWARE.
  */
 
-
-#if defined(_MSC_VER)
-#include "windows/epoll/epoll.h"
-#include <io.h>
-#else
-#include <sys/epoll.h>
-#include <unistd.h>
-#endif
-
 #include <errno.h>
+#include <sys/epoll.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "compiler.h"
 #include "eventloop.h"
@@ -125,8 +118,10 @@ enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
+_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 	epoll_ev.data.ptr = (void *)ev;
-	epoll_ev.events = EPOLLIN | EPOLLOUT;// | EPOLLET;
+_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
+	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
 		return EL_ABORT_LOOP;

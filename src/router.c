@@ -27,12 +27,17 @@
 #include <stddef.h>
 #include <stdio.h>
 
+#if defined(_MSC_VER)
+#include "windows/windows_io.h"
+#else
+#include "linux/linux_io.h"
+#endif
+
 #include "alloc.h"
 #include "compiler.h"
 #include "hashtable.h"
 #include "generated/cjet_config.h"
 #include "json/cJSON.h"
-#include "linux/linux_io.h"
 #include "peer.h"
 #include "response.h"
 #include "router.h"

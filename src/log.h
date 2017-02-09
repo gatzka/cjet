@@ -47,7 +47,7 @@ char *get_log_buffer(void);
 #else
 
 #if defined(_MSC_VER)
-#include "windows/syslog/syslog.h"
+#include "windows/syslog.h"
 #else
 #include <syslog.h>
 #endif
