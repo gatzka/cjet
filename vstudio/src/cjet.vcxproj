@@ -328,10 +328,10 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     <ClCompile Include="..\..\src\windows\eventloop_epoll.c" />
     <ClCompile Include="..\..\src\windows\getopt.c" />
     <ClCompile Include="..\..\src\windows\jet_endian.c" />
+    <ClCompile Include="..\..\src\windows\jet_string.c" />
     <ClCompile Include="..\..\src\windows\memmem.c" />
     <ClCompile Include="..\..\src\windows\mman.c" />
     <ClCompile Include="..\..\src\windows\posix\auth_file.c" />
-    <ClCompile Include="..\..\src\windows\posix\jet_string.c" />
     <ClCompile Include="..\..\src\windows\posix\main.c" />
     <ClCompile Include="..\..\src\windows\posix\socket.c" />
     <ClCompile Include="..\..\src\windows\random.c" />
