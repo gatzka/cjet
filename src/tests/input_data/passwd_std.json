@@ -35,14 +35,20 @@
       }
     },
     "john-pw_no_string": {
-      "readonly": true,
       "password": 123,
       "auth": {
         "fetchGroups": ["users", "public"],
         "setGroups": ["users"],
         "callGroups": ["users"]
       }
-    },   
+    },
+    "bob_read_only": {
+      "auth": {
+        "fetchGroups": ["users", "public"],
+        "setGroups": ["users"],
+        "callGroups": ["users"]
+      }
+    },
     "bob": {
       "password": "$6$C2ThIFi2ie4$G3nDGp97ijI1NSWG5kflmdk.Q9yIpCZOCELAVsLTaeNmnoQKj7PMn6DxKU17JYgMay2yWx.m0fDTJOiWJwwyH/",
       "auth": {
