@@ -20,6 +20,7 @@
 #include <stddef.h>
 #include <memory.h>
 
+
 void *memmem(const void *haystack, size_t haystackLen, const void *needle, size_t needleLen)
 {
 	if (needleLen == 0)
@@ -37,5 +38,6 @@ void *memmem(const void *haystack, size_t haystackLen, const void *needle, size_
 			}
 		}
 	}
+
 	return NULL;
 }

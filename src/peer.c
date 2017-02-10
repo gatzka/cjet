@@ -25,7 +25,7 @@
  */
 
 #if defined(_MSC_VER)
-#include <Winsock2.h>
+#include <WinSock2.h>
 #include <io.h>
 #else
 #include <arpa/inet.h>

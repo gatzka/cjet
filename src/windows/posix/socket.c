@@ -58,6 +58,7 @@ ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, size_t 
 	return ret;
 }
 
+
 int socket_close(socket_type sock)
 {
 	return close(sock);

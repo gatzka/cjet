@@ -27,17 +27,12 @@
 #include <stddef.h>
 #include <stdio.h>
 
-#if defined(_MSC_VER)
-#include "windows/windows_io.h"
-#else
-#include "linux/linux_io.h"
-#endif
-
 #include "alloc.h"
 #include "compiler.h"
 #include "hashtable.h"
 #include "generated/cjet_config.h"
 #include "json/cJSON.h"
+#include "linux/linux_io.h"
 #include "peer.h"
 #include "response.h"
 #include "router.h"
@@ -209,6 +204,7 @@ static void request_timeout_handler(void *context, bool cancelled) {
 
 int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response)
 {
+	/*
 	uint64_t timeout_ns = get_timeout_in_nsec(routing_request->requesting_peer, request, timeout, response, e->timeout_nsec);
 	if (unlikely(timeout_ns == 0)) {
 		return -1;
@@ -225,7 +221,6 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		return -1;
 	}
 
-	/*
 	struct value_route_table val;
 	val.vals[0] = routing_request;
 	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
@@ -233,13 +228,15 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 		return -1;
 	}
-	*/
+
 	return 0;
+	*/
 }
 
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
 	const struct peer *p)
 {
+	/*
 	const cJSON *id = cJSON_GetObjectItem(json_rpc, "id");
 	if (unlikely(id == NULL)) {
 		log_peer_err(p, "no id in response!\n");
@@ -251,7 +248,6 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 		return -1;
 	}
 
-	/*
 	struct value_route_table val;
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
@@ -303,9 +299,9 @@ static void send_shutdown_response(const struct peer *p,
 	}
 }
 
-/*
 static void clear_routing_entry(struct value_route_table *val)
 {
+	/*
 	struct routing_request *request = val->vals[0];
 
 	if (unlikely(request->timer.cancel(&request->timer) < 0)) {
@@ -315,8 +311,8 @@ static void clear_routing_entry(struct value_route_table *val)
 	send_shutdown_response(request->requesting_peer, request->origin_request_id);
 	cJSON_Delete(request->origin_request_id);
 	cjet_free(request);
+	*/
 }
-*/
 
 void remove_peer_from_routing_table(const struct peer *p,
 	const struct peer *peer_to_remove)

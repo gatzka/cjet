@@ -30,7 +30,6 @@
 
 #if defined(_MSC_VER)
 #include <BaseTsd.h>
-typedef SSIZE_T ssize_t;
 #endif
 
 #include <stddef.h>
@@ -40,6 +39,10 @@ typedef SSIZE_T ssize_t;
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(_MSC_VER)
+typedef SSIZE_T ssize_t;
 #endif
 
 struct socket_io_vector {

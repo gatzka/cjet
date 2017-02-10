@@ -28,12 +28,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#if defined(_MSC_VER)
-#include "windows/windows_io.h"
-#else
-#include "linux/linux_io.h"
-#endif
-
 #include "alloc.h"
 #include "authenticate.h"
 #include "compiler.h"
@@ -42,6 +36,7 @@
 #include "generated/cjet_config.h"
 #include "info.h"
 #include "json/cJSON.h"
+#include "linux/linux_io.h"
 #include "parse.h"
 #include "peer.h"
 #include "response.h"

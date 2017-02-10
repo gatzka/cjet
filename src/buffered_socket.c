@@ -330,15 +330,76 @@ int buffered_socket_close(void *context)
 	return ret;
 }
 
+#if defined(_MSC_VER)
 int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
-	#if defined(_MSC_VER)
-	struct socket_io_vector iov[1024 + 1];
-	//TODO
-	#else
+	struct socket_io_vector *iov = malloc(count * sizeof(unsigned int) + 1);
+	size_t to_write = bs->to_write;
+	iov[0].iov_base = bs->write_buffer;
+	iov[0].iov_len = bs->to_write;
+
+	for (unsigned int i = 0; i < count; i++) {
+		iov[i + 1].iov_base = io_vec[i].iov_base;
+		iov[i + 1].iov_len = io_vec[i].iov_len;
+		to_write += io_vec[i].iov_len;
+	}
+
+	ssize_t sent = socket_writev(bs->ev.sock, iov, count + 1);
+	if (likely(sent == (ssize_t)to_write))
+	{
+		free(iov);
+		return 0;
+	}
+
+	size_t written = 0;
+	if (sent > 0) {
+		written = (size_t)sent;
+	}
+
+	if (unlikely((sent == -1) &&
+		((errno != EAGAIN) && (errno != EWOULDBLOCK))))
+	{
+		log_err("unexpected %s error: %s!\n", "write",
+			strerror(errno));
+		free(iov);
+		return -1;
+	}
+
+	size_t io_vec_written;
+	if (written <= bs->to_write) {
+		bs->to_write -= written;
+		memmove(bs->write_buffer, bs->write_buffer + written, bs->to_write);
+		io_vec_written = 0;
+	}
+	else {
+		io_vec_written = written - bs->to_write;
+		bs->to_write = 0;
+	}
+	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0))
+	{
+		free(iov);
+		return -1;
+	}
+
+	if (sent == -1) 
+	{
+		free(iov);
+		return 0;
+	}
+
+	/*
+	* The write call didn't block, but only wrote parts of the
+	* messages. Try to send the rest.
+	*/
+	free(iov);
+	return send_buffer(bs);
+}
+#else
+int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
+{
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
 	struct socket_io_vector iov[count + 1];
-	#endif
 	size_t to_write = bs->to_write;
 	iov[0].iov_base = bs->write_buffer;
 	iov[0].iov_len = bs->to_write;
@@ -371,7 +432,8 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 		bs->to_write -= written;
 		memmove(bs->write_buffer, bs->write_buffer + written, bs->to_write);
 		io_vec_written = 0;
-	} else {
+	}
+	else {
 		io_vec_written = written - bs->to_write;
 		bs->to_write = 0;
 	}
@@ -384,11 +446,12 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 	}
 
 	/*
-	 * The write call didn't block, but only wrote parts of the
-	 * messages. Try to send the rest.
-	 */
+	* The write call didn't block, but only wrote parts of the
+	* messages. Try to send the rest.
+	*/
 	return send_buffer(bs);
 }
+#endif
 
 int buffered_socket_read_exactly(void *this_ptr, size_t num,
                                  enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
