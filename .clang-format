@@ -1,7 +1,13 @@
 BasedOnStyle: LLVM
-IndentWidth: 8
-UseTab: Always
-BreakBeforeBraces: Linux
+AlignAfterOpenBracket: true
+AlignOperands: true
+AllowShortBlocksOnASingleLine: false
+AllowShortFunctionsOnASingleLine: false
 AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+BreakBeforeBraces: Linux
+ColumnLimit: 0
+ForEachMacros: ['list_for_each_safe']
 IndentCaseLabels: false
-
+IndentWidth: 8
+UseTab: ForIndentation
