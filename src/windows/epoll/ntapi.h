@@ -1,6 +1,6 @@
 
-#ifndef EPOLL_NTAPI_H_
-#define EPOLL_NTAPI_H_
+#ifndef CJET_WINDOWS_EPOLL_NTAPI_H
+#define CJET_WINDOWS_EPOLL_NTAPI_H
 
 #include <windows.h>
 
@@ -4085,4 +4085,4 @@ typedef NTSTATUS (NTAPI *PNTDEVICEIOCONTROLFILE)
                   PVOID OutputBuffer,
                   ULONG OutputBufferLength);
 
-#endif  /* EPOLL_NTAPI_H_ */
+#endif  /* CJET_WINDOWS_EPOLL_NTAPI_H */

@@ -32,8 +32,8 @@ to the Windows (XP or CE) platform. They are planned to be used
 http://git.enlightenment.org/legacy/evil.git/tree/src/lib/evil_string.h?id=eeaddf80d0d547d4c216974038c0599b34359695
 */
 
-#ifndef STRCASESTR_H
-#define STRCASESTR_H
+#ifndef CJET_WINDOWS_STRCASESTR_H
+#define CJET_WINDOWS_STRCASESTR_H
 /**
 * @brief Locatea substring into a string, ignoring case.
 *
@@ -52,4 +52,4 @@ http://git.enlightenment.org/legacy/evil.git/tree/src/lib/evil_string.h?id=eeadd
 */
 char *strcasestr(const char *haystack, const char *needle);
 
-#endif  /* STRCASESTR_H */
+#endif  /* CJET_WINDOWS_STRCASESTR_H */

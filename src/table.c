@@ -41,16 +41,18 @@ static struct hashtable_string *element_hashtable = NULL;
 
 int element_hashtable_create(void)
 {
+	/*
 	element_hashtable = HASHTABLE_CREATE(element_table);
 	if (unlikely(element_hashtable == NULL)) {
 		return -1;
 	}
 	return 0;
+	*/
 }
 
 void element_hashtable_delete(void)
 {
-	HASHTABLE_DELETE(element_table, element_hashtable);
+	//HASHTABLE_DELETE(element_table, element_hashtable);
 }
 
 int element_table_put(const char *path, void *value)
@@ -77,6 +79,8 @@ void *element_table_get(const char *path)
 
 void element_table_remove(const char *path)
 {
+	/*
 	int ret = HASHTABLE_REMOVE(element_table, element_hashtable, path, NULL);
 	if (ret == 0) {}
+	*/
 }

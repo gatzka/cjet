@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_EVENTLOOP_EPOLL_H
-#define CJET_LINUX_EVENTLOOP_EPOLL_H
+#ifndef CJET_WINDOWS_EVENTLOOP_EPOLL_H
+#define CJET_WINDOWS_EVENTLOOP_EPOLL_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -48,5 +48,5 @@ void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev);
 }
 #endif
 
-#endif
+#endif	/* CJET_WINDOWS_EVENTLOOP_EPOLL_H */
 

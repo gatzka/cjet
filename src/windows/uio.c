@@ -1,7 +1,7 @@
 /*
 *The MIT License (MIT)
 *
-* Copyright (c) <2017> <Stephan Gatzka and Mathieu Borchardt>
+* Copyright (c) <2017> <Mathieu Borchardt>
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
@@ -25,40 +25,42 @@
 */
 
 #include <io.h>
+#include <windows.h>
 
 #include "windows/uio.h"
-#include "compiler.h"
-#include "socket.h"
 
 
-ssize_t socket_read(socket_type sock, void *buf, size_t count)
+int readv(int fd, struct iovec *iov, unsigned int iovcnt)
 {
-	return read(sock, buf, count);
-}
+	DWORD bytes_read = 0;
 
-
-ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, size_t count)
-{
-	ssize_t ret = 0;
-
-	if (count > 0)
+	for (int i = 0; i < iovcnt; i++)
 	{
-		struct iovec *iov = malloc(count * sizeof(unsigned int));
-
-		for (unsigned int i = 0; i < count; i++)
+		int r = recv((SOCKET)fd, iov[i].iov_base, iov[i].iov_len, 0);
+		if (r < 0)
 		{
-			iov[i].iov_base = (void *)io_vec[i].iov_base;
-			iov[i].iov_len = io_vec[i].iov_len;
+			return r;
 		}
-		ret = writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
-
-		free(iov);
+		bytes_read += r;
 	}
-	
-	return ret;
+
+	return bytes_read;
 }
 
-int socket_close(socket_type sock)
+
+int writev(int fd, const struct iovec *iov, unsigned int iovcnt)
 {
-	return close(sock);
+	DWORD bytes_written = 0;
+
+	for (int i = 0; i < iovcnt; i++)
+	{
+		int r = send((SOCKET)fd, iov[i].iov_base, iov[i].iov_len, 0);
+		if (r < 0)
+		{
+			return r;
+		}
+		bytes_written += r;
+	}
+
+	return bytes_written;
 }

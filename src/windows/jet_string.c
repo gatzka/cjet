@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka and Mathieu Borchardt>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,22 +24,30 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_WINDOWS_IO_H
-#define CJET_WINDOWS_IO_H
+#include <stddef.h>
+#include <string.h>
 
-#include <stdbool.h>
+#include "windows/memmem.h"
+#include "windows/strcasestr.h"
 
-#include "cmdline_config.h"
-#include "eventloop.h"
+#include "jet_string.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int run_io(struct eventloop *loop, const struct cmdline_config *config);
-
-#ifdef __cplusplus
+const char *jet_strcasestr(const char *haystack, const char *needle)
+{
+	return strcasestr(haystack, needle);
 }
-#endif
 
-#endif	/* CJET_WINDOWS_IO_H */
+void *jet_memmem(const void *haystack, size_t haystacklen, const void *needle, size_t needlelen)
+{
+	return memmem(haystack, haystacklen, needle, needlelen);
+}
+
+int jet_strcasecmp(const char *s1, const char *s2)
+{
+	return _stricmp(s1, s2);
+}
+
+int jet_strncasecmp(const char *s1, const char *s2, size_t n)
+{
+	return _strnicmp(s1, s2, n);
+}

@@ -71,17 +71,19 @@ DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
 
 int add_routing_table(struct peer *p)
 {
+	/*
 	p->routing_table = HASHTABLE_CREATE(route_table);
 	if (unlikely(p->routing_table == NULL)) {
 		return -1;
 	} else {
 		return 0;
 	}
+	*/
 }
 
 void delete_routing_table(struct peer *p)
 {
-	HASHTABLE_DELETE(route_table, p->routing_table);
+	//HASHTABLE_DELETE(route_table, p->routing_table);
 }
 
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,

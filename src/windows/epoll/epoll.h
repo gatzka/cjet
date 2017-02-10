@@ -1,6 +1,5 @@
-
-#ifndef EPOLL_H_
-#define EPOLL_H_
+#ifndef CJET_WINDOWS_EPOLL_EPOLL_H
+#define CJET_WINDOWS_EPOLL_EPOLL_H
 
 #include <WinSock2.h>
 #include <Windows.h>
@@ -47,12 +46,9 @@ struct epoll_event {
 
 
 epoll_t epoll_create();
-
 int epoll_close(epoll_t epoll_hnd);
-
 int epoll_ctl(epoll_t epoll_hnd, int op, SOCKET sock, struct epoll_event* event); 
-
 int epoll_wait(epoll_t epoll_hnd, struct epoll_event* events, int maxevents, int timeout);
 
 
-#endif  /* EPOLL_H_ */
+#endif  /* CJET_WINDOWS_EPOLL_EPOLL_H */

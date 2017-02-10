@@ -24,11 +24,11 @@
 * SOFTWARE.
 */
 
-#ifndef SIGPIPE_H
-#define SIGPIPE_H
+#ifndef CJET_WINDOWS_SIGPIPE_H
+#define CJET_WINDOWS_SIGPIPE_H
 
 
 #define SIGPIPE         13
 
 
-#endif	/* SIGPIPE_H */
+#endif	/* CJET_WINDOWS_SIGPIPE_H */

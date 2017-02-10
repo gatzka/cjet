@@ -24,12 +24,12 @@
 * SOFTWARE.
 */
 
-#ifndef STRINGS_H
-#define STRINGS_H
+#ifndef CJET_WINDOWS_STRINGS_H
+#define CJET_WINDOWS_STRINGS_H
 
 #include <string.h>
 
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
 
-#endif	/* STRINGS_H */
+#endif	/* CJET_WINDOWS_STRINGS_H */

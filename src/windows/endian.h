@@ -6,8 +6,8 @@
 /* This file is generated automatically by configure */
 /* It is valid only for the system type i686-pc-linux-gnu */
 
-#ifndef _ENDIAN_H_
-#define _ENDIAN_H_
+#ifndef CJET_WINDOWS_ENDIAN_H
+#define CJET_WINDOWS_ENDIAN_H
 
 /* ntohl and relatives live here */
 #include <winsock.h>
@@ -87,4 +87,4 @@
 #define htole32a(a,x)   *(uint32_t*)(a) = htole32(x)
 #define htole64a(a,x)   *(uint64_t*)(a) = htole64(x)
 
-#endif /*_ENDIAN_H_*/
+#endif /* CJET_WINDOWS__ENDIAN_H */

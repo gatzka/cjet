@@ -1,7 +1,7 @@
 /*
 *The MIT License (MIT)
 *
-* Copyright (c) <2017> <Stephan Gatzka and Mathieu Borchardt>
+* Copyright (c) <2017> <Mathieu Borchardt>
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
@@ -24,41 +24,22 @@
 * SOFTWARE.
 */
 
+#ifndef CJET_WINDOWS_UIO_H
+#define CJET_WINDOWS_UIO_H
+
+#include <inttypes.h>
 #include <io.h>
+#include <BaseTsd.h>
 
-#include "windows/uio.h"
-#include "compiler.h"
-#include "socket.h"
+typedef SSIZE_T ssize_t;
 
-
-ssize_t socket_read(socket_type sock, void *buf, size_t count)
+struct iovec
 {
-	return read(sock, buf, count);
-}
+	void	*iov_base;  /* Base address of a memory region for input or output */
+	size_t	 iov_len;   /* The size of the memory pointed to by iov_base */
+};
 
+ssize_t readv(int fd, const struct iovec *iov, unsigned int iovcnt);
+ssize_t writev(int fd, const struct iovec *iov, unsigned int iovcnt);
 
-ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, size_t count)
-{
-	ssize_t ret = 0;
-
-	if (count > 0)
-	{
-		struct iovec *iov = malloc(count * sizeof(unsigned int));
-
-		for (unsigned int i = 0; i < count; i++)
-		{
-			iov[i].iov_base = (void *)io_vec[i].iov_base;
-			iov[i].iov_len = io_vec[i].iov_len;
-		}
-		ret = writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
-
-		free(iov);
-	}
-	
-	return ret;
-}
-
-int socket_close(socket_type sock)
-{
-	return close(sock);
-}
+#endif /* CJET_WINDOWS_UIO_H */

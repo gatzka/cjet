@@ -57,7 +57,7 @@ int main(int argc, char **argv)
 		log_err("Could not initialize random seed!\n");
 		return EXIT_FAILURE;
 	}
-
+	
 	init_parser();
 
 	int ret = EXIT_SUCCESS;

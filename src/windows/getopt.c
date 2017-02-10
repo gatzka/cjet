@@ -20,6 +20,7 @@
 #include "windows/getopt.h"
 #include <windows.h>
 
+
 char* optarg = NULL;
 int optind = 1;
 
@@ -29,7 +30,6 @@ int getopt(int argc, char *const argv[], const char *optstring)
 	{
 		return -1;
 	}
-
 	int opt = argv[optind][1];
 	const char *p = strchr(optstring, opt);
 

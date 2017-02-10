@@ -17,12 +17,10 @@
 *
 ******************************************************************/
 
-#ifndef MEMMEM_H__
-#define MEMMEM_H__
+#ifndef CJET_WINDOWS_MEMMEM_H
+#define CJET_WINDOWS_MEMMEM_H
 
 #include <string.h>
-
-// crtdefs.h is required for size_t
 #include <crtdefs.h>
 
 #ifdef __cplusplus
@@ -35,4 +33,4 @@ void *memmem(const void *haystack, size_t haystackLen, const void *needle, size_
 }
 #endif
 
-#endif
+#endif	/* CJET_WINDOWS_MEMMEM_H */

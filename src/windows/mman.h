@@ -3,17 +3,8 @@
 * mman-win32
 */
 
-#ifndef _SYS_MMAN_H_
-#define _SYS_MMAN_H_
-
-#ifndef _WIN32_WINNT		// Allow use of features specific to Windows XP or later.                   
-#define _WIN32_WINNT 0x0501	// Change this to the appropriate value to target other versions of Windows.
-#endif						
-
-/* All the headers include this file. */
-#ifndef _MSC_VER
-#include <_mingw.h>
-#endif
+#ifndef CJET_WINDOWS_MMAN_H
+#define CJET_WINDOWS_MMAN_H
 
 /* Determine offset type */
 #include <stdint.h>
@@ -60,4 +51,4 @@ extern "C" {
 }
 #endif
 
-#endif /*  _SYS_MMAN_H_ */
+#endif /*  CJET_WINDOWS_MMAN_H */

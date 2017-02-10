@@ -17,8 +17,8 @@
 *
 ******************************************************************/
 
-#ifndef GETOPT_H__
-#define GETOPT_H__
+#ifndef CJET_WINDOWS_GETOPT_H
+#define CJET_WINDOWS_GETOPT_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,4 +33,4 @@ int getopt(int argc, char *const argv[], const char *optstring);
 }
 #endif
 
-#endif
+#endif	/* CJET_WINDOWS_GETOPT_H */

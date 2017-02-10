@@ -1,6 +1,6 @@
  
-#ifndef EPOLL_MSAFD_H_
-#define EPOLL_MSAFD_H_
+#ifndef CJET_WINDOWS_EPOLL_MSAFD_H_
+#define CJET_WINDOWS_EPOLL_MSAFD_H_
 
 #include <windows.h>
 #include "ntapi.h"
@@ -71,4 +71,4 @@ static const GUID AFD_PROVIDER_IDS[] = {
       {0xb7, 0xbd, 0x18, 0x1f, 0x20, 0x89, 0x79, 0x2a}}
 };
 
-#endif  /* EPOLL_MSAFD_H_ */
+#endif  /* CJET_WINDOWS_EPOLL_MSAFD_H_ */

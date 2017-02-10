@@ -1,7 +1,7 @@
 /*
 *The MIT License (MIT)
 *
-* Copyright (c) <2017> <Stephan Gatzka>
+* Copyright (c) <2017> <Mathieu Borchardt>
 *
 * Permission is hereby granted, free of charge, to any person obtaining
 * a copy of this software and associated documentation files (the
@@ -24,39 +24,55 @@
 * SOFTWARE.
 */
 
-#include <stddef.h>
+#include <Windows.h>
+#include <wincrypt.h>
 #include <stdio.h>
-#include <stdlib.h>
 
 #include "jet_random.h"
 
-static FILE *dev_urandom = NULL;
+
+static HCRYPTPROV prov = NULL;
 
 int init_random(void)
 {
-	//TODO
-	dev_urandom = fopen("/dev/urandom", "r");
-	if (dev_urandom == NULL) {
-		return -1;
+	int isSuccess = -1;
+
+	if (prov == NULL)
+	{
+		if (CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL, 0))
+		{
+			isSuccess = 0;
+		}
 	}
-	else {
-		return 0;
-	}
+
+	return isSuccess;
 }
 
 void close_random(void)
 {
-	if (dev_urandom != NULL) {
-		fclose(dev_urandom);
+	int isSuccess = -1;
+
+	if (prov != NULL)
+	{
+		if (CryptReleaseContext(prov, 0))
+		{
+			isSuccess = 0;
+		}
 	}
+
+	return isSuccess;
 }
 
 void cjet_get_random_bytes(void *bytes, size_t num_bytes)
 {
-	int ret = fread(bytes, 1, num_bytes, dev_urandom);
-	/* Ignore return value deliberately.
-	* There is no good error handling when this call fails
-	* besides shutting down cjet completely.
-	*/
-	(void)ret;
+	long int li = 0;
+	if (CryptGenRandom(prov, sizeof(li), (BYTE *)&li))
+	{
+		printf("Random number: %ld\n", li);
+	}
+	else
+	{
+		/* Handle error */
+	}
+	(void)li;
 }

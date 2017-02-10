@@ -118,6 +118,9 @@
     <ClCompile Include="..\..\src\windows\jet_string.c">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\windows\uio.c">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Git\cjet\src\CMakeLists.txt" />
