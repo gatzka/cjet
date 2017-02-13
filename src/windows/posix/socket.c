@@ -25,6 +25,7 @@
 */
 
 #include <io.h>
+#include <malloc.h>
 
 #include "windows/uio.h"
 #include "compiler.h"
@@ -41,18 +42,15 @@ ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, size_t 
 {
 	ssize_t ret = 0;
 
-	if (count > 0)
+	if (likely(count > 0))
 	{
-		struct iovec *iov = malloc(count * sizeof(unsigned int));
-
+		struct iovec *iov = alloca(count * sizeof(unsigned int));
 		for (unsigned int i = 0; i < count; i++)
 		{
 			iov[i].iov_base = (void *)io_vec[i].iov_base;
 			iov[i].iov_len = io_vec[i].iov_len;
 		}
 		ret = writev(sock, iov, sizeof(iov) / sizeof(struct iovec));
-
-		free(iov);
 	}
 	
 	return ret;

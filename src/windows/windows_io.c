@@ -27,10 +27,8 @@
 #include <WS2tcpip.h>
 #include <Winsock2.h>
 #include <io.h>
-
 #include <errno.h>
 #include <fcntl.h>
-
 #include <signal.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -39,11 +37,9 @@
 #include <string.h>
 #include <sys/types.h>
 
-#include "windows/sigpipe.h"
 #include "alloc.h"
 #include "buffered_reader.h"
 #include "compiler.h"
-#include "eventloop.h"
 #include "http_connection.h"
 #include "http_server.h"
 #include "jet_server.h"
@@ -58,57 +54,54 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+
 static int go_ahead = 1;
 
-static int set_fd_non_blocking(int fd)
+static int set_fd_non_blocking(SOCKET fd)
 {
 	int fd_flags;
-	/*
-	fd_flags = fcntl(fd, F_GETFL, 0);
-	if (unlikely(fd_flags < 0)) {
-		log_err("Could not get fd flags!\n");
+
+	u_long mode = 1; /* non-blocking */
+	fd_flags = ioctlsocket(fd, FIONBIO, &mode);
+	if (unlikely(fd_flags != 0)) {
+		log_err("ioctlsocket error!\n");
 		return -1;
 	}
-	fd_flags |= O_NONBLOCK;
-	if (unlikely(fcntl(fd, F_SETFL, fd_flags) < 0)) {
-		log_err("Could not set %s!\n", "O_NONBLOCK");
-		return -1;
-	}
-	*/
+	
 	return 0;
 }
 
-static int configure_keepalive(int fd)
+static int configure_keepalive(SOCKET fd)
 {
 	int opt = 12;
 	/*
-	if (setsockopt(fd, SOL_TCP, TCP_KEEPIDLE, &opt, sizeof(opt)) == -1) {
+	if (setsockopt(fd, IPPROTO_TCP,  TCP_KEEPIDLE, &opt, sizeof(opt)) != 0) {
 		log_err("error setting socket option %s\n", "TCP_KEEPIDLE");
 		return -1;
 	}
-
+	
 	opt = 3;
-	if (setsockopt(fd, SOL_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) == -1) {
+	if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPINTVL, &opt, sizeof(opt)) != 0) {
 		log_err("error setting socket option %s\n", "TCP_KEEPINTVL");
 		return -1;
 	}
 
 	opt = 2;
-	if (setsockopt(fd, SOL_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) == -1) {
+	if (setsockopt(fd, IPPROTO_TCP, TCP_KEEPCNT, &opt, sizeof(opt)) != 0) {
 		log_err("error setting socket option %s\n", "TCP_KEEPCNT");
 		return -1;
 	}
-
+	*/
 	opt = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) != 0) {
 		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
 		return -1;
 	}
-	*/
+
 	return 0;
 }
 
-static int prepare_peer_socket(int fd)
+static int prepare_peer_socket(SOCKET fd)
 {
 	static const int tcp_nodelay_on = 1;
 
@@ -116,22 +109,22 @@ static int prepare_peer_socket(int fd)
 		(setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
 			sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
-		close(fd);
+		closesocket(fd);
 		return -1;
 	}
 
 	if (configure_keepalive(fd) < 0) {
 		log_err("Could not configure keepalive!\n");
-		close(fd);
+		closesocket(fd);
 		return -1;
 	}
 	return 0;
 }
 
-static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local_connection)
+static void handle_new_jet_connection(struct io_event *ev, SOCKET fd, bool is_local_connection)
 {
 	if (unlikely(prepare_peer_socket(fd) < 0)) {
-		close(fd);
+		closesocket(fd);
 		return;
 	}
 
@@ -162,13 +155,13 @@ static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local
 alloc_bs_failed:
 	cjet_free(peer);
 alloc_peer_failed:
-	close(fd);
+	closesocket(fd);
 }
 
-static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
+static void handle_http(struct io_event *ev, SOCKET fd, bool is_local_connection)
 {
 	if (unlikely(prepare_peer_socket(fd) < 0)) {
-		close(fd);
+		closesocket(fd);
 		return;
 	}
 	const struct http_server *server = const_container_of(ev, struct http_server, ev);
@@ -205,7 +198,7 @@ init_failed:
 alloc_bs_failed:
 	cjet_free(connection);
 alloc_failed:
-	close(fd);
+	closesocket(fd);
 }
 
 static bool is_localhost(const struct sockaddr_storage *addr)
@@ -238,14 +231,14 @@ static bool is_localhost(const struct sockaddr_storage *addr)
 	}
 }
 
-static enum eventloop_return accept_common(struct io_event *ev, void(*peer_function)(struct io_event *ev, int fd, bool is_local_connection))
+static enum eventloop_return accept_common(struct io_event *ev, void(*peer_function)(struct io_event *ev, SOCKET fd, bool is_local_connection))
 {
 	while (1) {
 		struct sockaddr_storage addr;
 		memset(&addr, 0, sizeof(addr));
 		socklen_t addrlen = sizeof(addr);
-		int peer_fd = accept(ev->sock, (struct sockaddr *)&addr, &addrlen);
-		if (peer_fd == -1) {
+		SOCKET peer_fd = accept(ev->sock, (struct sockaddr *)&addr, &addrlen);
+		if (peer_fd == NULL) {
 			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
 				return EL_CONTINUE_LOOP;
 			}
@@ -259,7 +252,7 @@ static enum eventloop_return accept_common(struct io_event *ev, void(*peer_funct
 				peer_function(ev, peer_fd, is_local);
 			}
 			else {
-				close(peer_fd);
+				closesocket(peer_fd);
 			}
 		}
 	}
@@ -303,22 +296,28 @@ static int start_server(struct io_event *ev)
 	}
 }
 
-static int create_server_socket_all_interfaces(int port)
+static SOCKET create_server_socket_all_interfaces(int port)
 {
-	int listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
-	if (unlikely(listen_fd < 0)) {
+	WSADATA wsaData = { 0 };
+	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	if (iResult != 0) {
+		log_err(L"WSAStartup failed: %d\n", iResult);
+		return NULL;
+	}
+
+	SOCKET listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
+	if (unlikely(listen_fd == INVALID_SOCKET)) {
 		log_err("Could not create listen socket!\n");
-		return -1;
+		return NULL;
 	}
 
 	static const int reuse_on = 1;
-	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-		sizeof(reuse_on)) < 0)) {
+	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on, sizeof(reuse_on)) != 0)) {
 		log_err("Could not set %s!\n", "SO_REUSEADDR");
 		goto error;
 	}
 
-	if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
+	if (unlikely(set_fd_non_blocking(listen_fd) != 0)) {
 		log_err("Could not set %s!\n", "O_NONBLOCK");
 		goto error;
 	}
@@ -328,12 +327,12 @@ static int create_server_socket_all_interfaces(int port)
 	serveraddr.sin6_family = AF_INET6;
 	serveraddr.sin6_port = htons(port);
 	serveraddr.sin6_addr = in6addr_any;
-	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
+	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) != 0)) {
 		log_err("bind failed!\n");
 		goto error;
 	}
 
-	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) != 0)) {
 		log_err("listen failed!\n");
 		goto error;
 	}
@@ -341,11 +340,11 @@ static int create_server_socket_all_interfaces(int port)
 	return listen_fd;
 
 error:
-	close(listen_fd);
-	return -1;
+	closesocket(listen_fd);
+	return NULL;
 }
 
-static int create_server_socket_bound(const char *bind_addr, int port)
+static SOCKET create_server_socket_bound(const char *bind_addr, int port)
 {
 	struct addrinfo hints;
 	struct addrinfo *servinfo;
@@ -364,11 +363,11 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		return -1;
 	}
 
-	int listen_fd = -1;
+	SOCKET listen_fd = NULL;
 	struct addrinfo *rp;
 	for (rp = servinfo; rp != NULL; rp = rp->ai_next) {
 		listen_fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (listen_fd == -1) {
+		if (listen_fd == NULL) {
 			continue;
 		}
 
@@ -376,7 +375,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
 			sizeof(reuse_on)) < 0)) {
 			log_err("Could not set %s!\n", "SO_REUSEADDR");
-			close(listen_fd);
+			closesocket(listen_fd);
 			continue;
 		}
 
@@ -385,33 +384,33 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
 				sizeof(ipv6_only)) < 0)) {
 				log_err("Could not set %s!\n", "IPV6_V6ONLY");
-				close(listen_fd);
+				closesocket(listen_fd);
 				continue;
 			}
 		}
 
 		if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
 			log_err("Could not set %s!\n", "O_NONBLOCK");
-			close(listen_fd);
+			closesocket(listen_fd);
 			continue;
 		}
 
 		if (bind(listen_fd, rp->ai_addr, rp->ai_addrlen) == 0) {
 			break;
 		}
-		close(listen_fd);
+		closesocket(listen_fd);
 	}
 
 	freeaddrinfo(servinfo);
 
-	if ((listen_fd == -1) || (rp == NULL)) {
+	if ((listen_fd == NULL) || (rp == NULL)) {
 		log_err("Could not bind to address!");
 		return -1;
 	}
 
-	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) != 0)) {
 		log_err("listen failed!\n");
-		close(listen_fd);
+		closesocket(listen_fd);
 		return -1;
 	}
 
@@ -421,7 +420,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 static void stop_server(struct io_event *ev)
 {
 	ev->loop->remove(ev->loop->this_ptr, ev);
-	close(ev->sock);
+	closesocket(ev->sock);
 }
 
 static void sighandler(int signum)
@@ -432,16 +431,17 @@ static void sighandler(int signum)
 
 static int register_signal_handler(void)
 {
-	if (signal(SIGTERM, sighandler) == SIG_ERR) {
+	if (signal(SIGTERM, sighandler) != 0) {
 		log_err("installing signal handler for SIGTERM failed!\n");
 		return -1;
 	}
-	if (signal(SIGINT, sighandler) == SIG_ERR) {
+	if (signal(SIGINT, sighandler) != 0) {
 		log_err("installing signal handler for SIGINT failed!\n");
 		signal(SIGTERM, SIG_DFL);
 		return -1;
 	}
 	/*
+	//TODO
 	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
 		log_err("ignoring SIGPIPE failed!\n");
 		return -1;
@@ -456,24 +456,20 @@ static void unregister_signal_handler(void)
 	signal(SIGTERM, SIG_DFL);
 }
 
-static int drop_privileges(const char *user_name)
+static int drop_privileges()
 {
-	/*
-	struct passwd *passwd = getpwnam(user_name);
-	if (passwd == NULL) {
-		log_err("user name \"%s\" not available!\n", user_name);
+	HANDLE hProcessToken = NULL;
+	HANDLE hProcess = GetCurrentProcess();
+	if (!OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hProcessToken)) {
 		return -1;
 	}
-	if (setgid(passwd->pw_gid) == -1) {
-	log_err("Can't set process' gid to gid of \"%s\"!\n", user_name);
-	return -1;
-	}
-	if (setuid(passwd->pw_uid) == -1) {
-	log_err("Can't set process' uid to uid of \"%s\"!\n", user_name);
-	return -1;
-	}
-	*/
-	return 0;
+
+	// TRUE = disable all privilieges
+	BOOL bResult = AdjustTokenPrivileges(hProcessToken, TRUE, NULL, 0, 0, 0);
+
+	CloseHandle(hProcessToken);
+
+	return bResult;
 }
 
 static int run_jet(const struct eventloop *loop, const struct cmdline_config *config)
@@ -483,14 +479,14 @@ static int run_jet(const struct eventloop *loop, const struct cmdline_config *co
 		return -1;
 	}
 
-	/*
 	if (!config->run_foreground) {
+		/*
 		if (daemon(0, 0) != 0) {
 			log_err("Can't daemonize cjet!\n");
 			return -1;
 		}
+		*/
 	}
-	*/
 
 	int ret = loop->run(loop->this_ptr, &go_ahead);
 	destroy_all_peers();
@@ -502,8 +498,8 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	int ret = 0;
 
 	// start jet server on ipv6 loopback
-	int ipv6_jet_fd = create_server_socket_bound("::1", CONFIG_JET_PORT);
-	if (ipv6_jet_fd < 0) {
+	SOCKET ipv6_jet_fd = create_server_socket_bound("::1", CONFIG_JET_PORT);
+	if (ipv6_jet_fd == NULL) {
 		return -1;
 	}
 	struct jet_server ipv6_jet_server = {
@@ -517,59 +513,59 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	};
 	ret = start_server(&ipv6_jet_server.ev);
 	if (ret < 0) {
-		close(ipv6_jet_fd);
+		closesocket(ipv6_jet_fd);
 		return -1;
 	}
 
 	// start jet server on ipv4 loopback
-	int ipv4_jet_fd = create_server_socket_bound("127.0.0.1", CONFIG_JET_PORT);
-	if (ipv4_jet_fd < 0) {
+	SOCKET ipv4_jet_fd = create_server_socket_bound("127.0.0.1", CONFIG_JET_PORT);
+	if (ipv4_jet_fd == NULL) {
 		ret = -1;
 		goto create_ipv4_jet_socket_failed;
 	}
 
 	struct jet_server ipv4_jet_server = {
 		.ev = {
-		.read_function = accept_jet,
-		.write_function = NULL,
-		.error_function = accept_jet_error,
-		.loop = loop,
-		.sock = ipv4_jet_fd
-	}
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = ipv4_jet_fd
+		}
 	};
 	ret = start_server(&ipv4_jet_server.ev);
 	if (ret < 0) {
-		close(ipv4_jet_fd);
+		closesocket(ipv4_jet_fd);
 		goto start_ipv4_jet_server_failed;
 	}
 
 	// start websocket jet server on ipv6 loopback
-	int ipv6_http_fd = create_server_socket_bound("::1", CONFIG_JETWS_PORT);
-	if (ipv6_http_fd < 0) {
+	SOCKET ipv6_http_fd = create_server_socket_bound("::1", CONFIG_JETWS_PORT);
+	if (ipv6_http_fd == NULL) {
 		ret = -1;
 		goto create_ipv6_jetws_socket_failed;
 	}
 
 	struct http_server ipv6_http_server = {
 		.ev = {
-		.read_function = accept_http,
-		.write_function = NULL,
-		.error_function = accept_http_error,
-		.loop = loop,
-		.sock = ipv6_http_fd
-	},
+			.read_function = accept_http,
+			.write_function = NULL,
+			.error_function = accept_http_error,
+			.loop = loop,
+			.sock = ipv6_http_fd
+		},
 		.handler = handler,
 		.num_handlers = num_handlers
 	};
 	ret = start_server(&ipv6_http_server.ev);
 	if (ret < 0) {
-		close(ipv6_http_fd);
+		closesocket(ipv6_http_fd);
 		goto start_ipv6_jetws_server_failed;
 	}
 
 	// start websocket jet server on ipv4 loopback
-	int ipv4_http_fd = create_server_socket_bound("127.0.0.1", CONFIG_JETWS_PORT);
-	if (ipv4_http_fd < 0) {
+	SOCKET ipv4_http_fd = create_server_socket_bound("127.0.0.1", CONFIG_JETWS_PORT);
+	if (ipv4_http_fd == NULL) {
 		ret = -1;
 		goto create_ipv4_jetws_socket_failed;
 	}
@@ -587,7 +583,7 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	};
 	ret = start_server(&ipv4_http_server.ev);
 	if (ret < 0) {
-		close(ipv4_http_fd);
+		closesocket(ipv4_http_fd);
 		goto start_ipv4_jetws_server_failed;
 	}
 
@@ -610,28 +606,28 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 {
 	int ret = 0;
 
-	int jet_fd = create_server_socket_all_interfaces(CONFIG_JET_PORT);
-	if (jet_fd < 0) {
+	SOCKET jet_fd = create_server_socket_all_interfaces(CONFIG_JET_PORT);
+	if (jet_fd == NULL) {
 		return -1;
 	}
-
+	
 	struct jet_server jet_server = {
 		.ev = {
-		.read_function = accept_jet,
-		.write_function = NULL,
-		.error_function = accept_jet_error,
-		.loop = loop,
-		.sock = jet_fd
-	}
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = jet_fd
+		}
 	};
 	ret = start_server(&jet_server.ev);
-	if (ret  < 0) {
-		close(jet_fd);
+	if (ret < 0) {
+		closesocket(jet_fd);
 		return -1;
 	}
 
-	int http_fd = create_server_socket_all_interfaces(CONFIG_JETWS_PORT);
-	if (http_fd < 0) {
+	SOCKET http_fd = create_server_socket_all_interfaces(CONFIG_JETWS_PORT);
+	if (http_fd == NULL) {
 		ret = -1;
 		goto create_jetws_socket_failed;
 	}
@@ -649,7 +645,7 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 	};
 	ret = start_server(&http_server.ev);
 	if (ret  < 0) {
-		close(http_fd);
+		closesocket(http_fd);
 		goto start_jetws_server_failed;
 	}
 
@@ -669,7 +665,7 @@ int run_io(struct eventloop *loop, const struct cmdline_config *config)
 	if (register_signal_handler() < 0) {
 		return -1;
 	}
-
+	
 	if (loop->init(loop->this_ptr) < 0) {
 		go_ahead = 0;
 		ret = -1;

@@ -24,8 +24,8 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_LINUX_EVENTLOOP_H
-#define CJET_LINUX_EVENTLOOP_H
+#ifndef CJET_EVENTLOOP_H
+#define CJET_EVENTLOOP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -55,6 +55,7 @@ struct io_event {
 	eventloop_function error_function;
 	struct eventloop *loop;
 };
+
 
 struct eventloop {
 	void *this_ptr;

@@ -45,7 +45,6 @@ struct itimerspec
 	struct timespec it_value;     /* Initial expiration */
 };
 
-
 static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 {
 	struct itimerspec ts;
@@ -58,7 +57,6 @@ static struct itimerspec convert_timeoutns_to_itimerspec(uint64_t timeout)
 	ts.it_value.tv_nsec = nanos;
 	return ts;
 }
-
 
 static enum eventloop_return timer_read(struct io_event *ev)
 {
@@ -76,14 +74,12 @@ static enum eventloop_return timer_read(struct io_event *ev)
 	return EL_CONTINUE_LOOP;
 }
 
-
 static enum eventloop_return timer_error(struct io_event *ev)
 {
 	// TODO: maybe call registered callback with error parameter
 	(void)ev;
 	return EL_CONTINUE_LOOP;
 }
-
 
 static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handler, void *handler_context)
 {
@@ -92,9 +88,8 @@ static int timer_start(void *this_ptr, uint64_t timeout_ns, timer_handler handle
 	timer->handler_context = handler_context;
 
 	struct itimerspec timeout = convert_timeoutns_to_itimerspec(timeout_ns);
-	return timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
+	return 0;//todo timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
 }
-
 
 static int timer_cancel(void *this_ptr)
 {
@@ -102,7 +97,7 @@ static int timer_cancel(void *this_ptr)
 	static struct itimerspec timeout;
 	memset(&timeout, 0x0, sizeof(timeout));
 
-	int ret = timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
+	int ret = 0; // todo timerfd_settime(timer->ev.sock, 0, &timeout, NULL);
 	if (likely(ret == 0)) {
 		timer->handler(timer->handler_context, true);
 	}
@@ -113,12 +108,10 @@ static int timer_cancel(void *this_ptr)
 	return ret;
 }
 
-
 int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 {
-	/*
 	timer->ev.loop = loop;
-	int ret = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
+	int ret = 0;//todo timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
 	if (unlikely(ret == -1)) {
 		return -1;
 	}
@@ -130,7 +123,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 
 	timer->start = timer_start;
 	timer->cancel = timer_cancel;
-	
+
 	enum eventloop_return ev_ret = timer->ev.loop->add(timer->ev.loop->this_ptr, &timer->ev);
 	if (unlikely(ev_ret == EL_ABORT_LOOP)) {
 		return -1;
@@ -138,9 +131,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 	else {
 		return 0;
 	}
-	*/
 }
-
 
 void cjet_timer_destroy(struct cjet_timer *timer)
 {

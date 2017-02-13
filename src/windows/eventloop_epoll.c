@@ -28,11 +28,11 @@
 #include <errno.h>
 #include <string.h>
 
-#include "eventloop.h"
 #include "windows/epoll/epoll.h"
 #include "compiler.h"
+#include "eventloop.h"
 #include "generated/os_config.h"
-#include "linux/eventloop_epoll.h"
+#include "windows/eventloop_epoll.h"
 #include "log.h"
 
 static enum eventloop_return handle_events(int num_events, struct epoll_event *events)
@@ -134,3 +134,4 @@ void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)
 	const struct eventloop_epoll *loop = this_ptr;
 	epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
 }
+

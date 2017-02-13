@@ -29,8 +29,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <Winsock2.h>
 
-#include "windows/sigpipe.h"
 #include "windows/getopt.h"
 #include "windows/eventloop_epoll.h"
 #include "windows/windows_io.h"
@@ -52,14 +52,14 @@ int main(int argc, char **argv)
 		.passwd_file = NULL,
 		.request_target = "/api/jet/",
 	};
-
+	
 	if (init_random() < 0) {
 		log_err("Could not initialize random seed!\n");
 		return EXIT_FAILURE;
 	}
 	
 	init_parser();
-
+	
 	int ret = EXIT_SUCCESS;
 
 	int c;
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
 		goto load_passwd_data_failed;
 	}
 
-	signal(SIGPIPE, SIG_IGN);
+	//TODO signal(SIGPIPE, SIG_IGN);
 
 	if ((element_hashtable_create()) == -1) {
 		log_err("Cannot allocate hashtable for states!\n");
@@ -116,6 +116,7 @@ int main(int argc, char **argv)
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
+
 	if (run_io(&eloop.loop, &config) < 0) {
 		ret = EXIT_FAILURE;
 		goto run_io_failed;

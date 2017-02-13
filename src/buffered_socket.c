@@ -24,6 +24,10 @@
  * SOFTWARE.
  */
 
+#if defined(_MSC_VER)
+#include <malloc.h>
+#endif
+
 #include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -334,7 +338,7 @@ int buffered_socket_close(void *context)
 int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsigned int count)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
-	struct socket_io_vector *iov = malloc(count * sizeof(unsigned int) + 1);
+	struct socket_io_vector *iov = alloca(count * sizeof(unsigned int) + 1);
 	size_t to_write = bs->to_write;
 	iov[0].iov_base = bs->write_buffer;
 	iov[0].iov_len = bs->to_write;
@@ -346,9 +350,7 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 	}
 
 	ssize_t sent = socket_writev(bs->ev.sock, iov, count + 1);
-	if (likely(sent == (ssize_t)to_write))
-	{
-		free(iov);
+	if (likely(sent == (ssize_t)to_write)) {
 		return 0;
 	}
 
@@ -358,11 +360,9 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 	}
 
 	if (unlikely((sent == -1) &&
-		((errno != EAGAIN) && (errno != EWOULDBLOCK))))
-	{
+		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
 		log_err("unexpected %s error: %s!\n", "write",
 			strerror(errno));
-		free(iov);
 		return -1;
 	}
 
@@ -376,15 +376,11 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 		io_vec_written = written - bs->to_write;
 		bs->to_write = 0;
 	}
-	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0))
-	{
-		free(iov);
+	if (unlikely(copy_iovec_to_write_buffer(bs, io_vec, count, io_vec_written) < 0)) {
 		return -1;
 	}
 
-	if (sent == -1) 
-	{
-		free(iov);
+	if (sent == -1) {
 		return 0;
 	}
 
@@ -392,7 +388,6 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 	* The write call didn't block, but only wrote parts of the
 	* messages. Try to send the rest.
 	*/
-	free(iov);
 	return send_buffer(bs);
 }
 #else

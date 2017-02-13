@@ -32,42 +32,33 @@
 #include "table.h"
 
 
-#if defined(_MSC_VER)
- //TODO
-#else
 DECLARE_HASHTABLE_STRING(element_table, CONFIG_ELEMENT_TABLE_ORDER, 1U)
-#endif
 
 static struct hashtable_string *element_hashtable = NULL;
 
 int element_hashtable_create(void)
 {
-	/*
 	element_hashtable = HASHTABLE_CREATE(element_table);
 	if (unlikely(element_hashtable == NULL)) {
 		return -1;
 	}
 	return 0;
-	*/
 }
 
 void element_hashtable_delete(void)
 {
-	//HASHTABLE_DELETE(element_table, element_hashtable);
+	HASHTABLE_DELETE(element_table, element_hashtable);
 }
 
 int element_table_put(const char *path, void *value)
 {
-	/*
 	struct value_element_table new_val;
 	new_val.vals[0] = value;
 	return HASHTABLE_PUT(element_table, element_hashtable, path, new_val, NULL);
-	*/
 }
 
 void *element_table_get(const char *path)
 {
-	/*
 	struct value_element_table val;
 	int ret = HASHTABLE_GET(element_table, element_hashtable, path, &val);
 	if (ret == HASHTABLE_SUCCESS) {
@@ -75,13 +66,10 @@ void *element_table_get(const char *path)
 	} else {
 		return NULL;
 	}
-	*/
 }
 
 void element_table_remove(const char *path)
 {
-	/*
 	int ret = HASHTABLE_REMOVE(element_table, element_hashtable, path, NULL);
 	if (ret == 0) {}
-	*/
 }

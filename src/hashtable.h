@@ -71,7 +71,13 @@
 
 #define kmalloc(size, priority) cjet_malloc(size)
 #define kfree(__ptr) cjet_free(__ptr)
+
+#if defined(_MSC_VER)
+#include <Windows.h>
+#define wmb() MemoryBarrier()
+#else
 #define wmb() __sync_synchronize()
+#endif
 
 #define HASHTABLE_SUCCESS 0
 #define HASHTABLE_FULL -1
@@ -95,6 +101,7 @@ static const uint64_t hash64_magic = 0xd43ece626aa9260aULL;
  * string" and type "const char *". Please see also
  * DECLARE_HASHTABLE_STRING.
  */
+#if defined(_MSC_VER)
 #define DECLARE_HASHTABLE(name, order, type_name, type, value_entries) \
 \
 static const uint32_t add_range_##name = (1 << (order - 1)); \
@@ -124,6 +131,173 @@ static inline void hashtable_delete_##name(struct hashtable_##type_name *table) 
 	return; \
 } \
 \
+static inline int hashtable_get_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
+{ \
+	uint32_t hash_pos = hash_func_##name##_##type_name(key); \
+	uint32_t pos = hash_pos; \
+	uint32_t hop_info = table[hash_pos].hop_info; \
+	while (hop_info != 0) { \
+		if (((hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			*value = table[pos].value; \
+			return HASHTABLE_SUCCESS; \
+		} \
+		hop_info = hop_info >> 1; \
+		pos = wrap_pos##name(pos + 1); \
+	} \
+	return HASHTABLE_INVALIDENTRY; \
+} \
+\
+static inline uint32_t hop_range_##name(void) \
+{ \
+	return sizeof(((struct hashtable_##type_name*)0)->hop_info) * 8; \
+}\
+\
+static inline uint32_t find_closer_entry_##name(struct hashtable_##type_name *table, uint32_t free_position) \
+{ \
+	uint32_t check_distance = (hop_range_##name() - 1); \
+	while (check_distance > 0) { \
+		unsigned int i; \
+		uint32_t check_position = wrap_pos##name(free_position - check_distance); \
+		uint32_t check_hop_info = table[check_position].hop_info; \
+		uint32_t mask = 1; \
+		uint32_t hop_position = 0xffffffff; \
+		for (i = 0; i < check_distance; ++i) { \
+			if ((mask & check_hop_info) != 0) { \
+				hop_position = wrap_pos##name(check_position + i); \
+				break; \
+			} \
+			mask = mask << 1; \
+		} \
+		if (hop_position != 0xffffffff) { \
+/* We found a table entry to swap the free entry with. */ \
+			table[free_position].key = table[hop_position].key; \
+			table[free_position].value = table[hop_position].value; \
+			wmb(); \
+			check_hop_info = check_hop_info & ~(mask); \
+			check_hop_info = check_hop_info | (1 << check_distance); \
+			table[check_position].hop_info = check_hop_info; \
+			return hop_position ;\
+		} \
+		--check_distance; \
+	} \
+	return 0xffffffff; \
+} \
+\
+static inline int hashtable_put_##name(struct hashtable_##type_name *table, type key, struct value_##name value, struct value_##name *prev_value) \
+{ \
+	uint32_t hash_pos; \
+	uint32_t pos; \
+	uint32_t hop_info; \
+	uint32_t free_distance; \
+	uint32_t free_pos; \
+	if (prev_value != NULL) { \
+		memset(prev_value, 0, sizeof(*prev_value)); \
+	} \
+	if (key == (type)HASHTABLE_INVALIDENTRY) { \
+		return HASHTABLE_KEYINVAL; \
+	} \
+\
+/* Look if the key is already in the table. */ \
+	hash_pos = hash_func_##name##_##type_name(key); \
+	pos = hash_pos; \
+	hop_info = table[hash_pos].hop_info; \
+	while (hop_info != 0) { \
+		if (((hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			if (prev_value != NULL) { \
+				*prev_value = table[pos].value; \
+			} \
+			table[pos].value = value; \
+			return HASHTABLE_SUCCESS; \
+		} \
+		hop_info = hop_info >> 1; \
+		pos = wrap_pos##name(pos + 1); \
+	} \
+\
+/* The key wasn't found, so let's insert. */ \
+/* Make linear search from hash_pos to add_range_##name to find an empty table entry. */ \
+	free_distance = 0; \
+	pos = hash_pos; \
+	while (free_distance < add_range_##name) { \
+		if (table[pos].key == (type)HASHTABLE_INVALIDENTRY) { \
+			break; \
+		} \
+		++free_distance; \
+		pos = wrap_pos##name(pos + 1); \
+	} \
+	free_pos = pos; \
+	if (free_distance < add_range_##name) { \
+		do { \
+			if (free_distance < hop_range_##name()) { \
+				table[free_pos].value = value; \
+				table[free_pos].key = key; \
+				wmb(); \
+				hop_info = table[hash_pos].hop_info; \
+				hop_info = hop_info | (1 << free_distance); \
+				table[hash_pos].hop_info = hop_info; \
+				return HASHTABLE_SUCCESS; \
+			} else { \
+/* Now we must try to swap some entries */ \
+				free_pos = find_closer_entry_##name(table, free_pos); \
+				free_distance = wrap_pos##name(free_pos - hash_pos); \
+			} \
+		} while (free_pos != 0xffffffff); \
+	} \
+	return HASHTABLE_FULL; \
+} \
+\
+static inline int hashtable_remove_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
+{ \
+	uint32_t hash_pos = hash_func_##name##_##type_name(key); \
+	uint32_t pos = hash_pos; \
+	uint32_t hop_info = table[hash_pos].hop_info; \
+	uint32_t check_hop_info = hop_info; \
+	while (check_hop_info != 0) { \
+		if (((check_hop_info & 0x1) == 1) && (is_equal_##type_name(table[pos].key, key))) { \
+			uint32_t distance; \
+			if (value != NULL) { \
+				*value = table[pos].value; \
+			} \
+			table[pos].key = (type)HASHTABLE_INVALIDENTRY; \
+			wmb(); \
+			memset(&table[pos].value, 0, sizeof(table[pos].value)); \
+			distance = wrap_pos##name(pos - hash_pos); \
+			table[hash_pos].hop_info = hop_info & ~(1 << distance); \
+			return HASHTABLE_SUCCESS; \
+		} \
+		check_hop_info = check_hop_info >> 1; \
+		pos = wrap_pos##name(pos + 1); \
+	} \
+	return HASHTABLE_INVALIDENTRY; \
+}
+#else
+#define DECLARE_HASHTABLE(name, order, type_name, type, value_entries) \
+\
+static const uint32_t add_range_##name = (1 << (order - 1)); \
+static const uint32_t table_size_##name = (1 << (order)); \
+\
+static inline uint32_t wrap_pos##name(uint32_t pos) \
+{ \
+	return pos & (table_size_##name - 1); \
+} \
+\
+static inline struct hashtable_##type_name *hashtable_create_##name(void) \
+{ \
+	struct hashtable_##type_name *table = (struct hashtable_##type_name *)kmalloc(table_size_##name * sizeof(struct hashtable_##type_name), GFP_KERNEL) ; \
+	if (table != NULL) { \
+		size_t i; \
+		for (i = 0; i < table_size_##name; ++i) { \
+			memset(&table[i], 0, sizeof(table[0])); \
+			table[i].key = (type)HASHTABLE_INVALIDENTRY; \
+		} \
+	} \
+	return table; \
+} \
+\
+static inline void hashtable_delete_##name(struct hashtable_##type_name *table) \
+{ \
+	kfree(table); \
+	return; \
+} \
 _Pragma ("GCC diagnostic ignored \"-Wunused-function\"") \
 static inline int hashtable_get_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
 { \
@@ -264,6 +438,7 @@ static inline int hashtable_remove_##name(struct hashtable_##type_name *table, t
 	} \
 	return HASHTABLE_INVALIDENTRY; \
 }
+#endif
 
 
 
