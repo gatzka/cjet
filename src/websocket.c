@@ -44,7 +44,7 @@ static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
 
 #ifndef ARRAY_SIZE
- #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 #define CRLF "\r\n"
@@ -58,7 +58,7 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 
 static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
 {
-	for (unsigned int i= 0; i < length; i++) {
+	for (unsigned int i = 0; i < length; i++) {
 		buffer[i] = buffer[i] ^ (mask[i % 4]);
 	}
 }
@@ -98,8 +98,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		}
 		break;
 
-	case WS_PING_FRAME:
-	{
+	case WS_PING_FRAME: {
 		int pong_ret = websocket_send_pong_frame(s, frame, length);
 		if (unlikely(pong_ret < 0)) {
 			// TODO: maybe call the error callback?
@@ -118,8 +117,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		}
 		break;
 
-	case WS_CLOSE_FRAME:
-	{
+	case WS_CLOSE_FRAME: {
 		uint16_t status_code = 0;
 		if (length >= 2) {
 			memcpy(&status_code, frame, sizeof(status_code));
@@ -176,7 +174,6 @@ static enum bs_read_callback_return ws_get_payload(void *context, uint8_t *buf, 
 			handle_error(s, WS_CLOSE_INTERNAL_ERROR);
 			return BS_CLOSED;
 		}
-
 	}
 	return BS_OK;
 }
@@ -363,19 +360,19 @@ static int send_upgrade_response(struct http_connection *connection)
 	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
 
 	static const char switch_response[] =
-		"HTTP/1.1 101 Switching Protocols" CRLF
-		"Upgrade: websocket" CRLF
-		"Connection: Upgrade" CRLF
-		"Sec-WebSocket-Accept: ";
+	    "HTTP/1.1 101 Switching Protocols" CRLF
+	    "Upgrade: websocket" CRLF
+	    "Connection: Upgrade" CRLF
+	    "Sec-WebSocket-Accept: ";
 
-	static const char ws_protocol[] = 
-		CRLF "Sec-Websocket-Protocol: ";
+	static const char ws_protocol[] =
+	    CRLF "Sec-Websocket-Protocol: ";
 
 	static const char switch_response_end[] = CRLF CRLF;
 
 	struct socket_io_vector iov[5];
 	iov[0].iov_base = switch_response;
-	iov[0].iov_len = sizeof(switch_response ) - 1;
+	iov[0].iov_len = sizeof(switch_response) - 1;
 	iov[1].iov_base = accept_value;
 	iov[1].iov_len = sizeof(accept_value);
 	iov[2].iov_base = ws_protocol;
@@ -395,19 +392,19 @@ int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t len
 	struct websocket *s = connection->parser.data;
 
 	static const char sec_key[] = "Sec-WebSocket-Key";
-	if ((sizeof(sec_key) - 1  == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
+	if ((sizeof(sec_key) - 1 == length) && (jet_strncasecmp(at, sec_key, length) == 0)) {
 		s->current_header_field = HEADER_SEC_WEBSOCKET_KEY;
 		return 0;
 	}
 
 	static const char ws_version[] = "Sec-WebSocket-Version";
-	if ((sizeof(ws_version) - 1  == length) && (jet_strncasecmp(at, ws_version, length) == 0)) {
+	if ((sizeof(ws_version) - 1 == length) && (jet_strncasecmp(at, ws_version, length) == 0)) {
 		s->current_header_field = HEADER_SEC_WEBSOCKET_VERSION;
 		return 0;
 	}
 
 	static const char ws_protocol[] = "Sec-WebSocket-Protocol";
-	if ((sizeof(ws_protocol) - 1  == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
+	if ((sizeof(ws_protocol) - 1 == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
 		s->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
 		return 0;
 	}
@@ -457,7 +454,7 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 			const char *end = start;
 			while (length > 0) {
 				if (*end == ',') {
-					ptrdiff_t len  = end - start;
+					ptrdiff_t len = end - start;
 					fill_requested_sub_protocol(s, start, len);
 					start = end;
 					break;
@@ -466,12 +463,12 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 				length--;
 			}
 			if (length == 0) {
-				ptrdiff_t len  = end - start;
+				ptrdiff_t len = end - start;
 				fill_requested_sub_protocol(s, start, len);
 			}
 		} else {
-			 start++;
-			 length--;
+			start++;
+			length--;
 		}
 	}
 }
@@ -483,7 +480,7 @@ int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t len
 	struct http_connection *connection = container_of(p, struct http_connection, parser);
 	struct websocket *s = connection->parser.data;
 
-	switch(s->current_header_field) {
+	switch (s->current_header_field) {
 	case HEADER_SEC_WEBSOCKET_KEY:
 		ret = save_websocket_key(s->sec_web_socket_key, at, length);
 		break;

@@ -28,9 +28,9 @@
 #define CJET_REQUEST_H
 
 #include "compiler.h"
-#include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

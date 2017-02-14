@@ -59,7 +59,7 @@ static enum eventloop_return timer_read(struct io_event *ev)
 	if (likely(ret == sizeof(number_of_expirations))) {
 		timer->handler(timer->handler_context, false);
 	} else {
-	// TODO: maybe call registered callback with an error parameter
+		// TODO: maybe call registered callback with an error parameter
 	}
 
 	return EL_CONTINUE_LOOP;

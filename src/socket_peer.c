@@ -38,7 +38,7 @@
 #include "socket_peer.h"
 
 #ifndef ARRAY_SIZE
- #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 static void free_jet_peer(struct socket_peer *p)
@@ -117,11 +117,10 @@ static int send_message(const struct peer *p, char *rendered, size_t len)
 void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, bool is_local_connection)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)reader->this_ptr;
-	
+
 	init_peer(&p->peer, is_local_connection, bs->ev.loop);
 	p->peer.send_message = send_message;
 	p->peer.close = close_jet_peer;
-	
 
 	struct buffered_reader *br = &p->br;
 	br->this_ptr = reader->this_ptr;
@@ -130,7 +129,7 @@ void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, boo
 	br->read_until = reader->read_until;
 	br->set_error_handler = reader->set_error_handler;
 	br->writev = reader->writev;
-	
+
 	br->read_exactly(br->this_ptr, 4, read_msg_length, p);
 }
 

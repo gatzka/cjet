@@ -27,17 +27,17 @@
 #ifndef CJET_ROUTER_H
 #define CJET_ROUTER_H
 
-#include "json/cJSON.h"
-#include "peer.h"
 #include "element.h"
+#include "peer.h"
 #include "timer.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct routing_request {
-    struct cjet_timer timer;
+	struct cjet_timer timer;
 	const struct peer *requesting_peer;
 	const struct peer *owner_peer;
 	cJSON *origin_request_id;
@@ -45,15 +45,15 @@ struct routing_request {
 };
 
 cJSON *create_routed_message(const struct peer *p, const char *path, enum type what,
-	const cJSON *value, const char *id);
+                             const cJSON *value, const char *id);
 int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response);
 struct routing_request *alloc_routing_request(const struct peer *requesting_peer, const struct peer *owner_peer, const cJSON *origin_request_id);
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
-	const struct peer *p);
+                            const struct peer *p);
 
 void remove_routing_info_from_peer(const struct peer *p);
 void remove_peer_from_routing_table(const struct peer *p,
-	const struct peer *peer_to_remove);
+                                    const struct peer *peer_to_remove);
 
 int add_routing_table(struct peer *p);
 void delete_routing_table(struct peer *p);

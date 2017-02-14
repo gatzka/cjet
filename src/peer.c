@@ -33,15 +33,15 @@
 
 #include "alloc.h"
 #include "compiler.h"
+#include "element.h"
 #include "fetch.h"
 #include "jet_string.h"
-#include "json/cJSON.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"
 #include "router.h"
-#include "element.h"
 #include "util.h"
+#include "json/cJSON.h"
 
 static LIST_HEAD(peer_list);
 
@@ -61,7 +61,7 @@ static void remove_peer_from_routes(const struct peer *peer_to_remove)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &peer_list) {
+	list_for_each_safe (item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		remove_peer_from_routing_table(p, peer_to_remove);
 	}
@@ -126,7 +126,7 @@ void destroy_all_peers(void)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &peer_list) {
+	list_for_each_safe (item, tmp, &peer_list) {
 		struct peer *p = list_entry(item, struct peer, next_peer);
 		p->close(p);
 	}

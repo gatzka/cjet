@@ -39,12 +39,12 @@
 #include "compiler.h"
 #include "groups.h"
 #include "jet_random.h"
-#include "json/cJSON.h"
 #include "log.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 #ifndef ARRAY_SIZE
- #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 static cJSON *user_data = NULL;
@@ -52,17 +52,17 @@ static const cJSON *users = NULL;
 static int password_file = -1;
 
 struct crypt_method {
-	const char *prefix; /* salt prefix */
+	const char *prefix;        /* salt prefix */
 	const unsigned int minlen; /* minimum salt length */
 	const unsigned int maxlen; /* maximum salt length */
 	const unsigned int rounds; /* supports a variable number of rounds */
 };
 
 static const struct crypt_method methods[] = {
-	{"", 2, 2, 0}, /* DES */
-	{"$1$", 8, 8, 0}, /* MD5 */
-	{"$5$", 8, 16, 1}, /* SHA-256 */
-	{"$6$", 8, 16, 1} /* SHA-512 */
+    {"", 2, 2, 0},     /* DES */
+    {"$1$", 8, 8, 0},  /* MD5 */
+    {"$5$", 8, 16, 1}, /* SHA-256 */
+    {"$6$", 8, 16, 1}  /* SHA-512 */
 };
 
 int load_passwd_data(const char *passwd_file)
@@ -300,7 +300,7 @@ static int write_user_data()
 static void fill_salt(char *buf, unsigned int salt_len)
 {
 	static const char valid_salts[] = "abcdefghijklmnopqrstuvwxyz"
-		"ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
+	                                  "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789./";
 
 	unsigned int i;
 	for (i = 0; i < salt_len; i++) {

@@ -30,8 +30,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "http_connection.h"
 #include "http-parser/http_parser.h"
+#include "http_connection.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,9 +78,9 @@ struct websocket {
 	enum header_field current_header_field;
 
 	struct {
-		unsigned int fin: 1;
-		unsigned int opcode: 4;
-		unsigned int mask: 1;
+		unsigned int fin : 1;
+		unsigned int opcode : 4;
+		unsigned int mask : 1;
 	} ws_flags;
 	uint64_t length;
 	uint8_t mask[4];

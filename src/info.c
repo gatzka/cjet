@@ -29,10 +29,10 @@
 #include "compiler.h"
 #include "generated/version.h"
 #include "info.h"
-#include "json/cJSON.h"
 #include "linux/linux_io.h"
 #include "peer.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 static cJSON *create_info(void)
 {

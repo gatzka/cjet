@@ -25,8 +25,8 @@
  */
 
 #include <errno.h>
-#include <sys/epoll.h>
 #include <string.h>
+#include <sys/epoll.h>
 #include <unistd.h>
 
 #include "compiler.h"
@@ -102,7 +102,7 @@ int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 
 	while (likely(*go_ahead)) {
 		int num_events =
-			epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
+		    epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
 		if (unlikely(handle_events(num_events, events) == EL_ABORT_LOOP)) {
 			return -1;

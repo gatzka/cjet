@@ -50,7 +50,7 @@ static int send_buffer(struct buffered_socket *bs)
 
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
-				(errno != EWOULDBLOCK))) {
+			             (errno != EWOULDBLOCK))) {
 				log_err("unexpected write error: %s!", strerror(errno));
 				return -1;
 			} else {
@@ -223,7 +223,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
  * size of the internal read buffer.
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
- */ 
+ */
 static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
 	size_t count = ctx.num;
@@ -263,7 +263,7 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
  * filled internal read buffer.
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
- */ 
+ */
 static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
 	const uint8_t *haystack = bs->read_ptr;
@@ -355,9 +355,9 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 	}
 
 	if (unlikely((sent == -1) &&
-		((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
+	             ((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
 		log_err("unexpected %s error: %s!\n", "write",
-			strerror(errno));
+		        strerror(errno));
 		return -1;
 	}
 
@@ -390,8 +390,8 @@ int buffered_socket_read_exactly(void *this_ptr, size_t num,
                                  void *callback_context)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
-	union buffered_socket_reader_context ctx = { .num = num };
-	bool first_run =  (bs->reader == NULL);
+	union buffered_socket_reader_context ctx = {.num = num};
+	bool first_run = (bs->reader == NULL);
 	bs->reader = get_read_ptr;
 	bs->reader_context = ctx;
 	bs->read_callback = read_callback;
@@ -421,8 +421,8 @@ int buffered_socket_read_until(void *this_ptr, const char *delim,
                                void *callback_context)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
-	union buffered_socket_reader_context ctx = { .ptr = delim };
-	bool first_run =  (bs->reader == NULL);
+	union buffered_socket_reader_context ctx = {.ptr = delim};
+	bool first_run = (bs->reader == NULL);
 	bs->reader = internal_read_until;
 	bs->reader_context = ctx;
 	bs->read_callback = read_callback;

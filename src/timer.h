@@ -31,14 +31,14 @@
 #include <stdint.h>
 
 #include "eventloop.h"
-#include "json/cJSON.h"
 #include "peer.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-typedef void(*timer_handler)(void *context, bool cancelled);
+typedef void (*timer_handler)(void *context, bool cancelled);
 
 struct cjet_timer {
 	struct io_event ev;

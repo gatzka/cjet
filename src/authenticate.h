@@ -29,8 +29,8 @@
 
 #include <stdbool.h>
 
-#include "json/cJSON.h"
 #include "peer.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

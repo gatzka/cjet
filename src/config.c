@@ -28,10 +28,10 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "json/cJSON.h"
 #include "peer.h"
 #include "request.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 cJSON *config_peer(struct peer *p, const cJSON *request)
 {

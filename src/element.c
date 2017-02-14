@@ -34,7 +34,6 @@
 #include "groups.h"
 #include "hashtable.h"
 #include "jet_string.h"
-#include "json/cJSON.h"
 #include "linux/linux_io.h"
 #include "list.h"
 #include "peer.h"
@@ -42,29 +41,30 @@
 #include "response.h"
 #include "router.h"
 #include "table.h"
+#include "json/cJSON.h"
 
 static bool is_state(const struct element *e)
 {
 	return (e->value != NULL);
 }
 
-#define FILL_GROUP(access_groups, json_key) \
-static int fill_##access_groups(struct element *e, const struct peer *p, const cJSON *request, const cJSON *access, cJSON **response) \
-{ \
-	if (access == NULL) { \
-		return 0; \
-	} \
-\
-	const cJSON *groups = cJSON_GetObjectItem(access, json_key); \
-	if ((groups != NULL) && (groups->type != cJSON_Array)) { \
-		*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", #access_groups" is not an array"); \
-		return -1; \
-	} \
-\
-	e->access_groups = get_groups(groups); \
-\
-	return 0; \
-}
+#define FILL_GROUP(access_groups, json_key)                                                                                                      \
+	static int fill_##access_groups(struct element *e, const struct peer *p, const cJSON *request, const cJSON *access, cJSON **response)    \
+	{                                                                                                                                        \
+		if (access == NULL) {                                                                                                            \
+			return 0;                                                                                                                \
+		}                                                                                                                                \
+                                                                                                                                                 \
+		const cJSON *groups = cJSON_GetObjectItem(access, json_key);                                                                     \
+		if ((groups != NULL) && (groups->type != cJSON_Array)) {                                                                         \
+			*response = create_error_response_from_request(p, request, INVALID_PARAMS, "reason", #access_groups " is not an array"); \
+			return -1;                                                                                                               \
+		}                                                                                                                                \
+                                                                                                                                                 \
+		e->access_groups = get_groups(groups);                                                                                           \
+                                                                                                                                                 \
+		return 0;                                                                                                                        \
+	}
 
 FILL_GROUP(fetch_groups, "fetchGroups")
 FILL_GROUP(set_groups, "setGroups")
@@ -153,7 +153,7 @@ static int init_element(struct element *e, const cJSON *request, struct peer *p,
 	uint64_t timeout_nsec = get_timeout_in_nsec(p, request, timeout, response, convert_seconds_to_nsec(CONFIG_ROUTED_MESSAGES_TIMEOUT));
 	if (unlikely(timeout_nsec == 0)) {
 		return -1;
-	} else  {
+	} else {
 		e->timeout_nsec = timeout_nsec;
 	}
 
@@ -217,7 +217,7 @@ static struct element *alloc_element(const struct peer *p)
 	struct element *e = cjet_calloc(1, sizeof(*e));
 	if (unlikely(e == NULL)) {
 		log_peer_err(p, "Could not allocate memory for %s object!\n",
-				 "element");
+		             "element");
 	}
 
 	return e;
@@ -313,19 +313,19 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	}
 
 	if (unlikely(((what == STATE) && (e->value == NULL)) ||
-		((what == METHOD) && (e->value != NULL)))) {
-			return create_error_response_from_request(p, request, INVALID_PARAMS, "set/call on element not possible", path);
+	             ((what == METHOD) && (e->value != NULL)))) {
+		return create_error_response_from_request(p, request, INVALID_PARAMS, "set/call on element not possible", path);
 	}
 
 	if (((what == STATE) && (!has_access(e->set_groups, p->set_groups))) ||
-		((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
+	    ((what == METHOD) && (!has_access(e->call_groups, p->call_groups)))) {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "request not authorized", path);
 	}
 
 	const cJSON *origin_request_id = cJSON_GetObjectItem(request, "id");
 	if ((origin_request_id != NULL) &&
-		((origin_request_id->type != cJSON_String) &&
-		 (origin_request_id->type != cJSON_Number))) {
+	    ((origin_request_id->type != cJSON_String) &&
+	     (origin_request_id->type != cJSON_Number))) {
 		return create_error_response_from_request(p, request, INVALID_PARAMS, "request id is neither string nor number", path);
 	}
 
@@ -363,7 +363,7 @@ cJSON *set_or_call(const struct peer *p, const cJSON *request, enum type what)
 	}
 
 	if (unlikely(e->peer->send_message(e->peer, rendered_message,
-				 strlen(rendered_message)) != 0)) {
+	                                   strlen(rendered_message)) != 0)) {
 		response = create_error_response_from_request(p, request, INTERNAL_ERROR, "reason", "could not send routing information");
 	}
 
@@ -437,8 +437,7 @@ cJSON *remove_element_from_peer(const struct peer *p, const cJSON *request)
 
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->element_list)
-	{
+	list_for_each_safe (item, tmp, &p->element_list) {
 		struct element *e = list_entry(item, struct element, element_list);
 		if (strcmp(e->path, path) == 0) {
 			remove_element(e);
@@ -453,8 +452,7 @@ void remove_all_elements_from_peer(struct peer *p)
 {
 	struct list_head *item;
 	struct list_head *tmp;
-	list_for_each_safe(item, tmp, &p->element_list)
-	{
+	list_for_each_safe (item, tmp, &p->element_list) {
 		struct element *e = list_entry(item, struct element, element_list);
 		remove_element(e);
 	}

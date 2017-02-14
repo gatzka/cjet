@@ -49,4 +49,3 @@ void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev);
 #endif
 
 #endif
-

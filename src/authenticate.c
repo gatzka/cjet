@@ -30,12 +30,12 @@
 #include "compiler.h"
 #include "groups.h"
 #include "jet_string.h"
-#include "json/cJSON.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"
 #include "request.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {

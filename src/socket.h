@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-
 #ifndef CJET_SOCKET_H
 #define CJET_SOCKET_H
 
