@@ -33,7 +33,10 @@ struct list_head {
 	struct list_head *next, *prev;
 };
 
-#define LIST_HEAD_INIT(name) { &(name), &(name) }
+#define LIST_HEAD_INIT(name)     \
+	{                        \
+		&(name), &(name) \
+	}
 
 #define LIST_HEAD(name) \
 	struct list_head name = LIST_HEAD_INIT(name)
@@ -62,9 +65,9 @@ static inline int list_empty(const struct list_head *head)
 	return head->next == head;
 }
 
-#define list_for_each_safe(pos, n, head) \
+#define list_for_each_safe(pos, n, head)                       \
 	for (pos = (head)->next, n = pos->next; pos != (head); \
-		pos = n, n = pos->next)
+	     pos = n, n = pos->next)
 
 #define list_entry(ptr, type, member) \
 	container_of(ptr, type, member)

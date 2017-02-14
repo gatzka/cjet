@@ -32,9 +32,9 @@
 #include "compiler.h"
 #include "fetch.h"
 #include "groups.h"
-#include "json/cJSON.h"
 #include "list.h"
 #include "peer.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +47,7 @@ struct element {
 	struct list_head element_list;
 	char *path;
 	struct peer *peer; /*The peer the state belongs to */
-	cJSON *value; /* NULL if method */
+	cJSON *value;      /* NULL if method */
 	const struct fetch **fetcher_table;
 	group_t fetch_groups;
 	group_t set_groups;

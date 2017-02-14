@@ -27,10 +27,10 @@
 #ifndef CJET_HANDLE_FETCH_H
 #define CJET_HANDLE_FETCH_H
 
-#include "json/cJSON.h"
+#include "element.h"
 #include "list.h"
 #include "peer.h"
-#include "element.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -69,4 +69,3 @@ int notify_fetchers(const struct element *e, const char *event_name);
 #endif
 
 #endif
-

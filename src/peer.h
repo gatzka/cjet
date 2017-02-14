@@ -32,10 +32,10 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "groups.h"
 #include "eventloop.h"
-#include "json/cJSON.h"
+#include "groups.h"
 #include "list.h"
+#include "json/cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {
