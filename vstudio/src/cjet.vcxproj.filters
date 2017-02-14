@@ -82,9 +82,6 @@
     <ClCompile Include="..\..\src\windows\posix\socket.c">
       <Filter>Source Files\windows\posix</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\windows\epoll\epoll.c">
-      <Filter>Source Files\windows\epoll</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\windows\eventloop_epoll.c">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
@@ -121,6 +118,9 @@
     <ClCompile Include="..\..\src\windows\uio.c">
       <Filter>Source Files\windows</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\windows\epoll.c">
+      <Filter>Source Files\windows</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="C:\Git\cjet\src\CMakeLists.txt" />
@@ -143,9 +143,6 @@
     </Filter>
     <Filter Include="Source Files\windows\posix">
       <UniqueIdentifier>{5c569299-da56-4841-8bb6-e395c348da5f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\windows\epoll">
-      <UniqueIdentifier>{21f0ed81-7fec-4283-bef5-72cbee3f685e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

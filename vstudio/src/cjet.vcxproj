@@ -326,7 +326,7 @@ if %errorlevel% neq 0 goto :VCEnd</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\windows\epoll\epoll.c" />
+    <ClCompile Include="..\..\src\windows\epoll.c" />
     <ClCompile Include="..\..\src\windows\eventloop_epoll.c" />
     <ClCompile Include="..\..\src\windows\getopt.c" />
     <ClCompile Include="..\..\src\windows\jet_endian.c" />

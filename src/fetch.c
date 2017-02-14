@@ -28,6 +28,12 @@
 #include <stddef.h>
 #include <string.h>
 
+#if defined(_MSC_VER)
+#include "windows/windows_io.h"
+#else
+#include "linux/linux_io.h"
+#endif
+
 #include "alloc.h"
 #include "compiler.h"
 #include "fetch.h"
@@ -35,7 +41,6 @@
 #include "groups.h"
 #include "jet_string.h"
 #include "json/cJSON.h"
-#include "linux/linux_io.h"
 #include "list.h"
 #include "log.h"
 #include "peer.h"

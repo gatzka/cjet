@@ -25,7 +25,6 @@
 */
 
 #include <WS2tcpip.h>
-#include <Winsock2.h>
 #include <io.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -238,8 +237,9 @@ static enum eventloop_return accept_common(struct io_event *ev, void(*peer_funct
 		memset(&addr, 0, sizeof(addr));
 		socklen_t addrlen = sizeof(addr);
 		SOCKET peer_fd = accept(ev->sock, (struct sockaddr *)&addr, &addrlen);
-		if (peer_fd == NULL) {
-			if ((errno == EAGAIN) || (errno == EWOULDBLOCK)) {
+		if (peer_fd == INVALID_SOCKET) {
+			int last_error = WSAGetLastError();
+			if (last_error == WSAEWOULDBLOCK) {
 				return EL_CONTINUE_LOOP;
 			}
 			else {
@@ -302,13 +302,13 @@ static SOCKET create_server_socket_all_interfaces(int port)
 	int iResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (iResult != 0) {
 		log_err(L"WSAStartup failed: %d\n", iResult);
-		return NULL;
+		return INVALID_SOCKET;
 	}
 
 	SOCKET listen_fd = socket(AF_INET6, SOCK_STREAM, 0);
 	if (unlikely(listen_fd == INVALID_SOCKET)) {
 		log_err("Could not create listen socket!\n");
-		return NULL;
+		return INVALID_SOCKET;
 	}
 
 	static const int reuse_on = 1;
@@ -341,7 +341,7 @@ static SOCKET create_server_socket_all_interfaces(int port)
 
 error:
 	closesocket(listen_fd);
-	return NULL;
+	return INVALID_SOCKET;
 }
 
 static SOCKET create_server_socket_bound(const char *bind_addr, int port)
@@ -367,13 +367,12 @@ static SOCKET create_server_socket_bound(const char *bind_addr, int port)
 	struct addrinfo *rp;
 	for (rp = servinfo; rp != NULL; rp = rp->ai_next) {
 		listen_fd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
-		if (listen_fd == NULL) {
+		if (listen_fd == INVALID_SOCKET) {
 			continue;
 		}
 
 		static const int reuse_on = 1;
-		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-			sizeof(reuse_on)) < 0)) {
+		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on, sizeof(reuse_on)) != 0)) {
 			log_err("Could not set %s!\n", "SO_REUSEADDR");
 			closesocket(listen_fd);
 			continue;
@@ -381,8 +380,7 @@ static SOCKET create_server_socket_bound(const char *bind_addr, int port)
 
 		if (rp->ai_family == AF_INET6) {
 			static const int ipv6_only = 1;
-			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
-				sizeof(ipv6_only)) < 0)) {
+			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only, sizeof(ipv6_only)) != 0)) {
 				log_err("Could not set %s!\n", "IPV6_V6ONLY");
 				closesocket(listen_fd);
 				continue;
@@ -403,7 +401,7 @@ static SOCKET create_server_socket_bound(const char *bind_addr, int port)
 
 	freeaddrinfo(servinfo);
 
-	if ((listen_fd == NULL) || (rp == NULL)) {
+	if ((listen_fd == INVALID_SOCKET) || (rp == NULL)) {
 		log_err("Could not bind to address!");
 		return -1;
 	}
@@ -458,17 +456,19 @@ static void unregister_signal_handler(void)
 
 static int drop_privileges()
 {
+	int bResult = -1;
+
 	HANDLE hProcessToken = NULL;
 	HANDLE hProcess = GetCurrentProcess();
-	if (!OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hProcessToken)) {
-		return -1;
+	if (OpenProcessToken(hProcess, TOKEN_ADJUST_PRIVILEGES, &hProcessToken))
+	{
+		// TRUE = disable all privilieges
+		if (AdjustTokenPrivileges(hProcessToken, TRUE, NULL, 0, 0, 0) == 1) {
+			bResult = 0;
+		}
+		CloseHandle(hProcessToken);
 	}
-
-	// TRUE = disable all privilieges
-	BOOL bResult = AdjustTokenPrivileges(hProcessToken, TRUE, NULL, 0, 0, 0);
-
-	CloseHandle(hProcessToken);
-
+	
 	return bResult;
 }
 
@@ -499,7 +499,7 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 
 	// start jet server on ipv6 loopback
 	SOCKET ipv6_jet_fd = create_server_socket_bound("::1", CONFIG_JET_PORT);
-	if (ipv6_jet_fd == NULL) {
+	if (ipv6_jet_fd == INVALID_SOCKET) {
 		return -1;
 	}
 	struct jet_server ipv6_jet_server = {
@@ -511,15 +511,15 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 		.sock = ipv6_jet_fd
 	}
 	};
+
 	ret = start_server(&ipv6_jet_server.ev);
 	if (ret < 0) {
 		closesocket(ipv6_jet_fd);
 		return -1;
 	}
-
 	// start jet server on ipv4 loopback
 	SOCKET ipv4_jet_fd = create_server_socket_bound("127.0.0.1", CONFIG_JET_PORT);
-	if (ipv4_jet_fd == NULL) {
+	if (ipv4_jet_fd == INVALID_SOCKET) {
 		ret = -1;
 		goto create_ipv4_jet_socket_failed;
 	}
@@ -541,7 +541,7 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 
 	// start websocket jet server on ipv6 loopback
 	SOCKET ipv6_http_fd = create_server_socket_bound("::1", CONFIG_JETWS_PORT);
-	if (ipv6_http_fd == NULL) {
+	if (ipv6_http_fd == INVALID_SOCKET) {
 		ret = -1;
 		goto create_ipv6_jetws_socket_failed;
 	}
@@ -565,7 +565,7 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 
 	// start websocket jet server on ipv4 loopback
 	SOCKET ipv4_http_fd = create_server_socket_bound("127.0.0.1", CONFIG_JETWS_PORT);
-	if (ipv4_http_fd == NULL) {
+	if (ipv4_http_fd == INVALID_SOCKET) {
 		ret = -1;
 		goto create_ipv4_jetws_socket_failed;
 	}
@@ -607,7 +607,7 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 	int ret = 0;
 
 	SOCKET jet_fd = create_server_socket_all_interfaces(CONFIG_JET_PORT);
-	if (jet_fd == NULL) {
+	if (jet_fd == INVALID_SOCKET) {
 		return -1;
 	}
 	
@@ -620,18 +620,19 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 			.sock = jet_fd
 		}
 	};
+	
 	ret = start_server(&jet_server.ev);
 	if (ret < 0) {
 		closesocket(jet_fd);
 		return -1;
 	}
-
+	
 	SOCKET http_fd = create_server_socket_all_interfaces(CONFIG_JETWS_PORT);
-	if (http_fd == NULL) {
+	if (http_fd == INVALID_SOCKET) {
 		ret = -1;
 		goto create_jetws_socket_failed;
 	}
-
+	
 	struct http_server http_server = {
 		.ev = {
 		.read_function = accept_http,

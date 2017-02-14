@@ -24,16 +24,16 @@
 * SOFTWARE.
 */
 
-#include <io.h>
+#include <WinSock2.h>
 #include <errno.h>
-#include <string.h>
 
-#include "windows/epoll/epoll.h"
+#include "windows/epoll.h"
 #include "compiler.h"
 #include "eventloop.h"
 #include "generated/os_config.h"
 #include "windows/eventloop_epoll.h"
 #include "log.h"
+
 
 static enum eventloop_return handle_events(int num_events, struct epoll_event *events)
 {
@@ -81,9 +81,11 @@ static enum eventloop_return handle_events(int num_events, struct epoll_event *e
 	return EL_CONTINUE_LOOP;
 }
 
+
 int eventloop_epoll_init(void *this_ptr)
 {
 	struct eventloop_epoll *loop = this_ptr;
+	//loop->epoll_fd = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
 	loop->epoll_fd = epoll_create(1);
 	if (loop->epoll_fd < 0) {
 		return -1;
@@ -91,11 +93,13 @@ int eventloop_epoll_init(void *this_ptr)
 	return 0;
 }
 
+
 void eventloop_epoll_destroy(const void *this_ptr)
 {
 	const struct eventloop_epoll *loop = this_ptr;
-	close(loop->epoll_fd);
+	closesocket(loop->epoll_fd);
 }
+
 
 int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 {
@@ -103,16 +107,24 @@ int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
 	while (likely(*go_ahead)) {
-		int num_events =
-			epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
-
+		int num_events = epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 		if (unlikely(handle_events(num_events, events) == EL_ABORT_LOOP)) {
 			return -1;
 			break;
 		}
 	}
+	/*
+	DWORD number_bytes;
+	ULONG_PTR *perHandleKey;
+	OVERLAPPED ol;
+	if (GetQueuedCompletionStatus(loop->epoll_fd, &number_bytes, (PULONG_PTR)&perHandleKey, &ol, INFINITE) != 0) {
+	return -1;
+	break;
+	}
+	*/
 	return 0;
 }
+
 
 enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev)
 {
@@ -121,13 +133,20 @@ enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
 	epoll_ev.data.ptr = (void *)ev;
-	epoll_ev.events = EPOLLIN | EPOLLOUT;// | EPOLLET;
+	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
 		return EL_ABORT_LOOP;
 	}
+	/*
+	if (unlikely(CreateIoCompletionPort(ev->sock, loop->epoll_fd, 0, 0) == NULL)) {
+	log_err("eventloop_epoll_add failed!\n");
+	return EL_ABORT_LOOP;
+	}
+	*/
 	return EL_CONTINUE_LOOP;
 }
+
 
 void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)
 {
