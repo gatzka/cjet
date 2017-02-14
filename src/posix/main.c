@@ -45,11 +45,11 @@
 int main(int argc, char **argv)
 {
 	struct cmdline_config config = {
-		.run_foreground = false,
-		.bind_local_only = false,
-		.user_name = NULL,
-		.passwd_file = NULL,
-		.request_target = "/api/jet/",
+	    .run_foreground = false,
+	    .bind_local_only = false,
+	    .user_name = NULL,
+	    .passwd_file = NULL,
+	    .request_target = "/api/jet/",
 	};
 
 	if (init_random() < 0) {
@@ -63,28 +63,28 @@ int main(int argc, char **argv)
 
 	int c;
 
-	while ((c = getopt (argc, argv, "flp:r:u:")) != -1) {
+	while ((c = getopt(argc, argv, "flp:r:u:")) != -1) {
 		switch (c) {
-			case 'f':
-				config.run_foreground = true;
-				break;
-			case 'l':
-				config.bind_local_only = true;
-				break;
-			case 'p':
-				config.passwd_file = optarg;
-				break;
-			case 'r':
-				config.request_target = optarg;
-				break;
-			case 'u':
-				config.user_name = optarg;
-				break;
-			case '?':
-				fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>]\n", argv[0]);
-				ret = EXIT_FAILURE;
-				goto getopt_failed;
-				break;
+		case 'f':
+			config.run_foreground = true;
+			break;
+		case 'l':
+			config.bind_local_only = true;
+			break;
+		case 'p':
+			config.passwd_file = optarg;
+			break;
+		case 'r':
+			config.request_target = optarg;
+			break;
+		case 'u':
+			config.user_name = optarg;
+			break;
+		case '?':
+			fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>]\n", argv[0]);
+			ret = EXIT_FAILURE;
+			goto getopt_failed;
+			break;
 		}
 	}
 
@@ -103,15 +103,15 @@ int main(int argc, char **argv)
 	}
 
 	struct eventloop_epoll eloop = {
-		.epoll_fd = 0,
-		.loop = {
-			.this_ptr = &eloop,
-			.init = eventloop_epoll_init,
-			.destroy = eventloop_epoll_destroy,
-			.run = eventloop_epoll_run,
-			.add = eventloop_epoll_add,
-			.remove = eventloop_epoll_remove,
-		},
+	    .epoll_fd = 0,
+	    .loop = {
+	        .this_ptr = &eloop,
+	        .init = eventloop_epoll_init,
+	        .destroy = eventloop_epoll_destroy,
+	        .run = eventloop_epoll_run,
+	        .add = eventloop_epoll_add,
+	        .remove = eventloop_epoll_remove,
+	    },
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);

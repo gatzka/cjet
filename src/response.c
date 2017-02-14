@@ -27,9 +27,9 @@
 #include <stddef.h>
 
 #include "compiler.h"
-#include "json/cJSON.h"
 #include "peer.h"
 #include "response.h"
+#include "json/cJSON.h"
 
 static cJSON *add_subobject_to_object(const struct peer *p, cJSON *root, cJSON *value, const char *key)
 {
@@ -54,12 +54,12 @@ static cJSON *create_common_response(const struct peer *p, const cJSON *id)
 
 	case cJSON_String:
 		root = add_subobject_to_object(p, root,
-			cJSON_CreateString(id->valuestring), "id");
+		                               cJSON_CreateString(id->valuestring), "id");
 		break;
 
 	case cJSON_Number:
 		root = add_subobject_to_object(p, root,
-			cJSON_CreateNumber(id->valueint), "id");
+		                               cJSON_CreateNumber(id->valueint), "id");
 		break;
 
 	default:

@@ -39,15 +39,15 @@
 #include "parse.h"
 #include "peer.h"
 #include "sha1/sha1.h"
-#include "websocket_peer.h"
 #include "websocket.h"
+#include "websocket_peer.h"
 
 #ifndef ARRAY_SIZE
- #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 #ifndef MIN
-# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
 #define CRLF "\r\n"

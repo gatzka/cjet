@@ -70,5 +70,6 @@ void *element_table_get(const char *path)
 void element_table_remove(const char *path)
 {
 	int ret = HASHTABLE_REMOVE(element_table, element_hashtable, path, NULL);
-	if (ret == 0) {}
+	if (ret == 0) {
+	}
 }

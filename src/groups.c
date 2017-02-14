@@ -60,7 +60,8 @@ static int add_group(const char *group_name)
 	return 0;
 }
 
-int create_groups(void) {
+int create_groups(void)
+{
 	all_groups = cJSON_CreateArray();
 	if (all_groups == NULL) {
 		return -1;

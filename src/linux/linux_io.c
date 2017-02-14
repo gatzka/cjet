@@ -55,7 +55,7 @@
 #include "websocket_peer.h"
 
 #ifndef ARRAY_SIZE
- #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
 static int go_ahead = 1;
@@ -111,8 +111,8 @@ static int prepare_peer_socket(int fd)
 	static const int tcp_nodelay_on = 1;
 
 	if ((set_fd_non_blocking(fd) < 0) ||
-		(setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
-			sizeof(tcp_nodelay_on)) < 0)) {
+	    (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
+	                sizeof(tcp_nodelay_on)) < 0)) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
 		return -1;
@@ -153,7 +153,7 @@ static void handle_new_jet_connection(struct io_event *ev, int fd, bool is_local
 	br.read_until = buffered_socket_read_until;
 	br.set_error_handler = buffered_socket_set_error;
 	br.writev = buffered_socket_writev;
-	
+
 	init_socket_peer(peer, &br, is_local_connection);
 	return;
 
@@ -210,7 +210,7 @@ static bool is_localhost(const struct sockaddr_storage *addr)
 {
 	if (addr->ss_family == AF_INET) {
 		static const uint8_t ipv4_localhost_bytes[] =
-			{0x7f, 0, 0, 1 };
+		    {0x7f, 0, 0, 1};
 		const struct sockaddr_in *s = (const struct sockaddr_in *)addr;
 		if (memcmp(ipv4_localhost_bytes, &s->sin_addr.s_addr, sizeof(ipv4_localhost_bytes)) == 0) {
 			return true;
@@ -219,9 +219,9 @@ static bool is_localhost(const struct sockaddr_storage *addr)
 		}
 	} else {
 		static const uint8_t mapped_ipv4_localhost_bytes[] =
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1 };
+		    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff, 0x7f, 0, 0, 1};
 		static const uint8_t localhost_bytes[] =
-			{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 };
+		    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
 
 		const struct sockaddr_in6 *s = (const struct sockaddr_in6 *)addr;
 		if ((memcmp(mapped_ipv4_localhost_bytes, s->sin6_addr.s6_addr, sizeof(mapped_ipv4_localhost_bytes)) == 0) ||
@@ -303,7 +303,7 @@ static int create_server_socket_all_interfaces(int port)
 
 	static const int reuse_on = 1;
 	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-			sizeof(reuse_on)) < 0)) {
+	                        sizeof(reuse_on)) < 0)) {
 		log_err("Could not set %s!\n", "SO_REUSEADDR");
 		goto error;
 	}
@@ -329,7 +329,7 @@ static int create_server_socket_all_interfaces(int port)
 	}
 
 	return listen_fd;
-	
+
 error:
 	close(listen_fd);
 	return -1;
@@ -364,7 +364,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 
 		static const int reuse_on = 1;
 		if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
-				sizeof(reuse_on)) < 0)) {
+		                        sizeof(reuse_on)) < 0)) {
 			log_err("Could not set %s!\n", "SO_REUSEADDR");
 			close(listen_fd);
 			continue;
@@ -373,7 +373,7 @@ static int create_server_socket_bound(const char *bind_addr, int port)
 		if (rp->ai_family == AF_INET6) {
 			static const int ipv6_only = 1;
 			if (unlikely(setsockopt(listen_fd, IPPROTO_IPV6, IPV6_V6ONLY, &ipv6_only,
-					sizeof(ipv6_only)) < 0)) {
+			                        sizeof(ipv6_only)) < 0)) {
 				log_err("Could not set %s!\n", "IPV6_V6ONLY");
 				close(listen_fd);
 				continue;
@@ -491,14 +491,12 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 		return -1;
 	}
 	struct jet_server ipv6_jet_server = {
-		.ev = {
-			.read_function = accept_jet,
-			.write_function = NULL,
-			.error_function = accept_jet_error,
-			.loop = loop,
-			.sock = ipv6_jet_fd
-		}
-	};
+	    .ev = {
+	        .read_function = accept_jet,
+	        .write_function = NULL,
+	        .error_function = accept_jet_error,
+	        .loop = loop,
+	        .sock = ipv6_jet_fd}};
 	ret = start_server(&ipv6_jet_server.ev);
 	if (ret < 0) {
 		close(ipv6_jet_fd);
@@ -513,14 +511,12 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	}
 
 	struct jet_server ipv4_jet_server = {
-		.ev = {
-			.read_function = accept_jet,
-			.write_function = NULL,
-			.error_function = accept_jet_error,
-			.loop = loop,
-			.sock = ipv4_jet_fd
-		}
-	};
+	    .ev = {
+	        .read_function = accept_jet,
+	        .write_function = NULL,
+	        .error_function = accept_jet_error,
+	        .loop = loop,
+	        .sock = ipv4_jet_fd}};
 	ret = start_server(&ipv4_jet_server.ev);
 	if (ret < 0) {
 		close(ipv4_jet_fd);
@@ -535,16 +531,14 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	}
 
 	struct http_server ipv6_http_server = {
-		.ev = {
-			.read_function = accept_http,
-			.write_function = NULL,
-			.error_function = accept_http_error,
-			.loop = loop,
-			.sock = ipv6_http_fd
-		},
-		.handler = handler,
-		.num_handlers = num_handlers
-	};
+	    .ev = {
+	        .read_function = accept_http,
+	        .write_function = NULL,
+	        .error_function = accept_http_error,
+	        .loop = loop,
+	        .sock = ipv6_http_fd},
+	    .handler = handler,
+	    .num_handlers = num_handlers};
 	ret = start_server(&ipv6_http_server.ev);
 	if (ret < 0) {
 		close(ipv6_http_fd);
@@ -559,16 +553,14 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 	}
 
 	struct http_server ipv4_http_server = {
-		.ev = {
-			.read_function = accept_http,
-			.write_function = NULL,
-			.error_function = accept_http_error,
-			.loop = loop,
-			.sock = ipv4_http_fd
-		},
-		.handler = handler,
-		.num_handlers = num_handlers
-	};
+	    .ev = {
+	        .read_function = accept_http,
+	        .write_function = NULL,
+	        .error_function = accept_http_error,
+	        .loop = loop,
+	        .sock = ipv4_http_fd},
+	    .handler = handler,
+	    .num_handlers = num_handlers};
 	ret = start_server(&ipv4_http_server.ev);
 	if (ret < 0) {
 		close(ipv4_http_fd);
@@ -600,16 +592,14 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 	}
 
 	struct jet_server jet_server = {
-		.ev = {
-			.read_function = accept_jet,
-			.write_function = NULL,
-			.error_function = accept_jet_error,
-			.loop = loop,
-			.sock = jet_fd
-		}
-	};
+	    .ev = {
+	        .read_function = accept_jet,
+	        .write_function = NULL,
+	        .error_function = accept_jet_error,
+	        .loop = loop,
+	        .sock = jet_fd}};
 	ret = start_server(&jet_server.ev);
-	if (ret  < 0) {
+	if (ret < 0) {
 		close(jet_fd);
 		return -1;
 	}
@@ -619,20 +609,18 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 		ret = -1;
 		goto create_jetws_socket_failed;
 	}
-	
-	 struct http_server http_server = {
-		.ev = {
-			.read_function = accept_http,
-			.write_function = NULL,
-			.error_function = accept_http_error,
-			.loop = loop,
-			.sock = http_fd
-		},
-		.handler = handler,
-		.num_handlers = num_handlers
-	};
+
+	struct http_server http_server = {
+	    .ev = {
+	        .read_function = accept_http,
+	        .write_function = NULL,
+	        .error_function = accept_http_error,
+	        .loop = loop,
+	        .sock = http_fd},
+	    .handler = handler,
+	    .num_handlers = num_handlers};
 	ret = start_server(&http_server.ev);
-	if (ret  < 0) {
+	if (ret < 0) {
 		close(http_fd);
 		goto start_jetws_server_failed;
 	}
@@ -661,15 +649,15 @@ int run_io(struct eventloop *loop, const struct cmdline_config *config)
 	}
 
 	const struct url_handler handler[] = {
-		{
-			.request_target = config->request_target,
-			.create = alloc_websocket_peer,
-			.on_header_field = websocket_upgrade_on_header_field,
-			.on_header_value = websocket_upgrade_on_header_value,
-			.on_headers_complete = websocket_upgrade_on_headers_complete,
-			.on_body = NULL,
-			.on_message_complete = NULL,
-		},
+	    {
+	        .request_target = config->request_target,
+	        .create = alloc_websocket_peer,
+	        .on_header_field = websocket_upgrade_on_header_field,
+	        .on_header_value = websocket_upgrade_on_header_value,
+	        .on_headers_complete = websocket_upgrade_on_headers_complete,
+	        .on_body = NULL,
+	        .on_message_complete = NULL,
+	    },
 	};
 
 	if (config->bind_local_only) {
