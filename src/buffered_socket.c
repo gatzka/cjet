@@ -181,7 +181,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 	if (unlikely(free_space(bs) < count)) {
 		reorganize_read_buffer(bs);
 		if (unlikely(free_space(bs) < count)) {
-			log_err("read buffer too small to fulfill request!\n");
+		  log_err("remaining read buffer too small (%zu bytes) to fulfill request (%zu bytes)!\n", free_space(bs), count);
 			return BS_IO_TOOMUCHDATA;
 		}
 	}
