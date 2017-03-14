@@ -73,8 +73,8 @@ static std::string create_temp_copy_of_file(std::string source_filename, std::st
 	std::ifstream source(source_filename.c_str(), std::ios::binary);
 	std::ofstream dest(destination_filename.c_str(), std::ios::binary);
 
-	BOOST_REQUIRE_MESSAGE(source != NULL, "Can't open source file: " << source_filename);
-	BOOST_REQUIRE_MESSAGE(dest != NULL, "Can't open destination file: " << destination_filename);
+	BOOST_REQUIRE_MESSAGE(source.is_open(), "Can't open source file: " << source_filename);
+	BOOST_REQUIRE_MESSAGE(dest.is_open(), "Can't open destination file: " << destination_filename);
 	dest << source.rdbuf();
 
 	source.close();
