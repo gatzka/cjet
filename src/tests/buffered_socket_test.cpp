@@ -74,6 +74,8 @@ static const char *readbuffer;
 static const char *readbuffer_ptr;
 static size_t readbuffer_length;
 
+static unsigned int MAGIC = 0x1234;
+
 extern "C" {
 
 	ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
@@ -363,21 +365,21 @@ extern "C" {
 
 static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 	return EL_CONTINUE_LOOP;
 }
 
 static enum eventloop_return eventloop_fake_failing_add(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 	return EL_ABORT_LOOP;
 }
 
 static void eventloop_fake_remove(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 }
 
@@ -393,6 +395,7 @@ struct F {
 			loop.add = eventloop_fake_add;
 		}
 		loop.remove = eventloop_fake_remove;
+		loop.this_ptr = &MAGIC;
 		bs = buffered_socket_acquire();
 		buffered_socket_init(bs, fd, &loop, error_func, this);
 		bs->write_buffer_ptr = NULL;
