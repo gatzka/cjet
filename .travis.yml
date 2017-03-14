@@ -47,6 +47,7 @@ addons:
     - valgrind
     - libboost-dev
     - libboost-test-dev
+    - libboost-filesystem-dev
 
   coverity_scan:
     project:
