@@ -74,6 +74,8 @@ static const char *readbuffer;
 static const char *readbuffer_ptr;
 static size_t readbuffer_length;
 
+static unsigned int MAGIC = 0x1234;
+
 extern "C" {
 
 	void buffered_socket_release(void *this_ptr)
@@ -369,21 +371,21 @@ extern "C" {
 
 static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 	return EL_CONTINUE_LOOP;
 }
 
 static enum eventloop_return eventloop_fake_failing_add(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 	return EL_ABORT_LOOP;
 }
 
 static void eventloop_fake_remove(const void *this_ptr, const struct io_event *ev)
 {
-	(void)this_ptr;
+	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
 }
 
@@ -403,6 +405,7 @@ struct F {
 		bs.write_buffer_ptr = NULL;
 		bs.read_callback = NULL;
 		bs.read_callback_context = NULL;
+		loop.this_ptr = &MAGIC;
 		write_buffer_ptr = write_buffer;
 		send_parts_counter = 0;
 		called_from_eventloop = false;
