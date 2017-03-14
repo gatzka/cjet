@@ -324,7 +324,7 @@ void buffered_socket_init(struct buffered_socket *bs, socket_type sock, struct e
 int buffered_socket_close(void *context)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)context;
-	bs->ev.loop->remove(&bs->ev.loop->this_ptr, &bs->ev);
+	bs->ev.loop->remove(bs->ev.loop->this_ptr, &bs->ev);
 	int ret = socket_close(bs->ev.sock);
 	buffered_socket_release(bs);
 	return ret;
