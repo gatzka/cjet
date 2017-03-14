@@ -3,71 +3,19 @@
    Memcheck:Leak
    match-leak-kinds: reachable
    fun:malloc
-   fun:pool
-   fun:__static_initialization_and_destruction_0
-   fun:_GLOBAL__sub_I_eh_alloc.cc
-   fun:call_init.part.0
+   ...
    fun:_dl_init
-   obj:/usr/lib/ld-2.23.so
-}
-
-{
-   <dlinit1>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   obj:/usr/lib/x86_64-linux-gnu/libstdc++.so.6.0.21
-   fun:call_init.part.0
-   fun:call_init
-   fun:_dl_init
-   obj:/lib/x86_64-linux-gnu/ld-2.23.so
-}
-
-{
-   <dlinit2>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:malloc
-   fun:pool
-   fun:__static_initialization_and_destruction_0
-   fun:_GLOBAL__sub_I_eh_alloc.cc
-   fun:call_init.part.0
-   fun:_dl_init
-   obj:/usr/lib/ld-2.24.so
+   ...
 }
 
 {
    <crypt_realloc_memory>
    Memcheck:Leak
    match-leak-kinds: reachable
-   fun:malloc
+   ...
    fun:realloc
    fun:__sha512_crypt
    fun:credentials_ok
-   fun:_ZN17check_credentials11test_methodEv
-   fun:_ZL25check_credentials_invokerv
-   fun:_ZN5boost9unit_test9ut_detail7invokerINS1_6unusedEE6invokeIPFvvEEES3_RT_
-   fun:_ZN5boost9unit_test9ut_detail16callback0_impl_tINS1_6unusedEPFvvEE6invokeEv
-   obj:/usr/lib/x86_64-linux-gnu/libboost_unit_test_framework.so.1.58.0
-   fun:_ZN5boost17execution_monitor13catch_signalsERKNS_9unit_test9callback0IiEE
-   fun:_ZN5boost17execution_monitor7executeERKNS_9unit_test9callback0IiEE
-   fun:_ZN5boost9unit_test19unit_test_monitor_t21execute_and_translateERKNS0_9test_caseE
+   ...
 }
 
-{
-   <crypt_realloc_memory2>
-   Memcheck:Leak
-   match-leak-kinds: reachable
-   fun:realloc
-   fun:__sha512_crypt
-   fun:credentials_ok
-   fun:_ZN18change_credentials11test_methodEv
-   fun:_ZL26change_credentials_invokerv
-   fun:_ZN5boost9unit_test9ut_detail7invokerINS1_6unusedEE6invokeIPFvvEEES3_RT_
-   fun:_ZN5boost9unit_test9ut_detail16callback0_impl_tINS1_6unusedEPFvvEE6invokeEv
-   obj:/usr/lib/x86_64-linux-gnu/libboost_unit_test_framework.so.1.58.0
-   fun:_ZN5boost17execution_monitor13catch_signalsERKNS_9unit_test9callback0IiEE
-   fun:_ZN5boost17execution_monitor7executeERKNS_9unit_test9callback0IiEE
-   fun:_ZN5boost9unit_test19unit_test_monitor_t21execute_and_translateERKNS0_9test_caseE
-   fun:_ZN5boost9unit_test14framework_impl5visitERKNS0_9test_caseE
-}
