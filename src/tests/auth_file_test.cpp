@@ -27,9 +27,12 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MAIN
 #define BOOST_TEST_MODULE linux auth test
+#define BOOST_FILESYSTEM_NO_DEPRECATED
 
 #include <boost/test/unit_test.hpp>
+#include <boost/filesystem.hpp>
 #include <fstream>
+#include <iostream>
 
 #include "authenticate.h"
 #include "peer.h"
@@ -126,8 +129,10 @@ void free_peer(struct peer *p) { ::free(p); }
 struct F {
 	F()
 	{
-		std::string temporarily_file = create_temp_copy_of_file("input_data/passwd_std.json", "_temp");
-		int response = load_passwd_data("input_data/passwd_std.json_temp");
+		std::string argv(boost::unit_test::framework::master_test_suite().argv[0]);
+		boost::filesystem::path exec_path = boost::filesystem::system_complete(argv).parent_path();
+		std::string temporarily_file = create_temp_copy_of_file(exec_path.string() + "/input_data/passwd_std.json", "_temp");
+		int response = load_passwd_data((exec_path.string() + "/input_data/passwd_std.json_temp").c_str());
 		BOOST_REQUIRE_MESSAGE(response == 0, "Loading password file failed.");
 	}
 

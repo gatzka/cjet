@@ -77,9 +77,6 @@ Product {
         var cmd = new Command(fullCommandLine[0], fullCommandLine.slice(1));
         cmd.description = "Running test " + inputs.application[i].fileName;
         cmd.environment = product.environment;
-        var workingDir = inputs.application[i].filePath;
-        workingDir = workingDir.substring(0, workingDir.lastIndexOf("/"));
-        cmd.workingDirectory = workingDir;
         cmds.push(cmd);
       }
 

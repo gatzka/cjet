@@ -13,7 +13,7 @@ CONFIGURE_FILE(../linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os
 CONFIGURE_FILE(../cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(../version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
-FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework)
+FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework filesystem)
 IF(Boost_FOUND)
   INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   LIST(APPEND ADDITIONAL_LIBS ${Boost_LIBRARIES})

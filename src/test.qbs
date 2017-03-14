@@ -369,6 +369,8 @@ Project {
           fileTags: ["auth_test_source_files"]
         }
 
+        cpp.dynamicLibraries: ["boost_filesystem", "gcov","crypt"]
+
         Rule {
           id: test_file_copy
           inputs: ["auth_test_source_files"]
