@@ -36,7 +36,7 @@
 	
 #define RESTRICT restrict
 
-#else
+#elif _MSC_VER
 
 #define likely(x) \
 	(x)
