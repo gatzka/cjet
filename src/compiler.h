@@ -33,6 +33,8 @@
 	__builtin_expect((x), 1)
 #define unlikely(x) \
 	__builtin_expect((x), 0)
+	
+#define RESTRICT restrict
 
 #else
 
@@ -40,6 +42,8 @@
 	(x)
 #define unlikely(x) \
 	(x)
+	
+#define RESTRICT __restrict
 
 #endif
 
