@@ -65,13 +65,14 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "compiler.h"
 #include "alloc.h"
+
 
 #define GFP_KERNEL 1
 
 #define kmalloc(size, priority) cjet_malloc(size)
 #define kfree(__ptr) cjet_free(__ptr)
-#define wmb() __sync_synchronize()
 
 #define HASHTABLE_SUCCESS 0
 #define HASHTABLE_FULL -1
@@ -124,7 +125,7 @@ static const uint64_t hash64_magic = 0xd43ece626aa9260aULL;
 		return;                                                                                                                                                           \
 	}                                                                                                                                                                         \
                                                                                                                                                                                   \
-	_Pragma("GCC diagnostic ignored \"-Wunused-function\"") static inline int hashtable_get_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
+ATTRIBUTE((unused)) static inline int hashtable_get_##name(struct hashtable_##type_name *table, type key, struct value_##name *value) \
 	{                                                                                                                                                                         \
 		uint32_t hash_pos = hash_func_##name##_##type_name(key);                                                                                                          \
 		uint32_t pos = hash_pos;                                                                                                                                          \
@@ -139,9 +140,7 @@ static const uint64_t hash64_magic = 0xd43ece626aa9260aULL;
 		}                                                                                                                                                                 \
 		return HASHTABLE_INVALIDENTRY;                                                                                                                                    \
 	}                                                                                                                                                                         \
-	_Pragma("GCC diagnostic error \"-Wunused-function\"")                                                                                                                     \
-                                                                                                                                                                                  \
-	    static inline uint32_t hop_range_##name(void)                                                                                                                         \
+ATTRIBUTE((unused)) static inline uint32_t hop_range_##name(void)                                                                                                                         \
 	{                                                                                                                                                                         \
 		return sizeof(((struct hashtable_##type_name *)0)->hop_info) * 8;                                                                                                 \
 	}                                                                                                                                                                         \

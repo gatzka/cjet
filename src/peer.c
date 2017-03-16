@@ -24,24 +24,17 @@
  * SOFTWARE.
  */
 
-#include <arpa/inet.h>
+#include "peer.h"
+#include "compiler.h"
+#include INET
 
 #include <stdarg.h>
-#include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "alloc.h"
-#include "compiler.h"
-#include "element.h"
-#include "fetch.h"
 #include "jet_string.h"
-#include "list.h"
 #include "log.h"
-#include "peer.h"
 #include "router.h"
-#include "util.h"
-#include "json/cJSON.h"
 
 static LIST_HEAD(peer_list);
 
@@ -133,7 +126,7 @@ void destroy_all_peers(void)
 }
 
 #define LOG_BUFFER_SIZE 100
-__attribute__((format(printf, 2, 3)))
+ATTRIBUTE((format(printf, 2, 3)))
 void log_peer_err(const struct peer *p, const char *fmt, ...)
 {
 	int written;
@@ -148,7 +141,7 @@ void log_peer_err(const struct peer *p, const char *fmt, ...)
 	log_err("%s", buffer);
 }
 
-__attribute__((format(printf, 2, 3)))
+ATTRIBUTE((format(printf, 2, 3)))
 void log_peer_info(const struct peer *p, const char *fmt, ...)
 {
 	int written;

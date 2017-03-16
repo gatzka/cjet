@@ -36,6 +36,12 @@
 	
 #define RESTRICT restrict
 
+#define ATTRIBUTE(x) __attribute__(x)
+
+#define INET <arpa/inet.h>
+
+#define wmb() __sync_synchronize()
+
 #elif _MSC_VER
 
 #define likely(x) \
@@ -44,6 +50,12 @@
 	(x)
 	
 #define RESTRICT __restrict
+
+#define ATTRIBUTE(x)
+
+#define INET <WinSock2.h>
+
+#define wmb() MemoryBarrier()
 
 #endif
 
