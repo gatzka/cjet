@@ -40,6 +40,8 @@
 
 #define INET <arpa/inet.h>
 
+#define wmb() __sync_synchronize()
+
 #elif _MSC_VER
 
 #define likely(x) \
@@ -52,6 +54,8 @@
 #define ATTRIBUTE(x)
 
 #define INET <WinSock2.h>
+
+#define wmb() MemoryBarrier()
 
 #endif
 
