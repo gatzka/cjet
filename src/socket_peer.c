@@ -24,18 +24,15 @@
  * SOFTWARE.
  */
 
-#include <arpa/inet.h>
-#include <stdint.h>
-#include <unistd.h>
+#include "socket_peer.h"
+
+#include "compiler.h"
+#include INET
 
 #include "alloc.h"
-#include "buffered_reader.h"
-#include "compiler.h"
-#include "jet_endian.h"
 #include "log.h"
 #include "parse.h"
-#include "router.h"
-#include "socket_peer.h"
+
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
