@@ -24,11 +24,17 @@
  * SOFTWARE.
  */
 
+#include "peer.h"
 #include "compiler.h"
 #include INET
 
-#include "peer.h"
+#include <stdarg.h>
+#include <stdio.h>
+
+#include "alloc.h"
+#include "jet_string.h"
 #include "log.h"
+#include "router.h"
 
 static LIST_HEAD(peer_list);
 
