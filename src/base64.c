@@ -33,7 +33,7 @@
 
 static const char encode_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-void b64_encode_string(const uint8_t *RESTRICT in, size_t in_len, char *RESTRICT out)
+void b64_encode_string(const uint8_t *__restrict in, size_t in_len, char *__restrict out)
 {
 	unsigned int triple[3];
 	unsigned int len;

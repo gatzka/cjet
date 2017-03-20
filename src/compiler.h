@@ -34,16 +34,12 @@
 #define unlikely(x) \
 	__builtin_expect((x), 0)
 
-#define RESTRICT restrict
-
 #elif _MSC_VER
 
 #define likely(x) \
 	(x)
 #define unlikely(x) \
 	(x)
-
-#define RESTRICT __restrict
 
 #endif
 
