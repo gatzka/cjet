@@ -33,7 +33,7 @@
 	__builtin_expect((x), 1)
 #define unlikely(x) \
 	__builtin_expect((x), 0)
-	
+
 #define RESTRICT restrict
 
 #elif _MSC_VER
@@ -42,7 +42,7 @@
 	(x)
 #define unlikely(x) \
 	(x)
-	
+
 #define RESTRICT __restrict
 
 #endif
