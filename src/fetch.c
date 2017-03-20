@@ -426,7 +426,7 @@ static int state_matches(const struct element *e, const struct fetch *f)
 	return 1;
 }
 
-static int add_fetch_to_state(struct element *e, const struct fetch *f)
+static int add_fetch_to_state(struct element *e, struct fetch *f)
 {
 	for (unsigned int i = 0; i < e->fetch_table_size; i++) {
 		if (e->fetcher_table[i] == NULL) {
@@ -512,7 +512,7 @@ error:
 	return -1;
 }
 
-static int add_fetch_to_state_and_notify(const struct peer *p, struct element *e, const struct fetch *f)
+static int add_fetch_to_state_and_notify(const struct peer *p, struct element *e, struct fetch *f)
 {
 	if (!has_access(e->fetch_groups, f->peer->fetch_groups)) {
 		return 0;
@@ -569,7 +569,7 @@ static int get_element(const struct peer *p, const struct cJSON *request, const 
 	return 0;
 }
 
-static int add_fetch_to_states_in_peer(const struct peer *p, const struct fetch *f)
+static int add_fetch_to_states_in_peer(const struct peer *p, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
@@ -609,7 +609,7 @@ int notify_fetchers(const struct element *e, const char *event_name)
 	return 0;
 }
 
-cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, const struct fetch *f)
+cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, struct fetch *f)
 {
 	struct list_head *item;
 	struct list_head *tmp;
