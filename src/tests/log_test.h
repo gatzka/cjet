@@ -1,7 +1,7 @@
 /*
- * The MIT License (MIT)
+ *The MIT License (MIT)
  *
- * Copyright (c) <2015> <Stephan Gatzka>
+ * Copyright (c) <2014> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,48 +24,9 @@
  * SOFTWARE.
  */
 
-#include <stdarg.h>
-#include <stdio.h>
+#ifndef CJET_LOG_TEST_H
+#define CJET_LOG_TEST_H
 
-#include "log.h"
-#include "log_test.h"
+char *get_log_buffer(void);
 
-static const unsigned int LOG_BUFFER_SIZE = 1000;
-static char log_buffer[LOG_BUFFER_SIZE];
-
-char *get_log_buffer(void)
-{
-	return log_buffer;
-}
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void log_err(const char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
-}
-
-void log_warn(const char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
-}
-
-void log_info(const char *format, ...)
-{
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
-}
-
-#ifdef __cplusplus
-}
 #endif
