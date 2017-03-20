@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "log.h"
+#include "log_test.h"
 #include "peer.h"
 
 extern "C" {

@@ -92,6 +92,7 @@ SET(CJET_LINUX_FILES
 SET(CJET_POSIX_FILES
         posix/auth_file.c
         posix/jet_string.c
+        posix/log.c
         posix/main.c
         posix/socket.c
 )

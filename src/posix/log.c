@@ -1,7 +1,7 @@
 /*
- * The MIT License (MIT)
+ *The MIT License (MIT)
  *
- * Copyright (c) <2015> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -26,46 +26,35 @@
 
 #include <stdarg.h>
 #include <stdio.h>
+#include <syslog.h>
 
 #include "log.h"
-#include "log_test.h"
 
-static const unsigned int LOG_BUFFER_SIZE = 1000;
-static char log_buffer[LOG_BUFFER_SIZE];
-
-char *get_log_buffer(void)
-{
-	return log_buffer;
-}
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+static char log_buffer[200];
 
 void log_err(const char *format, ...)
 {
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	syslog(LOG_ERR, "%s", log_buffer);
+	va_end(args);
 }
 
 void log_warn(const char *format, ...)
 {
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	syslog(LOG_WARNING, "%s", log_buffer);
+	va_end(args);
 }
 
 void log_info(const char *format, ...)
 {
-	va_list ap;
-	va_start(ap, format);
-	vsnprintf(log_buffer, LOG_BUFFER_SIZE, format, ap);
-	va_end(ap);
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	syslog(LOG_INFO, "%s", log_buffer);
+	va_end(args);
 }
-
-#ifdef __cplusplus
-}
-#endif
