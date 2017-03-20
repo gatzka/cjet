@@ -28,10 +28,12 @@
 #include <stdio.h>
 #include <syslog.h>
 
+#include "compiler.h"
 #include "log.h"
 
 static char log_buffer[200];
 
+__attribute__((format(printf, 1, 2)))
 void log_err(const char *format, ...)
 {
 	va_list args;
@@ -41,6 +43,7 @@ void log_err(const char *format, ...)
 	va_end(args);
 }
 
+__attribute__((format(printf, 1, 2)))
 void log_warn(const char *format, ...)
 {
 	va_list args;
@@ -50,6 +53,7 @@ void log_warn(const char *format, ...)
 	va_end(args);
 }
 
+__attribute__((format(printf, 1, 2)))
 void log_info(const char *format, ...)
 {
 	va_list args;
