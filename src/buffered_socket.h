@@ -55,7 +55,7 @@ union buffered_socket_reader_context {
 
 struct buffered_socket {
 	struct io_event ev;
-	unsigned int to_write;
+	size_t to_write;
 	uint8_t *read_ptr;
 	uint8_t *write_ptr;
 	uint8_t *write_buffer_ptr;

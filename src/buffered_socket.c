@@ -80,7 +80,7 @@ static int go_reading(struct buffered_socket *bs)
 		uint8_t *buffer;
 		cjet_ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
 		if (unlikely(len < 0)) {
-			return len;
+			return (int)len;
 		} else {
 			int ret = bs->read_callback(bs->read_callback_context, buffer, len);
 			if (unlikely((len == 0) || (ret == BS_CLOSED))) {
