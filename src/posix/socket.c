@@ -24,10 +24,12 @@
  * SOFTWARE.
  */
 
+#include <string.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
 #include "compiler.h"
+#include "errno.h"
 #include "socket.h"
 
 cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
@@ -62,4 +64,14 @@ _Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 int socket_close(socket_type sock)
 {
 	return close(sock);
+}
+
+enum cjet_system_error get_socket_error(void)
+{
+	return errno;
+}
+
+const char *get_socket_error_msg(enum cjet_system_error err)
+{
+	return strerror(err);
 }

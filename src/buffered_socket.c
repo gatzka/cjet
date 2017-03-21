@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include <errno.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -33,6 +32,7 @@
 #include "alloc.h"
 #include "buffered_socket.h"
 #include "compiler.h"
+#include "error_codes.h"
 #include "eventloop.h"
 #include "jet_string.h"
 #include "log.h"
@@ -46,9 +46,10 @@ static int send_buffer(struct buffered_socket *bs)
 		cjet_ssize_t written = socket_writev_with_prefix(bs->ev.sock, write_buffer_ptr, bs->to_write, NULL, 0);
 
 		if (unlikely(written == -1)) {
-			if (unlikely((errno != EAGAIN) &&
-			             (errno != EWOULDBLOCK))) {
-				log_err("unexpected write error: %s!", strerror(errno));
+			enum cjet_system_error err = get_socket_error();
+			if (unlikely((err != resource_unavailable_try_again) &&
+						 (err != operation_would_block))) {
+				log_err("unexpected %s error: %s!", "write", get_socket_error_msg(err));
 				return -1;
 			} else {
 				memmove(bs->write_buffer, write_buffer_ptr, bs->to_write);
@@ -187,8 +188,10 @@ static cjet_ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 		return BS_PEER_CLOSED;
 	}
 	if (read_length == -1) {
-		if (unlikely((errno != EAGAIN) && (errno != EWOULDBLOCK))) {
-			log_err("unexpected %s error: %s!\n", "read", strerror(errno));
+		enum cjet_system_error err = get_socket_error();
+		if (unlikely((err != resource_unavailable_try_again) &&
+					 (err != operation_would_block))) {
+			log_err("unexpected %s error: %s!", "read", get_socket_error_msg(err));
 			return BS_IO_ERROR;
 		}
 		return BS_IO_WOULD_BLOCK;
@@ -346,11 +349,13 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 		written = (size_t)sent;
 	}
 
-	if (unlikely((sent == -1) &&
-	             ((errno != EAGAIN) && (errno != EWOULDBLOCK)))) {
-		log_err("unexpected %s error: %s!\n", "write",
-		        strerror(errno));
-		return -1;
+	if (unlikely(sent == -1)) {
+		enum cjet_system_error err = get_socket_error();
+		if (unlikely((err != resource_unavailable_try_again) &&
+					 (err != operation_would_block))) {
+			log_err("unexpected %s error: %s!", "write", get_socket_error_msg(err));
+			return -1;
+		}
 	}
 
 	size_t io_vec_written;

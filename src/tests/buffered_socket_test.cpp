@@ -29,15 +29,16 @@
 #define BOOST_TEST_MODULE buffered_socket_tests
 
 #include <boost/test/unit_test.hpp>
-#include <errno.h>
 #include <limits.h>
 #include <stdint.h>
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
 #include "compiler.h"
+#include "error_codes.h"
 #include "eventloop.h"
 #include "generated/os_config.h"
+#include "socket.h"
 
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof(*(x)))
 #define MIN(X, Y) (((X) < (Y)) ? (X) : (Y))
@@ -79,6 +80,8 @@ static size_t readbuffer_length;
 
 static unsigned int MAGIC = 0x1234;
 
+static int test_errno;
+
 extern "C" {
 
 	static cjet_ssize_t write_away(void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count, size_t parts_cnt)
@@ -115,7 +118,7 @@ extern "C" {
 
 		case WRITEV_EINVAL:
 		{
-			errno = EINVAL;
+			test_errno = EINVAL;
 			return -1;
 		}
 
@@ -137,11 +140,11 @@ extern "C" {
 						parts_cnt = 1;
 						send_parts_counter++;
 					} else {
-						errno = EWOULDBLOCK;
+						test_errno = EWOULDBLOCK;
 						return -1;
 					}
 				} else {
-					errno = EINVAL;
+					test_errno = EINVAL;
 					return -1;
 				}
 			}
@@ -161,7 +164,7 @@ extern "C" {
 						parts_cnt = 1;
 						send_parts_counter++;
 					} else {
-						errno = EWOULDBLOCK;
+						test_errno = EWOULDBLOCK;
 						return -1;
 					}
 				} else {
@@ -178,7 +181,7 @@ extern "C" {
 				first_writev = false;
 				return write_away(buf, len, io_vec, count, writev_parts_cnt);
 			} else {
-				errno = EINVAL;
+				test_errno = EINVAL;
 				return -1;
 			}
 		}
@@ -194,7 +197,7 @@ extern "C" {
 					parts_cnt = 1;
 					send_parts_counter++;
 				} else {
-					errno = EWOULDBLOCK;
+					test_errno = EWOULDBLOCK;
 					return -1;
 				}
 			}
@@ -204,7 +207,7 @@ extern "C" {
 
 		case WRITEV_BLOCKS:
 		{
-			errno = EWOULDBLOCK;
+			test_errno = EWOULDBLOCK;
 			return -1;
 		}
 		default:
@@ -225,7 +228,7 @@ extern "C" {
 				readbuffer_ptr += len;
 				return len;
 			} else {
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			}
 		}
@@ -241,7 +244,7 @@ extern "C" {
 				memset(buf, 'b', count);
 				return count;
 			} else {
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			}
 		}
@@ -257,7 +260,7 @@ extern "C" {
 				memset(buf, 'b', 2);
 				return 2;
 			} else {
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			}
 		}
@@ -266,7 +269,7 @@ extern "C" {
 		{
 			if (read_called == 0) {
 				read_called++;
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			} else  {
 				if (readbuffer_length > 0) {
@@ -275,7 +278,7 @@ extern "C" {
 					memcpy(buf, readbuffer, len);
 					return len;
 				} else {
-					errno = EWOULDBLOCK;
+					test_errno = EWOULDBLOCK;
 					return -1;
 				}
 			}
@@ -285,7 +288,7 @@ extern "C" {
 		{
 			if (read_called == 0) {
 				read_called++;
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			} else  {
 				return 0;
@@ -296,14 +299,14 @@ extern "C" {
 		{
 			if (read_called == 0) {
 				read_called++;
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			} else if (read_called == 1) {
 				read_called++;
-				errno = EINVAL;
+				test_errno = EINVAL;
 				return -1;
 			} else {
-				errno = EWOULDBLOCK;
+				test_errno = EWOULDBLOCK;
 				return -1;
 			}
 		}
@@ -315,7 +318,7 @@ extern "C" {
 
 		case READ_ERROR:
 		{
-			errno = EINVAL;
+			test_errno = EINVAL;
 			return -1;
 		}
 
@@ -328,6 +331,16 @@ extern "C" {
 	{
 		(void)sock;
 		return 0;
+	}
+
+	enum cjet_system_error get_socket_error(void)
+	{
+		return (cjet_system_error)test_errno;
+	}
+
+	const char *get_socket_error_msg(enum cjet_system_error err)
+	{
+		return ::strerror(err);
 	}
 }
 
