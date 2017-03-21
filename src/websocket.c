@@ -56,9 +56,9 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 #define WS_PING_FRAME 0x9
 #define WS_PONG_FRAME 0x0a
 
-static void unmask_payload(uint8_t *buffer, unsigned int length, uint8_t *mask)
+static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 {
-	for (unsigned int i = 0; i < length; i++) {
+	for (size_t i = 0; i < length; i++) {
 		buffer[i] = buffer[i] ^ (mask[i % 4]);
 	}
 }
