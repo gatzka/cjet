@@ -49,6 +49,11 @@ uint16_t jet_htobe16(uint16_t host_endian_16bits)
 	return htobe16(host_endian_16bits);
 }
 
+uint32_t jet_htobe32(uint32_t host_endian_32bits)
+{
+	return htobe32(host_endian_32bits);
+}
+
 uint64_t jet_htobe64(uint64_t host_endian_64bits)
 {
 	return htobe64(host_endian_64bits);

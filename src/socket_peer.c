@@ -24,7 +24,6 @@
  * SOFTWARE.
  */
 
-#include <arpa/inet.h>
 #include <stdint.h>
 #include <unistd.h>
 
@@ -93,7 +92,7 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 
 	uint32_t message_length;
 	memcpy(&message_length, buf, len);
-	message_length = ntohl(message_length);
+	message_length = jet_be32toh(message_length);
 
 	struct buffered_reader *br = &p->br;
 	br->read_exactly(br->this_ptr, message_length, read_msg, p);
@@ -102,7 +101,7 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 
 static int send_message(const struct peer *p, char *rendered, size_t len)
 {
-	uint32_t message_length = htonl(len);
+	uint32_t message_length = jet_htobe32(len);
 	struct socket_io_vector iov[2];
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);

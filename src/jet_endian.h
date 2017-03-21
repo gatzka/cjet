@@ -38,6 +38,7 @@ uint32_t jet_be32toh(uint32_t big_endian_32bits);
 uint64_t jet_be64toh(uint64_t big_endian_64bits);
 
 uint16_t jet_htobe16(uint16_t host_endian_16bits);
+uint32_t jet_htobe32(uint32_t host_endian_32bits);
 uint64_t jet_htobe64(uint64_t host_endian_16bits);
 
 #ifdef __cplusplus
