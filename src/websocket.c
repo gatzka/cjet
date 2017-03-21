@@ -588,16 +588,11 @@ int websocket_send_pong_frame(const struct websocket *s, uint8_t *payload, size_
 	return send_frame(s, payload, length, WS_PONG_FRAME);
 }
 
-int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code, const char *payload, size_t length)
+int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code)
 {
 	uint16_t code = status_code;
-	uint8_t buffer[length + sizeof(code)];
 	code = jet_htobe16(code);
-	memcpy(buffer, &code, sizeof(code));
-	if (length > 0) {
-		memcpy(buffer + sizeof(code), payload, length);
-	}
-	return send_frame(s, buffer, length + sizeof(code), WS_CLOSE_FRAME);
+	return send_frame(s, (uint8_t *)&code, sizeof(code), WS_CLOSE_FRAME);
 }
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
@@ -625,7 +620,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 {
 	if (ws->upgrade_complete) {
-		websocket_send_close_frame(ws, status_code, NULL, 0);
+		websocket_send_close_frame(ws, status_code);
 	}
 
 	free_connection(ws->connection);
