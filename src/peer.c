@@ -27,7 +27,6 @@
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 
 #include "alloc.h"
 #include "compiler.h"
