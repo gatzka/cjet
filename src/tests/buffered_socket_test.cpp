@@ -109,7 +109,7 @@ extern "C" {
 	{
 		switch (sock) {
 		case WRITEV_COMPLETE_WRITE: {
-			return write_away(buf, len, io_vec, count, SIZE_MAX);
+			return write_away(buf, len, io_vec, count, UINT32_MAX);
 		}
 
 		case WRITEV_EINVAL:
