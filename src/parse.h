@@ -27,6 +27,7 @@
 #ifndef CJET_PARSE_H
 #define CJET_PARSE_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "peer.h"
@@ -36,7 +37,7 @@ extern "C" {
 #endif
 
 void init_parser(void);
-int parse_message(const char *msg, uint32_t length, struct peer *p);
+int parse_message(const char *msg, size_t length, struct peer *p);
 
 #ifdef __cplusplus
 }

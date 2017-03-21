@@ -159,7 +159,7 @@ static int parse_json_array(cJSON *root, struct peer *p)
 	return 0;
 }
 
-int parse_message(const char *msg, uint32_t length, struct peer *p)
+int parse_message(const char *msg, size_t length, struct peer *p)
 {
 	int ret = 0;
 
