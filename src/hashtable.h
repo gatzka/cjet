@@ -66,12 +66,12 @@
 #include <string.h>
 
 #include "alloc.h"
+#include "compiler.h"
 
 #define GFP_KERNEL 1
 
 #define kmalloc(size, priority) cjet_malloc(size)
 #define kfree(__ptr) cjet_free(__ptr)
-#define wmb() __sync_synchronize()
 
 #define HASHTABLE_SUCCESS 0
 #define HASHTABLE_FULL -1

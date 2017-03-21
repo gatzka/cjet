@@ -34,6 +34,8 @@
 #define unlikely(x) \
 	__builtin_expect((x), 0)
 
+#define wmb() __sync_synchronize()
+
 #elif _MSC_VER
 
 #define likely(x) \
@@ -42,6 +44,9 @@
 	(x)
 
 #define __attribute__(x)
+#define _Pragma(x)
+
+#define wmb() _WriteBarrier()
 
 #endif
 
