@@ -25,7 +25,6 @@
  */
 
 #include <stdint.h>
-#include <unistd.h>
 
 #include "alloc.h"
 #include "buffered_reader.h"
