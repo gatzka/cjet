@@ -2,5 +2,4 @@ cscope.*
 *.swp
 build*
 *.qbs.user*
-**/*.obj
-
+*.obj
