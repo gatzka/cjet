@@ -41,6 +41,8 @@
 #define unlikely(x) \
 	(x)
 
+#define __attribute__(x)
+
 #endif
 
 #endif
