@@ -1,0 +1,144 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Quelldateien">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Headerdateien">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Ressourcendateien">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Quelldateien\win32">
+      <UniqueIdentifier>{366bd8b0-f2af-4c19-8118-f3efe596ea6f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Headerdateien\generated">
+      <UniqueIdentifier>{1591333f-4795-4963-ae8d-95bcef26abff}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\third-party">
+      <UniqueIdentifier>{5fd3b29f-85e4-4a62-8860-8466247cfbca}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\third-party\json">
+      <UniqueIdentifier>{3bb6ef73-fdd7-4868-b42e-b4ab145c94d2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\third-party\sha1">
+      <UniqueIdentifier>{f9ccf447-0662-425b-b843-747c9b923a08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Quelldateien\third-party\http-parser">
+      <UniqueIdentifier>{a5d43189-ec1e-4723-b141-8b80411aa16c}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\authenticate.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\alloc.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\base64.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\config.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\element.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\fetch.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\groups.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\info.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\jet_string.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\parse.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\peer.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\response.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\router.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\socket_peer.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\table.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\timer.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\websocket.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\websocket_peer.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\buffered_socket.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\http_connection.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\http_server.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\json\cJSON.c">
+      <Filter>Quelldateien\third-party\json</Filter>
+    </ClCompile>
+    <ClCompile Include="..\sha1\sha1.c">
+      <Filter>Quelldateien\third-party\sha1</Filter>
+    </ClCompile>
+    <ClCompile Include="..\http-parser\http_parser.c">
+      <Filter>Quelldateien\third-party\http-parser</Filter>
+    </ClCompile>
+    <ClCompile Include="jet_string_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="timer_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="socket_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="random_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="log_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="jet_endian_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="auth_file_win.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="main.c">
+      <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="generated\cjet_config.h">
+      <Filter>Headerdateien\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="generated\os_config.h">
+      <Filter>Headerdateien\generated</Filter>
+    </ClInclude>
+    <ClInclude Include="..\element.h">
+      <Filter>Headerdateien</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
