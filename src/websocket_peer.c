@@ -25,8 +25,8 @@
  */
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdio.h>
-#include <sys/types.h>
 
 #include "alloc.h"
 #include "base64.h"

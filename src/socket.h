@@ -28,7 +28,6 @@
 #define CJET_SOCKET_H
 
 #include <stddef.h>
-#include <sys/types.h>
 
 #include "compiler.h"
 #include "generated/os_config.h"

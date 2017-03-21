@@ -28,7 +28,6 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/types.h>
 
 #include "alloc.h"
 #include "buffered_reader.h"
