@@ -100,7 +100,11 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 
 static int send_message(const struct peer *p, char *rendered, size_t len)
 {
-	uint32_t message_length = jet_htobe32(len);
+	if (unlikely(len > UINT32_MAX)) {
+		log_err("Jet message length does not fit into uint32_t!\n");
+		return -1;
+	}
+	uint32_t message_length = jet_htobe32((uint32_t)len);
 	struct socket_io_vector iov[2];
 	iov[0].iov_base = &message_length;
 	iov[0].iov_len = sizeof(message_length);
