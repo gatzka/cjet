@@ -46,7 +46,7 @@ struct socket_io_vector {
  * This functions must be implemented in an OS specific way.
  */
 cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count);
-cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count);
+cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count);
 int socket_close(socket_type sock);
 
 #ifdef __cplusplus
