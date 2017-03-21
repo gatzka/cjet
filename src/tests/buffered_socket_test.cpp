@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
+#include <limits.h>
 #include <stdint.h>
 #include <sys/uio.h>
 
@@ -109,7 +110,7 @@ extern "C" {
 	{
 		switch (sock) {
 		case WRITEV_COMPLETE_WRITE: {
-			return write_away(buf, len, io_vec, count, UINT32_MAX);
+			return write_away(buf, len, io_vec, count, ULONG_MAX);
 		}
 
 		case WRITEV_EINVAL:
