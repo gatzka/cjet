@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <errno.h>
+#include <stdint.h>
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
