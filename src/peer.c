@@ -24,8 +24,6 @@
  * SOFTWARE.
  */
 
-#include <arpa/inet.h>
-
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
