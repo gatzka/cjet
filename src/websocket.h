@@ -109,7 +109,7 @@ int websocket_upgrade_on_headers_complete(http_parser *parser);
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
 int websocket_send_text_frame(const struct websocket *s, char *payload, size_t length);
 int websocket_send_binary_frame(const struct websocket *s, uint8_t *payload, size_t length);
-int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code, const char *payload, size_t length);
+int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code);
 int websocket_send_ping_frame(const struct websocket *s, uint8_t *payload, size_t length);
 int websocket_send_pong_frame(const struct websocket *s, uint8_t *payload, size_t length);
 
