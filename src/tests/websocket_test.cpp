@@ -29,10 +29,10 @@
 #define BOOST_TEST_MODULE websocket_tests
 
 #include <boost/test/unit_test.hpp>
-#include <errno.h>
 
 #include "compiler.h"
 #include "buffered_socket.h"
+#include "error_codes.h"
 #include "jet_endian.h"
 #include "jet_string.h"
 #include "socket.h"
@@ -66,6 +66,8 @@ static http_parser_settings response_parser_settings;
 static bool got_complete_response_header = false;
 static bool response_parse_error = false;
 
+static int test_errno;
+
 extern "C" {
 	cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count)
 	{
@@ -78,7 +80,7 @@ extern "C" {
 				size_t nparsed = http_parser_execute(&response_parser, &response_parser_settings, (const char *)io_vec[i].iov_base, io_vec[i].iov_len);
 				if (nparsed != io_vec[i].iov_len) {
 					response_parse_error = true;
-					errno = EFAULT;
+					test_errno = EFAULT;
 					return -1;
 				}
 			} else {
@@ -96,7 +98,7 @@ extern "C" {
 		(void)buf;
 		(void)count;
 
-		errno = EWOULDBLOCK;
+		test_errno = EWOULDBLOCK;
 		return -1;
 	}
 
@@ -104,6 +106,16 @@ extern "C" {
 	{
 		(void)sock;
 		return 0;
+	}
+
+	enum cjet_system_error get_socket_error(void)
+	{
+		return (cjet_system_error)test_errno;
+	}
+
+	const char *get_socket_error_msg(enum cjet_system_error err)
+	{
+		return ::strerror(err);
 	}
 }
 
