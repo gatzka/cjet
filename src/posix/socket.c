@@ -35,14 +35,16 @@ cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	return read(sock, buf, count);
 }
 
-cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
+cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count)
 {
-	struct iovec iov[count];
+	struct iovec iov[count + 1];
 
-	if (unlikely(count == 0)) {
+	if (unlikely((len == 0) && (count == 0))) {
 		return 0;
 	}
 
+	iov[0].iov_base = buf;
+	iov[0].iov_len = len;
 /*
  * This pragma is used because iov_base is not declared const.
  * Nevertheless, I want to have the parameter io_vec const. Therefore I
@@ -50,8 +52,8 @@ cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, un
  */
 _Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 	for (unsigned int i = 0; i < count; i++) {
-		iov[i].iov_base = (void *)io_vec[i].iov_base;
-		iov[i].iov_len = io_vec[i].iov_len;
+		iov[i + 1].iov_base = (void *)io_vec[i].iov_base;
+		iov[i + 1].iov_len = io_vec[i].iov_len;
 	}
 _Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	return writev(sock, iov, sizeof(iov) / sizeof(struct iovec));

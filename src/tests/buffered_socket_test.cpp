@@ -79,17 +79,36 @@ static unsigned int MAGIC = 0x1234;
 
 extern "C" {
 
-	cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
+	static cjet_ssize_t write_away(void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count, size_t parts_cnt)
+	{
+		size_t complete_length = 0;
+		int will_write = MIN(len, parts_cnt);
+		memcpy(write_buffer_ptr, buf, will_write);
+		complete_length += will_write;
+		write_buffer_ptr += will_write;
+		parts_cnt -= will_write;
+		if (parts_cnt == 0) {
+			return complete_length;
+		}
+
+		for (unsigned int i = 0; i < count; i++) {
+			will_write = MIN(io_vec[i].iov_len, parts_cnt);
+			memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
+			complete_length += will_write;
+			write_buffer_ptr += will_write;
+			parts_cnt -= will_write;
+			if (parts_cnt == 0) {
+				return complete_length;
+			}
+		}
+		return complete_length;
+	}
+
+	cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count)
 	{
 		switch (sock) {
 		case WRITEV_COMPLETE_WRITE: {
-			size_t complete_length = 0;
-			for (unsigned int i = 0; i < count; i++) {
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, io_vec[i].iov_len);
-				complete_length += io_vec[i].iov_len;
-				write_buffer_ptr += io_vec[i].iov_len;
-			}
-			return complete_length;
+			return write_away(buf, len, io_vec, count, SIZE_MAX);
 		}
 
 		case WRITEV_EINVAL:
@@ -101,24 +120,11 @@ extern "C" {
 		case WRITEV_PART_SEND_SINGLE_BYTES:
 		case WRITEV_PART_SEND_BLOCKS:
 		{
-			size_t complete_length = 0;
-			size_t parts_cnt = writev_parts_cnt;
-			for (unsigned int i = 0; i < count; i++) {
-				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
-				complete_length += will_write;
-				write_buffer_ptr += will_write;
-				parts_cnt -= will_write;
-				if (parts_cnt == 0) {
-					return complete_length;
-				}
-			}
-			return complete_length;
+			return write_away(buf, len, io_vec, count, writev_parts_cnt);
 		}
 
 		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_FAILS:
 		{
-			size_t complete_length = 0;
 			size_t parts_cnt;
 			if (first_writev) {
 				parts_cnt = writev_parts_cnt;
@@ -137,22 +143,12 @@ extern "C" {
 					return -1;
 				}
 			}
-			for (unsigned int i = 0; i < count; i++) {
-				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
-				complete_length += will_write;
-				write_buffer_ptr += will_write;
-				parts_cnt -= will_write;
-				if (parts_cnt == 0) {
-					return complete_length;
-				}
-			}
-			return complete_length;
+
+			return write_away(buf, len, io_vec, count, parts_cnt);
 		}
 
 		case WRITEV_PART_SEND_PARTS_EVENTLOOP_SEND_REST:
 		{
-			size_t complete_length = 0;
 			size_t parts_cnt;
 			if (first_writev) {
 				parts_cnt = writev_parts_cnt;
@@ -170,36 +166,15 @@ extern "C" {
 					parts_cnt = 1;
 				}
 			}
-			for (unsigned int i = 0; i < count; i++) {
-				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
-				complete_length += will_write;
-				write_buffer_ptr += will_write;
-				parts_cnt -= will_write;
-				if (parts_cnt == 0) {
-					return complete_length;
-				}
-			}
-			return complete_length;
+
+			return write_away(buf, len, io_vec, count, parts_cnt);
 		}
 
 		case WRITEV_PART_SEND_FAILS:
 		{
 			if (first_writev) {
 				first_writev = false;
-				size_t complete_length = 0;
-				size_t parts_cnt = writev_parts_cnt;
-				for (unsigned int i = 0; i < count; i++) {
-					int will_write = MIN(io_vec[i].iov_len, parts_cnt);
-					memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
-					complete_length += will_write;
-					write_buffer_ptr += will_write;
-					parts_cnt -= will_write;
-					if (parts_cnt == 0) {
-						return complete_length;
-					}
-				}
-				return complete_length;
+				return write_away(buf, len, io_vec, count, writev_parts_cnt);
 			} else {
 				errno = EINVAL;
 				return -1;
@@ -208,7 +183,6 @@ extern "C" {
 
 		case WRITEV_PART_SEND_PARTS:
 		{
-			size_t complete_length = 0;
 			size_t parts_cnt;
 			if (first_writev) {
 				parts_cnt = writev_parts_cnt;
@@ -222,17 +196,8 @@ extern "C" {
 					return -1;
 				}
 			}
-			for (unsigned int i = 0; i < count; i++) {
-				int will_write = MIN(io_vec[i].iov_len, parts_cnt);
-				memcpy(write_buffer_ptr, io_vec[i].iov_base, will_write);
-				complete_length += will_write;
-				write_buffer_ptr += will_write;
-				parts_cnt -= will_write;
-				if (parts_cnt == 0) {
-					return complete_length;
-				}
-			}
-			return complete_length;
+
+			return write_away(buf, len, io_vec, count, parts_cnt);
 		}
 
 		case WRITEV_BLOCKS:

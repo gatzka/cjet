@@ -67,9 +67,11 @@ static bool got_complete_response_header = false;
 static bool response_parse_error = false;
 
 extern "C" {
-	cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
+	cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count)
 	{
 		(void)sock;
+		(void)buf;
+		(void)len;
 		size_t complete_length = 0;
 		for (unsigned int i = 0; i < count; i++) {
 			if (!got_complete_response_header) {
