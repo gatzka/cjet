@@ -33,6 +33,7 @@
 #include <sys/uio.h>
 
 #include "buffered_socket.h"
+#include "compiler.h"
 #include "eventloop.h"
 #include "generated/os_config.h"
 
@@ -78,7 +79,7 @@ static unsigned int MAGIC = 0x1234;
 
 extern "C" {
 
-	ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
+	cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count)
 	{
 		switch (sock) {
 		case WRITEV_COMPLETE_WRITE: {
@@ -244,7 +245,7 @@ extern "C" {
 		}
 	}
 
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		switch (sock) {
 		case READ_UNTIL_IN_CALLBACK:

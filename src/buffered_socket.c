@@ -46,7 +46,7 @@ static int send_buffer(struct buffered_socket *bs)
 		struct socket_io_vector iov;
 		iov.iov_base = write_buffer_ptr;
 		iov.iov_len = bs->to_write;
-		ssize_t written = socket_writev(bs->ev.sock, &iov, 1);
+		cjet_ssize_t written = socket_writev(bs->ev.sock, &iov, 1);
 
 		if (unlikely(written == -1)) {
 			if (unlikely((errno != EAGAIN) &&
@@ -78,7 +78,7 @@ static int go_reading(struct buffered_socket *bs)
 {
 	while (1) {
 		uint8_t *buffer;
-		ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
+		cjet_ssize_t len = bs->reader(bs, bs->reader_context, &buffer);
 		if (unlikely(len < 0)) {
 			return len;
 		} else {
@@ -176,7 +176,7 @@ static void reorganize_read_buffer(struct buffered_socket *bs)
 	bs->read_ptr = bs->read_buffer;
 }
 
-static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
+static cjet_ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 {
 	if (unlikely(free_space(bs) < count)) {
 		reorganize_read_buffer(bs);
@@ -185,7 +185,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
 			return BS_IO_TOOMUCHDATA;
 		}
 	}
-	ssize_t read_length = socket_read(bs->ev.sock, bs->write_ptr, free_space(bs));
+	cjet_ssize_t read_length = socket_read(bs->ev.sock, bs->write_ptr, free_space(bs));
 	if (unlikely(read_length == 0)) {
 		return BS_PEER_CLOSED;
 	}
@@ -224,7 +224,7 @@ static ssize_t fill_buffer(struct buffered_socket *bs, size_t count)
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */
-static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
+static cjet_ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
 	size_t count = ctx.num;
 	while (1) {
@@ -233,7 +233,7 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
 			bs->read_ptr += count;
 			return count;
 		}
-		ssize_t number_of_bytes_read = fill_buffer(bs, count);
+		cjet_ssize_t number_of_bytes_read = fill_buffer(bs, count);
 		if (number_of_bytes_read <= 0) {
 			return number_of_bytes_read;
 		}
@@ -264,7 +264,7 @@ static ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_socket_re
  * @return BS_PEER_CLOSED is returned if the socket peer closed the underlying connection
  * and no more data is can be expected to read.
  */
-static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
+static cjet_ssize_t internal_read_until(struct buffered_socket *bs, union buffered_socket_reader_context ctx, uint8_t **read_ptr)
 {
 	const uint8_t *haystack = bs->read_ptr;
 	const char *needle = ctx.ptr;
@@ -277,7 +277,7 @@ static ssize_t internal_read_until(struct buffered_socket *bs, union buffered_so
 			bs->read_ptr += diff;
 			return diff;
 		} else {
-			ssize_t number_of_bytes_read = fill_buffer(bs, 1);
+			cjet_ssize_t number_of_bytes_read = fill_buffer(bs, 1);
 			haystack = bs->read_ptr;
 			if (number_of_bytes_read <= 0) {
 				return number_of_bytes_read;
@@ -344,8 +344,8 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 		to_write += io_vec[i].iov_len;
 	}
 
-	ssize_t sent = socket_writev(bs->ev.sock, iov, count + 1);
-	if (likely(sent == (ssize_t)to_write)) {
+	cjet_ssize_t sent = socket_writev(bs->ev.sock, iov, count + 1);
+	if (likely(sent == (cjet_ssize_t)to_write)) {
 		return 0;
 	}
 

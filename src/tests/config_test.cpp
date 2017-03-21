@@ -30,13 +30,14 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "compiler.h"
 #include "config.h"
 #include "json/cJSON.h"
 #include "peer.h"
 
 extern "C" {
 
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

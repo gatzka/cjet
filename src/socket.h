@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <sys/types.h>
 
+#include "compiler.h"
 #include "generated/os_config.h"
 
 #ifdef __cplusplus
@@ -45,8 +46,8 @@ struct socket_io_vector {
  * Platform independent prototypes for socket operations.
  * This functions must be implemented in an OS specific way.
  */
-ssize_t socket_read(socket_type sock, void *buf, size_t count);
-ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count);
+cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count);
+cjet_ssize_t socket_writev(socket_type sock, struct socket_io_vector *io_vec, unsigned int count);
 int socket_close(socket_type sock);
 
 #ifdef __cplusplus

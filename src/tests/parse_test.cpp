@@ -33,17 +33,18 @@
 #include <cstring>
 #include <list>
 
+#include "compiler.h"
+#include "element.h"
 #include "generated/cjet_config.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
-#include "element.h"
 #include "table.h"
 
 static std::list<cJSON*> events;
 
 extern "C" {
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

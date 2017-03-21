@@ -31,6 +31,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include "buffered_reader.h"
+#include "compiler.h"
 #include "generated/os_config.h"
 #include "http_connection.h"
 #include "peer.h"
@@ -55,7 +56,7 @@ static void *br_error_context = NULL;
 
 extern "C" {
 
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;
@@ -74,7 +75,7 @@ extern "C" {
 		(void)this_ptr;
 		uint8_t *ptr = read_buffer_ptr;
 		read_buffer_ptr += num;
-		if ((ptr - read_buffer) < (ssize_t)read_buffer_length) {
+		if ((ptr - read_buffer) < (cjet_ssize_t)read_buffer_length) {
 			handler(handler_context, ptr, num);
 		}
 		return 0;

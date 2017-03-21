@@ -30,11 +30,12 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "compiler.h"
+#include "element.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "router.h"
-#include "element.h"
 #include "table.h"
 
 static const char *method_no_args_path = "/method_no_args/";
@@ -42,7 +43,7 @@ static const char *method_no_args_path = "/method_no_args/";
 static const int INVALID_PARAMS_ERROR = -32602;
 
 extern "C" {
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

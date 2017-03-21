@@ -31,11 +31,12 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
+#include "compiler.h"
+#include "element.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "router.h"
-#include "element.h"
 #include "table.h"
 
 static char send_buffer[100000];
@@ -43,7 +44,7 @@ static char send_buffer[100000];
 static std::list<struct io_event *> timer_evs;
 
 extern "C" {
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

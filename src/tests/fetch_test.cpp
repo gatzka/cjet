@@ -32,6 +32,7 @@
 #include <list>
 #include <sstream>
 
+#include "compiler.h"
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 #include "json/cJSON.h"
@@ -57,7 +58,7 @@ static std::list<cJSON*> owner_responses;
 
 extern "C" {
 
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

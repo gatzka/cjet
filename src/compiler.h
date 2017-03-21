@@ -36,6 +36,9 @@
 
 #define wmb() __sync_synchronize()
 
+#include <sys/types.h>
+typedef ssize_t cjet_ssize_t;
+
 #elif _MSC_VER
 
 #define likely(x) \
@@ -47,6 +50,9 @@
 #define _Pragma(x)
 
 #define wmb() _WriteBarrier()
+
+#include <BaseTsd.h>
+typedef SSIZE_T cjet_ssize_t;
 
 #endif
 

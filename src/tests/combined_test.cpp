@@ -30,12 +30,13 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "compiler.h"
+#include "element.h"
 #include "eventloop.h"
 #include "json/cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "router.h"
-#include "element.h"
 #include "table.h"
 
 enum event {
@@ -70,7 +71,7 @@ static enum event fetch_peer_1_event;
 static enum event fetch_peer_2_event;
 
 extern "C" {
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

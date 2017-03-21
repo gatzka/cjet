@@ -282,8 +282,8 @@ static int write_user_data()
 		return -1;
 	}
 
-	ssize_t written = 0;
-	ssize_t to_write = strlen(data);
+	cjet_ssize_t written = 0;
+	cjet_ssize_t to_write = strlen(data);
 	while (written < to_write) {
 		written = write(password_file, data, to_write);
 		if (written < 0) {

@@ -34,6 +34,7 @@
 #include <stdio.h>
 
 #include "authenticate.h"
+#include "compiler.h"
 #include "element.h"
 #include "eventloop.h"
 #include "fetch.h"
@@ -83,7 +84,7 @@ extern "C" {
 		return NULL;
 	}
 
-	ssize_t socket_read(socket_type sock, void *buf, size_t count)
+	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{
 		(void)sock;
 		(void)count;

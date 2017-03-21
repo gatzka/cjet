@@ -31,6 +31,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include "compiler.h"
 #include "eventloop.h"
 #include "generated/cjet_config.h"
 #include "generated/os_config.h"
@@ -60,7 +61,7 @@ struct buffered_socket {
 	uint8_t *write_buffer_ptr;
 	uint8_t read_buffer[CONFIG_MAX_MESSAGE_SIZE];
 	uint8_t write_buffer[CONFIG_MAX_WRITE_BUFFER_SIZE];
-	ssize_t (*reader)(struct buffered_socket *bs, union buffered_socket_reader_context reader_context, uint8_t **read_ptr);
+	cjet_ssize_t (*reader)(struct buffered_socket *bs, union buffered_socket_reader_context reader_context, uint8_t **read_ptr);
 	union buffered_socket_reader_context reader_context;
 	enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len);
 	void *read_callback_context;
