@@ -33,11 +33,12 @@
 
 char *duplicate_string(const char *s)
 {
-	char *ptr = cjet_malloc(strlen(s) + 1);
+	size_t len_including_zero = strlen(s) + 1;
+	char *ptr = cjet_malloc(len_including_zero);
 	if (unlikely(ptr == NULL)) {
 		return NULL;
 	}
 
-	strcpy(ptr, s);
+	strncpy(ptr, s, len_including_zero);
 	return ptr;
 }
