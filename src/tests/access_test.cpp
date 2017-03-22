@@ -204,7 +204,10 @@ static cJSON *create_authentication_with_params(cJSON *params)
 {
 
 	cJSON *root = cJSON_CreateObject();
-	cJSON_AddItemToObject(root, "params", params);
+	if (params != NULL) {
+		cJSON_AddItemToObject(root, "params", params);
+	}
+
 	cJSON_AddStringToObject(root, "id", "auth_request");
 	cJSON_AddStringToObject(root, "method", "authenticate");
 	return root;
