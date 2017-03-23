@@ -1480,7 +1480,7 @@ CJSON_PUBLIC(unsigned int) cJSON_GetArraySize(const cJSON *array)
 CJSON_PUBLIC(cJSON *) cJSON_GetArrayItem(const cJSON *array, int item)
 {
     cJSON *c = array ? array->child : NULL;
-    while (c && item > 0)
+    while (c && item != 0)
     {
         item--;
         c = c->next;
@@ -1685,7 +1685,7 @@ CJSON_PUBLIC(void) cJSON_DeleteItemFromObject(cJSON *object, const char *string)
 CJSON_PUBLIC(void) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newitem)
 {
     cJSON *c = array->child;
-    while (c && (which > 0))
+    while (c && (which != 0))
     {
         c = c->next;
         which--;
@@ -1711,7 +1711,7 @@ CJSON_PUBLIC(void) cJSON_InsertItemInArray(cJSON *array, int which, cJSON *newit
 static void ReplaceItemInArray(cJSON *array, size_t which, cJSON *newitem)
 {
     cJSON *c = array->child;
-    while (c && (which > 0))
+    while (c && (which != 0))
     {
         c = c->next;
         which--;
