@@ -32,6 +32,7 @@
 #include <list>
 #include <sstream>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "eventloop.h"
 #include "generated/cjet_config.h"
@@ -1350,14 +1351,14 @@ BOOST_FIXTURE_TEST_CASE(add_events_before_fetch_response, F)
 	char *unformatted_json = cJSON_PrintUnformatted(add);
 	cJSON_Delete(add);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 
 	cJSON *fetch = create_correct_fetch("foo/bar", fetch_id);
 	unformatted_json = cJSON_PrintUnformatted(fetch);
 	cJSON_Delete(fetch);
 	ret = parse_message(unformatted_json, strlen(unformatted_json), fetch_peer_1);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 
 	BOOST_CHECK(fetch_events.size() == 2);
@@ -1383,7 +1384,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 	char *unformatted_json = cJSON_PrintUnformatted(add);
 	cJSON_Delete(add);
 	int ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 	check_no_error(add_id);
 
@@ -1391,7 +1392,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 	unformatted_json = cJSON_PrintUnformatted(fetch);
 	cJSON_Delete(fetch);
 	ret = parse_message(unformatted_json, strlen(unformatted_json), fetch_peer_1);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	BOOST_REQUIRE(ret == 0);
 
 	BOOST_CHECK(fetch_events.size() == 2);
@@ -1409,7 +1410,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 	cJSON *set_json = create_correct_set_method(path, 124);
 	unformatted_json = cJSON_PrintUnformatted(set_json);
 	ret = parse_message(unformatted_json, strlen(unformatted_json), set_peer);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	cJSON_Delete(set_json);
 	BOOST_CHECK(ret == 0);
 	BOOST_CHECK(owner_responses.size() == 1);
@@ -1421,7 +1422,7 @@ BOOST_FIXTURE_TEST_CASE(set_with_return_value, F)
 	cJSON *result_json = create_result_json(routed_id);
 	unformatted_json = cJSON_PrintUnformatted(result_json);
 	ret = parse_message(unformatted_json, strlen(unformatted_json), owner_peer);
-	cJSON_free(unformatted_json);
+	cjet_free(unformatted_json);
 	cJSON_Delete(result_json);
 	BOOST_CHECK(ret == 0);
 	free(routed_id);

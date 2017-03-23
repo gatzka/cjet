@@ -293,7 +293,7 @@ static int write_user_data()
 		to_write -= written;
 	}
 
-	cJSON_free(data);
+	cjet_free(data);
 	return 0;
 }
 
