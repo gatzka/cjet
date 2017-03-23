@@ -35,6 +35,7 @@
 #include <iostream>
 
 #include "authenticate.h"
+#include "parse.h"
 #include "peer.h"
 #include "json/cJSON.h"
 
@@ -129,6 +130,8 @@ void free_peer(struct peer *p) { ::free(p); }
 struct F {
 	F()
 	{
+		init_parser();
+
 		std::string argv(boost::unit_test::framework::master_test_suite().argv[0]);
 		boost::filesystem::path exec_path = boost::filesystem::system_complete(argv).parent_path();
 		std::string temporarily_file = create_temp_copy_of_file(exec_path.string() + "/input_data/passwd_std.json", "_temp");

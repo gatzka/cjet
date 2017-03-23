@@ -160,7 +160,7 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	char *rendered = cJSON_PrintUnformatted(response);
 	if (likely(rendered != NULL)) {
 		int ret = p->send_message(p, rendered, strlen(rendered));
-		cJSON_free(rendered);
+		cjet_free(rendered);
 		return ret;
 	} else {
 		log_peer_err(p, "Could not render JSON into a string!\n");

@@ -58,7 +58,7 @@ static int send_response(cJSON *response, const struct peer *p)
 	}
 
 	ret = p->send_message(p, rendered, strlen(rendered));
-	cJSON_free(rendered);
+	cjet_free(rendered);
 
 render_error:
 	cJSON_Delete(response);
