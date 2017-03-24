@@ -6,6 +6,7 @@ limitations (MIT).
 
 ## Build Status
 [![Travis CI](https://travis-ci.org/gatzka/cjet.svg?branch=master)](https://travis-ci.org/gatzka/cjet)
+[![Appveyor CI](https://ci.appveyor.com/api/projects/status/agpp4862u9523lw8?svg=true)](https://ci.appveyor.com/project/gatzka/cjet)
 [![Coverity](https://scan.coverity.com/projects/3315/badge.svg)](https://scan.coverity.com/projects/3315)
 [![Coverage Status](https://coveralls.io/repos/gatzka/cjet/badge.svg?branch=master&service=github)](https://coveralls.io/github/gatzka/cjet?branch=master)
 
