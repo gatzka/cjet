@@ -47,7 +47,7 @@ CJSON_PUBLIC(const char *) cJSON_GetErrorPtr(void)
 }
 
 /* This is a safeguard to prevent copy-pasters from using incompatible C and header files */
-#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 4) || (CJSON_VERSION_PATCH != 3)
+#if (CJSON_VERSION_MAJOR != 1) || (CJSON_VERSION_MINOR != 4) || (CJSON_VERSION_PATCH != 4)
     #error cJSON.h and cJSON.c have different versions. Make sure that both have the same.
 #endif
 
@@ -253,13 +253,19 @@ static unsigned char* ensure(printbuffer * const p, size_t needed, const interna
         return NULL;
     }
 
+    if ((p->length > 0) && (p->offset >= p->length))
+    {
+        /* make sure that offset is valid */
+        return NULL;
+    }
+
     if (needed > INT_MAX)
     {
         /* sizes bigger than INT_MAX are currently not supported */
         return NULL;
     }
 
-    needed += p->offset;
+    needed += p->offset + 1;
     if (needed <= p->length)
     {
         return p->buffer + p->offset;
@@ -270,8 +276,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed, const interna
     }
 
     /* calculate new buffer size */
-    newsize = needed * 2;
-    if (newsize > INT_MAX)
+    if (newsize > (INT_MAX / 2))
     {
         /* overflow of int, use INT_MAX if possible */
         if (needed <= INT_MAX)
@@ -282,6 +287,10 @@ static unsigned char* ensure(printbuffer * const p, size_t needed, const interna
         {
             return NULL;
         }
+    }
+    else
+    {
+        newsize = needed * 2;
     }
 
     if (hooks->reallocate != NULL)
@@ -303,7 +312,7 @@ static unsigned char* ensure(printbuffer * const p, size_t needed, const interna
         }
         if (newbuffer)
         {
-            memcpy(newbuffer, p->buffer, p->offset);
+            memcpy(newbuffer, p->buffer, p->offset + 1);
         }
         hooks->deallocate(p->buffer);
     }
