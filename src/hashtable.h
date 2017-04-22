@@ -88,7 +88,7 @@ static inline uint32_t hs_hash32(uint32_t key, unsigned int order)
 	return (key >> (32 - (order)));
 }
 
-static inline uint32_t hash6432shift(uint64_t key, unsigned int order)
+static inline uint32_t hs_hash6432shift(uint64_t key, unsigned int order)
 {
 	key = (~key) + (key << 18);
 	key = key ^ (key >> 31);
@@ -341,7 +341,7 @@ static inline uint32_t hash6432shift(uint64_t key, unsigned int order)
 	};                                                               \
 	static inline uint32_t hash_func_##name##_uint64_t(uint64_t key) \
 	{                                                                \
-		return hash6432shift(key, order);                        \
+		return hs_hash6432shift(key, order);                        \
 	}                                                                \
                                                                          \
 	static inline int is_equal_uint64_t(uint64_t a, uint64_t b)      \
