@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 			config.run_foreground = true;
 			break;
 		case 'l':
-			config.bind_local_only = true;
+            config.bind_local_only = false;
 			break;
 		case 'p':
 			config.passwd_file = optarg;

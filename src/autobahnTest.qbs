@@ -55,7 +55,7 @@ Project {
 
     Depends { name: "gccClang" }
     Depends { name: "hardening" }
-    Depends { name: "generateCjetConfig" }
+    Depends { name: "generateAutobahnConfig" }
     Depends { name: "generateOsConfig" }
     Depends { name: "generateVersion" }
 
