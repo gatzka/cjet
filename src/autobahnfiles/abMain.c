@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	    .bind_local_only = false,
 	    .user_name = NULL,
 	    .passwd_file = NULL,
-	    .request_target = "/api/jet/",
+        .request_target = "/",  //"/api/jet/",
 	};
 
 	if (init_random() < 0) {
@@ -108,7 +108,7 @@ int main(int argc, char **argv)
 	        .this_ptr = &eloop,
 	        .init = eventloop_epoll_init,
 	        .destroy = eventloop_epoll_destroy,
-	        .run = eventloop_epoll_run,
+            .run = eventloop_epoll_run,
 	        .add = eventloop_epoll_add,
 	        .remove = eventloop_epoll_remove,
 	    },

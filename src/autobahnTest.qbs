@@ -80,7 +80,11 @@ Project {
       name: "ANSI C conformant"
       files: [
         "*.c",
-        "*.h"
+        "*.h",
+        "./autobahnfiles/abWebsocket_peer.c"
+      ]
+      excludeFiles: [
+        "websocket_peer.c",
       ]
       cpp.cLanguageVersion: "c99"
     }
@@ -139,8 +143,8 @@ Project {
       files: [
         "*.c",
         "*.h",
-        "../autobahnfiles/*.c",
-        "../autobahnfiles/*.h"
+        "../autobahnfiles/abLog.c",
+        "../autobahnfiles/abMain.c"
       ]
       excludeFiles: [
           "main.c",
@@ -156,7 +160,11 @@ Project {
       prefix: "linux/"
       files: [
         "*.c",
-        "*.h"
+        "*.h",
+        "../autobahnfiles/abLinux_io.c"
+      ]
+      excludeFiles: [
+          "linux_io.c"
       ]
       cpp.defines: "_GNU_SOURCE"
     }
