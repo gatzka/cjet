@@ -370,35 +370,29 @@ static int send_upgrade_response(struct http_connection *connection)
 
 	static const char switch_response_end[] = CRLF CRLF;
 
-    if (s->sub_protocol.name != NULL) {
-        struct socket_io_vector iov[5];
-        iov[0].iov_base = switch_response;
-        iov[0].iov_len = sizeof(switch_response) - 1;
-        iov[1].iov_base = accept_value;
-        iov[1].iov_len = sizeof(accept_value);
-        iov[2].iov_base = ws_protocol;
-        iov[2].iov_len = sizeof(ws_protocol) - 1;
+    struct socket_io_vector iov[5];
+    size_t iov_length = 5;
+
+    iov[0].iov_base = switch_response;
+    iov[0].iov_len = sizeof(switch_response) - 1;
+    iov[1].iov_base = accept_value;
+    iov[1].iov_len = sizeof(accept_value);
+    iov[2].iov_base = ws_protocol;
+    iov[2].iov_len = sizeof(ws_protocol) - 1;
+
+    if (s->sub_protocol.name != NULL){
         iov[3].iov_base = s->sub_protocol.name;
         iov[3].iov_len = strlen(s->sub_protocol.name);
         iov[4].iov_base = switch_response_end;
         iov[4].iov_len = sizeof(switch_response_end) - 1;
-
-        struct buffered_reader *br = &connection->br;
-        return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
     } else {
-        struct socket_io_vector iov[4];
-        iov[0].iov_base = switch_response;
-        iov[0].iov_len = sizeof(switch_response) - 1;
-        iov[1].iov_base = accept_value;
-        iov[1].iov_len = sizeof(accept_value);
-        iov[2].iov_base = ws_protocol;
-        iov[2].iov_len = sizeof(ws_protocol) - 1;
+        iov_length = 4;
         iov[3].iov_base = switch_response_end;
         iov[3].iov_len = sizeof(switch_response_end) - 1;
-
-        struct buffered_reader *br = &connection->br;
-        return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
     }
+
+    struct buffered_reader *br = &connection->br;
+    return br->writev(br->this_ptr, iov, iov_length);
 }
 
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length)
