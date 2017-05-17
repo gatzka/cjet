@@ -360,30 +360,39 @@ static int send_upgrade_response(struct http_connection *connection)
 	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
 
 	static const char switch_response[] =
-	    "HTTP/1.1 101 Switching Protocols" CRLF
-	    "Upgrade: websocket" CRLF
-	    "Connection: Upgrade" CRLF
-	    "Sec-WebSocket-Accept: ";
+		"HTTP/1.1 101 Switching Protocols" CRLF
+		"Upgrade: websocket" CRLF
+		"Connection: Upgrade" CRLF
+		"Sec-WebSocket-Accept: ";
 
 	static const char ws_protocol[] =
-	    CRLF "Sec-Websocket-Protocol: ";
+		CRLF "Sec-Websocket-Protocol: ";
 
 	static const char switch_response_end[] = CRLF CRLF;
 
 	struct socket_io_vector iov[5];
+	size_t iov_length = 5;
+
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response) - 1;
 	iov[1].iov_base = accept_value;
 	iov[1].iov_len = sizeof(accept_value);
 	iov[2].iov_base = ws_protocol;
 	iov[2].iov_len = sizeof(ws_protocol) - 1;
-	iov[3].iov_base = s->sub_protocol.name;
-	iov[3].iov_len = strlen(s->sub_protocol.name);
-	iov[4].iov_base = switch_response_end;
-	iov[4].iov_len = sizeof(switch_response_end) - 1;
+
+	if (s->sub_protocol.name != NULL){
+		iov[3].iov_base = s->sub_protocol.name;
+		iov[3].iov_len = strlen(s->sub_protocol.name);
+		 iov[4].iov_base = switch_response_end;
+		iov[4].iov_len = sizeof(switch_response_end) - 1;
+	} else {
+		iov_length = 4;
+		iov[3].iov_base = switch_response_end;
+		iov[3].iov_len = sizeof(switch_response_end) - 1;
+	}
 
 	struct buffered_reader *br = &connection->br;
-	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
+	return br->writev(br->this_ptr, iov, iov_length);
 }
 
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length)
@@ -598,8 +607,8 @@ int websocket_send_close_frame(const struct websocket *s, enum ws_status_code st
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol)
 {
 	if (unlikely(sub_protocol == NULL)) {
-		log_err("You must specify a sub-protocol");
-		return -1;
+        log_info("No sub-protocol specified");
+//		return -1;
 	}
 	if (unlikely(on_error == NULL)) {
 		log_err("You must specify an error routine");
