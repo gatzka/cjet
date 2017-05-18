@@ -39,7 +39,7 @@ void log_err(const char *format, ...)
 	va_list args;
 	va_start(args, format);
 	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-    printf("LOG_ERR, %s\n", log_buffer);
+	printf("LOG_ERR, %s\n", log_buffer);
 	va_end(args);
 }
 
@@ -49,7 +49,7 @@ void log_warn(const char *format, ...)
 	va_list args;
 	va_start(args, format);
 	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-    printf("LOG_WARNING, %s\n", log_buffer);
+	printf("LOG_WARNING, %s\n", log_buffer);
 	va_end(args);
 }
 
@@ -59,6 +59,11 @@ void log_info(const char *format, ...)
 	va_list args;
 	va_start(args, format);
 	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-    printf("LOG_INFO, %s\n", log_buffer);
+	if (log_buffer[199] != 0){
+		log_buffer[197]='.';
+		log_buffer[198]='.';
+		log_buffer[199]='.';
+	}
+	printf("LOG_INFO, %s\n", log_buffer);
 	va_end(args);
 }
