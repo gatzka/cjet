@@ -86,7 +86,7 @@ static void free_websocket_peer_on_error(void *context)
 static enum websocket_callback_return text_frame_callback(struct websocket *s, char *msg, size_t length)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
-    log_info("recieved message %p and sent back.\n",msg);
+	log_info("recieved message and send back: %.*s",length,msg);
     int ret = ws_send_message(&ws_peer->peer, msg, length);
 	if (unlikely(ret < 0)) {
 		return WS_ERROR;
