@@ -406,10 +406,8 @@ int buffered_socket_read_exactly(void *this_ptr, size_t num,
 			return 0;
 		} else if (ret < 0) {
 			error_function(&bs->ev);
-			return -1;
-		} else {
-			return -1;
 		}
+		return 0;
 	}
 }
 
@@ -437,9 +435,7 @@ int buffered_socket_read_until(void *this_ptr, const char *delim,
 			return 0;
 		} else if (ret < 0) {
 			error_function(&bs->ev);
-			return -1;
-		} else {
-			return -1;
 		}
+		return 0;
 	}
 }
