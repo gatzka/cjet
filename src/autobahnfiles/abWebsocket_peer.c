@@ -64,6 +64,12 @@ static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 	return websocket_send_text_frame(&ws_peer->websocket, rendered, len);
 }
 
+static int ws_send_binary(const struct peer *p, uint8_t *payload, size_t len)
+{
+	const struct websocket_peer *ws_peer = const_container_of(p, struct websocket_peer, peer);
+	return websocket_send_binary_frame(&ws_peer->websocket, payload, len);
+}
+
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
 	free_peer_resources(&ws_peer->peer);
@@ -87,7 +93,19 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_info("recieved message and send back: %.*s",length,msg);
-    int ret = ws_send_message(&ws_peer->peer, msg, length);
+	int ret = ws_send_message(&ws_peer->peer, msg, length);
+	if (unlikely(ret < 0)) {
+		return WS_ERROR;
+	} else {
+		return WS_OK;
+	}
+}
+
+static enum websocket_callback_return binary_frame_callback(struct websocket *s, uint8_t *msg, size_t length)
+{
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	log_info("recieved binary and send back: %.*s",length,msg);
+	int ret = ws_send_binary(&ws_peer->peer, msg, length);
 	if (unlikely(ret < 0)) {
 		return WS_ERROR;
 	} else {
@@ -136,6 +154,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 		return -1;
 	}
 	ws_peer->websocket.text_message_received = text_frame_callback;
+	ws_peer->websocket.binary_message_received = binary_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
