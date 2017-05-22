@@ -706,7 +706,7 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_buffer_wrap)
 		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1;
 		char buffer[chunk_size * chunks];
 		::memset(buffer, 0, sizeof(buffer));
-		readbuffer=buffer;
+		readbuffer = buffer;
 		readbuffer_length = sizeof(buffer);
 		F f(READ_COMPLETE_BUFFER);
 		int ret = buffered_socket_read_exactly(f.bs, chunk_size, f.read_callback, &f);
