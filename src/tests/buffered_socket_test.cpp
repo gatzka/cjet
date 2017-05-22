@@ -32,6 +32,7 @@
 #include <limits.h>
 #include <stdint.h>
 #include <sys/uio.h>
+#include <iostream>
 
 #include "buffered_socket.h"
 #include "compiler.h"
@@ -700,16 +701,36 @@ BOOST_AUTO_TEST_CASE(test_read_exactly_called_twice)
 	BOOST_CHECK(f.bs->write_ptr - f.bs->read_ptr == 0);
 }
 
+/*
+ * checks the handeling of chunks, which do not fit
+ * in the buffer completely.
+ *
+ * Three cases are checked: the first chunk size fits
+ * in the buffer, the second and third not. More are
+ * possible, but would slow down the test execution
+ */
 BOOST_AUTO_TEST_CASE(test_read_exactly_buffer_wrap)
 {
-	for (unsigned int chunk_size = 1; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
-		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1;
-		char buffer[chunk_size * chunks];
+	size_t chunk_sizes[3] = {0};
+	chunk_sizes[0] = 1;
+	int index = 1;
+
+	for (size_t chunk_size = 2; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
+		if (index > 2) break;
+		if (CONFIG_MAX_MESSAGE_SIZE % chunk_size != 0) {
+			chunk_sizes[index] = chunk_size;
+			index++;
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_sizes[i]) + 1;
+		char buffer[chunk_sizes[i] * chunks];
 		::memset(buffer, 0, sizeof(buffer));
 		readbuffer = buffer;
 		readbuffer_length = sizeof(buffer);
 		F f(READ_COMPLETE_BUFFER);
-		int ret = buffered_socket_read_exactly(f.bs, chunk_size, f.read_callback, &f);
+		int ret = buffered_socket_read_exactly(f.bs, chunk_sizes[i], f.read_callback, &f);
 		BOOST_CHECK(ret == 0);
 		BOOST_CHECK(f.readcallback_called == chunks);
 	}
@@ -928,16 +949,38 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 	BOOST_CHECK(f.readcallback_called == 2);
 }
 
+/*
+ * checks the handeling of chunks, which do not fit
+ * in the buffer completely.
+ *
+ * Three cases are checked: the first chunk size fits
+ * in the buffer, the second and third not. More are
+ * possible, but would slow down the test execution
+ */
 BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap_all_sizes)
 {
 	const char *needle = "\r\n";
 	size_t needle_length = ::strlen(needle);
-	for (unsigned int chunk_size = needle_length; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
-		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_size) + 1; 
-		char buffer[chunk_size * chunks];
+	size_t chunk_sizes[3] = {0};
+	int index = 1;
+
+	for (size_t chunk_size = needle_length; chunk_size <= CONFIG_MAX_MESSAGE_SIZE; chunk_size++) {
+		if ((index > 2) && (chunk_sizes[0] != 0)) break;
+		if ((chunk_sizes[0] == 0) && (CONFIG_MAX_MESSAGE_SIZE % chunk_size == 0)) {
+			chunk_sizes[0] = chunk_size;
+		}
+		if ((index <= 2) && (CONFIG_MAX_MESSAGE_SIZE % chunk_size != 0)) {
+			chunk_sizes[index] = chunk_size;
+			index++;
+		}
+	}
+
+	for (int i = 0; i < 3; i++) {
+		size_t chunks = (CONFIG_MAX_MESSAGE_SIZE / chunk_sizes[i]) + 1;
+		char buffer[chunk_sizes[i] * chunks];
 		::memset(buffer, 0, sizeof(buffer));
 		for (unsigned int j = 0; j < chunks; j++) {
-			unsigned int index = (chunk_size * j) + (chunk_size - needle_length);
+			unsigned int index = (chunk_sizes[i] * j) + (chunk_sizes[i] - needle_length);
 			for (unsigned int k = 0; k < needle_length; k++) {
 				buffer[index + k] = needle[k];
 			}
