@@ -43,6 +43,7 @@
 #endif
 
 static const uint8_t WS_HEADER_FIN = 0x80;
+static const uint8_t WS_HEADER_RSV = 0x70;
 static const uint8_t WS_HEADER_MASK = 0x80;
 
 static const uint8_t WS_OPCODE_TEXT = 0x01;
@@ -187,6 +188,9 @@ static bool check_frame(uint8_t opcode, const char *payload, size_t payload_leng
 	uint8_t header;
 	::memcpy(&header, ptr, sizeof(header));
 	if ((header & WS_HEADER_FIN) != WS_HEADER_FIN) {
+		return false;
+	}
+	if ((header & WS_HEADER_RSV) != 0) {
 		return false;
 	}
 	if ((header & opcode) != opcode) {
@@ -384,6 +388,7 @@ struct F {
 		ws.connection = NULL;
 		ws.length = 0;
 		ws.ws_flags.fin = 0;
+		ws.ws_flags.rsv = 0;
 		ws.ws_flags.mask = 0;
 		ws.ws_flags.opcode = 0;
 		websocket_init(&ws, connection, is_server, ws_on_error, "jet");
@@ -505,6 +510,29 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(pong_received_called, "Callback for pong messages was not called!");
 	BOOST_CHECK_MESSAGE(::strncmp(message, (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
+}
+
+/*
+ * tests if the connection is failed immediately, when any rsv-bit is set.
+ * It doesn't matter if it is a text, binary or ping, because it is
+ * shut down before the type is determined.
+ */
+BOOST_AUTO_TEST_CASE(test_receive_text_message_with_rsv_bit_set)
+{
+	bool is_server = true;
+
+	char message [] = "Hello World!";
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	for (uint8_t rsv = 0x10; rsv <= 0x70; rsv+=16){
+		F f(is_server, 5000);
+		const uint8_t type = WS_OPCODE_TEXT | rsv;
+		prepare_message_string(type, message, is_server, mask);
+		ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+		BOOST_CHECK_MESSAGE(!text_message_received_called, "Callback for message must not be called!");
+		BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a text message with rsv set!");
+		BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+		BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	}
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_text_message_on_server_without_callback)
