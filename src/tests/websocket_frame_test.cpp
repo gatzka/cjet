@@ -470,7 +470,7 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }
 
-BOOST_AUTO_TEST_CASE(test_recieve_to_large_ping_frame_on_server)
+BOOST_AUTO_TEST_CASE(test_recieve_to_large_ping_payload_on_server)
 {
 	bool is_server = true;
 	F f(is_server, 5000);
