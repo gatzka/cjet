@@ -71,6 +71,11 @@ static void handle_error(struct websocket *s, uint16_t status_code)
 
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
+	if (s->ws_flags.rsv != 0) {
+		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+		return WS_CLOSED;
+	}
+
 	enum websocket_callback_return ret = WS_OK;
 
 	switch (s->ws_flags.opcode) {
@@ -297,6 +302,12 @@ enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t l
 	} else {
 		s->ws_flags.fin = 0;
 	}
+
+	static const uint8_t RSV_MASK = 0x70;
+	uint8_t rsv_field;
+	rsv_field = field & RSV_MASK;
+	rsv_field = rsv_field >> 4;
+	s->ws_flags.rsv = rsv_field;
 
 	static const uint8_t OPCODE_MASK = 0x0f;
 	field = field & OPCODE_MASK;
