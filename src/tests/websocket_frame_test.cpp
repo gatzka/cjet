@@ -470,6 +470,25 @@ BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
 	BOOST_CHECK_MESSAGE(is_pong_frame(message), "No pong frame sent when ping received!");
 }
 
+BOOST_AUTO_TEST_CASE(test_recieve_to_large_ping_frame_on_server)
+{
+	bool is_server = true;
+	F f(is_server, 5000);
+
+	char message[127];
+	::memset(message, 'A', sizeof(message));
+	message[sizeof(message) - 1] = 0x00;
+
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+	prepare_message_string(WS_OPCODE_PING, message, is_server, mask);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+	BOOST_CHECK_MESSAGE(!ping_received_called, "Callback for ping messages was not called!");
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a to large ping payload!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	BOOST_CHECK_MESSAGE(!is_pong_frame(message), "No pong frame sent when ping received!");
+}
+
 BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_client)
 {
 	bool is_server = false;
