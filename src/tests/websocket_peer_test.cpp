@@ -290,7 +290,7 @@ BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_receiving_fin, F)
 	ws_get_header(socket, read_buffer_ptr++, read_buffer_length);
 
 	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when receiving a close frame!");
-	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent when receiving a close frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_NORMAL), "No close frame sent when receiving a close frame!");
 }
 
 BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_illegal_message, F)
