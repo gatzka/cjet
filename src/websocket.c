@@ -99,13 +99,18 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_PING_FRAME: {
-		int pong_ret = websocket_send_pong_frame(s, frame, length);
-		if (unlikely(pong_ret < 0)) {
-			// TODO: maybe call the error callback?
-			ret = WS_ERROR;
+		if (unlikely(length > 125)) {
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			ret = WS_CLOSED;
 		} else {
-			if (s->ping_received != NULL) {
-				ret = s->ping_received(s, frame, length);
+			int pong_ret = websocket_send_pong_frame(s, frame, length);
+			if (unlikely(pong_ret < 0)) {
+				// TODO: maybe call the error callback?
+				ret = WS_ERROR;
+			} else {
+				if (s->ping_received != NULL) {
+					ret = s->ping_received(s, frame, length);
+				}
 			}
 		}
 		break;
