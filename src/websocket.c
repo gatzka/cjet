@@ -123,7 +123,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			memcpy(&status_code, frame, sizeof(status_code));
 			status_code = jet_be16toh(status_code);
 		}
-		websocket_close(s, WS_CLOSE_GOING_AWAY);
+		websocket_close(s, WS_CLOSE_NORMAL);
 		if (s->close_received != NULL) {
 			s->close_received(s, (enum ws_status_code)status_code);
 		}

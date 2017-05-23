@@ -552,7 +552,7 @@ BOOST_AUTO_TEST_CASE(test_receive_close_message_on_server)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called!");
 	BOOST_CHECK_MESSAGE(status_code_received == code, "Incorrect status code received!");
-	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent receiving a close!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_NORMAL), "No close frame sent receiving a close!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
 
@@ -684,7 +684,7 @@ BOOST_AUTO_TEST_CASE(test_receive_fin_on_server)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	prepare_message(WS_OPCODE_CLOSE, NULL, 0, is_server, mask);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
-	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_GOING_AWAY), "No close frame sent after receiving a close frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_NORMAL), "No close frame sent after receiving a close frame!");
 	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called after receiving a close frame!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 }
