@@ -306,5 +306,5 @@ BOOST_FIXTURE_TEST_CASE(test_connection_closed_when_illegal_message, F)
 	ws_get_header(socket, read_buffer_ptr++, read_buffer_length);
 
 	BOOST_CHECK_MESSAGE(num_close_called == 1, "Close of buffered_reader was not called when receiving an illegal frame!");
-	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_UNSUPPORTED), "No close frame sent when receiving an illegal frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent when receiving an illegal frame!");
 }
