@@ -542,7 +542,7 @@ BOOST_AUTO_TEST_CASE(test_receive_text_message_with_rsv_bit_set)
 
 	char message [] = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	for (uint8_t rsv = 0x10; rsv <= 0x70; rsv+=16){
+	for (uint8_t rsv = 0x10; rsv <= 0x70; rsv += 0x10){
 		F f(is_server, 5000);
 		const uint8_t type = WS_OPCODE_TEXT | rsv;
 		prepare_message_string(type, message, is_server, mask);
