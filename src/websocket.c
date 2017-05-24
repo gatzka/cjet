@@ -72,10 +72,16 @@ static void handle_error(struct websocket *s, uint16_t status_code)
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
 	if (unlikely(s->ws_flags.rsv != 0)) {
+		log_err("Frame with RSV-bit are not supported");
 		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return WS_CLOSED;
 	}
 
+	if (unlikely((s->ws_flags.fin == 0) && (s->ws_flags.opcode >= WS_PING_FRAME))) {
+		log_err("Control Frames must not be fragmented!");
+		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+		return WS_CLOSED;
+	}
 	enum websocket_callback_return ret = WS_OK;
 
 	switch (s->ws_flags.opcode) {
