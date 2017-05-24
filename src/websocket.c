@@ -142,8 +142,8 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	default:
-		log_err("Unsupported websocket frame!\n");
-		handle_error(s, WS_CLOSE_UNSUPPORTED);
+		log_err("Unsupported websocket frame with reserved opcode!\n");
+		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		ret = WS_CLOSED;
 		break;
 	}
