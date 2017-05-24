@@ -71,7 +71,7 @@ static void handle_error(struct websocket *s, uint16_t status_code)
 
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
-	if (s->ws_flags.rsv != 0) {
+	if (unlikely(s->ws_flags.rsv != 0)) {
 		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return WS_CLOSED;
 	}
