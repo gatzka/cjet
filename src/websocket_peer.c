@@ -83,7 +83,7 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
-static enum websocket_callback_return text_frame_callback(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return text_message_callback(struct websocket *s, char *msg, size_t length)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	int ret = parse_message(msg, length, &ws_peer->peer);
@@ -134,7 +134,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	if (ret < 0) {
 		return -1;
 	}
-	ws_peer->websocket.text_message_received = text_frame_callback;
+	ws_peer->websocket.text_message_received = text_message_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
