@@ -42,6 +42,7 @@
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
+static unsigned int fragment_opcode = 0xff;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -82,13 +83,58 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return WS_CLOSED;
 	}
-	enum websocket_callback_return ret = WS_OK;
 
+	if (s->ws_flags.fin == 0) {
+		if (s->ws_flags.opcode !=0) {
+			if (unlikely(fragment_opcode != 0xff)) {
+				log_err("Overwriting Opcode of unfinished fragmentation!");
+				fragment_opcode = 0xff;
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
+			fragment_opcode = s->ws_flags.opcode;
+			s->ws_flags.opcode = WS_CONTINUATION_FRAME;
+		} else {
+			if (unlikely(fragment_opcode == 0xff)) {
+				log_err("Opcode unknown!");
+				fragment_opcode = 0xff;
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
+		}
+	}
+
+	if (fragment_opcode != 0xff) {
+		if (unlikely((s->ws_flags.opcode < WS_PING_FRAME) && (s->ws_flags.opcode > 0))) {
+			log_err("Opcode during fragmentation must be 0x0!");
+			fragment_opcode = 0xff;
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			return WS_CLOSED;
+		}
+	}
+
+	enum websocket_callback_return ret = WS_OK;
+	bool last_frame = false;
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
-		log_err("Fragmented websocket frame not supported!\n");
-		handle_error(s, WS_CLOSE_UNSUPPORTED);
-		ret = WS_CLOSED;
+		if (unlikely(s->ws_flags.fin ==1)) {
+			last_frame = true;
+		}
+		switch (fragment_opcode) {
+		case WS_BINARY_FRAME:
+			ret = s->binary_frame_received(s, frame, length, last_frame);
+			break;
+		case WS_TEXT_FRAME:
+			ret = s->text_frame_received(s, (char *)frame, length, last_frame);
+			break;
+		default:
+			log_err("Opcode unknown!");
+			fragment_opcode = 0xff;
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			ret = WS_CLOSED;
+			break;
+		}
+		if (last_frame) fragment_opcode = 0xff;
 		break;
 
 	case WS_BINARY_FRAME:
