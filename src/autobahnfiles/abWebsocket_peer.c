@@ -27,6 +27,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "alloc.h"
 #include "base64.h"
@@ -58,6 +59,11 @@
 #define WS_PING_FRAME 0x9
 #define WS_PONG_FRAME 0x0a
 
+uint8_t *binary_frame_buffer = NULL;
+size_t binary_frame_buffer_size = 0;
+char *text_frame_buffer = NULL;
+size_t text_frame_buffer_size = 0;
+
 static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 {
 	const struct websocket_peer *ws_peer = const_container_of(p, struct websocket_peer, peer);
@@ -72,6 +78,16 @@ static int ws_send_binary(const struct peer *p, uint8_t *payload, size_t len)
 
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
+	if (text_frame_buffer != NULL) {
+		free(text_frame_buffer);
+		text_frame_buffer = NULL;
+		text_frame_buffer_size = 0;
+	}
+	if (binary_frame_buffer != NULL) {
+		free(text_frame_buffer);
+		binary_frame_buffer = 0;
+		binary_frame_buffer_size = 0;
+	}
 	free_peer_resources(&ws_peer->peer);
 	cjet_free(ws_peer);
 }
@@ -89,7 +105,7 @@ static void free_websocket_peer_on_error(void *context)
 	free_websocket_peer(ws_peer);
 }
 
-static enum websocket_callback_return text_frame_callback(struct websocket *s, char *msg, size_t length)
+static enum websocket_callback_return text_message_callback(struct websocket *s, char *msg, size_t length)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_info("recieved message and send back: %.*s",length,msg);
@@ -101,7 +117,27 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 	}
 }
 
-static enum websocket_callback_return binary_frame_callback(struct websocket *s, uint8_t *msg, size_t length)
+static enum websocket_callback_return text_frame_callback(struct websocket *s, char *msg, size_t length, bool is_last_frame)
+{
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	enum websocket_callback_return ret = WS_OK;
+	text_frame_buffer = realloc(text_frame_buffer, text_frame_buffer_size + length);
+	if (unlikely(text_frame_buffer == NULL)) {
+		log_err("Not enough memory for fragmented message!");
+		return WS_ERROR;
+	}
+	memcpy(text_frame_buffer + text_frame_buffer_size, msg, length);
+	text_frame_buffer_size += length;
+	if (is_last_frame) {
+		ret = text_message_callback(&ws_peer->websocket, text_frame_buffer, text_frame_buffer_size);
+		free(text_frame_buffer);
+		text_frame_buffer = NULL;
+		text_frame_buffer_size = 0;
+	}
+	return ret;
+}
+
+static enum websocket_callback_return binary_message_callback(struct websocket *s, uint8_t *msg, size_t length)
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_info("recieved binary and send back: %.*s",length,msg);
@@ -111,6 +147,26 @@ static enum websocket_callback_return binary_frame_callback(struct websocket *s,
 	} else {
 		return WS_OK;
 	}
+}
+
+static enum websocket_callback_return binary_frame_callback(struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame)
+{
+	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
+	enum websocket_callback_return ret = WS_OK;
+	binary_frame_buffer = realloc(binary_frame_buffer, binary_frame_buffer_size + length);
+	if (unlikely(binary_frame_buffer == NULL)) {
+		log_err("Not enough memory for fragmented message!");
+		return WS_ERROR;
+	}
+	memcpy(binary_frame_buffer + binary_frame_buffer_size, msg, length);
+	binary_frame_buffer_size += length;
+	if (is_last_frame) {
+		ret = binary_message_callback(&ws_peer->websocket, binary_frame_buffer, binary_frame_buffer_size);
+		free(binary_frame_buffer);
+		binary_frame_buffer = 0;
+		binary_frame_buffer_size = 0;
+	}
+	return ret;
 }
 
 static enum websocket_callback_return close_callback(struct websocket *s, enum ws_status_code status_code)
@@ -153,8 +209,10 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	if (ret < 0) {
 		return -1;
 	}
-	ws_peer->websocket.text_message_received = text_frame_callback;
-	ws_peer->websocket.binary_message_received = binary_frame_callback;
+	ws_peer->websocket.text_message_received = text_message_callback;
+	ws_peer->websocket.text_frame_received = text_frame_callback;
+	ws_peer->websocket.binary_message_received = binary_message_callback;
+	ws_peer->websocket.binary_frame_received = binary_frame_callback;
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
