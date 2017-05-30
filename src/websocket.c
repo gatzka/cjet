@@ -63,6 +63,15 @@ static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 	}
 }
 
+static bool is_status_code_invalid(uint16_t status_code)
+{
+	bool ret = true;
+	if ((status_code >=1000) && (status_code <= 1003)) ret = false;
+	if ((status_code >=1007) && (status_code <= 1011)) ret = false;
+	if ((status_code >=3000) && (status_code <= 4999)) ret = false;
+	return ret;
+}
+
 static void handle_error(struct websocket *s, uint16_t status_code)
 {
 	websocket_close(s, status_code);
@@ -179,10 +188,14 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_CLOSE_FRAME: {
-		uint16_t status_code = 0;
+		uint16_t status_code = 1000;
 		if (length >= 2) {
 			memcpy(&status_code, frame, sizeof(status_code));
 			status_code = jet_be16toh(status_code);
+		}
+		if ((length == 1) || (length > 125) || is_status_code_invalid(status_code)) {
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			return WS_CLOSED;
 		}
 		websocket_close(s, WS_CLOSE_NORMAL);
 		if (s->close_received != NULL) {
