@@ -63,7 +63,7 @@ Module {
         content = content.replace(/\${CONFIG_JET_PORT}/g, product.moduleProperty("generateCjetConfig", "jetPort") || "11122");
         content = content.replace(/\${CONFIG_JETWS_PORT}/g, product.moduleProperty("generateCjetConfig", "jetwsPort") || "9001");
         content = content.replace(/\${CONFIG_LISTEN_BACKLOG}/g, product.moduleProperty("generateCjetConfig", "maxListenBacklog") || "40");
-        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "262144");
+        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "524288");
         content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxWriteBufferSize") || "5120");
         content = content.replace(/\${CONFIG_ELEMENT_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "stateTableOrder") || "13");
         content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "routingTableOrder") || "6");
