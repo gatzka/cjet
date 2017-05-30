@@ -82,6 +82,8 @@ struct websocket {
 		unsigned int rsv : 3;
 		unsigned int opcode : 4;
 		unsigned int mask : 1;
+		unsigned int frag_opcode : 4;
+		unsigned int is_fragmented : 1;
 	} ws_flags;
 	uint64_t length;
 	uint8_t mask[4];
