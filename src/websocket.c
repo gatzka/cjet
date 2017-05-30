@@ -105,7 +105,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	if (fragment_opcode != 0xff) {
-		if (unlikely((s->ws_flags.opcode < WS_PING_FRAME) && (s->ws_flags.opcode > 0))) {
+		if (unlikely((s->ws_flags.opcode < WS_CLOSE_FRAME) && (s->ws_flags.opcode > 0))) {
 			log_err("Opcode during fragmentation must be 0x0!");
 			fragment_opcode = 0xff;
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
