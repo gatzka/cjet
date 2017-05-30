@@ -183,8 +183,13 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	case WS_PONG_FRAME:
-		if (s->pong_received != NULL) {
-			ret = s->pong_received(s, frame, length);
+		if (unlikely(length > 125)) {
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			ret = WS_CLOSED;
+		} else {
+			if (s->pong_received != NULL) {
+				ret = s->pong_received(s, frame, length);
+			}
 		}
 		break;
 
