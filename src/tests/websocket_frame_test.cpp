@@ -332,6 +332,7 @@ static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, 
 static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4], bool set_fin)
 {
 	uint8_t *ptr = read_buffer;
+	read_buffer_ptr = read_buffer;
 	read_buffer_length = 0;
 	uint8_t header = 0x00;
 	if (set_fin) {
@@ -505,11 +506,9 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
@@ -529,11 +528,9 @@ BOOST_AUTO_TEST_CASE(test_recceive_binary_frames)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
@@ -552,15 +549,12 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_with_ping_in_between)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_PING, messages[3], is_server, mask, true);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
@@ -579,7 +573,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_without_start_frame)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	BOOST_CHECK_MESSAGE(text_frame_received_called == 0, "Callback for text frames was called: " << text_frame_received_called);
@@ -598,7 +591,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frame_only_end_frame)
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 
 	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	BOOST_CHECK_MESSAGE(text_frame_received_called == 0, "Callback for text frames was called: " << text_frame_received_called);
@@ -619,7 +611,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_with_opcode)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	prepare_message_string_frag(WS_OPCODE_TEXT, messages[1], is_server, mask, false);
-	read_buffer_ptr = read_buffer;
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	BOOST_CHECK_MESSAGE(text_frame_received_called == 1, "Callback for text frames was called: " << text_frame_received_called);
