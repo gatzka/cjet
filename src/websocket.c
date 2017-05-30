@@ -696,6 +696,7 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 
 void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 {
+	fragment_opcode = 0xff;
 	if (ws->upgrade_complete) {
 		websocket_send_close_frame(ws, status_code);
 	}
