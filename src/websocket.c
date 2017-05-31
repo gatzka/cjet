@@ -72,17 +72,68 @@ static void handle_error(struct websocket *s, uint16_t status_code)
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
 	if (unlikely(s->ws_flags.rsv != 0)) {
+		log_err("Frame with RSV-bit are not supported");
 		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return WS_CLOSED;
 	}
 
-	enum websocket_callback_return ret = WS_OK;
+	if (unlikely((s->ws_flags.fin == 0) && (s->ws_flags.opcode >= WS_PING_FRAME))) {
+		log_err("Control Frames must not be fragmented!");
+		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+		return WS_CLOSED;
+	}
 
+	if (s->ws_flags.fin == 0) {
+		if (s->ws_flags.opcode !=0) {
+			if (unlikely(s->ws_flags.is_fragmented)) {
+				log_err("Overwriting Opcode of unfinished fragmentation!");
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
+			s->ws_flags.is_fragmented = 1;
+			s->ws_flags.frag_opcode = s->ws_flags.opcode;
+			s->ws_flags.opcode = WS_CONTINUATION_FRAME;
+		} else {
+			if (unlikely(!(s->ws_flags.is_fragmented))) {
+				log_err("No start frame was send!");
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
+		}
+	}
+
+	if (s->ws_flags.is_fragmented) {
+		if (unlikely((s->ws_flags.opcode < WS_PING_FRAME) && (s->ws_flags.opcode > 0))) {
+			log_err("Opcode during fragmentation must be 0x0!");
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			return WS_CLOSED;
+		}
+	}
+
+	enum websocket_callback_return ret = WS_OK;
+	bool last_frame = false;
 	switch (s->ws_flags.opcode) {
 	case WS_CONTINUATION_FRAME:
-		log_err("Fragmented websocket frame not supported!\n");
-		handle_error(s, WS_CLOSE_UNSUPPORTED);
-		ret = WS_CLOSED;
+		if (unlikely(s->ws_flags.fin ==1)) {
+			last_frame = true;
+		}
+		switch (s->ws_flags.frag_opcode) {
+		case WS_BINARY_FRAME:
+			ret = s->binary_frame_received(s, frame, length, last_frame);
+			break;
+		case WS_TEXT_FRAME:
+			ret = s->text_frame_received(s, (char *)frame, length, last_frame);
+			break;
+		default:
+			log_err("Opcode unknown!");
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			ret = WS_CLOSED;
+			break;
+		}
+		if (last_frame) {
+			s->ws_flags.is_fragmented = 0;
+			s->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
+		}
 		break;
 
 	case WS_BINARY_FRAME:
@@ -639,6 +690,8 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	ws->upgrade_complete = false;
 
 	ws->sub_protocol.name = sub_protocol;
+	ws->ws_flags.is_fragmented = 0;
+	ws->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
 	return 0;
 }
 

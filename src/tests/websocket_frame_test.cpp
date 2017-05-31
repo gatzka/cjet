@@ -46,6 +46,7 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 static const uint8_t WS_HEADER_RSV = 0x70;
 static const uint8_t WS_HEADER_MASK = 0x80;
 
+static const uint8_t WS_OPCODE_CONTINUATION = 0x00;
 static const uint8_t WS_OPCODE_TEXT = 0x01;
 static const uint8_t WS_OPCODE_BINARY = 0x02;
 static const uint8_t WS_OPCODE_CLOSE = 0x08;
@@ -64,7 +65,9 @@ static size_t readback_buffer_length;
 static bool br_close_called;
 static bool got_error;
 static bool text_message_received_called;
+static int text_frame_received_called;
 static bool binary_message_received_called;
+static int binary_frame_received_called;
 static bool ping_received_called;
 static bool pong_received_called;
 static bool close_received_called;
@@ -255,6 +258,18 @@ static enum websocket_callback_return text_message_received(struct websocket *s,
 	return WS_OK;
 }
 
+static enum websocket_callback_return text_frame_received(struct websocket *s, char *msg, size_t length, bool last_frame)
+{
+	(void)s;
+	::memcpy(readback_buffer + readback_buffer_length, msg, length);
+	readback_buffer_length += length;
+	if (last_frame) {
+		//do nothing
+	}
+	text_frame_received_called++;
+	return WS_OK;
+}
+
 static enum websocket_callback_return binary_message_received(struct websocket *s, uint8_t *msg, size_t length)
 {
 	(void)s;
@@ -264,12 +279,24 @@ static enum websocket_callback_return binary_message_received(struct websocket *
 	return WS_OK;
 }
 
+static enum websocket_callback_return binary_frame_received(struct websocket *s, uint8_t *msg, size_t length, bool last_frame)
+{
+	(void)s;
+	::memcpy(readback_buffer + readback_buffer_length, msg, length);
+	readback_buffer_length += length;
+	if (last_frame) {
+		//do nothing
+	}
+	binary_frame_received_called++;
+	return WS_OK;
+}
+
 static enum websocket_callback_return ping_received(struct websocket *s, uint8_t *msg, size_t length)
 {
 	(void)s;
 	(void)msg;
 	(void)length;
-	::memcpy(readback_buffer, msg, length);
+	::memcpy(readback_buffer + readback_buffer_length, msg, length);
 	readback_buffer_length += length;
 	ping_received_called = true;
 	return WS_OK;
@@ -302,12 +329,15 @@ static void fill_payload(uint8_t *ptr, const uint8_t *payload, uint64_t length, 
 	}
 }
 
-static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4])
+static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool shall_mask, uint8_t mask[4], bool set_fin)
 {
 	uint8_t *ptr = read_buffer;
+	read_buffer_ptr = read_buffer;
 	read_buffer_length = 0;
 	uint8_t header = 0x00;
-	header |= WS_HEADER_FIN;
+	if (set_fin) {
+		header |= WS_HEADER_FIN;
+	}
 	header |= type;
 	::memcpy(ptr, &header, sizeof(header));
 	ptr += sizeof(header);
@@ -355,7 +385,12 @@ static void prepare_message(uint8_t type, uint8_t *buffer, uint64_t length, bool
 
 static void prepare_message_string(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4])
 {
-	prepare_message(type, (uint8_t *)message, ::strlen(message), shall_mask, mask);
+	prepare_message(type, (uint8_t *)message, ::strlen(message), shall_mask, mask, true);
+}
+
+static void prepare_message_string_frag(uint8_t type, const char *message, bool shall_mask, uint8_t mask[4], bool set_fin)
+{
+	prepare_message(type, (uint8_t *)message, ::strlen(message), shall_mask, mask, set_fin);
 }
 
 struct F {
@@ -367,7 +402,9 @@ struct F {
 		br_close_called = false;
 		got_error = false;
 		text_message_received_called = false;
+		text_frame_received_called = 0;
 		binary_message_received_called = false;
+		binary_frame_received_called = 0;
 		ping_received_called = false;
 		close_received_called = false;
 		pong_received_called = false;
@@ -395,6 +432,8 @@ struct F {
 		ws.upgrade_complete = true;
 		ws.text_message_received = text_message_received;
 		ws.binary_message_received = binary_message_received;
+		ws.text_frame_received = text_frame_received;
+		ws.binary_frame_received = binary_frame_received;
 		ws.ping_received = ping_received;
 		ws.pong_received = pong_received;
 		ws.close_received = close_received;
@@ -454,6 +493,149 @@ BOOST_AUTO_TEST_CASE(test_receive_binary_message)
 			BOOST_CHECK_MESSAGE(::strncmp(messages[i], (char *)readback_buffer, readback_buffer_length) == 0, "Did not received the same message as sent!");
 		}
 	}
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frames)
+{
+	const char *messages[3] = {"frag1", "frag2", "frag3"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_TEXT, messages[0], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 3, "Callback for text frames was not or wrong times called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(::strncmp("frag1frag2frag3", (char *)readback_buffer, 15) == 0, "Did not received the same message as sent!");
+
+}
+
+BOOST_AUTO_TEST_CASE(test_recceive_binary_frames)
+{
+	const char *messages[3] = {"frag1", "frag2", "frag3"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_BINARY, messages[0], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+	BOOST_CHECK_MESSAGE(binary_frame_received_called == 3, "Callback for binary frames was not or wrong times called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(::strncmp("frag1frag2frag3", (char *)readback_buffer, 15) == 0, "Did not received the same message as sent!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frames_with_ping_in_between)
+{
+	const char *messages[4] = {"frag1", "frag2", "frag3", "ping"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_TEXT, messages[0], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_PING, messages[3], is_server, mask, true);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
+
+	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
+	BOOST_CHECK_MESSAGE(is_pong_frame(messages[3]), "No pong frame sent when ping received!");
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 3, "Callback for text frames was not or wrong times called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(::strncmp("frag1frag2pingfrag3", (char *)readback_buffer, 19) == 0, "Did not received the same message as sent!: " << readback_buffer);
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frames_without_start_frame)
+{
+	const char *messages[3] = {"frag1", "frag2", "frag3"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[1], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 0, "Callback for text frames was called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a message without start frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	BOOST_CHECK_MESSAGE(readback_buffer_length == 0, "Received a message!");
+
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frame_only_end_frame)
+{
+	const char *messages[3] = {"frag1", "frag2", "frag3"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_CONTINUATION, messages[2], is_server, mask, true);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 0, "Callback for text frames was called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a message without start frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	BOOST_CHECK_MESSAGE(readback_buffer_length == 0, "Received a message!");
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_text_frames_with_opcode)
+{
+	const char *messages[3] = {"frag1", "frag2", "frag3"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_TEXT, messages[0], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	prepare_message_string_frag(WS_OPCODE_TEXT, messages[1], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 1, "Callback for text frames was called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a message without start frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	BOOST_CHECK_MESSAGE(::strncmp("frag1", (char *)readback_buffer, 5) == 0, "Did not received the same message as sent!: " << readback_buffer);
+}
+
+BOOST_AUTO_TEST_CASE(test_receive_fragmented_ping)
+{
+	const char *messages[3] = {"controll frames", "must not", "be fragmented"};
+	bool is_server = true;
+	F f(is_server, 5000);
+	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
+
+	prepare_message_string_frag(WS_OPCODE_PING, messages[0], is_server, mask, false);
+	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
+
+	BOOST_CHECK_MESSAGE(text_frame_received_called == 0, "Callback for text frames was called: " << text_frame_received_called);
+	BOOST_CHECK_MESSAGE(!ping_received_called, "Callback for ping frame was called!");
+	BOOST_CHECK_MESSAGE(got_error, "Did not got an error when receiving a message without start frame!");
+	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
+	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
+	BOOST_CHECK_MESSAGE(readback_buffer_length == 0, "Received a message!");
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_ping_frame_on_server)
@@ -729,7 +911,7 @@ BOOST_AUTO_TEST_CASE(test_receive_fin_on_server)
 	F f(is_server, 5000);
 
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
-	prepare_message(WS_OPCODE_CLOSE, NULL, 0, is_server, mask);
+	prepare_message(WS_OPCODE_CLOSE, NULL, 0, is_server, mask, true);
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_NORMAL), "No close frame sent after receiving a close frame!");
 	BOOST_CHECK_MESSAGE(close_received_called, "Callback for close message was not called after receiving a close frame!");
