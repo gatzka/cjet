@@ -389,4 +389,17 @@ Project {
           }
         }
     }
+
+    CppApplication {
+        name: "utf8_checker_test"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends {name: "unittestSettings"}
+
+        files: [
+            "utf8_checker.c",
+            "tests/utf8_checker_test.cpp",
+        ]
+    }
 }
