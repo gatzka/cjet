@@ -42,6 +42,7 @@
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
+static const unsigned int WS_SMALL_FRAME_SIZE = 125;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -55,8 +56,6 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 #define WS_CLOSE_FRAME 0x8
 #define WS_PING_FRAME 0x9
 #define WS_PONG_FRAME 0x0a
-
-#define WS_SMALL_FRAME_SIZE 125
 
 static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 {
