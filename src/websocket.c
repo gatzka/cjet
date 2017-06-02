@@ -56,6 +56,8 @@ static const uint8_t WS_HEADER_FIN = 0x80;
 #define WS_PING_FRAME 0x9
 #define WS_PONG_FRAME 0x0a
 
+#define WS_SMALL_FRAME_SIZE 125
+
 static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 {
 	for (size_t i = 0; i < length; i++) {
@@ -66,9 +68,9 @@ static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 static bool is_status_code_invalid(uint16_t status_code)
 {
 	bool ret = true;
-	if ((status_code >=1000) && (status_code <= 1003)) ret = false;
-	if ((status_code >=1007) && (status_code <= 1011)) ret = false;
-	if ((status_code >=3000) && (status_code <= 4999)) ret = false;
+	if ((status_code >= WS_CLOSE_NORMAL) && (status_code <= WS_CLOSE_UNSUPPORTED)) ret = false;
+	if ((status_code >= WS_CLOSE_UNSUPPORTED_DATA) && (status_code <= WS_CLOSE_INTERNAL_ERROR)) ret = false;
+	if ((status_code >= WS_CLOSE_RESERVED_LOWER_BOUND) && (status_code <= WS_CLOSE_RESERVED_UPPER_BOUND)) ret = false;
 	return ret;
 }
 
@@ -164,7 +166,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_PING_FRAME: {
-		if (unlikely(length > 125)) {
+		if (unlikely(length > WS_SMALL_FRAME_SIZE)) {
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 			ret = WS_CLOSED;
 		} else {
@@ -182,7 +184,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	case WS_PONG_FRAME:
-		if (unlikely(length > 125)) {
+		if (unlikely(length > WS_SMALL_FRAME_SIZE)) {
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 			ret = WS_CLOSED;
 		} else {
@@ -193,12 +195,12 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_CLOSE_FRAME: {
-		uint16_t status_code = 1000;
+		uint16_t status_code = WS_CLOSE_NORMAL;
 		if (length >= 2) {
 			memcpy(&status_code, frame, sizeof(status_code));
 			status_code = jet_be16toh(status_code);
 		}
-		if ((length == 1) || (length > 125) || is_status_code_invalid(status_code)) {
+		if ((length == 1) || (length > WS_SMALL_FRAME_SIZE) || is_status_code_invalid(status_code)) {
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 			return WS_CLOSED;
 		}
