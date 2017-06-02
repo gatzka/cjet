@@ -42,6 +42,7 @@
 
 static const uint8_t WS_MASK_SET = 0x80;
 static const uint8_t WS_HEADER_FIN = 0x80;
+static const unsigned int WS_SMALL_FRAME_SIZE = 125;
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -61,6 +62,15 @@ static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 	for (size_t i = 0; i < length; i++) {
 		buffer[i] = buffer[i] ^ (mask[i % 4]);
 	}
+}
+
+static bool is_status_code_invalid(uint16_t status_code)
+{
+	bool ret = true;
+	if ((status_code >= WS_CLOSE_NORMAL) && (status_code <= WS_CLOSE_UNSUPPORTED)) ret = false;
+	if ((status_code >= WS_CLOSE_UNSUPPORTED_DATA) && (status_code <= WS_CLOSE_INTERNAL_ERROR)) ret = false;
+	if ((status_code >= WS_CLOSE_RESERVED_LOWER_BOUND) && (status_code <= WS_CLOSE_RESERVED_UPPER_BOUND)) ret = false;
+	return ret;
 }
 
 static void handle_error(struct websocket *s, uint16_t status_code)
@@ -103,7 +113,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	if (s->ws_flags.is_fragmented) {
-		if (unlikely((s->ws_flags.opcode < WS_PING_FRAME) && (s->ws_flags.opcode > 0))) {
+		if (unlikely((s->ws_flags.opcode < WS_CLOSE_FRAME) && (s->ws_flags.opcode > 0))) {
 			log_err("Opcode during fragmentation must be 0x0!");
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 			return WS_CLOSED;
@@ -155,7 +165,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		break;
 
 	case WS_PING_FRAME: {
-		if (unlikely(length > 125)) {
+		if (unlikely(length > WS_SMALL_FRAME_SIZE)) {
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 			ret = WS_CLOSED;
 		} else {
@@ -173,16 +183,25 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	}
 
 	case WS_PONG_FRAME:
-		if (s->pong_received != NULL) {
-			ret = s->pong_received(s, frame, length);
+		if (unlikely(length > WS_SMALL_FRAME_SIZE)) {
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			ret = WS_CLOSED;
+		} else {
+			if (s->pong_received != NULL) {
+				ret = s->pong_received(s, frame, length);
+			}
 		}
 		break;
 
 	case WS_CLOSE_FRAME: {
-		uint16_t status_code = 0;
+		uint16_t status_code = WS_CLOSE_NORMAL;
 		if (length >= 2) {
 			memcpy(&status_code, frame, sizeof(status_code));
 			status_code = jet_be16toh(status_code);
+		}
+		if ((length == 1) || (length > WS_SMALL_FRAME_SIZE) || is_status_code_invalid(status_code)) {
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			return WS_CLOSED;
 		}
 		websocket_close(s, WS_CLOSE_NORMAL);
 		if (s->close_received != NULL) {
