@@ -1,5 +1,5 @@
 /*
- *The MIT License (MIT)
+ * The MIT License (MIT)
  *
  * Copyright (c) <2017> <Felix Retsch>
  *
@@ -27,9 +27,9 @@
 #include "utf8_checker.h"
 
 
-static int is_byte_valid(struct utf8_checker *c, uint8_t byte)
+static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
-	int ret = 1;
+	bool ret = true;
 	int finished = 0;
 	switch (c->next_byte) {
 	case 1:
@@ -37,51 +37,51 @@ static int is_byte_valid(struct utf8_checker *c, uint8_t byte)
 
 		if (byte <= 0x7F) {
 			finished = 1;
-			ret = 1;
+			ret = true;
 		} else if (byte <= 0xC1) {
-			ret = 0;
+			ret = false;
 		} else if (byte <= 0xDF) {
 			c->length = 2;
-			ret = 1;
+			ret = true;
 		} else if (byte <= 0xEF) {
 			c->length = 3;
-			ret = 1;
+			ret = true;
 		} else if (byte <= 0xF4) {
 			c->length = 4;
-			ret = 1;
+			ret = true;
 		} else {
-			ret = 0;
+			ret = false;
 		}
 		break;
 	case 2:
 		if ((byte & 0xC0) != 0x80) {
-			ret = 0;
+			ret = false;
 		}
 
 		switch (c->start_byte) {
 		case 0xE0:
 			if ((byte < 0xA0) || (byte > 0xBF)) {
-				ret = 0;
+				ret = false;
 			}
 			break;
 		case 0xED:
 			if ((byte < 0x80) || (byte > 0x9F)) {
-				ret = 0;
+				ret = false;
 			}
 			break;
 		case 0xEF:
 			if ((byte < 0x80) || (byte > 0xA3)) {
-				ret = 0;
+				ret = false;
 			}
 			break;
 		case 0xF0:
 			if ((byte < 0x90) || (byte > 0xBF)) {
-				ret = 0;
+				ret = false;
 			}
 			break;
 		case 0xF4:
 			if ((byte < 0x80) || (byte > 0x8F)) {
-				ret = 0;
+				ret = false;
 			}
 			break;
 		}
@@ -91,18 +91,18 @@ static int is_byte_valid(struct utf8_checker *c, uint8_t byte)
 	case 3:
 		if ((byte & 0xC0) != 0x80) {
 			finished = 1;
-			ret = 0;
+			ret = false;
 		}
 		if (c->length == 3) finished = 1;
 		break;
 	case 4:
 		if ((byte & 0xC0) != 0x80) {
-			ret = 0;
+			ret = false;
 		}
 		finished = 1;
 		break;
 	default:
-		ret = -1;
+		ret = false;
 		break;
 	}
 	if (finished || (ret < 1)) {
@@ -115,24 +115,22 @@ static int is_byte_valid(struct utf8_checker *c, uint8_t byte)
 	return ret;
 }
 
-int is_text_valid(struct utf8_checker *c, char *text, size_t length)
+bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length)
 {
-	int ret = 1;
+	bool ret = true;
 	for (unsigned int i = 0; i < length; i++) {
 		ret = is_byte_valid(c, (uint8_t) *(text + i));
-		if (ret == 0) return 0;
-		if (ret == -1) return -1;
+		if (ret == false) return false;
 	}
 	return ret;
 }
 
-int is_byte_sequence_valid(struct utf8_checker *c, uint8_t *sequence, size_t length)
+bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length)
 {
-	int ret = 1;
+	bool ret = true;
 	for (unsigned int i = 0; i < length; i++) {
 		ret = is_byte_valid(c, *(sequence + i));
-		if (ret == 0) return 0;
-		if (ret == -1) return -1;
+		if (ret == false) return false;
 	}
 	return ret;
 }
@@ -203,7 +201,7 @@ int is_byte_sequence_valid(struct utf8_checker *c, uint8_t *sequence, size_t len
 	return ret;
 }*/
 
-void init_checker(struct utf8_checker *c)
+void cjet_init_checker(struct cjet_utf8_checker *c)
 {
 	c->start_byte = 0xFF;
 	c->length = 1;
