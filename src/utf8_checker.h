@@ -31,20 +31,74 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @file
+ * @brief This file contains the interface of a utf8 checker.
+ *
+ * The checker can be used to check, if a char or byte sequence
+ * consists only of valid utf8. It is possible to check
+ * fragmented sequences, too.
+ */
+
+/**
+ * @brief The cjet_utf8_checker struct.
+ *
+ * Holds the state of a checker instance. Do not change the
+ * values of the attributes.
+ */
 struct cjet_utf8_checker {
+	/**
+	 * @privatesection
+	 */
 	uint8_t start_byte;
 	uint8_t length;
 	uint8_t next_byte;
 };
 
+/**
+ * @brief The type of a utf8 checker initialization function.
+ *
+ * initializes the given utf8 checker. Must be called only once before
+ * the first use of the validation functions.
+ *
+ * @param c a utf8 checker to be initialized
+ */
 void cjet_init_checker(struct cjet_utf8_checker *c);
+
+/**
+ * @brief The type of a byte sequence validation function
+ *
+ * validates a given byte sequence with a given length. If an invalid utf8 character
+ * occurs, the validation is stopped and false is returned.
+ *
+ * @param c an utf8 checker, should be initialized
+ * @param sequence the byte sequence to be checked
+ * @param length the length of the byte sequence
+ *
+ * @return true if the byte sequence consists only of valid utf8 characters,
+ *			false otherwise
+ */
 bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length);
+
+/**
+ * @brief The type of a text validation function
+ *
+ * validates a given char sequence with a given length. If an invalid utf8 character
+ * occurs, the validation is stopped and false is returned.
+ *
+ * @param c an utf8 checker, should be initialized
+ * @param text the char sequence to be checked
+ * @param length the length of the char sequence
+ *
+ * @return true if the text consists only of valid utf8 characters,
+ *			false otherwise
+ */
 bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length);
+
 #ifdef __cplusplus
 }
 #endif
