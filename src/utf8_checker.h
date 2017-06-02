@@ -1,5 +1,5 @@
 /*
- *The MIT License (MIT)
+ * The MIT License (MIT)
  *
  * Copyright (c) <2017> <Felix Retsch>
  *
@@ -27,22 +27,24 @@
 #ifndef CJET_UTF8_CHECKER_H
 #define CJET_UTF8_CHECKER_H
 
-#include <stdlib.h>
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
+
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct utf8_checker {
+struct cjet_utf8_checker {
 	uint8_t start_byte;
 	uint8_t length;
 	uint8_t next_byte;
 };
 
-void init_checker(struct utf8_checker *c);
-int is_byte_sequence_valid(struct utf8_checker *c, uint8_t *sequence, size_t length);
-int is_text_valid(struct utf8_checker *c, char *text, size_t length);
+void cjet_init_checker(struct cjet_utf8_checker *c);
+bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length);
+bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length);
 #ifdef __cplusplus
 }
 #endif
