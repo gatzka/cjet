@@ -34,15 +34,15 @@
 
 static const int invalid_message_size = 10;
 static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00,0x00},	//invalid start
-														   {0xF6,0x00,0x00,0x00},	//invalid start
-														   {0x80,0x00,0x00,0x00},	//invalid start
-														   {0xC2,0x80,0x80,0x00},	//invalid continuation
-														   {0xE0,0x60,0x80,0x00},	//invalid continuation
-														   {0xE0,0x9F,0x80,0x00},	//reserved zone
-														   {0xED,0xA0,0x80,0x00},	//reserved zone
-														   {0xEF,0xA4,0x80,0x00},	//reserved zone
-														   {0xF0,0x8F,0x80,0x80},	//reserved zone
-														   {0xF4,0x90,0x80,0x80}};	//reserved zone
+																 {0xF6,0x00,0x00,0x00},	//invalid start
+																 {0x80,0x00,0x00,0x00},	//invalid start
+																 {0xC2,0x80,0x80,0x00},	//invalid continuation
+																 {0xE0,0x60,0x80,0x00},	//invalid continuation
+																 {0xE0,0x9F,0x80,0x00},	//reserved zone
+																 {0xED,0xA0,0x80,0x00},	//reserved zone
+																 {0xEF,0xA4,0x80,0x00},	//reserved zone
+																 {0xF0,0x8F,0x80,0x80},	//reserved zone
+																 {0xF4,0x90,0x80,0x80}};	//reserved zone
 
 static const char valid_message[] = "Hello-µ@ßöäüàá-UTF-8!!";
 static const uint8_t valid_message_long[] = {0xF1,0x80,0x80,0x80,0xF2,0xA0,0xA0,0xA0};
@@ -60,6 +60,9 @@ struct F {
 	struct cjet_utf8_checker c;
 };
 
+/**
+ * @brief tests the utf8 checker with a message of length 0
+ */
 BOOST_AUTO_TEST_CASE(test_message_zero_length)
 {
 	F f;
@@ -68,6 +71,9 @@ BOOST_AUTO_TEST_CASE(test_message_zero_length)
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a valid message
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message)
 {
 	F f;
@@ -75,6 +81,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message)
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented valid message
+ *
+ * The message is fragmented after an utf8 character, considering that
+ * an utf8 character may consists of more than one byte.
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints)
 {
 	F f;
@@ -84,6 +96,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints)
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented valid message
+ *
+ * The message is fragmented after each byte. Hence some utf8 characters
+ * are fragmented, too.
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
 {
 	F f;
@@ -94,6 +112,11 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
 	}
 }
 
+/**
+ * @brief tests the utf8 checker with a valid message
+ *
+ * The message consists of two 4 byte utf8 characters
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message_long)
 {
 	F f;
@@ -101,6 +124,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message_long)
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented valid message
+ *
+ * The message consists of two 4 byte utf8 characters and is fragmented
+ * between them.
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints_long)
 {
 	F f;
@@ -110,6 +139,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints_long)
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented valid message
+ *
+ * The message consists of two 4 byte utf8 characters. The message
+ * is fragmented after each byte.
+ */
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
 {
 	F f;
@@ -120,6 +155,9 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
 	}
 }
 
+/**
+ * @brief tests the utf8 checker with a invalid message
+ */
 BOOST_AUTO_TEST_CASE(test_invalid_message)
 {
 	int ret;
@@ -130,6 +168,12 @@ BOOST_AUTO_TEST_CASE(test_invalid_message)
 	}
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented invalid message
+ *
+ * The message is fragmented after an utf8 character, considering that
+ * an utf8 character may consists of more than one byte.
+ */
 BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
 {
 	F f;
@@ -139,6 +183,12 @@ BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 }
 
+/**
+ * @brief tests the utf8 checker with a fragmented invalid message
+ *
+ * The message is fragmented after each byte. Hence some utf8 characters
+ * are fragmented, too.
+ */
 BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_between_letters)
 {
 	int ret;
