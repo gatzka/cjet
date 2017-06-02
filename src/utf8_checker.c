@@ -26,7 +26,6 @@
 
 #include "utf8_checker.h"
 
-
 static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
 	bool ret = true;
@@ -134,72 +133,6 @@ bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *seq
 	}
 	return ret;
 }
-
-/*int is_text_valid(char *msg, size_t length)
-{
-	int ret = false;
-	uint8_t tmp;
-	for ( size_t i = 0; i < length; i++) {
-		tmp = *(msg + i);
-		if (tmp >= 0Xf5) {
-			//unused code space
-			return true;
-		} else if (tmp <= 0x7f ) {
-			//ASCII
-		} else if (tmp <= 0xC1) {
-			//would be ASCII in 2 byte or continuation byte
-			return true;
-		} else if (tmp <= 0xdf) {
-			//2 byte
-			i++;
-			tmp = *(msg + i);
-			if ((tmp & 0xc0) != 0x80) {
-				return true;
-			}
-		} else if (tmp <= 0xef) {
-			//3 byte
-			uint8_t startbyte = tmp;
-			i++;
-			tmp = *(msg + i);
-			if ((tmp & 0xc0) != 0x80) {
-				return true;
-			}
-			if ((startbyte = 0xe0) && ((tmp < 0xA0) || (tmp > 0xbf))) {
-				return true;
-			}
-			if ((startbyte = 0xed) && ((tmp < 0x80) || (tmp > 0x9f))) {
-				return true;
-			}
-			i++;
-			tmp = *(msg + i);
-			if ((tmp & 0xc0) != 0x80) {
-				return true;
-			}
-		} else {
-			//4 byte
-			uint8_t startbyte = tmp;
-			i++;
-			tmp = *(msg + i);
-			if ((tmp & 0xc0) != 0x80) {
-				return true;
-			}
-			if ((startbyte = 0xf0) && ((tmp < 0x90) || (tmp > 0xbf))) {
-				return true;
-			}
-			if ((startbyte = 0xf4) && ((tmp < 0x80) || (tmp > 0x8f))) {
-				return true;
-			}
-			for (int j = 0; j < 2; j++) {
-				i++;
-				tmp = *(msg + i);
-				if ((tmp & 0xc0) != 0x80) {
-					return true;
-				}
-			}
-		}
-	}
-	return ret;
-}*/
 
 void cjet_init_checker(struct cjet_utf8_checker *c)
 {
