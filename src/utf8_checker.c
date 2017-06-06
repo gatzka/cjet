@@ -70,11 +70,6 @@ static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 				ret = false;
 			}
 			break;
-		case 0xEF:
-			if ((byte < 0x80) || (byte > 0xA3)) {
-				ret = false;
-			}
-			break;
 		case 0xF0:
 			if ((byte < 0x90) || (byte > 0xBF)) {
 				ret = false;
