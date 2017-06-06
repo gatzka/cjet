@@ -78,11 +78,13 @@ void cjet_init_checker(struct cjet_utf8_checker *c);
  * @param c an utf8 checker, should be initialized
  * @param sequence the byte sequence to be checked
  * @param length the length of the byte sequence
+ * @param is_complete true, if the sequence is complete or last fragment,
+ *						false otherwise
  *
  * @return true if the byte sequence consists only of valid utf8 characters,
  *			false otherwise
  */
-bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length);
+bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length, bool is_complete);
 
 /**
  * @brief The type of a text validation function
@@ -93,11 +95,13 @@ bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *seq
  * @param c an utf8 checker, should be initialized
  * @param text the char sequence to be checked
  * @param length the length of the char sequence
+ * @param is_complete true, if the sequence is complete or last fragment,
+ *						false otherwise
  *
  * @return true if the text consists only of valid utf8 characters,
  *			false otherwise
  */
-bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length);
+bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length, bool is_complete);
 
 #ifdef __cplusplus
 }

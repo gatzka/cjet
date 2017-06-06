@@ -26,6 +26,8 @@
 
 #include "utf8_checker.h"
 
+#define UC_FINISH 0xFF
+
 static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
 	bool ret = true;
@@ -105,7 +107,7 @@ static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 		break;
 	}
 	if (finished || (ret < 1)) {
-		c->start_byte = 0xFF;
+		c->start_byte = UC_FINISH;
 		c->length = 1;
 		c->next_byte = 1;
 	} else {
@@ -114,29 +116,35 @@ static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 	return ret;
 }
 
-bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length)
+bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length, bool is_complete)
 {
 	bool ret = true;
 	for (unsigned int i = 0; i < length; i++) {
 		ret = is_byte_valid(c, (uint8_t) *(text + i));
 		if (ret == false) return false;
 	}
+	if (is_complete) {
+		if (c->start_byte != UC_FINISH) return false;
+	}
 	return ret;
 }
 
-bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length)
+bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length, bool is_complete)
 {
 	bool ret = true;
 	for (unsigned int i = 0; i < length; i++) {
 		ret = is_byte_valid(c, *(sequence + i));
 		if (ret == false) return false;
 	}
+	if (is_complete) {
+		if (c->start_byte != UC_FINISH) return false;
+	}
 	return ret;
 }
 
 void cjet_init_checker(struct cjet_utf8_checker *c)
 {
-	c->start_byte = 0xFF;
+	c->start_byte = UC_FINISH;
 	c->length = 1;
 	c->next_byte = 1;
 }
