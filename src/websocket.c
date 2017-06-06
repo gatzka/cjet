@@ -37,6 +37,7 @@
 #include "jet_string.h"
 #include "log.h"
 #include "sha1/sha1.h"
+#include "utf8_checker.h"
 #include "util.h"
 #include "websocket.h"
 
@@ -198,6 +199,14 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		if (length >= 2) {
 			memcpy(&status_code, frame, sizeof(status_code));
 			status_code = jet_be16toh(status_code);
+		}
+		if (length > 2) {
+			struct cjet_utf8_checker c;
+			cjet_init_checker(&c);
+			if (!cjet_is_byte_sequence_valid(&c, frame + 2, length - 2, true)) {
+				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
+				return WS_CLOSED;
+			}
 		}
 		if ((length == 1) || (length > WS_SMALL_FRAME_SIZE) || is_status_code_invalid(status_code)) {
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
