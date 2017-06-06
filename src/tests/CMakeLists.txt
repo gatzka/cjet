@@ -76,6 +76,7 @@ add_library(jet STATIC
  	../router.c
  	../table.c
  	../timer.c
+	../utf8_checker.c
 )
 
 SET(CJET_TEST_INPUT_FILES
