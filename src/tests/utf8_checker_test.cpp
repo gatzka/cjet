@@ -32,7 +32,7 @@
 
 #include "utf8_checker.h"
 
-static const int invalid_message_size = 10;
+static const int invalid_message_size = 9;
 static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00,0x00},	//invalid start
 																 {0xF6,0x00,0x00,0x00},	//invalid start
 																 {0x80,0x00,0x00,0x00},	//invalid start
@@ -40,7 +40,6 @@ static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00
 																 {0xE0,0x60,0x80,0x00},	//invalid continuation
 																 {0xE0,0x9F,0x80,0x00},	//reserved zone
 																 {0xED,0xA0,0x80,0x00},	//reserved zone
-																 {0xEF,0xA4,0x80,0x00},	//reserved zone
 																 {0xF0,0x8F,0x80,0x80},	//reserved zone
 																 {0xF4,0x90,0x80,0x80}};	//reserved zone
 
