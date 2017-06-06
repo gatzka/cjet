@@ -375,3 +375,13 @@ TARGET_LINK_LIBRARIES(
     jet
     ${Boost_LIBRARIES}
 )
+
+SET(UTF8_CHECKER_TEST
+    ../utf8_checker.c
+    utf8_checker_test.cpp
+)
+ADD_EXECUTABLE(utf8_checker_test.bin ${UTF8_CHECKER_TEST})
+TARGET_LINK_LIBRARIES(
+    utf8_checker_test.bin
+    ${Boost_LIBRARIES}
+) 
