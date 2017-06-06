@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(test_message_zero_length)
 {
 	F f;
 	char zero = '\0';
-	int ret = cjet_is_text_valid(&f.c, &zero, 0);
+	int ret = cjet_is_text_valid(&f.c, &zero, 0, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(test_message_zero_length)
 BOOST_AUTO_TEST_CASE(test_valid_message)
 {
 	F f;
-	int ret = cjet_is_text_valid(&f.c, valid_message, sizeof(valid_message));
+	int ret = cjet_is_text_valid(&f.c, valid_message, sizeof(valid_message), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -90,9 +90,9 @@ BOOST_AUTO_TEST_CASE(test_valid_message)
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints)
 {
 	F f;
-	int ret = cjet_is_text_valid(&f.c, valid_message, 15);
+	int ret = cjet_is_text_valid(&f.c, valid_message, 15, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	ret = cjet_is_text_valid(&f.c, valid_message + 15, sizeof(valid_message) - 15);
+	ret = cjet_is_text_valid(&f.c, valid_message + 15, sizeof(valid_message) - 15, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -106,10 +106,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
 {
 	F f;
 	int ret;
-	for (uint i = 0; i < sizeof(valid_message); i++) {
-		ret = cjet_is_text_valid(&f.c, valid_message + i, 1);
+	for (uint i = 0; i < sizeof(valid_message) - 1; i++) {
+		ret = cjet_is_text_valid(&f.c, valid_message + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
+	ret = cjet_is_text_valid(&f.c, valid_message + sizeof(valid_message) - 1, 1, true);
+	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
 /**
@@ -120,7 +122,7 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
 BOOST_AUTO_TEST_CASE(test_valid_message_long)
 {
 	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long));
+	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -133,9 +135,9 @@ BOOST_AUTO_TEST_CASE(test_valid_message_long)
 BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints_long)
 {
 	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, 4);
+	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, 4, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + 4, sizeof(valid_message_long) - 4);
+	ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + 4, sizeof(valid_message_long) - 4, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -149,10 +151,12 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
 {
 	F f;
 	int ret;
-	for (uint i = 0; i < sizeof(valid_message_long); i++) {
-		ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + i, 1);
+	for (uint i = 0; i < sizeof(valid_message_long) - 1; i++) {
+		ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
+	ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + sizeof(valid_message_long) - 1, 1, true);
+	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
 /**
@@ -163,7 +167,7 @@ BOOST_AUTO_TEST_CASE(test_invalid_message)
 	int ret;
 	for (int i = 0; i < invalid_message_size; i++) {
 		F f;
-		ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[i], sizeof(invalid_message[i]));
+		ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[i], sizeof(invalid_message[i]), true);
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
 }
@@ -177,9 +181,9 @@ BOOST_AUTO_TEST_CASE(test_invalid_message)
 BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
 {
 	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long));
+	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long), false);
 	BOOST_CHECK_MESSAGE(ret == 1, "Message should be valid!");
-	ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[1], sizeof(invalid_message[1]));
+	ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[1], sizeof(invalid_message[1]), true);
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 }
 
@@ -192,12 +196,35 @@ BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
 BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_between_letters)
 {
 	int ret;
+	bool invalid = false;
 	for (int i = 0; i < invalid_message_size; i++) {
 		F f;
-		for (uint j = 0; j < sizeof(invalid_message[i]); j++) {
-			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][j], 1);
-			if (ret < 1) break;
+		for (uint j = 0; j < sizeof(invalid_message[i]) - 1; j++) {
+			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][j], 1, false);
+			if (ret < 1) {
+				invalid = true;
+				break;
+			}
+		}
+		if (!invalid) {
+			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][sizeof(invalid_message[i]) - 1], 1, true);
 		}
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
+}
+
+/**
+ * @brief tests the utf8 checkers is_complete flag
+ *
+ * An incomplete valid utf8 byte is checked with and without is_complete set.
+ */
+BOOST_AUTO_TEST_CASE(test_is_complete_flag)
+{
+	F f;
+	uint8_t test_msg = 0xC2;
+	int ret = cjet_is_byte_sequence_valid(&f.c, &test_msg, 1, false);
+	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
+	cjet_init_checker(&f.c);
+	ret = cjet_is_byte_sequence_valid(&f.c, &test_msg, 1, true);
+	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 }
