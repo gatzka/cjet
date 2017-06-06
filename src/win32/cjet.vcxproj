@@ -41,6 +41,7 @@
     <ClCompile Include="..\socket_peer.c" />
     <ClCompile Include="..\table.c" />
     <ClCompile Include="..\timer.c" />
+    <ClCompile Include="..\utf8_checker.c" />
     <ClCompile Include="..\websocket.c" />
     <ClCompile Include="..\websocket_peer.c" />
     <ClCompile Include="auth_file_win.c" />
