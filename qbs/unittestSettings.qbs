@@ -127,6 +127,7 @@ StaticLibrary {
         "table.c",
         "tests/log.cpp",
         "timer.c",
+        "utf8_checker.c"
     ]
   }
 }
