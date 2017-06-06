@@ -41,6 +41,7 @@
 #include "sha1/sha1.h"
 #include "websocket.h"
 #include "websocket_peer.h"
+#include "utf8_checker.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -63,6 +64,8 @@ uint8_t *binary_frame_buffer = NULL;
 size_t binary_frame_buffer_size = 0;
 char *text_frame_buffer = NULL;
 size_t text_frame_buffer_size = 0;
+struct cjet_utf8_checker checker;
+struct cjet_utf8_checker *checker_ptr;
 
 static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 {
@@ -109,6 +112,10 @@ static enum websocket_callback_return text_message_callback(struct websocket *s,
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_info("recieved message and send back: %.*s",length,msg);
+	if (!cjet_is_text_valid(checker_ptr, msg, length, true)) {
+		websocket_close(s,1007);
+		return WS_CLOSED;
+	}
 	int ret = ws_send_message(&ws_peer->peer, msg, length);
 	if (unlikely(ret < 0)) {
 		return WS_ERROR;
@@ -121,6 +128,10 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	enum websocket_callback_return ret = WS_OK;
+	if (!cjet_is_text_valid(checker_ptr, msg, length, is_last_frame)) {
+		websocket_close(s,1007);
+		return WS_CLOSED;
+	}
 	if (length != 0) {
 		text_frame_buffer = realloc(text_frame_buffer, text_frame_buffer_size + length);
 		if (unlikely(text_frame_buffer == NULL)) {
@@ -205,6 +216,8 @@ static void peer_close_websocket_peer(struct peer *p)
 static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection, bool is_local_connection)
 {
     static const char *sub_protocol = NULL;
+	checker_ptr = &checker;
+	cjet_init_checker(checker_ptr);
 
 	init_peer(&ws_peer->peer, is_local_connection, connection->server->ev.loop);
 	ws_peer->peer.send_message = ws_send_message;
