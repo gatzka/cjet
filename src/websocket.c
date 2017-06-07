@@ -138,7 +138,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		default:
 			log_err("Opcode unknown!");
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
-			ret = WS_CLOSED;
+			return ret = WS_CLOSED;
 			break;
 		}
 		if (last_frame) {
