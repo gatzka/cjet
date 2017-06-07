@@ -6,6 +6,7 @@ Installation hints:
 -the targtet request_target is /
 -the sub_protocol must be NULL
 -the websocket-peer must echo the recieved messages back
+-for performance tests messages up to 16M must be handled (max. msg. size, wirte buffer size and heap size)
 
 Doxygen:
 -doxygen autobahnTest.qbs

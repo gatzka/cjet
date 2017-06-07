@@ -63,15 +63,15 @@ Module {
         content = content.replace(/\${CONFIG_JET_PORT}/g, product.moduleProperty("generateCjetConfig", "jetPort") || "11122");
         content = content.replace(/\${CONFIG_JETWS_PORT}/g, product.moduleProperty("generateCjetConfig", "jetwsPort") || "9001");
         content = content.replace(/\${CONFIG_LISTEN_BACKLOG}/g, product.moduleProperty("generateCjetConfig", "maxListenBacklog") || "40");
-        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "524288");
-        content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxWriteBufferSize") || "5120");
+        content = content.replace(/\${CONFIG_MAX_MESSAGE_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxMessageSize") || "33554432");
+        content = content.replace(/\${CONFIG_MAX_WRITE_BUFFER_SIZE}/g, product.moduleProperty("generateCjetConfig", "maxWriteBufferSize") || "16777216");
         content = content.replace(/\${CONFIG_ELEMENT_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "stateTableOrder") || "13");
         content = content.replace(/\${CONFIG_ROUTING_TABLE_ORDER}/g, product.moduleProperty("generateCjetConfig", "routingTableOrder") || "6");
         content = content.replace(/\${CONFIG_INITIAL_FETCH_TABLE_SIZE}/g, product.moduleProperty("generateCjetConfig", "initialFetchTableSize") || "4");
         content = content.replace(/\${CONFIG_ROUTED_MESSAGES_TIMEOUT}/g, product.moduleProperty("generateCjetConfig", "routedMessagesTimeout") || "5.0");
         content = content.replace(/\${CONFIG_MAX_NUMBERS_OF_MATCHERS_IN_FETCH}/g, product.moduleProperty("generateCjetConfig", "maxMatchersInFetch") || "12");
         content = content.replace(/\${CONFIG_ALLOW_ADD_ONLY_FROM_LOCALHOST}/g, product.moduleProperty("generateCjetConfig", "addOnlyFromLocalhost") || false);
-        content = content.replace(/\${CONFIG_MAX_HEAPSIZE_IN_KBYTE}/g, product.moduleProperty("generateCjetConfig", "maxHeapsizeInKByte") || 20480);
+        content = content.replace(/\${CONFIG_MAX_HEAPSIZE_IN_KBYTE}/g, product.moduleProperty("generateCjetConfig", "maxHeapsizeInKByte") || 65536);
         file = new TextFile(output.filePath,  TextFile.WriteOnly);
         file.truncate();
         file.write(content);
