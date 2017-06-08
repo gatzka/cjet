@@ -218,7 +218,7 @@ static void peer_close_websocket_peer(struct peer *p)
 
 static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection, bool is_local_connection)
 {
-    static const char *sub_protocol = NULL;
+	static const char *sub_protocol = NULL;
 	checker_ptr = &checker;
 	cjet_init_checker(checker_ptr);
 
