@@ -107,6 +107,11 @@ static enum websocket_callback_return pong_received(struct websocket *s, uint8_t
 	char buffer[50];
 	size_t len = MIN(sizeof(buffer), length);
 	memcpy(buffer, msg, len);
+	if (len < sizeof(buffer)) {
+		buffer[len] = '\0';
+	} else {
+		buffer[sizeof(buffer) - 1] = '\0';
+	}
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_peer_info(&ws_peer->peer, "PONG received: %s\n", buffer);
 	return WS_OK;
