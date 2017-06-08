@@ -134,11 +134,15 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			break;
 		case WS_TEXT_FRAME:
 			ret = s->text_frame_received(s, (char *)frame, length, last_frame);
+			if (ret == WS_CLOSED) {
+				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
+				return ret;
+			}
 			break;
 		default:
 			log_err("Opcode unknown!");
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
-			ret = WS_CLOSED;
+			return WS_CLOSED;
 			break;
 		}
 		if (last_frame) {
@@ -159,6 +163,9 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 	case WS_TEXT_FRAME:
 		if (likely(s->text_message_received != NULL)) {
 			ret = s->text_message_received(s, (char *)frame, length);
+			if (ret == WS_CLOSED) {
+				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
+			}
 		} else {
 			handle_error(s, WS_CLOSE_UNSUPPORTED);
 			ret = WS_CLOSED;
