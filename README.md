@@ -76,7 +76,7 @@ coverage data is directly displayed in a web browser.
 If you don't like waiting for the http-parse-tests to complete you can
 disable them;
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjetUnitTests.buildHttpParserTest:false]...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [projects.cjetUnitTests.buildHttpParserTest:false]...
 ```
 If you have clang and clang-analyzer installed, you can run the static
 code analyzer with
