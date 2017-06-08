@@ -24,20 +24,23 @@
  * SOFTWARE.
  */
 
+#include <stdbool.h>
+#include <stdint.h>
+
 #include "utf8_checker.h"
 
-#define UC_FINISH 0xFF
+const uint8_t UC_FINISH = 0xFF;
 
 static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
 	bool ret = true;
-	int finished = 0;
+	bool finished = false;
 	switch (c->next_byte) {
 	case 1:
 		c->start_byte = byte;
 
 		if (byte <= 0x7F) {
-			finished = 1;
+			finished = true;
 			ret = true;
 		} else if (byte <= 0xC1) {
 			ret = false;
@@ -82,20 +85,20 @@ static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 			break;
 		}
 
-		if (c->length == 2) finished = 1;
+		if (c->length == 2) finished = true;
 		break;
 	case 3:
 		if ((byte & 0xC0) != 0x80) {
-			finished = 1;
+			finished = true;
 			ret = false;
 		}
-		if (c->length == 3) finished = 1;
+		if (c->length == 3) finished = true;
 		break;
 	case 4:
 		if ((byte & 0xC0) != 0x80) {
 			ret = false;
 		}
-		finished = 1;
+		finished = true;
 		break;
 	default:
 		ret = false;
@@ -114,7 +117,7 @@ static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length, bool is_complete)
 {
 	bool ret = true;
-	for (unsigned int i = 0; i < length; i++) {
+	for (size_t i = 0; i < length; i++) {
 		ret = is_byte_valid(c, (uint8_t) *(text + i));
 		if (ret == false) return false;
 	}
@@ -127,7 +130,7 @@ bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t le
 bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length, bool is_complete)
 {
 	bool ret = true;
-	for (unsigned int i = 0; i < length; i++) {
+	for (size_t i = 0; i < length; i++) {
 		ret = is_byte_valid(c, *(sequence + i));
 		if (ret == false) return false;
 	}

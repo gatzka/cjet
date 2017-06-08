@@ -34,14 +34,14 @@
 
 static const int invalid_message_size = 9;
 static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00,0x00},	//invalid start
-																 {0xF6,0x00,0x00,0x00},	//invalid start
-																 {0x80,0x00,0x00,0x00},	//invalid start
-																 {0xC2,0x80,0x80,0x00},	//invalid continuation
-																 {0xE0,0x60,0x80,0x00},	//invalid continuation
-																 {0xE0,0x9F,0x80,0x00},	//reserved zone
-																 {0xED,0xA0,0x80,0x00},	//reserved zone
-																 {0xF0,0x8F,0x80,0x80},	//reserved zone
-																 {0xF4,0x90,0x80,0x80}};	//reserved zone
+                                                                 {0xF6,0x00,0x00,0x00},	//invalid start
+                                                                 {0x80,0x00,0x00,0x00},	//invalid start
+                                                                 {0xC2,0x80,0x80,0x00},	//invalid continuation
+                                                                 {0xE0,0x60,0x80,0x00},	//invalid continuation
+                                                                 {0xE0,0x9F,0x80,0x00},	//reserved zone
+                                                                 {0xED,0xA0,0x80,0x00},	//reserved zone
+                                                                 {0xF0,0x8F,0x80,0x80},	//reserved zone
+                                                                 {0xF4,0x90,0x80,0x80}};	//reserved zone
 
 static const char valid_message[] = "Hello-µ@ßöäüàá-UTF-8!!";
 static const uint8_t valid_message_long[] = {0xF1,0x80,0x80,0x80,0xF2,0xA0,0xA0,0xA0};
@@ -105,7 +105,7 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
 {
 	F f;
 	int ret;
-	for (uint i = 0; i < sizeof(valid_message) - 1; i++) {
+	for (unsigned int i = 0; i < sizeof(valid_message) - 1; i++) {
 		ret = cjet_is_text_valid(&f.c, valid_message + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
@@ -150,7 +150,7 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
 {
 	F f;
 	int ret;
-	for (uint i = 0; i < sizeof(valid_message_long) - 1; i++) {
+	for (unsigned int i = 0; i < sizeof(valid_message_long) - 1; i++) {
 		ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
 BOOST_AUTO_TEST_CASE(test_invalid_message)
 {
 	int ret;
-	for (int i = 0; i < invalid_message_size; i++) {
+	for (unsigned int i = 0; i < invalid_message_size; i++) {
 		F f;
 		ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[i], sizeof(invalid_message[i]), true);
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
@@ -196,9 +196,9 @@ BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_between_letters)
 {
 	int ret;
 	bool invalid = false;
-	for (int i = 0; i < invalid_message_size; i++) {
+	for (unsigned int i = 0; i < invalid_message_size; i++) {
 		F f;
-		for (uint j = 0; j < sizeof(invalid_message[i]) - 1; j++) {
+		for (unsigned int j = 0; j < sizeof(invalid_message[i]) - 1; j++) {
 			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][j], 1, false);
 			if (ret < 1) {
 				invalid = true;
