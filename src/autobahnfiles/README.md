@@ -18,9 +18,9 @@ If you use _autobahnTest.qbs_, instead of _cjet.qbs_, with the _abXXX_ files eve
 - the targtet `request_target` is `/`
 - the `sub_protocol` must be `NULL`
 - the websocket peer must echo the received messages back
-- for performance tests messages up to 16M must be handled, hence set during build or in the config file e.g.: `generateCjetConfig.maxMessageSize:33554432` `generateCjetConfig.maxWriteBufferSize:16777216` `generateCjetConfig.maxHeapsizeInKByte:65536`
 - utf8 checking using _utf8\_checker.h_ is left to the websocket peer
 - reassembling the fragmented messages is left to the websocket peer as well
+- for performance tests messages up to 16M must be handled, hence set during build or in the config file e.g.: `generateCjetConfig.maxMessageSize:33554432` `generateCjetConfig.maxWriteBufferSize:16777216` `generateCjetConfig.maxHeapsizeInKByte:65536`
 - it is advisable to change the output via log.c to the standard output
 
 ## Howto Use
@@ -37,11 +37,3 @@ The results can be seen by _~/results/reports/servers/index.html_. The testsuite
     - `"1.*","4.1.*"` for all sub cases of a category
 - same pattern applys to `"exclude-cases"`  
 The settings will be used in every further run in _results_ without any changes in the start command.
-
-## Howto Create a Project Survey with Doxygen
-- execute `doxygen autobahnTest.qbs`in the _/cjet/src_ folder. This creates among other files the file _Doxyfile.in_
-- choose your settings in _Doxyfile.in_, particularly choose the target directory, enable latex, pdflatex or html
-- execute doxygen with your Doxyfile.in
-- execute `make` in the latex directory (make sure you have installed all required latex packages!)
-- the result is _refman.pdf_
-- for html the result is _index.html_ in the _html_ directory (you do not need make)
