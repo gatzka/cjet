@@ -107,6 +107,24 @@ bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *c, const uint64_t *
  */
 bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length, bool is_complete);
 
+/**
+ * @brief The type of a text validation function
+ *
+ * validates a given char, byte or word sequence with a given length in bytes. If an invalid utf8 character
+ * occurs, the validation is stopped and false is returned. It analayses the address bitwidth and chooses
+ * a suitable allinged word validation.
+ *
+ * @param c an utf8 checker, should be initialized
+ * @param sequence the text sequence to be checked
+ * @param byte_length the lenght of the sequence in byte
+ * @param is_complete true, if the sequence is complete or last fragment,
+ *						false otherwise
+ *
+ * @return true if the text consists only of valid utf8 characters,
+ *			false otherwise
+ */
+bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, const void *sequence, size_t byte_length, bool is_complete);
+
 #ifdef __cplusplus
 }
 #endif

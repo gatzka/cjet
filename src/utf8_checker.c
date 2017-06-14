@@ -207,6 +207,36 @@ bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *c, const uint64_t *
 	return ret;
 }
 
+bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, const void *sequence, size_t byte_length, bool is_complete)
+{
+	size_t bytewidth = sizeof(sequence);
+	if ((bytewidth == 8) && (bytewidth < 8)) bytewidth = 1;
+	if ((bytewidth == 4) && (bytewidth < 4)) bytewidth = 1;
+
+	size_t pre_length, main_length, post_length;
+	switch (bytewidth) {
+	case 8:
+		pre_length = 0x8 - (byte_length & 0x7);
+		main_length = (byte_length - pre_length) >> 3;
+		post_length = byte_length - pre_length - ( main_length << 3);
+		return cjet_is_byte_sequence_valid(c, sequence, pre_length, is_complete)
+				& cjet_is_word64_sequence_valid(c, sequence + pre_length, main_length, is_complete)
+				& cjet_is_byte_sequence_valid(c, sequence + pre_length + (main_length << 3), post_length, is_complete);
+		break;
+	case 4:
+		pre_length = 0x4 - (byte_length & 0x3);
+		main_length = (byte_length - pre_length) >> 2;
+		post_length = byte_length - pre_length - ( main_length << 2);
+		return cjet_is_byte_sequence_valid(c, sequence, pre_length, is_complete)
+				& cjet_is_word_sequence_valid(c, sequence + pre_length, main_length, is_complete)
+				& cjet_is_byte_sequence_valid(c, sequence + pre_length + (main_length << 2), post_length, is_complete);
+		break;
+	default:
+		return cjet_is_byte_sequence_valid(c, sequence, byte_length, is_complete);
+		break;
+	}
+}
+
 void cjet_init_checker(struct cjet_utf8_checker *c)
 {
 	c->start_byte = UC_FINISH;
