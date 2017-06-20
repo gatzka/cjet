@@ -111,8 +111,8 @@ bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t le
  * @brief The type of a text validation function
  *
  * validates a given char, byte or word sequence with a given length in bytes. If an invalid utf8 character
- * occurs, the validation is stopped and false is returned. It analayses the address bitwidth and chooses
- * a suitable allinged word validation.
+ * occurs, the validation is stopped and false is returned. It analayses the size of uint_fast and chooses
+ * a suitable allinged word validation. The word sequence must be stored as Big Endian (Network Byteorder).
  *
  * @param c an utf8 checker, should be initialized
  * @param sequence the text sequence to be checked
