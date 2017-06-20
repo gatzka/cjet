@@ -36,6 +36,10 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+/*
+ * word messages must be stored in Big Endian, because the received messages are stored byte wise.
+ * Hence the messages must be typed word wise reversed, because the system is Little Endian.
+ */
 static const int invalid_message_size = 9;
 static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00,0x00},	//invalid start
                                                                  {0xF6,0x00,0x00,0x00},	//invalid start
@@ -49,26 +53,26 @@ static const uint8_t invalid_message[invalid_message_size][4] = {{0xC0,0x00,0x00
 unsigned int invalid_message_word[invalid_message_size][4] = {{0x000000C0,0x0,0x0,0x0},	//invalid start
                                                               {0x000000F6,0x0,0x0,0x0},	//invalid start
                                                               {0x00000080,0x0,0x0,0x0},	//invalid start
-                                                              {0x000000C2,0x80800000,0x0,0x0},	//invalid continuation
-                                                              {0x000000E0,0x60800000,0x0,0x0},	//invalid continuation
-                                                              {0x000000E0,0x9F800000,0x0,0x0},	//reserved zone
-                                                              {0x000000ED,0xA0800000,0x0,0x0},	//reserved zone
-                                                              {0x000000F0,0x8F808000,0x0,0x0},	//reserved zone
-                                                              {0x000000F4,0x90808000,0x0,0x0}};	//reserved zone
+                                                              {0xC2000000,0x00008080,0x0,0x0},	//invalid continuation
+                                                              {0xE0000000,0x00008060,0x0,0x0},	//invalid continuation
+                                                              {0xE0000000,0x0000809F,0x0,0x0},	//reserved zone
+                                                              {0xED000000,0x000080A0,0x0,0x0},	//reserved zone
+                                                              {0xF0000000,0x0080808F,0x0,0x0},	//reserved zone
+                                                              {0xF4000000,0x00808090,0x0,0x0}};	//reserved zone
 uint64_t invalid_message_word64[invalid_message_size][4] = {{0xC000000000000000,0x0,0x0,0x0},	//invalid start
                                                             {0xF600000000000000,0x0,0x0,0x0},	//invalid start
                                                             {0x8000000000000000,0x0,0x0,0x0},	//invalid start
-                                                            {0x00000000000000C2,0x8080000000000000,0x0,0x0},	//invalid continuation
-                                                            {0x00000000000000E0,0x6080000000000000,0x0,0x0},	//invalid continuation
-                                                            {0x00000000000000E0,0x9F80000000000000,0x0,0x0},	//reserved zone
-                                                            {0x00000000000000ED,0xA080000000000000,0x0,0x0},	//reserved zone
-                                                            {0x00000000000000F0,0x8F80800000000000,0x0,0x0},	//reserved zone
-                                                            {0x00000000000000F4,0x9080800000000000,0x0,0x0}};	//reserved zone
+                                                            {0xC200000000000000,0x0000000000008080,0x0,0x0},	//invalid continuation
+                                                            {0xE000000000000000,0x0000000000008060,0x0,0x0},	//invalid continuation
+                                                            {0xE000000000000000,0x000000000000809F,0x0,0x0},	//reserved zone
+                                                            {0xED00000000000000,0x00000000000080A0,0x0,0x0},	//reserved zone
+                                                            {0xF000000000000000,0x000000000080808F,0x0,0x0},	//reserved zone
+                                                            {0xF400000000000000,0x0000000000808090,0x0,0x0}};	//reserved zone
 
 static const char valid_message[] = "Hello-µ@ßöäüàá-UTF-8!!";
 static const uint8_t valid_message_long[] = {0xF1,0x80,0x80,0x80,0xF2,0xA0,0xA0,0xA0};
-const unsigned int valid_message_long_word[4] = {0xF1808080,0x00000F2A0,0xA0A00000,0xF2A0A0A0};
-const uint64_t valid_message_long_word64[4] = {0xF1808080F2A0A0A0,0xF18080800000F2A0,0xA0A0F18080800000,0xF1808080F2A0A0A0};
+const unsigned int valid_message_long_word[4] = {0x808080F1,0xA0F20000,0x0000A0A0,0xA0A0A0F2};
+const uint64_t valid_message_long_word64[4] = {0x808080F1A0A0A0F2,0xA0F20000808080F1,0x0000808080F1A0A0,0x808080F1A0A0A0F2};
 
 struct F {
 	F ()
@@ -288,8 +292,8 @@ BOOST_AUTO_TEST_CASE(test_is_complete_flag)
 {
 	F f;
 	uint8_t test_msg = 0xC2;
-	unsigned int test_msg_word = 0xC2;
-	uint64_t test_msg_word64 = 0xC2;
+	unsigned int test_msg_word = 0xC2000000;
+	uint64_t test_msg_word64 = 0xC200000000000000;
 	int ret = cjet_is_byte_sequence_valid(&f.c, &test_msg, 1, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	cjet_init_checker(&f.c);
