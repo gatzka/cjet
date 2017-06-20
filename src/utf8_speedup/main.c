@@ -176,25 +176,29 @@ int main()
 
 	printf("\ntext test\n");
 	cjet_init_checker(&c);
-	test_byte(&c, text_8, text_length);
+	test_byte(&c, (uint8_t*) text, text_length);
 	cjet_init_checker(&c);
-	test_word(&c, text_32, text_length / 4);
+	test_word(&c, (unsigned int *) text, text_length / 4);
 	cjet_init_checker(&c);
-	test_word64(&c, text_64, text_length / 8);
+	test_word64(&c, (uint64_t *) text, text_length / 8);
 	printf("\nlong text\n");
 	cjet_init_checker(&c);
-	test_byte(&c, text_w_8, text_length_w);
+	test_byte(&c, (uint8_t*) text_wiki, text_length_w);
 	cjet_init_checker(&c);
-	test_word(&c, text_w_32, text_length_w / 4);
+	test_word(&c, (unsigned int *) text_wiki, text_length_w / 4);
 	cjet_init_checker(&c);
-	test_word64(&c, text_w_64, text_length_w / 8);
+	test_word64(&c, (uint64_t *) text_wiki, text_length_w / 8);
 	printf("\nbyte sequence\n");
 	cjet_init_checker(&c);
-	test_byte(&c, (uint8_t*) testdata_word, MB);
+	test_byte(&c, (uint8_t *) testdata_word, MB);
 	cjet_init_checker(&c);
 	test_word(&c, testdata_word, MB / 4);
 	cjet_init_checker(&c);
 	test_word64(&c, (uint64_t*) testdata_word, MB / 8);
+
+	cjet_init_checker(&c);
+	int ret = cjet_is_word_sequence_valid_auto_alligned(&c, text, text_length,1);
+	printf("ret %d\n",ret);
 	return EXIT_SUCCESS;
 }
 
