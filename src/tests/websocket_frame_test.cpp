@@ -580,7 +580,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_without_start_frame)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 	BOOST_CHECK_MESSAGE(readback_buffer_length == 0, "Received a message!");
-
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_text_frame_only_end_frame)
@@ -721,7 +720,6 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
 BOOST_AUTO_TEST_CASE(test_receive_text_message_with_rsv_bit_set)
 {
 	bool is_server = true;
-
 	char message [] = "Hello World!";
 	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	for (uint8_t rsv = 0x10; rsv <= 0x70; rsv += 0x10){
