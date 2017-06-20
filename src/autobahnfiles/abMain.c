@@ -45,11 +45,11 @@
 int main(int argc, char **argv)
 {
 	struct cmdline_config config = {
-        .run_foreground = true,
-	    .bind_local_only = false,
-	    .user_name = NULL,
-	    .passwd_file = NULL,
-        .request_target = "/",  //"/api/jet/",
+		.run_foreground = true,
+		.bind_local_only = false,
+		.user_name = NULL,
+		.passwd_file = NULL,
+		.request_target = "/",
 	};
 
 	if (init_random() < 0) {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 			config.run_foreground = true;
 			break;
 		case 'l':
-            config.bind_local_only = false;
+			config.bind_local_only = false;
 			break;
 		case 'p':
 			config.passwd_file = optarg;
@@ -103,15 +103,15 @@ int main(int argc, char **argv)
 	}
 
 	struct eventloop_epoll eloop = {
-	    .epoll_fd = 0,
-	    .loop = {
-	        .this_ptr = &eloop,
-	        .init = eventloop_epoll_init,
-	        .destroy = eventloop_epoll_destroy,
-            .run = eventloop_epoll_run,
-	        .add = eventloop_epoll_add,
-	        .remove = eventloop_epoll_remove,
-	    },
+		.epoll_fd = 0,
+		.loop = {
+			.this_ptr = &eloop,
+			.init = eventloop_epoll_init,
+			.destroy = eventloop_epoll_destroy,
+			.run = eventloop_epoll_run,
+			.add = eventloop_epoll_add,
+			.remove = eventloop_epoll_remove,
+		},
 	};
 
 	log_info("%s version %s started", CJET_NAME, CJET_VERSION);
