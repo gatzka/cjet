@@ -51,21 +51,13 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#define CRLF "\r\n"
-
-#define WS_CONTINUATION_FRAME 0x0
-#define WS_TEXT_FRAME 0x1
-#define WS_BINARY_FRAME 0x2
-#define WS_CLOSE_FRAME 0x8
-#define WS_PING_FRAME 0x9
-#define WS_PONG_FRAME 0x0a
-
-uint8_t *binary_frame_buffer = NULL;
-size_t binary_frame_buffer_size = 0;
-char *text_frame_buffer = NULL;
-size_t text_frame_buffer_size = 0;
-struct cjet_utf8_checker checker;
-struct cjet_utf8_checker *checker_ptr;
+static struct ab_ws_peer {
+	uint8_t *binary_frame_buffer;
+	size_t binary_frame_buffer_size;
+	char *text_frame_buffer;
+	size_t text_frame_buffer_size;
+	struct cjet_utf8_checker checker;
+} ab_peer;
 
 static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 {
@@ -81,15 +73,15 @@ static int ws_send_binary(const struct peer *p, uint8_t *payload, size_t len)
 
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
-	if (text_frame_buffer != NULL) {
-		free(text_frame_buffer);
-		text_frame_buffer = NULL;
-		text_frame_buffer_size = 0;
+	if (ab_peer.text_frame_buffer != NULL) {
+		free(ab_peer.text_frame_buffer);
+		ab_peer.text_frame_buffer = NULL;
+		ab_peer.text_frame_buffer_size = 0;
 	}
-	if (binary_frame_buffer != NULL) {
-		free(text_frame_buffer);
-		binary_frame_buffer = NULL;
-		binary_frame_buffer_size = 0;
+	if (ab_peer.binary_frame_buffer != NULL) {
+		free(ab_peer.text_frame_buffer);
+		ab_peer.binary_frame_buffer = NULL;
+		ab_peer.binary_frame_buffer_size = 0;
 	}
 	free_peer_resources(&ws_peer->peer);
 	cjet_free(ws_peer);
@@ -112,7 +104,7 @@ static enum websocket_callback_return text_message_callback(struct websocket *s,
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	log_info("recieved message and send back: %.*s",length,msg);
-	if (!cjet_is_text_valid(checker_ptr, msg, length, true)) {
+	if (!cjet_is_text_valid(&(ab_peer.checker), msg, length, true)) {
 		return WS_CLOSED;
 	}
 	int ret = ws_send_message(&ws_peer->peer, msg, length);
@@ -127,24 +119,24 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 {
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	enum websocket_callback_return ret = WS_OK;
-	if (!cjet_is_text_valid(checker_ptr, msg, length, is_last_frame)) {
+	if (!cjet_is_text_valid(&(ab_peer.checker), msg, length, is_last_frame)) {
 		return WS_CLOSED;
 	}
 	if (length != 0) {
-		text_frame_buffer = realloc(text_frame_buffer, text_frame_buffer_size + length);
-		if (unlikely(text_frame_buffer == NULL)) {
+		ab_peer.text_frame_buffer = realloc(ab_peer.text_frame_buffer, ab_peer.text_frame_buffer_size + length);
+		if (unlikely(ab_peer.text_frame_buffer == NULL)) {
 			log_err("Not enough memory for fragmented message!");
 			return WS_ERROR;
 		}
-		memcpy(text_frame_buffer + text_frame_buffer_size, msg, length);
-		text_frame_buffer_size += length;
+		memcpy(ab_peer.text_frame_buffer + ab_peer.text_frame_buffer_size, msg, length);
+		ab_peer.text_frame_buffer_size += length;
 	}
 	if (is_last_frame) {
-		ret = text_message_callback(&ws_peer->websocket, text_frame_buffer, text_frame_buffer_size);
-		if (text_frame_buffer != NULL) {
-			free(text_frame_buffer);
-			text_frame_buffer = NULL;
-			text_frame_buffer_size = 0;
+		ret = text_message_callback(&ws_peer->websocket, ab_peer.text_frame_buffer, ab_peer.text_frame_buffer_size);
+		if (ab_peer.text_frame_buffer != NULL) {
+			free(ab_peer.text_frame_buffer);
+			ab_peer.text_frame_buffer = NULL;
+			ab_peer.text_frame_buffer_size = 0;
 		}
 	}
 	return ret;
@@ -167,20 +159,20 @@ static enum websocket_callback_return binary_frame_callback(struct websocket *s,
 	struct websocket_peer *ws_peer = container_of(s, struct websocket_peer, websocket);
 	enum websocket_callback_return ret = WS_OK;
 	if (length != 0) {
-		binary_frame_buffer = realloc(binary_frame_buffer, binary_frame_buffer_size + length);
-		if (unlikely(binary_frame_buffer == NULL)) {
+		ab_peer.binary_frame_buffer = realloc(ab_peer.binary_frame_buffer, ab_peer.binary_frame_buffer_size + length);
+		if (unlikely(ab_peer.binary_frame_buffer == NULL)) {
 			log_err("Not enough memory for fragmented message!");
 			return WS_ERROR;
 		}
-		memcpy(binary_frame_buffer + binary_frame_buffer_size, msg, length);
-		binary_frame_buffer_size += length;
+		memcpy(ab_peer.binary_frame_buffer + ab_peer.binary_frame_buffer_size, msg, length);
+		ab_peer.binary_frame_buffer_size += length;
 	}
 	if (is_last_frame) {
-		ret = binary_message_callback(&ws_peer->websocket, binary_frame_buffer, binary_frame_buffer_size);
-		if (binary_frame_buffer != NULL) {
-			free(binary_frame_buffer);
-			binary_frame_buffer = NULL;
-			binary_frame_buffer_size = 0;
+		ret = binary_message_callback(&ws_peer->websocket, ab_peer.binary_frame_buffer, ab_peer.binary_frame_buffer_size);
+		if (ab_peer.binary_frame_buffer != NULL) {
+			free(ab_peer.binary_frame_buffer);
+			ab_peer.binary_frame_buffer = NULL;
+			ab_peer.binary_frame_buffer_size = 0;
 		}
 	}
 	return ret;
@@ -216,11 +208,19 @@ static void peer_close_websocket_peer(struct peer *p)
 	free_websocket_peer(ws_peer);
 }
 
+static void init_ab_websocket_peer()
+{
+	ab_peer.binary_frame_buffer = NULL;
+	ab_peer.binary_frame_buffer_size = 0;
+	ab_peer.text_frame_buffer = NULL;
+	ab_peer.text_frame_buffer_size = 0;
+	cjet_init_checker(&(ab_peer.checker));
+}
+
 static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_connection *connection, bool is_local_connection)
 {
 	static const char *sub_protocol = NULL;
-	checker_ptr = &checker;
-	cjet_init_checker(checker_ptr);
+	init_ab_websocket_peer();
 
 	init_peer(&ws_peer->peer, is_local_connection, connection->server->ev.loop);
 	ws_peer->peer.send_message = ws_send_message;
@@ -240,7 +240,7 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 	ws_peer->websocket.close_received = close_callback;
 	ws_peer->websocket.pong_received = pong_received;
 
-	br->read_until(br->this_ptr, CRLF, websocket_read_header_line, &ws_peer->websocket);
+	br->read_until(br->this_ptr, "\r\n", websocket_read_header_line, &ws_peer->websocket);
 	return 0;
 }
 
