@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,37 +24,46 @@
  * SOFTWARE.
  */
 
-import qbs 1.0
-import qbs.TextFile
+#include <stdarg.h>
+#include <stdio.h>
+#include <syslog.h>
 
-Module {
-  property string maxEpollEvents
+#include "compiler.h"
+#include "log.h"
 
-  Rule {
-    id: config_generator
-    inputs:  ["os_config_tag"]
+static char log_buffer[200];
 
-    Artifact {
-      filePath: "generated/os_config.h"
-      fileTags: ["hpp"]
-    }
+__attribute__((format(printf, 1, 2)))
+void log_err(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	printf("LOG_ERR, %s\n", log_buffer);
+	va_end(args);
+}
 
-    prepare: {
-      var cmd = new JavaScriptCommand();
-      cmd.description = "Processing '" + input.fileName + "'";
-      cmd.highlight = "codegen";
-      cmd.sourceCode = function() {
+__attribute__((format(printf, 1, 2)))
+void log_warn(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	printf("LOG_WARNING, %s\n", log_buffer);
+	va_end(args);
+}
 
-        var file = new TextFile(input.filePath);
-        var content = file.readAll();
-        file.close();
-        content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, product.moduleProperty("generateOsConfig", "maxEpollEvents") || "1");
-        file = new TextFile(output.filePath,  TextFile.WriteOnly);
-        file.truncate();
-        file.write(content);
-        file.close();
-      }
-      return  cmd;
-    }
-  }
+__attribute__((format(printf, 1, 2)))
+void log_info(const char *format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	vsnprintf(log_buffer, sizeof(log_buffer), format, args);
+	if (log_buffer[199] != 0){
+		log_buffer[197]='.';
+		log_buffer[198]='.';
+		log_buffer[199]='.';
+	}
+	printf("LOG_INFO, %s\n", log_buffer);
+	va_end(args);
 }

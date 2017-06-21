@@ -24,37 +24,33 @@
  * SOFTWARE.
  */
 
-import qbs 1.0
-import qbs.TextFile
+#ifndef CJET_ABWEBSOCKET_PEER_H
+#define CJET_ABWEBSOCKET_PEER_H
 
-Module {
-  property string maxEpollEvents
+#include <stddef.h>
+#include <stdint.h>
 
-  Rule {
-    id: config_generator
-    inputs:  ["os_config_tag"]
+#include "http_connection.h"
+#include "utf8_checker.h"
+#include "websocket.h"
 
-    Artifact {
-      filePath: "generated/os_config.h"
-      fileTags: ["hpp"]
-    }
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    prepare: {
-      var cmd = new JavaScriptCommand();
-      cmd.description = "Processing '" + input.fileName + "'";
-      cmd.highlight = "codegen";
-      cmd.sourceCode = function() {
+struct ab_ws_peer {
+	uint8_t *binary_frame_buffer;
+	size_t binary_frame_buffer_size;
+	char *text_frame_buffer;
+	size_t text_frame_buffer_size;
+	struct cjet_utf8_checker checker;
+	struct websocket websocket;
+};
 
-        var file = new TextFile(input.filePath);
-        var content = file.readAll();
-        file.close();
-        content = content.replace(/\${CONFIG_MAX_EPOLL_EVENTS}/g, product.moduleProperty("generateOsConfig", "maxEpollEvents") || "1");
-        file = new TextFile(output.filePath,  TextFile.WriteOnly);
-        file.truncate();
-        file.write(content);
-        file.close();
-      }
-      return  cmd;
-    }
-  }
+int alloc_abWebsocket_peer(struct http_connection *connection);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif
