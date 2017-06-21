@@ -90,27 +90,25 @@ struct F {
 /**
  * @brief tests the utf8 checker with a message of length 0
  */
-BOOST_AUTO_TEST_CASE(test_message_zero_length)
+BOOST_FIXTURE_TEST_CASE(test_message_zero_length, F)
 {
-	F f;
 	char zero = '\0';
-	int ret = cjet_is_text_valid(&f.c, &zero, 0, true);
+	int ret = cjet_is_text_valid(&c, &zero, 0, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word_sequence_valid(&f.c,(unsigned int* )&zero, 0, true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word_sequence_valid(&c,(unsigned int* )&zero, 0, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word64_sequence_valid(&f.c,(uint64_t*) &zero, 0, true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word64_sequence_valid(&c,(uint64_t*) &zero, 0, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
 /**
  * @brief tests the utf8 checker with a valid message
  */
-BOOST_AUTO_TEST_CASE(test_valid_message)
+BOOST_FIXTURE_TEST_CASE(test_valid_message, F)
 {
-	F f;
-	int ret = cjet_is_text_valid(&f.c, valid_message, sizeof(valid_message), true);
+	int ret = cjet_is_text_valid(&c, valid_message, sizeof(valid_message), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -120,12 +118,11 @@ BOOST_AUTO_TEST_CASE(test_valid_message)
  * The message is fragmented after an utf8 character, considering that
  * an utf8 character may consists of more than one byte.
  */
-BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints)
+BOOST_FIXTURE_TEST_CASE(test_valid_message_fragmented_on_codepoints, F)
 {
-	F f;
-	int ret = cjet_is_text_valid(&f.c, valid_message, 15, false);
+	int ret = cjet_is_text_valid(&c, valid_message, 15, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	ret = cjet_is_text_valid(&f.c, valid_message + 15, sizeof(valid_message) - 15, true);
+	ret = cjet_is_text_valid(&c, valid_message + 15, sizeof(valid_message) - 15, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -135,15 +132,14 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints)
  * The message is fragmented after each byte. Hence some utf8 characters
  * are fragmented, too.
  */
-BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
+BOOST_FIXTURE_TEST_CASE(test_valid_message_fragmented_between_letters, F)
 {
-	F f;
 	int ret;
 	for (unsigned int i = 0; i < sizeof(valid_message) - 1; i++) {
-		ret = cjet_is_text_valid(&f.c, valid_message + i, 1, false);
+		ret = cjet_is_text_valid(&c, valid_message + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
-	ret = cjet_is_text_valid(&f.c, valid_message + sizeof(valid_message) - 1, 1, true);
+	ret = cjet_is_text_valid(&c, valid_message + sizeof(valid_message) - 1, 1, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -153,16 +149,15 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters)
  * The message consists of two 4 byte utf8 characters
  * In the word tests one character is distributed over two bytes
  */
-BOOST_AUTO_TEST_CASE(test_valid_message_long)
+BOOST_FIXTURE_TEST_CASE(test_valid_message_long, F)
 {
-	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long), true);
+	int ret = cjet_is_byte_sequence_valid(&c, valid_message_long, sizeof(valid_message_long), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word_sequence_valid(&f.c, valid_message_long_word, ARRAY_SIZE(valid_message_long_word), true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word_sequence_valid(&c, valid_message_long_word, ARRAY_SIZE(valid_message_long_word), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word64_sequence_valid(&f.c, valid_message_long_word64, ARRAY_SIZE(valid_message_long_word64), true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word64_sequence_valid(&c, valid_message_long_word64, ARRAY_SIZE(valid_message_long_word64), true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -172,12 +167,11 @@ BOOST_AUTO_TEST_CASE(test_valid_message_long)
  * The message consists of two 4 byte utf8 characters and is fragmented
  * between them.
  */
-BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints_long)
+BOOST_FIXTURE_TEST_CASE(test_valid_message_fragmented_on_codepoints_long, F)
 {
-	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, 4, false);
+	int ret = cjet_is_byte_sequence_valid(&c, valid_message_long, 4, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + 4, sizeof(valid_message_long) - 4, true);
+	ret = cjet_is_byte_sequence_valid(&c, valid_message_long + 4, sizeof(valid_message_long) - 4, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 }
 
@@ -188,29 +182,28 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_on_codepoints_long)
  * is fragmented after each byte.
  * In the word tests one character is distributed over two bytes.
  */
-BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
+BOOST_FIXTURE_TEST_CASE(test_valid_message_fragmented_between_letters_long, F)
 {
-	F f;
 	int ret;
 	for (unsigned int i = 0; i < sizeof(valid_message_long) - 1; i++) {
-		ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + i, 1, false);
+		ret = cjet_is_byte_sequence_valid(&c, valid_message_long + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
-	ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long + sizeof(valid_message_long) - 1, 1, true);
+	ret = cjet_is_byte_sequence_valid(&c, valid_message_long + sizeof(valid_message_long) - 1, 1, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
+	cjet_init_checker(&c);
 	for (unsigned int i = 0; i < ARRAY_SIZE(valid_message_long_word) - 1; i++) {
-		ret = cjet_is_word_sequence_valid(&f.c, valid_message_long_word + i, 1, false);
+		ret = cjet_is_word_sequence_valid(&c, valid_message_long_word + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
 	ret = cjet_is_word_sequence_valid(&f.c, valid_message_long_word + ARRAY_SIZE(valid_message_long_word) - 1, 1, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
+	cjet_init_checker(&c);
 	for (unsigned int i = 0; i < ARRAY_SIZE(valid_message_long_word64) - 1; i++) {
-		ret = cjet_is_word64_sequence_valid(&f.c, valid_message_long_word64 + i, 1, false);
+		ret = cjet_is_word64_sequence_valid(&c, valid_message_long_word64 + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
-	ret = cjet_is_word64_sequence_valid(&f.c, valid_message_long_word64 + ARRAY_SIZE(valid_message_long_word64) - 1, 1, true);
+	ret = cjet_is_word64_sequence_valid(&c, valid_message_long_word64 + ARRAY_SIZE(valid_message_long_word64) - 1, 1, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 
 }
@@ -222,22 +215,21 @@ BOOST_AUTO_TEST_CASE(test_valid_message_fragmented_between_letters_long)
  * so it is similar to fragmentation. The function of the is_complete flag is checked
  * seperately, hence a fragmentation check for word validation is not necessary.
  */
-BOOST_AUTO_TEST_CASE(test_invalid_message)
+BOOST_FIXTURE_TEST_CASE(test_invalid_message, F)
 {
-	int ret;
 	for (unsigned int i = 0; i < invalid_message_size; i++) {
-		F f;
-		ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[i], sizeof(invalid_message[i]), true);
+		cjet_init_checker(&c);
+		int ret = cjet_is_byte_sequence_valid(&c, invalid_message[i], sizeof(invalid_message[i]), true);
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
 	for (unsigned int i = 0; i < invalid_message_size; i++) {
-		F f;
-		ret = cjet_is_word_sequence_valid(&f.c, invalid_message_word[i], 4, true);
+		cjet_init_checker(&c);
+		int ret = cjet_is_word_sequence_valid(&c, invalid_message_word[i], 4, true);
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
 	for (unsigned int i = 0; i < invalid_message_size; i++) {
-		F f;
-		ret = cjet_is_word64_sequence_valid(&f.c, invalid_message_word64[i], 4, true);
+		cjet_init_checker(&c);
+		int ret = cjet_is_word64_sequence_valid(&c, invalid_message_word64[i], 4, true);
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
 }
@@ -248,12 +240,11 @@ BOOST_AUTO_TEST_CASE(test_invalid_message)
  * The message is fragmented after an utf8 character, considering that
  * an utf8 character may consists of more than one byte.
  */
-BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
+BOOST_FIXTURE_TEST_CASE(test_invalid_message_fragmented_on_codepoints, F)
 {
-	F f;
-	int ret = cjet_is_byte_sequence_valid(&f.c, valid_message_long, sizeof(valid_message_long), false);
+	int ret = cjet_is_byte_sequence_valid(&c, valid_message_long, sizeof(valid_message_long), false);
 	BOOST_CHECK_MESSAGE(ret == 1, "Message should be valid!");
-	ret = cjet_is_byte_sequence_valid(&f.c, invalid_message[1], sizeof(invalid_message[1]), true);
+	ret = cjet_is_byte_sequence_valid(&c, invalid_message[1], sizeof(invalid_message[1]), true);
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 }
 
@@ -263,21 +254,21 @@ BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_on_codepoints)
  * The message is fragmented after each byte. Hence some utf8 characters
  * are fragmented, too.
  */
-BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_between_letters)
+BOOST_FIXTURE_TEST_CASE(test_invalid_message_fragmented_between_letters, F)
 {
 	int ret;
 	bool invalid = false;
 	for (unsigned int i = 0; i < invalid_message_size; i++) {
-		F f;
+		cjet_init_checker(&c);
 		for (unsigned int j = 0; j < sizeof(invalid_message[i]) - 1; j++) {
-			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][j], 1, false);
+			ret = cjet_is_byte_sequence_valid(&c, &invalid_message[i][j], 1, false);
 			if (ret < 1) {
 				invalid = true;
 				break;
 			}
 		}
 		if (!invalid) {
-			ret = cjet_is_byte_sequence_valid(&f.c, &invalid_message[i][sizeof(invalid_message[i]) - 1], 1, true);
+			ret = cjet_is_byte_sequence_valid(&c, &invalid_message[i][sizeof(invalid_message[i]) - 1], 1, true);
 		}
 		BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 	}
@@ -288,27 +279,26 @@ BOOST_AUTO_TEST_CASE(test_invalid_message_fragmented_between_letters)
  *
  * An incomplete valid utf8 byte / word is checked with and without is_complete set.
  */
-BOOST_AUTO_TEST_CASE(test_is_complete_flag)
+BOOST_FIXTURE_TEST_CASE(test_is_complete_flag, F)
 {
-	F f;
 	uint8_t test_msg = 0xC2;
 	unsigned int test_msg_word = 0xC2000000;
 	uint64_t test_msg_word64 = 0xC200000000000000;
-	int ret = cjet_is_byte_sequence_valid(&f.c, &test_msg, 1, false);
+	int ret = cjet_is_byte_sequence_valid(&c, &test_msg, 1, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_byte_sequence_valid(&f.c, &test_msg, 1, true);
+	cjet_init_checker(&c);
+	ret = cjet_is_byte_sequence_valid(&c, &test_msg, 1, true);
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word_sequence_valid(&f.c, &test_msg_word, 1, false);
+	cjet_init_checker(&c);
+	ret = cjet_is_word_sequence_valid(&c, &test_msg_word, 1, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word_sequence_valid(&f.c, &test_msg_word, 1, true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word_sequence_valid(&c, &test_msg_word, 1, true);
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word64_sequence_valid(&f.c, &test_msg_word64, 1, false);
+	cjet_init_checker(&c);
+	ret = cjet_is_word64_sequence_valid(&c, &test_msg_word64, 1, false);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
-	cjet_init_checker(&f.c);
-	ret = cjet_is_word64_sequence_valid(&f.c, &test_msg_word64, 1, true);
+	cjet_init_checker(&c);
+	ret = cjet_is_word64_sequence_valid(&c, &test_msg_word64, 1, true);
 	BOOST_CHECK_MESSAGE(ret == false, "Message should be invalid!");
 }

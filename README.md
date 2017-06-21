@@ -67,16 +67,16 @@ qbs -f <path/to/cjet-sources>/src/cjet.qbs release hardening.enableHardening:fal
 
 In addition, there is also a qbs project for building cjet and running all unit tests:
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [unittestRunner.showCoverageData:true]...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [products.unittestRunner.showCoverageData:true]...
 ```
 You can specify as many additional parallel builds by adding more
-profiles. If `unittestRunner.showCoverageData:true` is given, the
+profiles. If `products.unittestRunner.showCoverageData:true` is given, the
 coverage data is directly displayed in a web browser.
 
 If you don't like waiting for the http-parse-tests to complete you can
 disable them;
 ```
-qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [cjetUnitTests.buildHttpParserTest:false]...
+qbs -f <path/to/cjet-sources>/all.qbs release profile:gcc [projects.cjetUnitTests.buildHttpParserTest:false]...
 ```
 If you have clang and clang-analyzer installed, you can run the static
 code analyzer with

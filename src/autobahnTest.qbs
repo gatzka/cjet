@@ -81,10 +81,12 @@ Project {
       files: [
         "*.c",
         "*.h",
-        "./autobahnfiles/abWebsocket_peer.c"
+        "./autobahnfiles/abWebsocket_peer.c",
+        "./autobahnfiles/abWebsocket_peer.h"
       ]
       excludeFiles: [
         "websocket_peer.c",
+        "websocket_peer.h"
       ]
       cpp.cLanguageVersion: "c99"
     }

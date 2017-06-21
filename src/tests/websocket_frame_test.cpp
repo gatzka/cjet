@@ -514,7 +514,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames)
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
 	BOOST_CHECK_MESSAGE(text_frame_received_called == 3, "Callback for text frames was not or wrong times called: " << text_frame_received_called);
 	BOOST_CHECK_MESSAGE(::strncmp("frag1frag2frag3", (char *)readback_buffer, 15) == 0, "Did not received the same message as sent!");
-
 }
 
 BOOST_AUTO_TEST_CASE(test_recceive_binary_frames)
@@ -558,7 +557,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_with_ping_in_between)
 	ws_get_header(&f.ws, read_buffer_ptr++, read_buffer_length);
 
 	websocket_close(&f.ws, WS_CLOSE_GOING_AWAY);
-
 	BOOST_CHECK_MESSAGE(ping_received_called, "Callback for ping messages was not called!");
 	BOOST_CHECK_MESSAGE(is_pong_frame(messages[3]), "No pong frame sent when ping received!");
 	BOOST_CHECK_MESSAGE(text_frame_received_called == 3, "Callback for text frames was not or wrong times called: " << text_frame_received_called);
@@ -580,7 +578,6 @@ BOOST_AUTO_TEST_CASE(test_receive_text_frames_without_start_frame)
 	BOOST_CHECK_MESSAGE(is_close_frame(WS_CLOSE_PROTOCOL_ERROR), "No close frame sent after error!");
 	BOOST_CHECK_MESSAGE(br_close_called, "buffered_reader not closed after websocket close!");
 	BOOST_CHECK_MESSAGE(readback_buffer_length == 0, "Received a message!");
-
 }
 
 BOOST_AUTO_TEST_CASE(test_receive_text_frame_only_end_frame)
@@ -720,11 +717,10 @@ BOOST_AUTO_TEST_CASE(test_receive_pong_on_client)
  */
 BOOST_AUTO_TEST_CASE(test_receive_text_message_with_rsv_bit_set)
 {
-	bool is_server = true;
-
-	char message [] = "Hello World!";
-	uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 	for (uint8_t rsv = 0x10; rsv <= 0x70; rsv += 0x10){
+		bool is_server = true;
+		char message [] = "Hello World!";
+		uint8_t mask[4] = {0xaa, 0x55, 0xcc, 0x11};
 		F f(is_server, 5000);
 		const uint8_t type = WS_OPCODE_TEXT | rsv;
 		prepare_message_string(type, message, is_server, mask);
