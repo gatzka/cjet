@@ -52,7 +52,7 @@
 #include "socket_peer.h"
 #include "util.h"
 #include "websocket.h"
-#include "websocket_peer.h"
+#include "abWebsocket_peer.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
@@ -537,7 +537,7 @@ int run_io(struct eventloop *loop, const struct cmdline_config *config)
 	const struct url_handler handler[] = {
 	    {
 	        .request_target = config->request_target,
-	        .create = alloc_websocket_peer,
+	        .create = alloc_abWebsocket_peer,
 	        .on_header_field = websocket_upgrade_on_header_field,
 	        .on_header_value = websocket_upgrade_on_header_value,
 	        .on_headers_complete = websocket_upgrade_on_headers_complete,
