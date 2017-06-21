@@ -196,7 +196,7 @@ BOOST_FIXTURE_TEST_CASE(test_valid_message_fragmented_between_letters_long, F)
 		ret = cjet_is_word_sequence_valid(&c, valid_message_long_word + i, 1, false);
 		BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	}
-	ret = cjet_is_word_sequence_valid(&f.c, valid_message_long_word + ARRAY_SIZE(valid_message_long_word) - 1, 1, true);
+	ret = cjet_is_word_sequence_valid(&c, valid_message_long_word + ARRAY_SIZE(valid_message_long_word) - 1, 1, true);
 	BOOST_CHECK_MESSAGE(ret == true, "Message should be valid!");
 	cjet_init_checker(&c);
 	for (unsigned int i = 0; i < ARRAY_SIZE(valid_message_long_word64) - 1; i++) {
