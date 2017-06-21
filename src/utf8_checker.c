@@ -26,7 +26,6 @@
 
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 
 #include "utf8_checker.h"
 
@@ -212,7 +211,6 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *restric
 {
 	size_t bytewidth = sizeof(uint_fast16_t);
 	if (byte_length < 8) bytewidth = 1;
-	printf("bytewidth %zu\n",bytewidth);
 	size_t pre_length, main_length, post_length;
 	int ret;
 	const uint8_t* ptr_alligned = sequence;
