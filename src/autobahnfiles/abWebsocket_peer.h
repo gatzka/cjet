@@ -24,13 +24,13 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_WEBSOCKET_PEER_H
-#define CJET_WEBSOCKET_PEER_H
+#ifndef CJET_ABWEBSOCKET_PEER_H
+#define CJET_ABWEBSOCKET_PEER_H
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "http_connection.h"
-#include "peer.h"
 #include "utf8_checker.h"
 #include "websocket.h"
 
