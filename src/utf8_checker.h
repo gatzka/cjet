@@ -86,7 +86,7 @@ void cjet_init_checker(struct cjet_utf8_checker *c);
  */
 bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length, bool is_complete);
 
-bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *c, const unsigned int *sequence, size_t length, bool is_complete);
+bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *c, const uint32_t *sequence, size_t length, bool is_complete);
 
 bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *c, const uint64_t *sequence, size_t length, bool is_complete);
 
