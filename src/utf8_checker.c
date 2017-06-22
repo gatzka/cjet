@@ -38,7 +38,7 @@ const unsigned int FAST_ZONE24 = 0xC0E0C0E0;
 const uint64_t FAST_ZONE1_64 = 0x8080808080808080;
 const uint64_t FAST_ZONE2_64 = 0xC0E0C0E0C0E0C0E0;
 
-static bool is_byte_valid(struct cjet_utf8_checker *restrict c, uint8_t byte)
+static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
 	bool ret = true;
 	bool finished = false;
@@ -121,7 +121,7 @@ static bool is_byte_valid(struct cjet_utf8_checker *restrict c, uint8_t byte)
 	return ret;
 }
 
-bool cjet_is_text_valid(struct cjet_utf8_checker *restrict c, const char *restrict text, size_t length, bool is_complete)
+bool cjet_is_text_valid(struct cjet_utf8_checker *c, const char *text, size_t length, bool is_complete)
 {
 	bool ret = true;
 	for (size_t i = 0; i < length; i++) {
@@ -134,7 +134,7 @@ bool cjet_is_text_valid(struct cjet_utf8_checker *restrict c, const char *restri
 	return ret;
 }
 
-bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *restrict c, const uint8_t *restrict sequence, size_t length, bool is_complete)
+bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *sequence, size_t length, bool is_complete)
 {
 	bool ret = true;
 	for (size_t i = 0; i < length; i++) {
@@ -150,7 +150,7 @@ bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *restrict c, const uin
 	return ret;
 }
 
-bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *restrict c, const unsigned int *sequence, size_t length, bool is_complete)
+bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *c, const unsigned int *sequence, size_t length, bool is_complete)
 {
 	bool ret = true;
 	unsigned int tmp = 0x0;
@@ -180,7 +180,7 @@ bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *restrict c, const uns
 	return ret;
 }
 
-bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *restrict c, const uint64_t *sequence, size_t length, bool is_complete)
+bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *c, const uint64_t *sequence, size_t length, bool is_complete)
 {
 	bool ret = true;
 	uint64_t tmp = 0x0;
@@ -207,20 +207,22 @@ bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *restrict c, const u
 	return ret;
 }
 
-bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *restrict c, const void *sequence, size_t byte_length, bool is_complete)
+bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, const void *sequence, size_t byte_length, bool is_complete)
 {
 	size_t bytewidth = sizeof(uint_fast16_t);
 	if (byte_length < 8) bytewidth = 1;
 	size_t pre_length, main_length, post_length;
 	int ret;
-	const uint8_t* ptr_alligned = sequence;
+	const uint8_t *ptr_alligned_byte = sequence;
+	const void *ptr_alligned;
 	switch (bytewidth) {
 	case 8:
 		pre_length = ((uint64_t) sequence) % 8;
 		main_length = (byte_length - pre_length) >> 3;
 		post_length = byte_length - pre_length - ( main_length << 3);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
-		ptr_alligned += pre_length;
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
 		ret &= cjet_is_word64_sequence_valid(c, ((const uint64_t*) ptr_alligned), main_length, 0);
 		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 3), post_length, 0);
 		break;
@@ -229,7 +231,8 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *restric
 		main_length = (byte_length - pre_length) >> 2;
 		post_length = byte_length - pre_length - ( main_length << 2);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
-		ptr_alligned += pre_length;
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
 		ret &= cjet_is_word_sequence_valid(c, ((const unsigned int*) ptr_alligned), main_length, 0);
 		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 2), post_length, 0);
 		break;
