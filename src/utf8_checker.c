@@ -213,14 +213,16 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *restric
 	if (byte_length < 8) bytewidth = 1;
 	size_t pre_length, main_length, post_length;
 	int ret;
-	const uint8_t* ptr_alligned = sequence;
+	const uint8_t *ptr_alligned_byte = sequence;
+	const void *ptr_alligned;
 	switch (bytewidth) {
 	case 8:
 		pre_length = ((uint64_t) sequence) % 8;
 		main_length = (byte_length - pre_length) >> 3;
 		post_length = byte_length - pre_length - ( main_length << 3);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
-		ptr_alligned += pre_length;
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
 		ret &= cjet_is_word64_sequence_valid(c, ((const uint64_t*) ptr_alligned), main_length, 0);
 		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 3), post_length, 0);
 		break;
@@ -229,7 +231,8 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *restric
 		main_length = (byte_length - pre_length) >> 2;
 		post_length = byte_length - pre_length - ( main_length << 2);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
-		ptr_alligned += pre_length;
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
 		ret &= cjet_is_word_sequence_valid(c, ((const unsigned int*) ptr_alligned), main_length, 0);
 		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 2), post_length, 0);
 		break;
