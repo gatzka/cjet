@@ -81,11 +81,16 @@ static void free_ab_ws_peer_on_error(void *context)
 static enum websocket_callback_return text_message_callback(struct websocket *s, char *msg, size_t length)
 {
 	struct ab_ws_peer *ws_peer = container_of(s, struct ab_ws_peer, websocket);
-	log_info("recieved message and send back: %.*s", length, msg);
 	if (!cjet_is_word_sequence_valid_auto_alligned(&(ws_peer->checker), msg, length, true)) {
 		return WS_CLOSED;
 	}
 	int ret = websocket_send_text_frame(s, msg, length);
+	size_t writelength = length;
+	if (writelength > 200) {
+		writelength = 200;
+		*(msg + 199) = '\0';
+	}
+	log_info("recieved message and send back: %.*s", writelength, msg);
 	if (unlikely(ret < 0)) {
 		return WS_ERROR;
 	} else {
@@ -122,8 +127,13 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 
 static enum websocket_callback_return binary_message_callback(struct websocket *s, uint8_t *msg, size_t length)
 {
-	log_info("recieved binary and send back: %.*s",length,msg);
 	int ret = websocket_send_binary_frame(s, msg, length);
+	size_t writelength = length;
+	if (writelength > 200) {
+		writelength = 200;
+		*(msg + 199) = '\0';
+	}
+	log_info("recieved binary and send back: %.*s",writelength,msg);
 	if (unlikely(ret < 0)) {
 		return WS_ERROR;
 	} else {
