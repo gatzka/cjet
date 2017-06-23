@@ -82,7 +82,7 @@ static enum websocket_callback_return text_message_callback(struct websocket *s,
 {
 	struct ab_ws_peer *ws_peer = container_of(s, struct ab_ws_peer, websocket);
 	log_info("recieved message and send back: %.*s", length, msg);
-	if (!cjet_is_text_valid(&(ws_peer->checker), msg, length, true)) {
+	if (!cjet_is_word_sequence_valid_auto_alligned(&(ws_peer->checker), msg, length, true)) {
 		return WS_CLOSED;
 	}
 	int ret = websocket_send_text_frame(s, msg, length);
@@ -97,7 +97,7 @@ static enum websocket_callback_return text_frame_callback(struct websocket *s, c
 {
 	struct ab_ws_peer *ws_peer = container_of(s, struct ab_ws_peer, websocket);
 	enum websocket_callback_return ret = WS_OK;
-	if (!cjet_is_text_valid(&(ws_peer->checker), msg, length, is_last_frame)) {
+	if (!cjet_is_word_sequence_valid_auto_alligned(&(ws_peer->checker), msg, length, is_last_frame)) {
 		return WS_CLOSED;
 	}
 	if (length != 0) {

@@ -30,6 +30,13 @@
 #include "utf8_checker.h"
 
 const uint8_t UC_FINISH = 0xFF;
+const unsigned int FAST_ZONE1 = 0x80808080;
+const unsigned int FAST_ZONE21 = 0x8080C0E0;
+const unsigned int FAST_ZONE22 = 0x80C0E080;
+const unsigned int FAST_ZONE23 = 0xC0E08080;
+const unsigned int FAST_ZONE24 = 0xC0E0C0E0;
+const uint64_t FAST_ZONE1_64 = 0x8080808080808080;
+const uint64_t FAST_ZONE2_64 = 0xC0E0C0E0C0E0C0E0;
 
 static bool is_byte_valid(struct cjet_utf8_checker *c, uint8_t byte)
 {
@@ -135,7 +142,109 @@ bool cjet_is_byte_sequence_valid(struct cjet_utf8_checker *c, const uint8_t *seq
 		if (ret == false) return false;
 	}
 	if (is_complete) {
-		if (c->start_byte != UC_FINISH) return false;
+		if (c->start_byte != UC_FINISH) {
+			cjet_init_checker(c);
+			return false;
+		}
+	}
+	return ret;
+}
+
+bool cjet_is_word_sequence_valid(struct cjet_utf8_checker *c, const uint32_t *sequence, size_t length, bool is_complete)
+{
+	bool ret = true;
+	uint32_t tmp = 0x0;
+	for (size_t i = 0; i < length; i++) {
+		tmp = *(sequence + i);
+		if (c->next_byte == 1) {
+			if (!(tmp & FAST_ZONE1)) continue;
+			if (((tmp & FAST_ZONE21) == 0x80C0) && ((tmp & 0x1F) > 0x01)) continue;
+			if (((tmp & FAST_ZONE22) == 0x80C000) && ((tmp & 0x1F00) > 0x0100)) continue;
+			if (((tmp & FAST_ZONE23) == 0x80C00000) && ((tmp & 0x1F0000) > 0x010000)) continue;
+			if (((tmp & FAST_ZONE24) == 0x80C080C0) && ((tmp & 0x1F001F) > 0x010001)) continue;
+		}
+		for (size_t j = 0; j < sizeof(tmp); j++) {
+			tmp = *(sequence + i);
+			tmp = tmp >> j * 8;
+			tmp &= 0xFF;
+			ret = is_byte_valid(c, (uint8_t) tmp);
+			if (ret == false) return false;
+		}
+	}
+	if (is_complete) {
+		if (c->start_byte != UC_FINISH) {
+			cjet_init_checker(c);
+			return false;
+		}
+	}
+	return ret;
+}
+
+bool cjet_is_word64_sequence_valid(struct cjet_utf8_checker *c, const uint64_t *sequence, size_t length, bool is_complete)
+{
+	bool ret = true;
+	uint64_t tmp = 0x0;
+	for (size_t i = 0; i < length; i++) {
+		tmp = *(sequence + i);
+		if (c->next_byte == 1) {
+			if (!(tmp & FAST_ZONE1_64)) continue;
+			if(((tmp & FAST_ZONE2_64) == 0x80C080C080C080C0) && ((tmp & 0x001F001F001F001F) > 0x0001000100010001)) continue;
+		}
+		for (uint64_t j = 0; j < sizeof(tmp); j++) {
+			tmp = *(sequence + i);
+			tmp >>= (j * 8);
+			tmp &= 0xFF;
+			ret = is_byte_valid(c, (uint8_t) tmp);
+			if (ret == false) return false;
+		}
+	}
+	if (is_complete) {
+		if (c->start_byte != UC_FINISH) {
+			cjet_init_checker(c);
+			return false;
+		}
+	}
+	return ret;
+}
+
+bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, const void *sequence, size_t byte_length, bool is_complete)
+{
+	size_t bytewidth = sizeof(uint_fast16_t);
+	if (byte_length < 8) bytewidth = 1;
+	size_t pre_length, main_length, post_length;
+	int ret;
+	const uint8_t *ptr_alligned_byte = sequence;
+	const void *ptr_alligned;
+	switch (bytewidth) {
+	case 8:
+		pre_length = ((uintptr_t) sequence) % 8;
+		main_length = (byte_length - pre_length) >> 3;
+		post_length = byte_length - pre_length - ( main_length << 3);
+		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
+		ret &= cjet_is_word64_sequence_valid(c, ((const uint64_t*) ptr_alligned), main_length, 0);
+		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 3), post_length, 0);
+		break;
+	case 4:
+		pre_length = ((uintptr_t) sequence) % 4;
+		main_length = (byte_length - pre_length) >> 2;
+		post_length = byte_length - pre_length - ( main_length << 2);
+		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
+		ptr_alligned_byte += pre_length;
+		ptr_alligned = ptr_alligned_byte;
+		ret &= cjet_is_word_sequence_valid(c, ((const uint32_t*) ptr_alligned), main_length, 0);
+		ret &= cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence) + pre_length + (main_length << 2), post_length, 0);
+		break;
+	default:
+		ret = cjet_is_byte_sequence_valid(c, sequence, byte_length, is_complete);
+		break;
+	}
+	if (is_complete) {
+		if (c->start_byte != UC_FINISH) {
+			cjet_init_checker(c);
+			return false;
+		}
 	}
 	return ret;
 }
