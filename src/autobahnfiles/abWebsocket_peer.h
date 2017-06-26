@@ -41,8 +41,10 @@ extern "C" {
 struct ab_ws_peer {
 	uint8_t *binary_frame_buffer;
 	size_t binary_frame_buffer_size;
+	size_t binary_frame_buffer_ptr;
 	char *text_frame_buffer;
 	size_t text_frame_buffer_size;
+	size_t text_frame_buffer_ptr;
 	struct cjet_utf8_checker checker;
 	struct websocket websocket;
 };
