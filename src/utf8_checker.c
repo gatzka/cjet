@@ -218,8 +218,9 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, cons
 	switch (bytewidth) {
 	case 8:
 		pre_length = ((uintptr_t) sequence) % 8;
+		pre_length = 8 - pre_length;
 		main_length = (byte_length - pre_length) >> 3;
-		post_length = byte_length - pre_length - ( main_length << 3);
+		post_length = byte_length - pre_length - (main_length << 3);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
 		ptr_alligned_byte += pre_length;
 		ptr_alligned = ptr_alligned_byte;
@@ -228,8 +229,9 @@ bool cjet_is_word_sequence_valid_auto_alligned(struct cjet_utf8_checker *c, cons
 		break;
 	case 4:
 		pre_length = ((uintptr_t) sequence) % 4;
+		pre_length = 4 - pre_length;
 		main_length = (byte_length - pre_length) >> 2;
-		post_length = byte_length - pre_length - ( main_length << 2);
+		post_length = byte_length - pre_length - (main_length << 2);
 		ret = cjet_is_byte_sequence_valid(c, ((const uint8_t*) sequence), pre_length, 0);
 		ptr_alligned_byte += pre_length;
 		ptr_alligned = ptr_alligned_byte;

@@ -82,7 +82,8 @@ Project {
         "*.c",
         "*.h",
         "./autobahnfiles/abWebsocket_peer.c",
-        "./autobahnfiles/abWebsocket_peer.h"
+        "./autobahnfiles/abWebsocket_peer.h",
+        "./autobahnfiles/abLog.h"
       ]
       excludeFiles: [
         "websocket_peer.c",

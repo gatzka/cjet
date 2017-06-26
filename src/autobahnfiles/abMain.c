@@ -31,6 +31,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include "abLog.h"
 #include "alloc.h"
 #include "authenticate.h"
 #include "cmdline_config.h"
@@ -63,7 +64,7 @@ int main(int argc, char **argv)
 
 	int c;
 
-	while ((c = getopt(argc, argv, "flp:r:u:")) != -1) {
+	while ((c = getopt(argc, argv, "flp:r:u:w:")) != -1) {
 		switch (c) {
 		case 'f':
 			config.run_foreground = true;
@@ -80,8 +81,32 @@ int main(int argc, char **argv)
 		case 'u':
 			config.user_name = optarg;
 			break;
+		case 'w':
+			switch ((unsigned int) *optarg - '0') {
+			case 0:
+				log_info("Nothing will be displayed\n");
+				set_warning_level(0);
+				break;
+			case 1:
+				log_info("Only errors will be displayed.\n");
+				set_warning_level(1);
+				break;
+			case 2:
+				log_info("Warnings and errors will be displayed.\n");
+				set_warning_level(2);
+				break;
+			case 3:
+				log_info("All messages will be displayed.\n");
+				set_warning_level(3);
+				break;
+			default:
+				log_warn("Invalid warning level. Warning level is set to default (all)\n");
+				set_warning_level(3);
+				break;
+			}
+			break;
 		case '?':
-			fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>]\n", argv[0]);
+			fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>] [-w <0,1,2 or 3: warning level nothing to all>]\n", argv[0]);
 			ret = EXIT_FAILURE;
 			goto getopt_failed;
 			break;

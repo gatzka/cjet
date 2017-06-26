@@ -1,7 +1,7 @@
 /*
  *The MIT License (MIT)
  *
- * Copyright (c) <2014> <Stephan Gatzka>
+ * Copyright (c) <2017> <Stephan Gatzka>
  *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
@@ -24,32 +24,14 @@
  * SOFTWARE.
  */
 
-#ifndef CJET_ABWEBSOCKET_PEER_H
-#define CJET_ABWEBSOCKET_PEER_H
-
-#include <stddef.h>
-#include <stdint.h>
-
-#include "http_connection.h"
-#include "utf8_checker.h"
-#include "websocket.h"
+#ifndef CJET_ABLOG_H
+#define CJET_ABLOG_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct ab_ws_peer {
-	uint8_t *binary_frame_buffer;
-	size_t binary_frame_buffer_size;
-	size_t binary_frame_buffer_ptr;
-	char *text_frame_buffer;
-	size_t text_frame_buffer_size;
-	size_t text_frame_buffer_ptr;
-	struct cjet_utf8_checker checker;
-	struct websocket websocket;
-};
-
-int alloc_abWebsocket_peer(struct http_connection *connection);
+void set_warning_level(unsigned int level);
 
 #ifdef __cplusplus
 }
