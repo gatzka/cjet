@@ -24,59 +24,17 @@
  * SOFTWARE.
  */
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <syslog.h>
+#ifndef CJET_ABLOG_H
+#define CJET_ABLOG_H
 
-#include "abLog.h"
-#include "compiler.h"
-#include "log.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-static char log_buffer[200];
-static unsigned int warning_level = 3;
+void set_warning_level(unsigned int level);
 
-__attribute__((format(printf, 1, 2)))
-void log_err(const char *format, ...)
-{
-	if (warning_level > 0) {
-		va_list args;
-		va_start(args, format);
-		vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-		printf("LOG_ERR, %s\n", log_buffer);
-		va_end(args);
-	}
+#ifdef __cplusplus
 }
+#endif
 
-__attribute__((format(printf, 1, 2)))
-void log_warn(const char *format, ...)
-{
-	if (warning_level > 1) {
-		va_list args;
-		va_start(args, format);
-		vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-		printf("LOG_WARNING, %s\n", log_buffer);
-		va_end(args);
-	}
-}
-
-__attribute__((format(printf, 1, 2)))
-void log_info(const char *format, ...)
-{
-	if (warning_level > 2) {
-		va_list args;
-		va_start(args, format);
-		vsnprintf(log_buffer, sizeof(log_buffer), format, args);
-		if (log_buffer[199] != 0){
-			log_buffer[197]='.';
-			log_buffer[198]='.';
-			log_buffer[199]='.';
-		}
-		printf("LOG_INFO, %s\n", log_buffer);
-		va_end(args);
-	}
-}
-
-void set_warning_level(unsigned int level)
-{
-	warning_level = level;
-}
+#endif
