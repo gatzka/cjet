@@ -101,7 +101,9 @@ Project {
         "http-parser/http_parser.c",
         "http-parser/http_parser.h",
         "sha1/sha1.c",
-        "sha1/sha1.h"
+        "sha1/sha1.h",
+        "zlib/*.c",
+        "zlib/*.h"
       ]
     }
 
