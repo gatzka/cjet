@@ -102,6 +102,13 @@ Project {
         "http-parser/http_parser.h",
         "sha1/sha1.c",
         "sha1/sha1.h",
+      ]
+    }
+
+    Group {
+      name: "zlib"
+      cpp.warningLevel: "none"
+      files: [
         "zlib/*.c",
         "zlib/*.h"
       ]
