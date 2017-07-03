@@ -147,9 +147,17 @@ static void handle_error(struct websocket *s, uint16_t status_code)
 static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8_t *frame, size_t length)
 {
 	if (unlikely(s->ws_flags.rsv != 0)) {
-		log_err("Frame with RSV-bit are not supported");
-		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
-		return WS_CLOSED;
+		if(s->extension_compression.accepted) {
+			if (s->ws_flags.fin == 0 || s->ws_flags.rsv != 0x4) {
+				log_err("RSV-bits should be 0 or wrong RSV-bit is set!");
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
+		} else {
+			log_err("Frame with RSV-bit are not supported!");
+			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+			return WS_CLOSED;
+		}
 	}
 
 	if (unlikely((s->ws_flags.fin == 0) && (s->ws_flags.opcode >= WS_PING_FRAME))) {
@@ -532,30 +540,39 @@ static int send_upgrade_response(struct http_connection *connection)
 		"Sec-WebSocket-Accept: ";
 
 	static const char ws_protocol[] =
-		CRLF "Sec-Websocket-Protocol: ";
+		CRLF "Sec-WebSocket-Protocol: ";
+
+	static const char ws_extensions[] =
+		CRLF "Sec-WebSocket-Extensions: ";
 
 	static const char switch_response_end[] = CRLF CRLF;
 
-	struct socket_io_vector iov[5];
-	size_t iov_length = 5;
+	struct socket_io_vector iov[7];
+	size_t iov_length = 2;
 
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response) - 1;
 	iov[1].iov_base = accept_value;
 	iov[1].iov_len = sizeof(accept_value);
-	iov[2].iov_base = ws_protocol;
-	iov[2].iov_len = sizeof(ws_protocol) - 1;
-
-	if (s->sub_protocol.name != NULL){
-		iov[3].iov_base = s->sub_protocol.name;
-		iov[3].iov_len = strlen(s->sub_protocol.name);
-		 iov[4].iov_base = switch_response_end;
-		iov[4].iov_len = sizeof(switch_response_end) - 1;
-	} else {
-		iov_length = 4;
-		iov[3].iov_base = switch_response_end;
-		iov[3].iov_len = sizeof(switch_response_end) - 1;
+	if (s->sub_protocol.name != NULL) {
+		iov[iov_length].iov_base = ws_protocol;
+		iov[iov_length].iov_len = sizeof(ws_protocol) - 1;
+		iov_length++;
+		iov[iov_length].iov_base = s->sub_protocol.name;
+		iov[iov_length].iov_len = strlen(s->sub_protocol.name);
+		iov_length++;
 	}
+	if (s->extension_compression.accepted) {
+		iov[iov_length].iov_base = ws_extensions;
+		iov[iov_length].iov_len = sizeof(ws_extensions) - 1;
+		iov_length++;
+		iov[iov_length].iov_base = s->extension_compression.response;
+		iov[iov_length].iov_len = strlen(s->extension_compression.response);
+		iov_length++;
+	}
+	iov[iov_length].iov_base = switch_response_end;
+	iov[iov_length].iov_len = sizeof(switch_response_end) - 1;
+	iov_length++;
 
 	struct buffered_reader *br = &connection->br;
 	return br->writev(br->this_ptr, iov, iov_length);
@@ -581,6 +598,12 @@ int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t len
 	static const char ws_protocol[] = "Sec-WebSocket-Protocol";
 	if ((sizeof(ws_protocol) - 1 == length) && (jet_strncasecmp(at, ws_protocol, length) == 0)) {
 		s->current_header_field = HEADER_SEC_WEBSOCKET_PROTOCOL;
+		return 0;
+	}
+
+	static const char ws_extensions[] = "Sec-WebSocket-Extensions";
+	if ((sizeof(ws_extensions) - 1 == length) && (jet_strncasecmp(at, ws_extensions, length) == 0)) {
+		s->current_header_field = HEADER_SEC_WEBSOCKET_EXTENSIONS;
 		return 0;
 	}
 
@@ -648,6 +671,104 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 	}
 }
 
+/*
+ * only permessage-deflate without parameter so far.
+ */
+static void fill_requested_extension(struct websocket *s, const char  *start, size_t length)
+{
+	const char *parameter[5];
+	size_t parameter_length[5] = {0,1,1,1,1};
+	parameter[0] = start;
+	unsigned int parameter_count = 0;
+	for (size_t i = 0; i < length; i++) {
+		if (!isspace(*(start + i)) && (*(start + i) != ';')) parameter_length[parameter_count]++;
+		if (*(start + i) == ';') {
+			i++;
+			parameter_count++;
+			if (parameter_count == 5) return;
+			while (isspace(*(start + i))) i++;
+			parameter[parameter_count] = start + i;
+		}
+	}
+	size_t name_length = strlen(s->extension_compression.name);
+	if (name_length == parameter_length[0]) {
+		if (memcmp(s->extension_compression.name, parameter[0], name_length) == 0) {
+			s->extension_compression.response = malloc(length += 1);
+			memcpy(s->extension_compression.response, s->extension_compression.name, name_length);
+			s->extension_compression.accepted = true;
+		} else return;
+	} else return;
+
+//	size_t response_length = name_length;
+//	for ( unsigned int i = 1; i <= parameter_count; i++) {
+//		const char *parameter_name = "client_max_window_bits";
+//		name_length = strlen(parameter_name);
+//		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+//			s->extension_compression.response[response_length] = ';';
+//			s->extension_compression.response[response_length + 1] = ' ';
+//			response_length += 2;
+//			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+//			response_length += name_length;
+//			if (name_length == parameter_length[i]) {
+//				char no = s->extension_compression.client_max_window_bits % 10 + '0';
+//				if (s->extension_compression.client_max_window_bits >= 10) {
+//					s->extension_compression.response = realloc(s->extension_compression.response, length += 3);
+//					s->extension_compression.response[response_length] = '=';
+//					s->extension_compression.response[response_length + 1] = '1';
+//					s->extension_compression.response[response_length + 2] = no;
+//					response_length += 3;
+//				} else {
+//					s->extension_compression.response = realloc(s->extension_compression.response, length += 2);
+//					s->extension_compression.response[response_length] = '=';
+//					s->extension_compression.response[response_length + 1] = no;
+//					response_length += 2;
+//				}
+//			} else {
+//				//todo
+//			}
+//		}
+//		parameter_name = "client_no_context_takeover";
+//		name_length = strlen(parameter_name);
+//		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+//			s->extension_compression.response[response_length] = ';';
+//			s->extension_compression.response[response_length + 1] = ' ';
+//			response_length += 2;
+//			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+//			response_length += name_length;
+//			s->extension_compression.client_no_context_takeover = true;
+//		}
+//	}
+//	s->extension_compression.response[length - 1] = '\0';
+	s->extension_compression.response[name_length] = '\0';
+}
+
+static void check_websocket_extensions(struct websocket *s, const char *at, size_t length)
+{
+	const char *start = at;
+	while (length > 0) {
+		if (!isspace(*start) && (*start != ',')) {
+			const char *end = start;
+			while (length > 0) {
+				if ( *end == ',') {
+					ptrdiff_t len = end - start;
+					fill_requested_extension(s, start, len);
+					start = end;
+					break;
+				}
+				end++;
+				length--;
+			}
+			if (length == 0) {
+				ptrdiff_t len = end - start;
+				fill_requested_extension(s, start, len);
+			}
+		} else {
+			start++;
+			length--;
+		}
+	}
+}
+
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length)
 {
 	int ret = 0;
@@ -669,6 +790,9 @@ int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t len
 		check_websocket_protocol(s, at, length);
 		break;
 
+	case HEADER_SEC_WEBSOCKET_EXTENSIONS:
+		check_websocket_extensions(s, at, length);
+		break;
 	case HEADER_UNKNOWN:
 	default:
 		break;
@@ -789,6 +913,11 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	ws->upgrade_complete = false;
 
 	ws->sub_protocol.name = sub_protocol;
+	ws->extension_compression.name = "permessage-deflate";
+	ws->extension_compression.client_no_context_takeover = false;
+	ws->extension_compression.client_max_window_bits = 15;
+	ws->extension_compression.response = NULL;
+	ws->extension_compression.accepted = false;
 	ws->ws_flags.is_fragmented = 0;
 	ws->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
 	return 0;
@@ -800,5 +929,8 @@ void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 		websocket_send_close_frame(ws, status_code);
 	}
 
+	if (ws->extension_compression.response != NULL) {
+		free(ws->extension_compression.response);
+	}
 	free_connection(ws->connection);
 }

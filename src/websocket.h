@@ -45,6 +45,7 @@ enum header_field {
 	HEADER_SEC_WEBSOCKET_KEY,
 	HEADER_SEC_WEBSOCKET_VERSION,
 	HEADER_SEC_WEBSOCKET_PROTOCOL,
+	HEADER_SEC_WEBSOCKET_EXTENSIONS,
 };
 
 enum ws_status_code {
@@ -102,6 +103,15 @@ struct websocket {
 		const char *name;
 		bool found;
 	} sub_protocol;
+	struct {
+		const char *name;
+		unsigned int client_max_window_bits;
+		bool client_no_context_takeover;
+//		const unsigned int server_max_window_bits;
+//		const unsigned int server_no_context_takeover;
+		char *response;
+		bool accepted;
+	} extension_compression;
 };
 
 int websocket_init(struct websocket *ws, struct http_connection *connection, bool is_server, void (*on_error)(struct websocket *s), const char *sub_protocol);
