@@ -87,7 +87,7 @@ Project {
       ]
       excludeFiles: [
         "websocket_peer.c",
-        "websocket_peer.h"
+        "websocket_peer.h",
       ]
       cpp.cLanguageVersion: "c99"
     }
@@ -108,6 +108,8 @@ Project {
     Group {
       name: "zlib"
       cpp.warningLevel: "none"
+//      cpp.defines: ["MAX_WBITS=-15"]
+      cpp.cFlags: "-DMAX_WBITS=-15"
       files: [
         "zlib/*.c",
         "zlib/*.h"

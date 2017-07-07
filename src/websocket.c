@@ -32,6 +32,7 @@
 
 #include "base64.h"
 #include "compiler.h"
+#include "compression.h"
 #include "http_connection.h"
 #include "jet_endian.h"
 #include "jet_random.h"
@@ -148,7 +149,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 {
 	if (unlikely(s->ws_flags.rsv != 0)) {
 		if(s->extension_compression.accepted) {
-			if (s->ws_flags.fin == 0 || s->ws_flags.rsv != 0x4) {
+			if(s->ws_flags.rsv != 0x4) {
 				log_err("RSV-bits should be 0 or wrong RSV-bit is set!");
 				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 				return WS_CLOSED;
@@ -177,6 +178,11 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			s->ws_flags.frag_opcode = s->ws_flags.opcode;
 			s->ws_flags.opcode = WS_CONTINUATION_FRAME;
 		} else {
+			if (unlikely(s->ws_flags.rsv != 0)) {
+				log_err("RSV-Bits must be 0 during continuation!");
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
 			if (unlikely(!(s->ws_flags.is_fragmented))) {
 				log_err("No start frame was send!");
 				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
@@ -202,10 +208,10 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		}
 		switch (s->ws_flags.frag_opcode) {
 		case WS_BINARY_FRAME:
-			ret = s->binary_frame_received(s, frame, length, last_frame);
+			ret = binary_frame_received_comp(s->extension_compression.accepted, s, frame, length, last_frame, s->binary_frame_received);
 			break;
 		case WS_TEXT_FRAME:
-			ret = s->text_frame_received(s, (char *)frame, length, last_frame);
+			ret = frame_received_comp(s->extension_compression.accepted, s, (char *)frame, length, last_frame, s->text_frame_received);
 			if (ret == WS_CLOSED) {
 				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
 				return ret;
@@ -225,7 +231,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 
 	case WS_BINARY_FRAME:
 		if (likely(s->binary_message_received != NULL)) {
-			ret = s->binary_message_received(s, frame, length);
+			ret = binary_received_comp(s->extension_compression.accepted, s, frame, length, s->binary_message_received);
 		} else {
 			handle_error(s, WS_CLOSE_UNSUPPORTED);
 			ret = WS_CLOSED;
@@ -234,7 +240,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 
 	case WS_TEXT_FRAME:
 		if (likely(s->text_message_received != NULL)) {
-			ret = s->text_message_received(s, (char *)frame, length);
+			ret = message_received_comp(s->extension_compression.accepted, s, (char *)frame, length,s->text_message_received);
 			if (ret == WS_CLOSED) {
 				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
 			}
@@ -826,22 +832,32 @@ int websocket_upgrade_on_headers_complete(http_parser *parser)
 	}
 }
 
-static int send_frame(const struct websocket *s, uint8_t *payload, size_t length, unsigned int type)
+static int send_frame(struct websocket *s, uint8_t *payload, size_t length, unsigned int type)
 {
 	char ws_header[14];
 	uint8_t first_len;
 	size_t header_index = 2;
+	uint8_t *payload_ptr = payload;
+	uint8_t *payload_comp;
+	size_t length_comp = length;
+	uint8_t rsv = 0x00;
+	if (s->extension_compression.accepted && (type != WS_CLOSE_FRAME)) {
+		payload_comp = malloc(length * 2);
+		length_comp = websocket_compress(s, payload_comp, payload, length);
+		rsv = 0x40;
+		payload_ptr = payload_comp;
+	}
 
-	ws_header[0] = (uint8_t)(type | WS_HEADER_FIN);
-	if (length < 126) {
-		first_len = (uint8_t)length;
-	} else if (length < 65536) {
-		uint16_t be_len = jet_htobe16((uint16_t)length);
+	ws_header[0] = (uint8_t)(type | WS_HEADER_FIN | rsv);
+	if (length_comp < 126) {
+		first_len = (uint8_t)length_comp;
+	} else if (length_comp < 65536) {
+		uint16_t be_len = jet_htobe16((uint16_t)length_comp);
 		memcpy(&ws_header[2], &be_len, sizeof(be_len));
 		header_index += sizeof(be_len);
 		first_len = 126;
 	} else {
-		uint64_t be_len = jet_htobe64((uint64_t)length);
+		uint64_t be_len = jet_htobe64((uint64_t)length_comp);
 		memcpy(&ws_header[2], &be_len, sizeof(be_len));
 		header_index += sizeof(be_len);
 		first_len = 127;
@@ -853,41 +869,45 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 		cjet_get_random_bytes(mask, sizeof(mask));
 		memcpy(&ws_header[header_index], &mask, sizeof(mask));
 		header_index += sizeof(mask);
-		unmask_payload(payload, length, mask);
+		unmask_payload(payload_ptr, length_comp, mask);
 	}
 	ws_header[1] = first_len;
 
 	struct socket_io_vector iov[2];
 	iov[0].iov_base = ws_header;
 	iov[0].iov_len = header_index;
-	iov[1].iov_base = payload;
-	iov[1].iov_len = length;
+	iov[1].iov_base = payload_ptr;
+	iov[1].iov_len = length_comp;
 
 	struct buffered_reader *br = &s->connection->br;
-	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
+	int ret =  br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
+	if (s->extension_compression.accepted && (type != WS_CLOSE_FRAME)) {
+		free(payload_comp);
+	}
+	return ret;
 }
 
-int websocket_send_binary_frame(const struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_binary_frame(struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_BINARY_FRAME);
 }
 
-int websocket_send_text_frame(const struct websocket *s, char *payload, size_t length)
+int websocket_send_text_frame(struct websocket *s, char *payload, size_t length)
 {
 	return send_frame(s, (uint8_t *)payload, length, WS_TEXT_FRAME);
 }
 
-int websocket_send_ping_frame(const struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_ping_frame(struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_PING_FRAME);
 }
 
-int websocket_send_pong_frame(const struct websocket *s, uint8_t *payload, size_t length)
+int websocket_send_pong_frame(struct websocket *s, uint8_t *payload, size_t length)
 {
 	return send_frame(s, payload, length, WS_PONG_FRAME);
 }
 
-int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code)
+int websocket_send_close_frame(struct websocket *s, enum ws_status_code status_code)
 {
 	uint16_t code = status_code;
 	code = jet_htobe16(code);
@@ -920,6 +940,8 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 	ws->extension_compression.accepted = false;
 	ws->ws_flags.is_fragmented = 0;
 	ws->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
+
+	alloc_compression(ws);
 	return 0;
 }
 
@@ -932,5 +954,6 @@ void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 	if (ws->extension_compression.response != NULL) {
 		free(ws->extension_compression.response);
 	}
+	free_compression(ws);
 	free_connection(ws->connection);
 }

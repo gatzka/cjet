@@ -32,6 +32,7 @@
 
 #include "http-parser/http_parser.h"
 #include "http_connection.h"
+#include "zlib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -111,6 +112,8 @@ struct websocket {
 //		const unsigned int server_no_context_takeover;
 		char *response;
 		bool accepted;
+		z_stream strm_comp;
+		z_stream strm_decomp;
 	} extension_compression;
 };
 
@@ -122,11 +125,11 @@ enum bs_read_callback_return ws_get_header(void *context, uint8_t *buf, size_t l
 int websocket_upgrade_on_header_field(http_parser *p, const char *at, size_t length);
 int websocket_upgrade_on_headers_complete(http_parser *parser);
 int websocket_upgrade_on_header_value(http_parser *p, const char *at, size_t length);
-int websocket_send_text_frame(const struct websocket *s, char *payload, size_t length);
-int websocket_send_binary_frame(const struct websocket *s, uint8_t *payload, size_t length);
-int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code);
-int websocket_send_ping_frame(const struct websocket *s, uint8_t *payload, size_t length);
-int websocket_send_pong_frame(const struct websocket *s, uint8_t *payload, size_t length);
+int websocket_send_text_frame(struct websocket *s, char *payload, size_t length);
+int websocket_send_binary_frame(struct websocket *s, uint8_t *payload, size_t length);
+int websocket_send_close_frame(struct websocket *s, enum ws_status_code status_code);
+int websocket_send_ping_frame(struct websocket *s, uint8_t *payload, size_t length);
+int websocket_send_pong_frame(struct websocket *s, uint8_t *payload, size_t length);
 
 #ifdef __cplusplus
 }
