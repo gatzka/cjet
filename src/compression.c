@@ -138,7 +138,7 @@ enum websocket_callback_return frame_received_comp(bool is_compressed, struct we
 				strm->next_in = malloc(memory);
 				if (unlikely(strm->next_in == NULL)) {
 					log_err("Inflate: Not enough memory for fragmented message!");
-					strm->next_in = 0;
+					strm->avail_in = 0;
 					free(strm->next_in);
 					return WS_ERROR;
 				}
@@ -150,7 +150,7 @@ enum websocket_callback_return frame_received_comp(bool is_compressed, struct we
 				strm->next_in = realloc(strm->next_in, next_size);
 				if (unlikely(strm->next_in == NULL)) {
 					log_err("Inflate: Not enough memory for fragmented message!");
-					strm->next_in = 0;
+					strm->avail_in = 0;
 					free(strm->next_in);
 					return WS_ERROR;
 				}
@@ -219,7 +219,7 @@ enum websocket_callback_return binary_received_comp(bool is_compressed, struct w
 		z_stream *strm = &s->extension_compression.strm_decomp;
 
 		strm->avail_in = length + 4;
-		uint8_t in [length + 4];
+		uint8_t in[length + 4];
 		memcpy(in, msg, length);
 		in[length] = 0x00;
 		in[length + 1] = 0x00;
@@ -257,7 +257,7 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 				strm->next_in = malloc(memory);
 				if (unlikely(strm->next_in == NULL)) {
 					log_err("Inflate: Not enough memory for fragmented message!");
-					strm->next_in = 0;
+					strm->avail_in = 0;
 					free(strm->next_in);
 					return WS_ERROR;
 				}
@@ -269,7 +269,7 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 				strm->next_in = realloc(strm->next_in, next_size);
 				if (unlikely(strm->next_in == NULL)) {
 					log_err("Inflate: Not enough memory for fragmented message!");
-					strm->next_in = 0;
+					strm->avail_in = 0;
 					free(strm->next_in);
 					return WS_ERROR;
 				}
@@ -301,10 +301,13 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 		strm->avail_out = size_out;
 		uint8_t out[size_out];
 		strm->next_out = out;
+//		strm->next_out = malloc(size_out);
+
 		uint8_t in [strm->avail_in];
 		memcpy(in, strm->next_in, strm->avail_in);
 		free(strm->next_in);
 		strm->next_in = in;
+//		uint8_t *start_in = strm->next_in;
 
 		ret = inflate(strm, Z_SYNC_FLUSH);
 		if (ret < Z_OK) {
@@ -312,19 +315,23 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 			print_converted_ret(ret);
 			inflateEnd(strm);
 			free(strm->next_in);
+			free(strm->next_out);
 			return WS_ERROR;
 		}
 		have = size_out - strm->avail_out;
-		return binary_frame_received(s, out, have, true);
+		ret = binary_frame_received(s, strm->next_out, have, true);
+//		free(strm->next_out);
+//		free(start_in);
+		return ret;
 	} else {
 		return binary_frame_received(s, msg, length, is_last_frame);
 	}
 }
 
-int websocket_compress(struct websocket *s,uint8_t *dest, uint8_t *src, size_t length)
+int websocket_compress(const struct websocket *s,uint8_t *dest, uint8_t *src, size_t length)
 {
 	int ret;
-	z_stream *strm = &s->extension_compression.strm_comp;
+	z_stream *strm = *(s->extension_compression.strm_comp);
 	unsigned int have;
 
 	strm->avail_in = length;
@@ -345,31 +352,19 @@ int websocket_compress(struct websocket *s,uint8_t *dest, uint8_t *src, size_t l
 	if (dest[have - 4] != 0x00) log_err("Error remove tail deflate!");
 	have -= 4;
 
-//	printf("deflate outstream: ");
-//	for (unsigned int i = 0; i < have; i++) {
-//		printf ("0x%x ", dest[i]);
-//	}
-//	printf("\n");
 	if (ret < Z_OK) {
 		log_err("deflate error %d\n",ret);
 		deflateEnd(strm);
 		return -1;
 	}
 
-//	uint8_t testarry[have*16];
-//	int len = test(testarry, dest, have);
-//	printf("Testout: ");
-//	for (int i = 0; i < len; i++) {
-//		printf("%c",testarry[i]);
-//	}
-//	printf("\n");
 	return have;
 }
 void alloc_compression(struct websocket *ws)
 {
 	int ret;
 	z_stream *infl = &ws->extension_compression.strm_decomp;
-	z_stream *defl = &ws->extension_compression.strm_comp;
+	z_stream *defl = *(ws->extension_compression.strm_comp);
 
 	infl->zalloc = Z_NULL;
 	infl->zfree = Z_NULL;
@@ -396,6 +391,6 @@ void alloc_compression(struct websocket *ws)
 
 void free_compression(struct websocket *ws)
 {
-	deflateEnd(&ws->extension_compression.strm_comp);
+	deflateEnd(*ws->extension_compression.strm_comp);
 	inflateEnd(&ws->extension_compression.strm_decomp);
 }

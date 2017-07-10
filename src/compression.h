@@ -44,7 +44,7 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 //enum websocket_callback_return pong_received_comp(struct websocket *s, uint8_t *msg, size_t length);
 //enum websocket_callback_return close_received_comp(struct websocket *s, enum ws_status_code status_code);
 
-int websocket_compress(struct websocket *s, uint8_t *dest, uint8_t *src, size_t length);
+int websocket_compress(const struct websocket *s, uint8_t *dest, uint8_t *src, size_t length);
 //int websocket_send_binary_frame(const struct websocket *s, uint8_t *payload, size_t length);
 //int websocket_send_close_frame(const struct websocket *s, enum ws_status_code status_code);
 //int websocket_send_ping_frame(const struct websocket *s, uint8_t *payload, size_t length);
