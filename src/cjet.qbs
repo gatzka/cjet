@@ -99,6 +99,17 @@ Project {
     }
 
     Group {
+      name: "zlib"
+      cpp.warningLevel: "none"
+//      cpp.defines: ["MAX_WBITS=-15"]
+      cpp.cFlags: "-DMAX_WBITS=-15"
+      files: [
+        "zlib/*.c",
+        "zlib/*.h"
+      ]
+    }
+
+    Group {
       name: "version header"
       files: [
         "version.h.in"
