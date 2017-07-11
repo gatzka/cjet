@@ -33,6 +33,8 @@
 #include "log.h"
 #include "zlib.h"
 
+static bool debug = false;
+
 static void print_converted_ret(int err)
 {
 	switch (err) {
@@ -87,6 +89,11 @@ enum websocket_callback_return message_received_comp(bool is_compressed, struct 
 		in[length + 2] = 0xFF;
 		in[length + 3] = 0xFF;
 		strm->next_in = in;
+//		printf("inflate instream: ");
+//		for (size_t i = 0; i < strm->avail_in; i++) {
+//			printf ("0x%x ", (in[i] & 0xFF));
+//		}
+//		printf("\n");
 		unsigned int size_out = 16 * length;
 		strm->avail_out = size_out;
 		uint8_t out[size_out];
@@ -167,15 +174,10 @@ enum websocket_callback_return frame_received_comp(bool is_compressed, struct we
 		}
 
 
-		/******************************decompression*******************************/
+		/******************************decompression*************************/
 		int ret;
 		unsigned int have;
 
-//		printf("inflate instream: ");
-//		for (size_t i = 0; i < length; i++) {
-//			printf ("0x%x ", (msg[i] & 0xFF));
-//		}
-//		printf("\n");
 		unsigned int sumLen = read_int_from_array(strm->next_in) - strm->avail_in - 4;
 		memmove(strm->next_in, strm->next_in + 4, sumLen);
 		strm->next_in[sumLen] = 0x00;
@@ -187,21 +189,17 @@ enum websocket_callback_return frame_received_comp(bool is_compressed, struct we
 		strm->avail_out = size_out;
 		unsigned char out[size_out];
 		strm->next_out = out;
-		unsigned char in [strm->avail_in];
+		unsigned char in[strm->avail_in];
 		memcpy(in, strm->next_in, strm->avail_in);
 		free(strm->next_in);
 		strm->next_in = in;
+
 		ret = inflate(strm, Z_SYNC_FLUSH);
-//		printf("inflate outstream: ");
-//		for (size_t i = 0; i < (size_out - strm.avail_out); i++) {
-//			printf ("0x%x ", (out[i] & 0xFF));
-//		}
-//		printf("\n");
 		if (ret < Z_OK) {
 			log_err("inflate error:");
 			print_converted_ret(ret);
+			if(debug) printf("inflate frag error %d\n",ret);
 			inflateEnd(strm);
-			free(strm->next_in);
 			return WS_ERROR;
 		}
 		have = size_out - strm->avail_out;
@@ -231,6 +229,7 @@ enum websocket_callback_return binary_received_comp(bool is_compressed, struct w
 		strm->avail_out = size_out;
 		uint8_t out[size_out];
 		strm->next_out = out;
+
 		ret = inflate(strm, Z_SYNC_FLUSH);
 		if (ret < Z_OK) {
 			log_err("inflate error:");
@@ -301,28 +300,21 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 		strm->avail_out = size_out;
 		uint8_t out[size_out];
 		strm->next_out = out;
-//		strm->next_out = malloc(size_out);
-
-		uint8_t in [strm->avail_in];
+		uint8_t in[strm->avail_in];
 		memcpy(in, strm->next_in, strm->avail_in);
 		free(strm->next_in);
 		strm->next_in = in;
-//		uint8_t *start_in = strm->next_in;
 
 		ret = inflate(strm, Z_SYNC_FLUSH);
 		if (ret < Z_OK) {
 			log_err("inflate error:");
 			print_converted_ret(ret);
+			if(debug) printf("inflate binary frag error %d\n",ret);
 			inflateEnd(strm);
-			free(strm->next_in);
-			free(strm->next_out);
 			return WS_ERROR;
 		}
 		have = size_out - strm->avail_out;
-		ret = binary_frame_received(s, strm->next_out, have, true);
-//		free(strm->next_out);
-//		free(start_in);
-		return ret;
+		return binary_frame_received(s, out, have, true);
 	} else {
 		return binary_frame_received(s, msg, length, is_last_frame);
 	}
