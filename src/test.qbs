@@ -405,4 +405,25 @@ Project {
             "tests/utf8_checker_test.cpp",
         ]
     }
+
+    CppApplication {
+        name: "compression_test"
+        type: ["application", "unittest"]
+        consoleApplication: true
+
+        Depends {name: "unittestSettings"}
+
+        files: [
+            "base64.c",
+            "compression.c",
+            "http-parser/http_parser.c",
+            "http_connection.c",
+            "http_server.c",
+            "linux/jet_endian.c",
+            "linux/random.c",
+            "sha1/sha1.c",
+            "tests/compression_test.cpp",
+            "websocket.c",
+        ]
+    }
 }
