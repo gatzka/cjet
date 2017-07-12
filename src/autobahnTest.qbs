@@ -108,11 +108,20 @@ Project {
     Group {
       name: "zlib"
       cpp.warningLevel: "none"
-//      cpp.defines: ["MAX_WBITS=-15"]
-      cpp.cFlags: "-DMAX_WBITS=-15"
+//    cpp.defines: ["MAX_WBITS=-15"]
+      cpp.cFlags: "-DMAX_WBITS=-15", "-DNO_GZIP"
       files: [
         "zlib/*.c",
         "zlib/*.h"
+      ]
+      excludeFiles: [
+        "zlib/g*.c",
+        "zlib/g*.h",
+        "zlib/infback.c",
+        "zlib/inffixed.h",
+        "zlib/compress.*",
+        "zlib/uncompr.c",
+        "zlib/crc32.*",
       ]
     }
 
