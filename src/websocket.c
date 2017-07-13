@@ -211,7 +211,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 			ret = binary_frame_received_comp(s->extension_compression.accepted, s, frame, length, last_frame, s->binary_frame_received);
 			break;
 		case WS_TEXT_FRAME:
-			ret = frame_received_comp(s->extension_compression.accepted, s, (char *)frame, length, last_frame, s->text_frame_received);
+			ret = text_frame_received_comp(s->extension_compression.accepted, s, (char *)frame, length, last_frame, s->text_frame_received);
 			if (ret == WS_CLOSED) {
 				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
 				return ret;
@@ -240,7 +240,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 
 	case WS_TEXT_FRAME:
 		if (likely(s->text_message_received != NULL)) {
-			ret = message_received_comp(s->extension_compression.accepted, s, (char *)frame, length,s->text_message_received);
+			ret = text_received_comp(s->extension_compression.accepted, s, (char *)frame, length,s->text_message_received);
 			if (ret == WS_CLOSED) {
 				handle_error(s, WS_CLOSE_UNSUPPORTED_DATA);
 			}

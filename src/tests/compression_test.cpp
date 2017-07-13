@@ -126,7 +126,7 @@ BOOST_FIXTURE_TEST_CASE(comp_and_decomp_msg_simple, F)
 	have = websocket_compress(&ws, dest, src, text_length);
 	char dest_txt[have];
 	memcpy(dest_txt,dest,have);
-	message_received_comp(true, &ws, dest_txt, have, message_received);
+	text_received_comp(true, &ws, dest_txt, have, message_received);
 	BOOST_CHECK_MESSAGE(text_correct == true, "Received message differs from orginal!");
 }
 
@@ -141,7 +141,7 @@ BOOST_FIXTURE_TEST_CASE(comp_and_decomp_msg_5_times, F)
 		have = websocket_compress(&ws, dest, src, text_length);
 		char dest_txt[have];
 		memcpy(dest_txt,dest,have);
-		message_received_comp(true, &ws, dest_txt, have, message_received);
+		text_received_comp(true, &ws, dest_txt, have, message_received);
 		BOOST_CHECK_MESSAGE(text_correct == true, "Received message differs from orginal!");
 		text_correct = false;
 	}
@@ -160,10 +160,10 @@ BOOST_FIXTURE_TEST_CASE(comp_and_decomp_msg_frag, F)
 	memcpy(dest_txt, dest, have);
 	size_t cut = have / 2;
 
-	ret = frame_received_comp(true, &ws, dest_txt, cut, false, frame_received);
+	ret = text_frame_received_comp(true, &ws, dest_txt, cut, false, frame_received);
 	BOOST_CHECK_MESSAGE(ret == WS_OK, "Problem with first fragment");
 
-	ret = frame_received_comp(true, &ws, dest_txt + cut, have - cut, true, frame_received);
+	ret = text_frame_received_comp(true, &ws, dest_txt + cut, have - cut, true, frame_received);
 	BOOST_CHECK_MESSAGE(ret == WS_OK, "Error during decomp last fragment!");
 	BOOST_CHECK_MESSAGE(frame_correct == true, "Received fragments differ from orginal!");
 }
