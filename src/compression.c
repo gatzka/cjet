@@ -125,7 +125,7 @@ static enum websocket_callback_return private_decompress(struct websocket *s, ui
 	strm->avail_in = length + 4;
 	uint8_t *in = malloc(length + 4);
 	if (in == NULL) {
-		log_err("error malloc");
+		log_err("inflate in error: malloc");
 		return WS_ERROR;
 	}
 	memcpy(in, msg, length);
@@ -135,24 +135,40 @@ static enum websocket_callback_return private_decompress(struct websocket *s, ui
 	in[length + 3] = 0xFF;
 	strm->next_in = in;
 
-	size_t size_out = 16 * length;
+	size_t size_out = 20 * length;
 	strm->avail_out = size_out;
 	*free_ptr = malloc(size_out);
 	if (*free_ptr == NULL) {
-		log_err("error malloc");
+		log_err("inflate out error: malloc");
 		return WS_ERROR;
 	}
 	uint8_t *out = *free_ptr;
 	strm->next_out = out;
-
-	ret = inflate(strm, Z_SYNC_FLUSH);
-	if (ret < Z_OK) {
-		log_err("inflate bin error:");
-		print_converted_ret(ret);
-		inflateEnd(strm);
+	do {
+		if (strm->avail_out == 0) {
+			strm->avail_out += size_out;
+			size_out *= 2;
+			*free_ptr = realloc(*free_ptr, size_out);
+			if (*free_ptr == NULL) {
+				log_err("inflate out error: realloc");
+				return WS_ERROR;
+			}
+			out = *free_ptr;
+			strm->next_out = out + size_out / 2;
+		}
+		ret = inflate(strm, Z_SYNC_FLUSH);
+		if (ret < Z_OK) {
+			log_err("inflate error:");
+			print_converted_ret(ret);
+			inflateEnd(strm);
+			return WS_ERROR;
+		}
+	} while(strm->avail_out == 0);
+	free(in);
+	if (strm->avail_in != 0) {
+		log_err("Shit happens! Not all date is decompressed");
 		return WS_ERROR;
 	}
-	free(in);
 	*have = size_out - strm->avail_out;
 	return WS_OK;
 }
