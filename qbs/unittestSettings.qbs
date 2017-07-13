@@ -108,8 +108,18 @@ StaticLibrary {
   Group {
     name: "zlib"
     prefix: "../src/"
+    cpp.cFlags: ["-DNO_GZIP"]
     files: [
       "zlib/*.c",
+    ]
+    excludeFiles: [
+      "zlib/g*.c",
+      "zlib/g*.h",
+      "zlib/infback.c",
+      "zlib/inffixed.h",
+      "zlib/compress.*",
+      "zlib/uncompr.c",
+      "zlib/crc32.*",
     ]
   }
 
