@@ -91,8 +91,9 @@ struct F {
 	F ()
 	{
 		ws.extension_compression.name = "permessage-deflate";
-		ws.extension_compression.client_no_context_takeover = false;
+//		ws.extension_compression.client_no_context_takeover = false;
 		ws.extension_compression.client_max_window_bits = 15;
+		ws.extension_compression.server_max_window_bits = 15;
 		ws.extension_compression.response = NULL;
 		ws.extension_compression.accepted = false;
 		ws.extension_compression.dummy_ptr = &ws.extension_compression.strm_private_comp;

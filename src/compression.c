@@ -304,19 +304,28 @@ void alloc_compression(struct websocket *ws)
 	infl->opaque = Z_NULL;
 	infl->avail_in = 0;
 	infl->next_in = Z_NULL;
-	ret = inflateInit(infl);
+	ret = inflateInit2(infl, -(ws->extension_compression.client_max_window_bits));
 	if (ret != Z_OK) {
 		inflateEnd(infl);
-		log_err("inflateInit error %d\n",ret);
+		log_err("inflateInit error %d",ret);
+		print_converted_ret(ret);
 		return;
 	}
 
 	defl->zalloc = Z_NULL;
 	defl->zfree = Z_NULL;
 	defl->opaque = Z_NULL;
-	ret = deflateInit(defl, 6);
+//	ret = deflateInit(defl, 6);
+	if (ws->extension_compression.server_max_window_bits == 8) {
+		log_warn("zlib currently not support a window size of 8 for deflate\n! "
+                 "Switching to size 9.");
+		ws->extension_compression.server_max_window_bits = 9;
+	}
+//	ret = deflateInit2(defl, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), 8, Z_DEFAULT_STRATEGY);
+	ret = deflateInit2(defl, 4, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), 9, Z_DEFAULT_STRATEGY);
 	if (ret != Z_OK) {
-		log_err("deflateInit error %d\n", ret);
+		log_err("deflateInit error %d", ret);
+		print_converted_ret(ret);
 		deflateEnd(defl);
 		return;
 	}

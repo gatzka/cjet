@@ -107,8 +107,8 @@ struct websocket {
 	struct {
 		const char *name;
 		unsigned int client_max_window_bits;
-		bool client_no_context_takeover;
-//		const unsigned int server_max_window_bits;
+//		bool client_no_context_takeover;
+		unsigned int server_max_window_bits;
 //		const unsigned int server_no_context_takeover;
 		char *response;
 		bool accepted;

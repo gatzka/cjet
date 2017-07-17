@@ -678,10 +678,14 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 }
 
 /*
- * only permessage-deflate without parameter so far.
+ * only permessage-deflate with window parameter and no quotet values so far.
+ * Awaits something like: permessage-deflate; client_no_context_takeover; server_max_window_bits=8
+ * The order of the parameter does not matter. The value, e.g. 8, may be quoted.
  */
 static void fill_requested_extension(struct websocket *s, const char  *start, size_t length)
 {
+	if (s->extension_compression.accepted == true) return;
+
 	const char *parameter[5];
 	size_t parameter_length[5] = {0,1,1,1,1};
 	parameter[0] = start;
@@ -696,43 +700,113 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 			parameter[parameter_count] = start + i;
 		}
 	}
+	size_t response_max_length = length + 1;
 	size_t name_length = strlen(s->extension_compression.name);
 	if (name_length == parameter_length[0]) {
 		if (memcmp(s->extension_compression.name, parameter[0], name_length) == 0) {
-			s->extension_compression.response = malloc(length += 1);
+			s->extension_compression.response = malloc(response_max_length);
 			memcpy(s->extension_compression.response, s->extension_compression.name, name_length);
 			s->extension_compression.accepted = true;
 		} else return;
 	} else return;
 
-//	size_t response_length = name_length;
-//	for ( unsigned int i = 1; i <= parameter_count; i++) {
-//		const char *parameter_name = "client_max_window_bits";
-//		name_length = strlen(parameter_name);
-//		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
-//			s->extension_compression.response[response_length] = ';';
-//			s->extension_compression.response[response_length + 1] = ' ';
-//			response_length += 2;
-//			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
-//			response_length += name_length;
-//			if (name_length == parameter_length[i]) {
-//				char no = s->extension_compression.client_max_window_bits % 10 + '0';
-//				if (s->extension_compression.client_max_window_bits >= 10) {
-//					s->extension_compression.response = realloc(s->extension_compression.response, length += 3);
-//					s->extension_compression.response[response_length] = '=';
-//					s->extension_compression.response[response_length + 1] = '1';
-//					s->extension_compression.response[response_length + 2] = no;
-//					response_length += 3;
-//				} else {
-//					s->extension_compression.response = realloc(s->extension_compression.response, length += 2);
-//					s->extension_compression.response[response_length] = '=';
-//					s->extension_compression.response[response_length + 1] = no;
-//					response_length += 2;
-//				}
-//			} else {
-//				//todo
-//			}
-//		}
+	size_t response_length = name_length;
+	bool client_offered_c_max_window = false;
+	bool client_offered_s_max_window = false;
+	for ( unsigned int i = 1; i <= parameter_count; i++) {
+		//TODO check for quoted values
+		const char *parameter_name = "client_max_window_bits";
+		name_length = strlen(parameter_name);
+		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			s->extension_compression.response[response_length] = ';';
+			s->extension_compression.response[response_length + 1] = ' ';
+			response_length += 2;
+			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+			response_length += name_length;
+
+			if (name_length == parameter_length[i]) {    //without value
+				char no = s->extension_compression.client_max_window_bits % 10 + '0';
+				if (s->extension_compression.client_max_window_bits >= 10) {
+					s->extension_compression.response = realloc(s->extension_compression.response, response_max_length += 3);
+					s->extension_compression.response[response_length] = '=';
+					s->extension_compression.response[response_length + 1] = '1';
+					s->extension_compression.response[response_length + 2] = no;
+					response_length += 3;
+				} else {
+					s->extension_compression.response = realloc(s->extension_compression.response, response_max_length += 2);
+					s->extension_compression.response[response_length] = '=';
+					s->extension_compression.response[response_length + 1] = no;
+					response_length += 2;
+				}
+			} else {                                     //with value
+				const char *value_start = parameter[i] + name_length;
+				if (*value_start == '=') {
+					value_start++;
+					if (parameter_length[i] == name_length + 2) {
+						unsigned int tmp = *value_start;
+						tmp -= '0';
+						if ((tmp < 8) || (tmp > 9)) return;
+						s->extension_compression.client_max_window_bits = tmp;
+						memcpy(s->extension_compression.response + response_length, parameter[i] + name_length, 2);
+						response_length += 2;
+					} else {
+						if (*value_start != '1') return;
+						value_start++;
+						unsigned int tmp = *value_start;
+						tmp -= '0';
+						if (tmp > 5) return;
+						s->extension_compression.client_max_window_bits = 10 + tmp;
+						memcpy(s->extension_compression.response + response_length, parameter [i] + name_length, 3);
+						response_length += 3;
+					}
+				} else {
+					return;
+				}
+			}
+			client_offered_c_max_window = true;
+		}
+
+		parameter_name = "server_max_window_bits";
+		name_length = strlen(parameter_name);
+		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			s->extension_compression.response[response_length] = ';';
+			s->extension_compression.response[response_length + 1] = ' ';
+			response_length += 2;
+			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+			response_length += name_length;
+
+			const char *value_start = parameter[i] + name_length;
+			if (*value_start == '=') {
+				value_start++;
+				if (parameter_length[i] == name_length + 2) {
+					unsigned int tmp = *value_start;
+					tmp -= '0';
+					if ((tmp < 8) || (tmp > 9)) return;
+					s->extension_compression.server_max_window_bits = tmp;
+					memcpy(s->extension_compression.response + response_length, parameter[i] + name_length, 2);
+					//if fixed from zlib remove this part
+					if (tmp == 8) {
+						log_warn("Currently zlib does not support a window size of 8! Switching to 9.");
+						s->extension_compression.server_max_window_bits = 9;
+						*(s->extension_compression.response + response_length + 1) = '9';
+					}
+					//end
+					response_length += 2;
+				} else {
+					if (*value_start != '1') return;
+					value_start++;
+					unsigned int tmp = *value_start;
+					tmp -= '0';
+					if (tmp > 5) return;
+					s->extension_compression.server_max_window_bits = 10 + tmp;
+					memcpy(s->extension_compression.response + response_length, parameter [i] + name_length, 3);
+					response_length += 3;
+				}
+			} else {
+				return;
+			}
+			client_offered_s_max_window = true;
+		}
 //		parameter_name = "client_no_context_takeover";
 //		name_length = strlen(parameter_name);
 //		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
@@ -743,9 +817,13 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 //			response_length += name_length;
 //			s->extension_compression.client_no_context_takeover = true;
 //		}
-//	}
+	}
 //	s->extension_compression.response[length - 1] = '\0';
-	s->extension_compression.response[name_length] = '\0';
+	s->extension_compression.response[response_length] = '\0';
+	if (!client_offered_c_max_window) s->extension_compression.client_max_window_bits = 15;
+	if (!client_offered_s_max_window) s->extension_compression.server_max_window_bits = 15;
+	if (s->extension_compression.accepted) alloc_compression(s);
+//	s->extension_compression.response[name_length] = '\0';
 }
 
 static void check_websocket_extensions(struct websocket *s, const char *at, size_t length)
@@ -934,8 +1012,9 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 
 	ws->sub_protocol.name = sub_protocol;
 	ws->extension_compression.name = "permessage-deflate";
-	ws->extension_compression.client_no_context_takeover = false;
+//	ws->extension_compression.client_no_context_takeover = false;
 	ws->extension_compression.client_max_window_bits = 15;
+	ws->extension_compression.server_max_window_bits = 15;
 	ws->extension_compression.response = NULL;
 	ws->extension_compression.accepted = false;
 	ws->extension_compression.dummy_ptr = &ws->extension_compression.strm_private_comp;
@@ -943,8 +1022,6 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 //	ws->extension_compression.strm_comp = &ws->extension_compression.strm_private_comp;
 	ws->ws_flags.is_fragmented = 0;
 	ws->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
-
-	alloc_compression(ws);
 	return 0;
 }
 
@@ -957,6 +1034,6 @@ void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 	if (ws->extension_compression.response != NULL) {
 		free(ws->extension_compression.response);
 	}
-	free_compression(ws);
+	if (ws->extension_compression.accepted) free_compression(ws);
 	free_connection(ws->connection);
 }

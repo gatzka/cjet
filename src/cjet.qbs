@@ -101,7 +101,7 @@ Project {
     Group {
       name: "zlib"
       cpp.warningLevel: "none"
-      cpp.cFlags: ["-DMAX_WBITS=-15", "-DNO_GZIP"]
+      cpp.cFlags: ["-DNO_GZIP"]
       files: [
         "zlib/*.c",
         "zlib/*.h"
