@@ -713,6 +713,8 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 	size_t response_length = name_length;
 	bool client_offered_c_max_window = false;
 	bool client_offered_s_max_window = false;
+	bool client_offered_c_no_takeover = false;
+	bool client_offered_s_no_takeover = false;
 	for ( unsigned int i = 1; i <= parameter_count; i++) {
 		//TODO check for quoted values
 		const char *parameter_name = "client_max_window_bits";
@@ -807,23 +809,37 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 			}
 			client_offered_s_max_window = true;
 		}
-//		parameter_name = "client_no_context_takeover";
-//		name_length = strlen(parameter_name);
-//		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
-//			s->extension_compression.response[response_length] = ';';
-//			s->extension_compression.response[response_length + 1] = ' ';
-//			response_length += 2;
-//			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
-//			response_length += name_length;
-//			s->extension_compression.client_no_context_takeover = true;
-//		}
+
+		parameter_name = "client_no_context_takeover";
+		name_length = strlen(parameter_name);
+		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			s->extension_compression.response[response_length] = ';';
+			s->extension_compression.response[response_length + 1] = ' ';
+			response_length += 2;
+			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+			response_length += name_length;
+			s->extension_compression.client_no_context_takeover = true;
+			client_offered_c_no_takeover = true;
+		}
+
+		parameter_name = "server_no_context_takeover";
+		name_length = strlen(parameter_name);
+		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			s->extension_compression.response[response_length] = ';';
+			s->extension_compression.response[response_length + 1] = ' ';
+			response_length += 2;
+			memcpy(s->extension_compression.response + response_length, parameter_name, name_length);
+			response_length += name_length;
+			s->extension_compression.server_no_context_takeover = true;
+			client_offered_s_no_takeover = true;
+		}
 	}
-//	s->extension_compression.response[length - 1] = '\0';
 	s->extension_compression.response[response_length] = '\0';
 	if (!client_offered_c_max_window) s->extension_compression.client_max_window_bits = 15;
 	if (!client_offered_s_max_window) s->extension_compression.server_max_window_bits = 15;
+	if (!client_offered_c_no_takeover) s->extension_compression.client_no_context_takeover = false;
+	if (!client_offered_s_no_takeover) s->extension_compression.server_no_context_takeover = false;
 	if (s->extension_compression.accepted) alloc_compression(s);
-//	s->extension_compression.response[name_length] = '\0';
 }
 
 static void check_websocket_extensions(struct websocket *s, const char *at, size_t length)
@@ -1012,14 +1028,14 @@ int websocket_init(struct websocket *ws, struct http_connection *connection, boo
 
 	ws->sub_protocol.name = sub_protocol;
 	ws->extension_compression.name = "permessage-deflate";
-//	ws->extension_compression.client_no_context_takeover = false;
+	ws->extension_compression.client_no_context_takeover = false;
 	ws->extension_compression.client_max_window_bits = 15;
+	ws->extension_compression.server_no_context_takeover = false;
 	ws->extension_compression.server_max_window_bits = 15;
 	ws->extension_compression.response = NULL;
 	ws->extension_compression.accepted = false;
 	ws->extension_compression.dummy_ptr = &ws->extension_compression.strm_private_comp;
 	ws->extension_compression.strm_comp = &ws->extension_compression.dummy_ptr;
-//	ws->extension_compression.strm_comp = &ws->extension_compression.strm_private_comp;
 	ws->ws_flags.is_fragmented = 0;
 	ws->ws_flags.frag_opcode = WS_CONTINUATION_FRAME;
 	return 0;

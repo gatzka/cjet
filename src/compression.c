@@ -156,14 +156,18 @@ static enum websocket_callback_return private_decompress(struct websocket *s, ui
 			out = *free_ptr;
 			strm->next_out = out + size_out / 2;
 		}
-		ret = inflate(strm, Z_SYNC_FLUSH);
-		if (ret < Z_OK) {
+		if (s->extension_compression.client_no_context_takeover) {
+			ret = inflate(strm, Z_FINISH);
+		} else {
+			ret = inflate(strm, Z_SYNC_FLUSH);
+		}
+		if (ret < Z_OK && ret != Z_BUF_ERROR) {
 			log_err("inflate error:");
 			print_converted_ret(ret);
 			inflateEnd(strm);
 			return WS_ERROR;
 		}
-	} while(strm->avail_out == 0);
+	}while(strm->avail_out == 0);
 	free(in);
 	if (strm->avail_in != 0) {
 		log_err("Shit happens! Not all date is decompressed");
@@ -276,7 +280,11 @@ int websocket_compress(const struct websocket *s,uint8_t *dest, uint8_t *src, si
 	strm->next_in = src;
 	strm->avail_out = length * 2;
 	strm->next_out = dest;
-	ret = deflate(strm, Z_SYNC_FLUSH);
+	if (s->extension_compression.server_no_context_takeover) {
+		ret = deflate(strm, Z_FULL_FLUSH);
+	} else {
+		ret = deflate(strm, Z_SYNC_FLUSH);
+	}
 	if (ret < Z_OK) {
 		log_err("deflate error: ");
 		print_converted_ret(ret);
