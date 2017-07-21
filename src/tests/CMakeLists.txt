@@ -77,6 +77,13 @@ add_library(jet STATIC
  	../table.c
  	../timer.c
 	../utf8_checker.c
+	../zlib/adler32.c
+	../zlib/deflate.c
+	../zlib/inffast.c
+	../zlib/inflate.c
+	../zlib/inftrees.c
+	../zlib/trees.c
+	../zlib/zutil.c
 )
 
 SET(CJET_TEST_INPUT_FILES
@@ -385,3 +392,17 @@ TARGET_LINK_LIBRARIES(
     utf8_checker_test.bin
     ${Boost_LIBRARIES}
 ) 
+
+SET(COMPRESSION_TEST
+    ../base64.c
+    ../compression.c
+    ../http_connection.c
+    ../http_server.c
+    ../websocket.c
+)
+ADD_EXECUTABLE(compression_test.bin ${COMPRESSION_TEST})
+TARGET_LINK_LIBRARIES(
+    compression_test.bin
+    jet
+    ${Boost_LIBRARIES}
+)

@@ -98,6 +98,16 @@ SET(CJET_POSIX_FILES
         posix/socket.c
 )
 
+SET (CJET_ZLIB_FILES
+        zlib/adler32.c
+        zlib/deflate.c
+        zlib/inffast.c
+        zlib/inflate.c
+        zlib/inftrees.c
+        zlib/trees.c
+        zlib/zutil.c
+)
+
 FOREACH(_file ${CJET_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
@@ -117,10 +127,17 @@ FOREACH(_file ${CJET_POSIX_FILES})
         SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
 ENDFOREACH()
 
+FOREACH(_file ${CJET_ZLIB_FILES})
+        FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+        STRING(SUBSTRING ${checksum} 0 8 checksum)
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
+ENDFOREACH()
+
 ADD_EXECUTABLE(cjet
         ${CJET_FILES}
         ${CJET_LINUX_FILES}
         ${CJET_POSIX_FILES}
+        ${CJET_ZLIB_FILES}
 )
 
 TARGET_LINK_LIBRARIES(
