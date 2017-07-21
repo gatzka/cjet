@@ -154,6 +154,11 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 				return WS_CLOSED;
 			}
+			if (s->ws_flags.opcode >= WS_CLOSE_FRAME) {
+				log_err("Control Frames must not be compressed!");
+				handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
+				return WS_CLOSED;
+			}
 		} else {
 			log_err("Frame with RSV-bit are not supported!");
 			handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
@@ -161,7 +166,7 @@ static enum websocket_callback_return ws_handle_frame(struct websocket *s, uint8
 		}
 	}
 
-	if (unlikely((s->ws_flags.fin == 0) && (s->ws_flags.opcode >= WS_PING_FRAME))) {
+	if (unlikely((s->ws_flags.fin == 0) && (s->ws_flags.opcode >= WS_CLOSE_FRAME))) {
 		log_err("Control Frames must not be fragmented!");
 		handle_error(s, WS_CLOSE_PROTOCOL_ERROR);
 		return WS_CLOSED;
@@ -678,9 +683,8 @@ static void check_websocket_protocol(struct websocket *s, const char *at, size_t
 }
 
 /*
- * only permessage-deflate with window parameter and no quotet values so far.
  * Awaits something like: permessage-deflate; client_no_context_takeover; server_max_window_bits=8
- * The order of the parameter does not matter. The value, e.g. 8, may be quoted.
+ * The order of the parameter does not matter.
  */
 static void fill_requested_extension(struct websocket *s, const char  *start, size_t length)
 {
@@ -704,9 +708,8 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 	size_t name_length = strlen(s->extension_compression.name);
 	if (name_length == parameter_length[0]) {
 		if (memcmp(s->extension_compression.name, parameter[0], name_length) == 0) {
-			s->extension_compression.response = malloc(response_max_length);
+			s->extension_compression.response = realloc(s->extension_compression.response, response_max_length);
 			memcpy(s->extension_compression.response, s->extension_compression.name, name_length);
-			s->extension_compression.accepted = true;
 		} else return;
 	} else return;
 
@@ -715,11 +718,15 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 	bool client_offered_s_max_window = false;
 	bool client_offered_c_no_takeover = false;
 	bool client_offered_s_no_takeover = false;
+
 	for ( unsigned int i = 1; i <= parameter_count; i++) {
-		//TODO check for quoted values
+
 		const char *parameter_name = "client_max_window_bits";
 		name_length = strlen(parameter_name);
+		if (parameter_length[i] < name_length) return;
 		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			if (client_offered_c_max_window) return;
+			if ((name_length + 3) < parameter_length[i]) return;
 			s->extension_compression.response[response_length] = ';';
 			s->extension_compression.response[response_length + 1] = ' ';
 			response_length += 2;
@@ -766,11 +773,14 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 				}
 			}
 			client_offered_c_max_window = true;
+			continue;
 		}
 
 		parameter_name = "server_max_window_bits";
 		name_length = strlen(parameter_name);
 		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			if (client_offered_s_max_window) return;
+			if ((name_length + 3) < parameter_length[i]) return;
 			s->extension_compression.response[response_length] = ';';
 			s->extension_compression.response[response_length + 1] = ' ';
 			response_length += 2;
@@ -783,16 +793,10 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 				if (parameter_length[i] == name_length + 2) {
 					unsigned int tmp = *value_start;
 					tmp -= '0';
-					if ((tmp < 8) || (tmp > 9)) return;
+					//Replace the following line with the if() in the following comment, when the zlib supports a size of 8
+					if (tmp != 9) return; //if ((tmp < 8) || (tmp > 9)) return;
 					s->extension_compression.server_max_window_bits = tmp;
 					memcpy(s->extension_compression.response + response_length, parameter[i] + name_length, 2);
-					//if fixed from zlib remove this part
-					if (tmp == 8) {
-						log_warn("Currently zlib does not support a window size of 8! Switching to 9.");
-						s->extension_compression.server_max_window_bits = 9;
-						*(s->extension_compression.response + response_length + 1) = '9';
-					}
-					//end
 					response_length += 2;
 				} else {
 					if (*value_start != '1') return;
@@ -808,11 +812,14 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 				return;
 			}
 			client_offered_s_max_window = true;
+			continue;
 		}
 
 		parameter_name = "client_no_context_takeover";
 		name_length = strlen(parameter_name);
+		if (parameter_length[i] < name_length) return;
 		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			if (client_offered_c_no_takeover) return;
 			s->extension_compression.response[response_length] = ';';
 			s->extension_compression.response[response_length + 1] = ' ';
 			response_length += 2;
@@ -820,11 +827,13 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 			response_length += name_length;
 			s->extension_compression.client_no_context_takeover = true;
 			client_offered_c_no_takeover = true;
+			continue;
 		}
 
 		parameter_name = "server_no_context_takeover";
 		name_length = strlen(parameter_name);
 		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
+			if (client_offered_s_no_takeover) return;
 			s->extension_compression.response[response_length] = ';';
 			s->extension_compression.response[response_length + 1] = ' ';
 			response_length += 2;
@@ -832,14 +841,18 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 			response_length += name_length;
 			s->extension_compression.server_no_context_takeover = true;
 			client_offered_s_no_takeover = true;
+			continue;
 		}
-	}
+		return;
+	} //for
+
 	s->extension_compression.response[response_length] = '\0';
 	if (!client_offered_c_max_window) s->extension_compression.client_max_window_bits = 15;
 	if (!client_offered_s_max_window) s->extension_compression.server_max_window_bits = 15;
 	if (!client_offered_c_no_takeover) s->extension_compression.client_no_context_takeover = false;
 	if (!client_offered_s_no_takeover) s->extension_compression.server_no_context_takeover = false;
-	if (s->extension_compression.accepted) alloc_compression(s);
+	s->extension_compression.accepted = true;
+	alloc_compression(s);
 }
 
 static void check_websocket_extensions(struct websocket *s, const char *at, size_t length)
@@ -935,7 +948,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 	uint8_t *payload_comp;
 	size_t length_comp = length;
 	uint8_t rsv = 0x00;
-	if (s->extension_compression.accepted && (type != WS_CLOSE_FRAME)) {
+	if (s->extension_compression.accepted && (type < WS_CLOSE_FRAME)) {
 		payload_comp = malloc(length * 2);
 		length_comp = websocket_compress(s, payload_comp, payload, length);
 		rsv = 0x40;
@@ -975,7 +988,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 
 	struct buffered_reader *br = &s->connection->br;
 	int ret =  br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
-	if (s->extension_compression.accepted && (type != WS_CLOSE_FRAME)) {
+	if (s->extension_compression.accepted && (type < WS_CLOSE_FRAME)) {
 		free(payload_comp);
 	}
 	return ret;
@@ -1046,10 +1059,11 @@ void websocket_close(struct websocket *ws, enum ws_status_code status_code)
 	if (ws->upgrade_complete) {
 		websocket_send_close_frame(ws, status_code);
 	}
-
 	if (ws->extension_compression.response != NULL) {
 		free(ws->extension_compression.response);
 	}
-	if (ws->extension_compression.accepted) free_compression(ws);
+	if (ws->extension_compression.accepted) {
+		free_compression(ws);
+	}
 	free_connection(ws->connection);
 }
