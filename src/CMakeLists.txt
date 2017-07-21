@@ -130,7 +130,7 @@ ENDFOREACH()
 FOREACH(_file ${CJET_ZLIB_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
-        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -std=c99")
 ENDFOREACH()
 
 ADD_EXECUTABLE(cjet
