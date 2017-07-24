@@ -945,7 +945,7 @@ static int send_frame(const struct websocket *s, uint8_t *payload, size_t length
 	uint8_t first_len;
 	size_t header_index = 2;
 	uint8_t *payload_ptr = payload;
-	uint8_t *payload_comp;
+	uint8_t *payload_comp = NULL;
 	size_t length_comp = length;
 	uint8_t rsv = 0x00;
 	if (s->extension_compression.accepted && (type < WS_CLOSE_FRAME)) {
