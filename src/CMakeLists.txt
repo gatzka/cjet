@@ -130,6 +130,7 @@ ENDFOREACH()
 FOREACH(_file ${CJET_ZLIB_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
+        SET(WARN_SWITCHES "-Wnone")
         SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -std=c99")
 ENDFOREACH()
 
