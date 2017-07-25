@@ -136,12 +136,20 @@ static enum bs_read_callback_return read_start_line(void *context, uint8_t *buf,
 	}
 	return BS_OK;
 }
+int init_http_connection2(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection,
+                         unsigned int compression_level)
+{
+	int ret = init_http_connection(connection, server, reader, is_local_connection);
+	connection->compression_level = compression_level;
+	return ret;
+}
 
 int init_http_connection(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection)
 {
 	connection->is_local_connection = is_local_connection;
 	connection->status_code = 0;
 	connection->server = server;
+	connection->compression_level = 0;
 	http_parser_settings_init(&connection->parser_settings);
 	connection->parser_settings.on_url = on_url;
 

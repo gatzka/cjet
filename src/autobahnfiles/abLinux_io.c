@@ -59,6 +59,7 @@
 #endif
 
 static int go_ahead = 1;
+static unsigned int comp_level;
 
 static int set_fd_non_blocking(int fd)
 {
@@ -154,7 +155,7 @@ static void handle_http(struct io_event *ev, int fd, bool is_local_connection)
 	br.set_error_handler = buffered_socket_set_error;
 	br.writev = buffered_socket_writev;
 
-	int ret = init_http_connection(connection, server, &br, is_local_connection);
+	int ret = init_http_connection2(connection, server, &br, is_local_connection, comp_level);
 	if (unlikely(ret < 0)) {
 		log_err("Could not initialize http connection!\n");
 		goto init_failed;
@@ -523,6 +524,8 @@ create_jetws_socket_failed:
 int run_io(struct eventloop *loop, const struct cmdline_config *config)
 {
 	int ret;
+
+	comp_level = config->compression_level;
 
 	if (register_signal_handler() < 0) {
 		return -1;

@@ -37,6 +37,7 @@ struct cmdline_config {
 	const char *user_name;
 	const char *passwd_file;
 	const char *request_target;
+	unsigned int compression_level;
 };
 
 #ifdef __cplusplus

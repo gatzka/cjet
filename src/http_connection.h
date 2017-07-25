@@ -43,10 +43,13 @@ struct http_connection {
 	const struct http_server *server;
 	unsigned int status_code;
 	bool is_local_connection;
+	unsigned int compression_level;
 };
 
 struct http_connection *alloc_http_connection(void);
 int init_http_connection(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection);
+int init_http_connection2(struct http_connection *connection, const struct http_server *server, struct buffered_reader *reader, bool is_local_connection,
+                         unsigned int compression_level);
 void free_connection(void *context);
 int send_http_error_response(struct http_connection *connection);
 

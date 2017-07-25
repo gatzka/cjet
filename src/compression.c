@@ -180,7 +180,7 @@ static enum websocket_callback_return private_decompress(struct websocket *s, ui
 enum websocket_callback_return text_received_comp(bool is_compressed, struct websocket *s, char *msg, size_t length,
                                enum websocket_callback_return(*text_message_received)(struct websocket *ws, char *txt, size_t len))
 {
-	if (is_compressed) {
+	if (is_compressed && (s->extension_compression.compression_level != 0)) {
 		enum websocket_callback_return ret;
 		size_t have = 0;
 		uint8_t *free_ptr = NULL;
@@ -197,7 +197,7 @@ enum websocket_callback_return text_received_comp(bool is_compressed, struct web
 enum websocket_callback_return text_frame_received_comp(bool is_compressed, struct websocket *s, char *msg, size_t length, bool is_last_frame,
                                enum websocket_callback_return(*text_frame_received)(struct websocket *ws, char *txt, size_t len, bool is_last_frame))
 {
-	if (is_compressed) {
+	if (is_compressed && (s->extension_compression.compression_level != 0)) {
 		z_stream *strm = &s->extension_compression.strm_decomp;
 
 		int ret_val = reassemble(s, (uint8_t *)msg, length);
@@ -227,7 +227,7 @@ enum websocket_callback_return text_frame_received_comp(bool is_compressed, stru
 enum websocket_callback_return binary_received_comp(bool is_compressed, struct websocket *s, uint8_t *msg, size_t length,
                                enum websocket_callback_return(*binary_message_received)(struct websocket *s, uint8_t *msg, size_t length))
 {
-	if (is_compressed) {
+	if (is_compressed && (s->extension_compression.compression_level != 0)) {
 		enum websocket_callback_return ret;
 		size_t have = 0;
 		uint8_t *free_ptr = NULL;
@@ -244,7 +244,7 @@ enum websocket_callback_return binary_received_comp(bool is_compressed, struct w
 enum websocket_callback_return binary_frame_received_comp(bool is_compressed, struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame,
                                enum websocket_callback_return(*binary_frame_received)(struct websocket *s, uint8_t *msg, size_t length, bool is_last_frame))
 {
-	if (is_compressed) {
+	if (is_compressed && (s->extension_compression.compression_level != 0)) {
 		z_stream *strm = &s->extension_compression.strm_decomp;
 
 		int ret_val = reassemble(s, msg, length);
@@ -272,6 +272,10 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 
 int websocket_compress(const struct websocket *s,uint8_t *dest, uint8_t *src, size_t length)
 {
+	if (s->extension_compression.compression_level == 0) {
+		memcpy(dest, src, length);
+		return length;
+	}
 	int ret;
 	z_stream *strm = *(s->extension_compression.strm_comp);
 	unsigned int have;
@@ -303,6 +307,7 @@ int websocket_compress(const struct websocket *s,uint8_t *dest, uint8_t *src, si
 }
 void alloc_compression(struct websocket *ws)
 {
+	if (ws->extension_compression.compression_level == 0) return;
 	int ret;
 	z_stream *infl = &ws->extension_compression.strm_decomp;
 	z_stream *defl = *(ws->extension_compression.strm_comp);
@@ -323,14 +328,27 @@ void alloc_compression(struct websocket *ws)
 	defl->zalloc = Z_NULL;
 	defl->zfree = Z_NULL;
 	defl->opaque = Z_NULL;
-//	ret = deflateInit(defl, 6);
+	int comp_level, mem_level;
+	switch (ws->extension_compression.compression_level) {
+	case 1:
+		comp_level = Z_BEST_SPEED;
+		mem_level = 1;
+		break;
+	case 3:
+		comp_level = Z_BEST_COMPRESSION;
+		mem_level = 9;
+		break;
+	default:
+		comp_level = Z_DEFAULT_COMPRESSION;
+		mem_level = 8;
+		break;
+	}
 	if (ws->extension_compression.server_max_window_bits == 8) {
 		log_warn("zlib currently not support a window size of 8 for deflate\n! "
                  "Switching to size 9.");
 		ws->extension_compression.server_max_window_bits = 9;
 	}
-//	ret = deflateInit2(defl, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), 8, Z_DEFAULT_STRATEGY);
-	ret = deflateInit2(defl, 4, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), 9, Z_DEFAULT_STRATEGY);
+	ret = deflateInit2(defl, comp_level, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), mem_level, Z_DEFAULT_STRATEGY);
 	if (ret != Z_OK) {
 		log_err("deflateInit error %d", ret);
 		print_converted_ret(ret);
@@ -341,6 +359,7 @@ void alloc_compression(struct websocket *ws)
 
 void free_compression(struct websocket *ws)
 {
+	if (ws->extension_compression.compression_level == 0) return;
 	deflateEnd(*ws->extension_compression.strm_comp);
 	inflateEnd(&ws->extension_compression.strm_decomp);
 }

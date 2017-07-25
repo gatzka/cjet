@@ -106,6 +106,7 @@ struct websocket {
 	} sub_protocol;
 	struct {
 		const char *name;
+		unsigned int compression_level;
 		unsigned int client_max_window_bits;
 		bool client_no_context_takeover;
 		unsigned int server_max_window_bits;
