@@ -166,6 +166,7 @@ struct F {
 		connection->br.writev = writev;
 		connection->br.read_exactly = read_exactly;
 		connection->br.close = close;
+		connection->compression_level = 3;
 		ws.protocol_requested = false;
 		ws.binary_frame_received = NULL;
 		ws.text_frame_received = NULL;
