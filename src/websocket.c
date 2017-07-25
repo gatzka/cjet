@@ -748,7 +748,7 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 		if (0 == memcmp(parameter_name, parameter[i], name_length)) {
 			if (client_offered_c_max_window) return;
 			if ((name_length + 3) < parameter_length[i]) return;
-			if (parameter_length[i] > name_length) {
+			if (parameter_length[i] > name_length) {	//with value
 				const char *value_start = parameter[i] + name_length;
 				if (*value_start != '=') return;
 				value_start++;
@@ -830,11 +830,20 @@ static void fill_requested_extension(struct websocket *s, const char  *start, si
 		return;
 	} //for
 
-	s->extension_compression.response[response_length] = '\0';
 	if (!client_offered_c_max_window) s->extension_compression.client_max_window_bits = 15;
-	if (!client_offered_s_max_window) s->extension_compression.server_max_window_bits = 15;
-	if (!client_offered_c_no_takeover) s->extension_compression.client_no_context_takeover = false;
-	if (!client_offered_s_no_takeover) s->extension_compression.server_no_context_takeover = false;
+	if (!client_offered_s_max_window && (s->extension_compression.server_max_window_bits < 15)) {
+		const char param_name[] = "server_max_window_bits";
+		write_to_response(s, param_name, strlen(param_name), &response_length, s->extension_compression.server_max_window_bits);
+	}
+	if (!client_offered_c_no_takeover && s->extension_compression.client_no_context_takeover) {
+		const char param_name[] = "client_no_context_takeover";
+		write_to_response(s, param_name, strlen(param_name), &response_length, 0);
+	}
+	if (!client_offered_s_no_takeover && s->extension_compression.server_no_context_takeover) {
+		const char param_name[] = "server_no_context_takeover";
+		write_to_response(s, param_name, strlen(param_name), &response_length, 0);
+	}
+	s->extension_compression.response[response_length] = '\0';
 	s->extension_compression.accepted = true;
 	alloc_compression(s);
 }
