@@ -388,7 +388,7 @@ BOOST_FIXTURE_TEST_CASE(test_parse_html_extension_field, F)
 	http_parser parser;
 	parser.data = &ws;
 	ws.connection->parser = parser;
-	unsigned int cases = 4;
+	const unsigned int cases = 4;
 	const char extension_line[cases][150] = {{"permessage-deflate"},
                                              {"permessage-deflate; client_max_window_bits=10; client_no_context_takeover;"
                                               " server_no_context_takeover; server_max_window_bits=10"},
@@ -423,7 +423,7 @@ BOOST_FIXTURE_TEST_CASE(test_parse_html_extension_field_illegal, F)
 	http_parser parser;
 	parser.data = &ws;
 	ws.connection->parser = parser;
-	unsigned int cases = 4;
+	const unsigned int cases = 4;
 	const char extension_line[cases][150]={{"permessage-deflate; server_max_window_bits=8"},
                                            {"permessage-deflate; client_no_context_takeover; client_no_context_takeover"},
                                            {"permessage-deflate; xxxxxxxxxxxxxxxxxxxxxxxxxx, client_no_context_takeover"},
