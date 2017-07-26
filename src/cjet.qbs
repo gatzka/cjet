@@ -99,6 +99,25 @@ Project {
     }
 
     Group {
+      name: "zlib"
+      cpp.warningLevel: "none"
+      cpp.cFlags: ["-DNO_GZIP"]
+      files: [
+        "zlib/*.c",
+        "zlib/*.h"
+      ]
+      excludeFiles: [
+        "zlib/g*.c",
+        "zlib/g*.h",
+        "zlib/infback.c",
+        "zlib/inffixed.h",
+        "zlib/compress.*",
+        "zlib/uncompr.c",
+        "zlib/crc32.*",
+      ]
+    }
+
+    Group {
       name: "version header"
       files: [
         "version.h.in"

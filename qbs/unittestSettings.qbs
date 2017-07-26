@@ -34,7 +34,7 @@ StaticLibrary {
   Depends { name: "generateCjetConfig" }
   Depends { name: "generateOsConfig" }
 
-  cpp.includePaths: ["../src/", product.buildDirectory]
+  cpp.includePaths: ["../src/", "../src/zlib", product.buildDirectory]
   cpp.defines: ["BOOST_SYSTEM_NO_DEPRECATED", "_GNU_SOURCE", "TESTING"]
   cpp.treatWarningsAsErrors: true
   cpp.cFlags: [
@@ -48,7 +48,7 @@ StaticLibrary {
 
     cpp.warningLevel: "all"
     cpp.treatWarningsAsErrors: false
-    cpp.includePaths: ["../src/", product.buildDirectory]
+    cpp.includePaths: ["../src/", "../src/zlib", product.buildDirectory]
     cpp.defines: ["_GNU_SOURCE", "BOOST_SYSTEM_NO_DEPRECATED", "TESTING"]
     cpp.dynamicLibraries: ["boost_unit_test_framework", "gcov","crypt"]
     cpp.cLanguageVersion: "c99"
@@ -106,12 +106,31 @@ StaticLibrary {
   }
   
   Group {
+    name: "zlib"
+    prefix: "../src/"
+    cpp.cFlags: ["-DNO_GZIP"]
+    files: [
+      "zlib/*.c",
+    ]
+    excludeFiles: [
+      "zlib/g*.c",
+      "zlib/g*.h",
+      "zlib/infback.c",
+      "zlib/inffixed.h",
+      "zlib/compress.*",
+      "zlib/uncompr.c",
+      "zlib/crc32.*",
+    ]
+  }
+
+  Group {
     name: "cjet files"
     prefix: "../src/"
     cpp.cLanguageVersion: "c99"
     files: [
         "alloc.c",
         "authenticate.c",
+        "compression.c",
         "config.c",
         "element.c",
         "fetch.c",
@@ -127,7 +146,7 @@ StaticLibrary {
         "table.c",
         "tests/log.cpp",
         "timer.c",
-        "utf8_checker.c"
+        "utf8_checker.c",
     ]
   }
 }

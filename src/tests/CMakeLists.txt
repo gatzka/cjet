@@ -79,6 +79,22 @@ add_library(jet STATIC
 	../utf8_checker.c
 )
 
+SET (ZLIB_FILES
+	../zlib/adler32.c
+	../zlib/deflate.c
+	../zlib/inffast.c
+	../zlib/inflate.c
+	../zlib/inftrees.c
+	../zlib/trees.c
+	../zlib/zutil.c
+)
+
+FOREACH(_file ${ZLIB_FILES})
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-DNO_GZIP")
+ENDFOREACH()
+
+add_library(zlib STATIC  ${ZLIB_FILES})
+
 SET(CJET_TEST_INPUT_FILES
         input_data/no_json.json
         input_data/passwd_call_group_no_array.json
@@ -317,6 +333,7 @@ TARGET_LINK_LIBRARIES(
 
 SET(WEBSOCKET_TEST
     ../base64.c
+    ../compression.c
     ../buffered_socket.c
     ../http-parser/http_parser.c
     ../http_connection.c
@@ -332,11 +349,13 @@ ADD_EXECUTABLE(websocket_test.bin ${WEBSOCKET_TEST})
 TARGET_LINK_LIBRARIES(
 	websocket_test.bin
 	jet
+	zlib
 	${Boost_LIBRARIES}
 )
 
 SET(WEBSOCKET_FRAME_TEST
     ../base64.c
+    ../compression.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
@@ -351,12 +370,14 @@ ADD_EXECUTABLE(websocket_frame_test.bin ${WEBSOCKET_FRAME_TEST})
 TARGET_LINK_LIBRARIES(
 	websocket_frame_test.bin
 	jet
+	zlib
 	${Boost_LIBRARIES}
 )
 
 SET(WEBSOCKET_PEER_TEST
     ../linux/timer_linux.c
     ../base64.c
+    ../compression.c
     ../http-parser/http_parser.c
     ../http_connection.c
     ../http_server.c
@@ -373,6 +394,7 @@ ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(
     websocket_peer_test.bin
     jet
+	zlib
     ${Boost_LIBRARIES}
 )
 
@@ -385,3 +407,24 @@ TARGET_LINK_LIBRARIES(
     utf8_checker_test.bin
     ${Boost_LIBRARIES}
 ) 
+
+SET(COMPRESSION_TEST
+    ../base64.c
+    ../compression.c
+    ../http-parser/http_parser.c
+    ../http_connection.c
+    ../http_server.c
+    ../linux/jet_endian.c
+    ../linux/random.c
+    ../sha1/sha1.c
+    ../websocket.c
+    compression_test.cpp
+    log.cpp
+)
+ADD_EXECUTABLE(compression_test.bin ${COMPRESSION_TEST})
+TARGET_LINK_LIBRARIES(
+    compression_test.bin
+    jet
+	zlib
+    ${Boost_LIBRARIES}
+)

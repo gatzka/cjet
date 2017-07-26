@@ -87,7 +87,7 @@ Project {
       ]
       excludeFiles: [
         "websocket_peer.c",
-        "websocket_peer.h"
+        "websocket_peer.h",
       ]
       cpp.cLanguageVersion: "c99"
     }
@@ -101,7 +101,26 @@ Project {
         "http-parser/http_parser.c",
         "http-parser/http_parser.h",
         "sha1/sha1.c",
-        "sha1/sha1.h"
+        "sha1/sha1.h",
+      ]
+    }
+
+    Group {
+      name: "zlib"
+      cpp.warningLevel: "none"
+      cpp.cFlags: ["-DNO_GZIP"]
+      files: [
+        "zlib/*.c",
+        "zlib/*.h"
+      ]
+      excludeFiles: [
+        "zlib/g*.c",
+        "zlib/g*.h",
+        "zlib/infback.c",
+        "zlib/inffixed.h",
+        "zlib/compress.*",
+        "zlib/uncompr.c",
+        "zlib/crc32.*",
       ]
     }
 

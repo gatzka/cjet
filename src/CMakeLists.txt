@@ -14,7 +14,7 @@ CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_co
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
-SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
@@ -38,7 +38,7 @@ IF(CMAKE_C_COMPILER_ID STREQUAL GNU AND CMAKE_C_COMPILER_VERSION VERSION_GREATER
 ENDIF()
 
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--hash-style=gnu,--as-needed")
-SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wstrict-overflow=2 -Wl,-O3,--gc-sections,-s")
+SET(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-O3,--gc-sections,-s")
 SET(CMAKE_EXE_LINKER_FLAGS_DEBUG "-Wl,-O0")
 
 IF(NOT CMAKE_BUILD_TYPE)
@@ -58,6 +58,7 @@ SET(CJET_FILES
         authenticate.c
         base64.c
         buffered_socket.c
+        compression.c
         config.c
         element.c
         fetch.c
@@ -98,6 +99,16 @@ SET(CJET_POSIX_FILES
         posix/socket.c
 )
 
+SET (CJET_ZLIB_FILES
+        zlib/adler32.c
+        zlib/deflate.c
+        zlib/inffast.c
+        zlib/inflate.c
+        zlib/inftrees.c
+        zlib/trees.c
+        zlib/zutil.c
+)
+
 FOREACH(_file ${CJET_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
@@ -117,10 +128,17 @@ FOREACH(_file ${CJET_POSIX_FILES})
         SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-frandom-seed=0x${checksum} -D_XOPEN_SOURCE=500 -std=c99")
 ENDFOREACH()
 
+FOREACH(_file ${CJET_ZLIB_FILES})
+        FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
+        STRING(SUBSTRING ${checksum} 0 8 checksum)
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-DNO_GZIP -frandom-seed=0x${checksum} -std=c99 -Wno-cast-qual")
+ENDFOREACH()
+
 ADD_EXECUTABLE(cjet
         ${CJET_FILES}
         ${CJET_LINUX_FILES}
         ${CJET_POSIX_FILES}
+        ${CJET_ZLIB_FILES}
 )
 
 TARGET_LINK_LIBRARIES(
