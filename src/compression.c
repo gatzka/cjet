@@ -317,7 +317,8 @@ void alloc_compression(struct websocket *ws)
 	infl->opaque = Z_NULL;
 	infl->avail_in = 0;
 	infl->next_in = Z_NULL;
-	int max_win_bits = -(ws->extension_compression.client_max_window_bits);
+	int max_win_bits = ws->extension_compression.client_max_window_bits;
+	max_win_bits *= -1;
 	ret = inflateInit2(infl, max_win_bits);
 	if (ret != Z_OK) {
 		inflateEnd(infl);
@@ -349,7 +350,8 @@ void alloc_compression(struct websocket *ws)
 		         "Switching to size 9.");
 		ws->extension_compression.server_max_window_bits = 9;
 	}
-	max_win_bits =  -(ws->extension_compression.server_max_window_bits);
+	max_win_bits = ws->extension_compression.server_max_window_bits;
+	max_win_bits *= -1;
 	ret = deflateInit2(defl, comp_level, Z_DEFLATED, max_win_bits, mem_level, Z_DEFAULT_STRATEGY);
 	if (ret != Z_OK) {
 		log_err("deflateInit error %d", ret);
