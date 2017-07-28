@@ -23,6 +23,7 @@
     <ClCompile Include="..\authenticate.c" />
     <ClCompile Include="..\base64.c" />
     <ClCompile Include="..\buffered_socket.c" />
+    <ClCompile Include="..\compression.c" />
     <ClCompile Include="..\config.c" />
     <ClCompile Include="..\element.c" />
     <ClCompile Include="..\fetch.c" />
