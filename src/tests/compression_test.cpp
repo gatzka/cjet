@@ -76,7 +76,6 @@ static websocket_callback_return message_received(struct websocket *ws, char *ms
 static websocket_callback_return frame_received(struct websocket *ws, char *msg, size_t length, bool is_complete)
 {
 	(void)ws;
-	(void)length;
 	::memcpy(fragmentation_buffer_ptr, msg, length);
 	fragmentation_buffer_ptr += length;
 	if (is_complete && (strcmp((char *)fragmentation_buffer, text) == 0)) {
@@ -99,7 +98,6 @@ static websocket_callback_return binary_received(struct websocket *ws, uint8_t *
 static websocket_callback_return binary_frame_received(struct websocket *ws, uint8_t *msg, size_t length, bool is_complete)
 {
 	(void)ws;
-	(void)length;
 	::memcpy(fragmentation_buffer_ptr, msg, length);
 	fragmentation_buffer_ptr += length;
 	if (is_complete && (memcmp(fragmentation_buffer, binary, text_length) == 0)) {
@@ -266,12 +264,12 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_msg_simple, F)
 		setup_comp();
 		int have;
 		uint8_t src[text_length];
-		::memcpy(src,text, text_length);
+		::memcpy(src, text, text_length);
 		uint8_t dest[text_length*2];
 
 		have = websocket_compress(&ws, dest, src, text_length);
 		char dest_txt[have];
-		::memcpy(dest_txt,dest,have);
+		::memcpy(dest_txt, dest, have);
 		text_received_comp(true, &ws, dest_txt, have, message_received);
 		BOOST_CHECK_MESSAGE(text_correct == true, "Received message differs from orginal!");
 		tear_down_comp();
@@ -286,13 +284,13 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_msg_5_times, F)
 		setup_comp();
 		int have;
 		uint8_t src [text_length];
-		::memcpy(src,text, text_length);
+		::memcpy(src, text, text_length);
 		uint8_t dest[text_length*2];
 
 		for(unsigned int i = 0; i < 5; i++) {
 			have = websocket_compress(&ws, dest, src, text_length);
 			char dest_txt[have];
-			::memcpy(dest_txt,dest,have);
+			::memcpy(dest_txt, dest, have);
 			text_received_comp(true, &ws, dest_txt, have, message_received);
 			BOOST_CHECK_MESSAGE(text_correct == true, "Received message differs from orginal!");
 			text_correct = false;
@@ -334,7 +332,7 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_binary_simple, F)
 		ws.extension_compression.compression_level = i;
 		setup_comp();
 		int have;
-		uint8_t dest[text_length*2];
+		uint8_t dest[text_length * 2];
 		have = websocket_compress(&ws, dest, binary, text_length);
 		binary_received_comp(true, &ws, dest, have, binary_received);
 		BOOST_CHECK_MESSAGE(binary_correct == true, "Received binary differs from orginal!");
@@ -349,7 +347,7 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_binary_5_times, F)
 		ws.extension_compression.compression_level = j;
 		setup_comp();
 		int have;
-		uint8_t dest[text_length*2];
+		uint8_t dest[text_length * 2];
 
 		for(unsigned int i = 0; i < 5; i++) {
 			have = websocket_compress(&ws, dest, binary, text_length);
@@ -368,7 +366,7 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_binary_frag, F)
 		setup_comp();
 		int have;
 		websocket_callback_return ret;
-		uint8_t dest[text_length*2];
+		uint8_t dest[text_length * 2];
 		have = websocket_compress(&ws, dest, binary, text_length);
 		size_t cut = have / 2;
 
@@ -386,7 +384,7 @@ BOOST_FIXTURE_TEST_CASE(test_comp_and_decomp_binary_frag, F)
 BOOST_FIXTURE_TEST_CASE(test_compression_and_decompression_binary_all_parameters,F)
 {
 	int have;
-	uint8_t dest[text_length*2];
+	uint8_t dest[text_length * 2];
 
 	for (unsigned int server_bits = 8; server_bits < 16; server_bits++) {
 		ws.extension_compression.server_max_window_bits = server_bits;
@@ -479,7 +477,7 @@ BOOST_FIXTURE_TEST_CASE(test_data_frame_rsv_set, F)
 	::memcpy(readbuffer_comp + 6, dest, half);
 
 	read_buffer_start = readbuffer_comp;
-	read_buffer_ptr = readbuffer_comp +1;
+	read_buffer_ptr = readbuffer_comp + 1;
 	readbuffer_comp[0] = RSV1 | TYPE_BINARY;
 	ws_get_header(&ws, read_buffer_start, read_buffer_length);
 	BOOST_CHECK_MESSAGE(ws.ws_flags.is_frag_compressed == 1, "Compressed flag not set");
@@ -490,7 +488,7 @@ BOOST_FIXTURE_TEST_CASE(test_data_frame_rsv_set, F)
 	::memcpy(readbuffer_comp + 6, dest + half, have - half);
 
 	read_buffer_start = readbuffer_comp;
-	read_buffer_ptr = readbuffer_comp +1;
+	read_buffer_ptr = readbuffer_comp + 1;
 	readbuffer_comp[0] = FIN | RSV1 | TYPE_CONTINUATION;
 	ws_get_header(&ws, read_buffer_start, read_buffer_length);
 	BOOST_CHECK_MESSAGE(binary_frame_correct, "Received comp. frag. message should be ok!");
@@ -506,7 +504,7 @@ BOOST_FIXTURE_TEST_CASE(test_data_frame_rsv_set, F)
 	::memcpy(readbuffer_comp + 6, dest, have);
 
 	read_buffer_start = readbuffer_comp;
-	read_buffer_ptr = readbuffer_comp +1;
+	read_buffer_ptr = readbuffer_comp + 1;
 
 	readbuffer_comp[0] = FIN | RSV1 | TYPE_BINARY;
 	ws_get_header(&ws, read_buffer_start, read_buffer_length);
@@ -539,7 +537,7 @@ BOOST_FIXTURE_TEST_CASE(test_rsv_bit_control_frame, F)
 	mask_payload(readbuffer + 6, text_length, mask);
 
 	read_buffer_start = readbuffer;
-	read_buffer_ptr = readbuffer +1;
+	read_buffer_ptr = readbuffer + 1;
 
 	readbuffer[0] = FIN | TYPE_PING;
 	ws_get_header(&ws, read_buffer_start, read_buffer_length);
@@ -618,7 +616,7 @@ BOOST_FIXTURE_TEST_CASE(test_parse_html_extension_field, F)
 				BOOST_CHECK_MESSAGE(ws.extension_compression.accepted, str2);
 				BOOST_CHECK_MESSAGE(max_window_val_c_s[i][0] == 0 ? (ws.extension_compression.client_max_window_bits == 15)
 				                                                  : (ws.extension_compression.client_max_window_bits == get_min(cmw, j, i)),
-				                                                  "client_max_window_bits not adapted!");
+				                                                    "client_max_window_bits not adapted!");
 				BOOST_CHECK_MESSAGE(ws.extension_compression.server_max_window_bits == get_min(smw, j, i), "server_max_window_bits not adapted!");
 			}
 			if (ws.extension_compression.accepted) tear_down_comp();
@@ -632,10 +630,10 @@ BOOST_FIXTURE_TEST_CASE(test_parse_html_extension_field_illegal, F)
 	parser.data = &ws;
 	ws.connection->parser = parser;
 	const unsigned int cases = 4;
-	const char extension_line[cases][150]={{"permessage-deflate; server_max_window_bits=7"},
-	                                       {"permessage-deflate; client_no_context_takeover; client_no_context_takeover"},
-	                                       {"permessage-deflate; xxxxxxxxxxxxxxxxxxxxxxxxxx, client_no_context_takeover"},
-	                                       {"permeeeege-deeeeee; server_max_window_bits=10"}};
+	const char extension_line[cases][150] = {{"permessage-deflate; server_max_window_bits=7"},
+	                                         {"permessage-deflate; client_no_context_takeover; client_no_context_takeover"},
+	                                         {"permessage-deflate; xxxxxxxxxxxxxxxxxxxxxxxxxx, client_no_context_takeover"},
+	                                         {"permeeeege-deeeeee; server_max_window_bits=10"}};
 
 	for (unsigned int j = 0; j <= MAX_COMP_LEVEL; j++) {
 		connection->compression_level = j;

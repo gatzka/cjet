@@ -86,7 +86,7 @@ static int reassemble(struct websocket *s, uint8_t *msg, size_t length)
 {
 	if (length != 0) {
 		z_stream *strm = &s->extension_compression.strm_decomp;
-		if (strm->avail_in ==0) {
+		if (strm->avail_in == 0) {
 			unsigned int memory = length * 3 + 4;
 			strm->next_in = malloc(memory);
 			if (unlikely(strm->next_in == NULL)) {
@@ -98,7 +98,7 @@ static int reassemble(struct websocket *s, uint8_t *msg, size_t length)
 			strm->avail_in = memory - 4;
 			write_int_to_array(strm->next_in, memory);
 		}
-		if (strm->avail_in <= length+ 4) {
+		if (strm->avail_in <= length + 4) {
 			unsigned int next_size = read_int_from_array(strm->next_in) * 2;
 			strm->next_in = realloc(strm->next_in, next_size);
 			if (unlikely(strm->next_in == NULL)) {
@@ -170,7 +170,7 @@ static enum websocket_callback_return private_decompress(struct websocket *s, ui
 	}while(strm->avail_out == 0);
 	free(in);
 	if (strm->avail_in != 0) {
-		log_err("Shit happens! Not all date is decompressed");
+		log_err("Shit happens! Not all data is decompressed");
 		return WS_ERROR;
 	}
 	*have = size_out - strm->avail_out;
@@ -270,7 +270,7 @@ enum websocket_callback_return binary_frame_received_comp(bool is_compressed, st
 	}
 }
 
-int websocket_compress(const struct websocket *s,uint8_t *dest, uint8_t *src, size_t length)
+int websocket_compress(const struct websocket *s, uint8_t *dest, uint8_t *src, size_t length)
 {
 	if (s->extension_compression.compression_level == 0) {
 		memcpy(dest, src, length);
@@ -345,7 +345,7 @@ void alloc_compression(struct websocket *ws)
 	}
 	if (ws->extension_compression.server_max_window_bits == 8) {
 		log_warn("zlib currently not support a window size of 8 for deflate\n! "
-                 "Switching to size 9.");
+		         "Switching to size 9.");
 		ws->extension_compression.server_max_window_bits = 9;
 	}
 	ret = deflateInit2(defl, comp_level, Z_DEFLATED, -(ws->extension_compression.server_max_window_bits), mem_level, Z_DEFAULT_STRATEGY);

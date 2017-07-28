@@ -116,7 +116,7 @@ struct websocket {
 		bool accepted;
 		z_stream strm_private_comp;
 		z_stream *dummy_ptr;
-		z_stream *const* strm_comp;
+		z_stream *const *strm_comp;
 		z_stream strm_decomp;
 	} extension_compression;
 };

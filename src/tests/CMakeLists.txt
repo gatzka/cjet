@@ -425,6 +425,6 @@ ADD_EXECUTABLE(compression_test.bin ${COMPRESSION_TEST})
 TARGET_LINK_LIBRARIES(
     compression_test.bin
     jet
-	zlib
+    zlib
     ${Boost_LIBRARIES}
 )

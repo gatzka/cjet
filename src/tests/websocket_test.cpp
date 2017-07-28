@@ -347,7 +347,6 @@ BOOST_AUTO_TEST_CASE(test_websocket_init_without_subprotocols)
 	int ret = websocket_init(&ws, NULL, true, ws_on_error, NULL);
 	BOOST_CHECK_MESSAGE(ret == 0, "Initializaton of websocket did not failed when called without supported sub-protocol!");
 	free_compression(&ws);
-
 }
 
 BOOST_FIXTURE_TEST_CASE(http_upgrade_with_websocket_protocol, F)
