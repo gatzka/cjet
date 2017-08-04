@@ -51,6 +51,7 @@ int main(int argc, char **argv)
 		.user_name = NULL,
 		.passwd_file = NULL,
 		.request_target = "/",
+		.compression_level = 2,
 	};
 
 	if (init_random() < 0) {
@@ -64,7 +65,7 @@ int main(int argc, char **argv)
 
 	int c;
 
-	while ((c = getopt(argc, argv, "flp:r:u:w:")) != -1) {
+	while ((c = getopt(argc, argv, "flp:r:u:w:c:")) != -1) {
 		switch (c) {
 		case 'f':
 			config.run_foreground = true;
@@ -84,7 +85,7 @@ int main(int argc, char **argv)
 		case 'w':
 			switch ((unsigned int) *optarg - '0') {
 			case 0:
-				log_info("Nothing will be displayed\n");
+				log_info("Nothing will be displayed.\n");
 				set_warning_level(0);
 				break;
 			case 1:
@@ -105,8 +106,33 @@ int main(int argc, char **argv)
 				break;
 			}
 			break;
+		case 'c':
+			switch ((unsigned int) *optarg - '0') {
+			case 0:
+				log_info("No compression will be used and accepted.\n");
+				config.compression_level = 0;
+				break;
+			case 1:
+				log_info("Use compression with min. memory usage. if possible\n");
+				config.compression_level = 1;
+				break;
+			case 2:
+				log_info("Use default compression if possible.\n");
+				config.compression_level = 2;
+				break;
+			case 3:
+				log_info("Use best compression with max. memory usage if possible\n");
+				config.compression_level = 3;
+				break;
+			default:
+				log_warn("Invalid compression level. Compression level is set to default (2)\n");
+				config.compression_level = 2;
+				break;
+			}
+			break;
 		case '?':
-			fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>] [-w <0,1,2 or 3: warning level nothing to all>]\n", argv[0]);
+			fprintf(stderr, "Usage: %s [-l] [-f] [-r <request target>] [-u <username>] [-p <password file>] "
+                            "[-w <0,1,2 or 3: warning level nothing to all>] [-c <0, 1, 2 or 3: compression level no, little memory, default, good compression\n", argv[0]);
 			ret = EXIT_FAILURE;
 			goto getopt_failed;
 			break;
