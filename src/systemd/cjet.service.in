@@ -1,5 +1,6 @@
 [Unit]
 Description="cjet service"
+After = network.target
 
 [Service]
 ExecStart=@CMAKE_INSTALL_PREFIX@/bin/cjet
