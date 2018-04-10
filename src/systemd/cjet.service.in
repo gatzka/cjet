@@ -1,0 +1,10 @@
+[Unit]
+Description="cjet service"
+
+[Service]
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/cjet
+Restart=always
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
