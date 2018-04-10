@@ -31,6 +31,9 @@
     <Filter Include="Quelldateien\third-party\http-parser">
       <UniqueIdentifier>{a5d43189-ec1e-4723-b141-8b80411aa16c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Quelldateien\third-party\zlib">
+      <UniqueIdentifier>{2ab7b82f-3789-40c9-9bd9-349d5958f9cc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\authenticate.c">
@@ -128,6 +131,33 @@
     </ClCompile>
     <ClCompile Include="main.c">
       <Filter>Quelldateien\win32</Filter>
+    </ClCompile>
+    <ClCompile Include="..\compression.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\utf8_checker.c">
+      <Filter>Quelldateien</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\adler32.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\deflate.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inffast.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inflate.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\inftrees.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\trees.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\zlib\zutil.c">
+      <Filter>Quelldateien\third-party\zlib</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
