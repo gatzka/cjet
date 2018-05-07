@@ -131,7 +131,7 @@ ENDFOREACH()
 FOREACH(_file ${CJET_ZLIB_FILES})
         FILE(SHA1 ${PROJECT_SOURCE_DIR}/${_file} checksum)
         STRING(SUBSTRING ${checksum} 0 8 checksum)
-        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-DNO_GZIP -frandom-seed=0x${checksum} -std=c99 -Wno-cast-qual")
+        SET_PROPERTY(SOURCE ${_file} APPEND_STRING PROPERTY COMPILE_FLAGS "-DNO_GZIP -frandom-seed=0x${checksum} -std=c99 -Wno-cast-qual -Wno-implicit-fallthrough")
 ENDFOREACH()
 
 ADD_EXECUTABLE(cjet
