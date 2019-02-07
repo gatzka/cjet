@@ -59,6 +59,8 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
+static const char UDS_PATH[] = "/tmp/jetd.sock";
+
 static int go_ahead = 1;
 
 static int set_fd_non_blocking(int fd)
@@ -360,8 +362,9 @@ static int create_server_unix_domain_socket(const char *pPath)
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sun_family = AF_UNIX;
 	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path)-1);
+	unlink(pPath);
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
-		log_err("bind failed!\n");
+		log_err("bind failed %s!\n", strerror(errno));
 		goto error;
 	}
 
@@ -610,6 +613,26 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 		goto start_ipv4_jetws_server_failed;
 	}
 
+	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
+	if (uds_fd < 0) {
+		return -1;
+	}
+
+	struct jet_server jet_uds_server = {
+		.ev = {
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = uds_fd}};
+
+	ret = start_server(&jet_uds_server.ev);
+	if (ret < 0) {
+		close(uds_fd);
+		return -1;
+	}
+
+
 	ret = run_jet(loop, config);
 
 	stop_server(&ipv4_http_server.ev);
@@ -668,7 +691,7 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 		goto start_jetws_server_failed;
 	}
 
-	int uds_fd = create_server_unix_domain_socket("/tmp/jetd.sock");
+	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
 	if (uds_fd < 0) {
 		return -1;
 	}
@@ -728,6 +751,7 @@ int run_io(struct eventloop *loop, const struct cmdline_config *config)
 	} else {
 		ret = run_io_all_interfaces(loop, config, handler, ARRAY_SIZE(handler));
 	}
+	unlink(UDS_PATH);
 
 	loop->destroy(loop->this_ptr);
 eventloop_init_failed:
