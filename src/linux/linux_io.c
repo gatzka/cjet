@@ -100,11 +100,6 @@ static int configure_keepalive(int fd)
 		return -1;
 	}
 
-	opt = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
-		return -1;
-	}
 
 	return 0;
 }
@@ -113,17 +108,34 @@ static int prepare_peer_socket(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
-	if ((set_fd_non_blocking(fd) < 0) ||
-	    (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
-	                sizeof(tcp_nodelay_on)) < 0)) {
+	if (set_fd_non_blocking(fd) < 0) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
 		return -1;
 	}
 
-	if (configure_keepalive(fd) < 0) {
-		log_err("Could not configure keepalive!\n");
-		close(fd);
+	int domain;
+	socklen_t len;
+	if (getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &domain, &len) < 0) {
+		log_err("could not determine socket domain");
+		return -1;
+	}
+	if ((domain==AF_INET) || (domain==AF_INET6)) {
+		if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on))==-1) {
+			log_err("error turning off nagle algorithm");
+			return -1;
+		}
+		if (configure_keepalive(fd) < 0) {
+			log_err("Could not configure keepalive!\n");
+			close(fd);
+			return -1;
+		}
+	}
+
+	// activate keep-alive
+	int opt = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
+		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
 		return -1;
 	}
 	return 0;
@@ -322,7 +334,7 @@ static int create_server_socket_all_interfaces(int port)
 	serveraddr.sin6_port = htons(port);
 	serveraddr.sin6_addr = in6addr_any;
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
-		log_err("bind failed!\n");
+		log_err("bind failed: '%s'!\n", strerror(errno));
 		goto error;
 	}
 
@@ -364,7 +376,7 @@ static int create_server_unix_domain_socket(const char *pPath)
 	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path)-1);
 	unlink(pPath);
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
-		log_err("bind failed %s!\n", strerror(errno));
+		log_err("binding unix domain socket failed: '%s!\n", strerror(errno));
 		goto error;
 	}
 
