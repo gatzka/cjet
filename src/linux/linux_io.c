@@ -38,6 +38,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include "alloc.h"
@@ -335,6 +336,48 @@ error:
 	return -1;
 }
 
+static int create_server_unix_domain_socket(const char *pPath)
+{
+	int listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (unlikely(listen_fd < 0)) {
+		log_err("Could not create listen socket!\n");
+		return -1;
+	}
+
+	static const int reuse_on = 1;
+	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+							sizeof(reuse_on)) < 0)) {
+		log_err("Could not set %s!\n", "SO_REUSEADDR");
+		goto error;
+	}
+
+	if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
+		log_err("Could not set %s!\n", "O_NONBLOCK");
+		goto error;
+	}
+
+	struct sockaddr_un serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sun_family = AF_UNIX;
+	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path)-1);
+	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
+		log_err("bind failed!\n");
+		goto error;
+	}
+
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
+		log_err("listen failed!\n");
+		goto error;
+	}
+
+	return listen_fd;
+
+error:
+	close(listen_fd);
+	return -1;
+}
+
+
 static int create_server_socket_bound(const char *bind_addr, int port)
 {
 	struct addrinfo hints;
@@ -624,6 +667,26 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 		close(http_fd);
 		goto start_jetws_server_failed;
 	}
+
+	int uds_fd = create_server_unix_domain_socket("/tmp/jetd.sock");
+	if (uds_fd < 0) {
+		return -1;
+	}
+
+	struct jet_server jet_uds_server = {
+		.ev = {
+			.read_function = accept_jet,
+			.write_function = NULL,
+			.error_function = accept_jet_error,
+			.loop = loop,
+			.sock = uds_fd}};
+
+	ret = start_server(&jet_uds_server.ev);
+	if (ret < 0) {
+		close(uds_fd);
+		return -1;
+	}
+
 
 	ret = run_jet(loop, config);
 
