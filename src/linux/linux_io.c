@@ -60,7 +60,7 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-static const char UDS_PATH[] = "/tmp/jetd.sock";
+static const char UDS_NAME[] = "/var/run/jet.socket";
 
 static int go_ahead = 1;
 
@@ -396,7 +396,7 @@ error:
 
 static int start_uds_server(struct eventloop *loop, struct jet_server* pjet_uds_server)
 {
-	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
+	int uds_fd = create_server_unix_domain_socket(UDS_NAME);
 	if (uds_fd < 0) {
 		return -1;
 	}
@@ -500,7 +500,7 @@ static void stop_uds_server(struct io_event *ev)
 {
 	ev->loop->remove(ev->loop->this_ptr, ev);
 	close(ev->sock);
-	unlink(UDS_PATH);
+	unlink(UDS_NAME);
 }
 
 
