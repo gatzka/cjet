@@ -24,6 +24,7 @@
  * SOFTWARE.
  */
 
+#include <crypt.h>
 #include <fcntl.h>
 #include <limits.h>
 #include <stddef.h>
