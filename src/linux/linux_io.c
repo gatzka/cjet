@@ -121,7 +121,7 @@ static int prepare_peer_socket(int fd)
 		log_err("could not determine socket domain");
 		return -1;
 	}
-	if ((domain==AF_INET) || (domain==AF_INET6)) {
+	if ((domain == AF_INET) || (domain == AF_INET6)) {
 		if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on))==-1) {
 			log_err("error turning off nagle algorithm");
 			return -1;
@@ -374,7 +374,7 @@ static int create_server_unix_domain_socket(const char *pPath)
 	struct sockaddr_un serveraddr;
 	memset(&serveraddr, 0, sizeof(serveraddr));
 	serveraddr.sun_family = AF_UNIX;
-	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path)-1);
+	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path) - 1);
 	unlink(pPath);
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
 		log_err("binding unix domain socket failed: '%s!\n", strerror(errno));
@@ -393,6 +393,28 @@ error:
 	close(listen_fd);
 	return -1;
 }
+
+static int start_uds_server(struct eventloop *loop, struct jet_server* pjet_uds_server)
+{
+	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
+	if (uds_fd < 0) {
+		return -1;
+	}
+
+	pjet_uds_server->ev.read_function = accept_jet;
+	pjet_uds_server->ev.write_function = NULL;
+	pjet_uds_server->ev.error_function = accept_jet_error;
+	pjet_uds_server->ev.loop = loop;
+	pjet_uds_server->ev.sock = uds_fd;
+
+	int ret = start_server(&pjet_uds_server->ev);
+	if (ret < 0) {
+		close(uds_fd);
+		return -1;
+	}
+	return 0;
+}
+
 
 
 static int create_server_socket_bound(const char *bind_addr, int port)
@@ -473,6 +495,14 @@ static void stop_server(struct io_event *ev)
 	ev->loop->remove(ev->loop->this_ptr, ev);
 	close(ev->sock);
 }
+
+static void stop_uds_server(struct io_event *ev)
+{
+	ev->loop->remove(ev->loop->this_ptr, ev);
+	close(ev->sock);
+	unlink(UDS_PATH);
+}
+
 
 static void sighandler(int signum)
 {
@@ -627,28 +657,16 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 		goto start_ipv4_jetws_server_failed;
 	}
 
-	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
-	if (uds_fd < 0) {
-		return -1;
+	struct jet_server uds_jet_server;
+	if (start_uds_server(loop, &uds_jet_server) < 0) {
+		ret = -1;
+		goto start_uds_server_failed;
 	}
-
-	struct jet_server jet_uds_server = {
-		.ev = {
-			.read_function = accept_jet,
-			.write_function = NULL,
-			.error_function = accept_jet_error,
-			.loop = loop,
-			.sock = uds_fd}};
-
-	ret = start_server(&jet_uds_server.ev);
-	if (ret < 0) {
-		close(uds_fd);
-		return -1;
-	}
-
 
 	ret = run_jet(loop, config);
 
+	stop_uds_server(&uds_jet_server.ev);
+start_uds_server_failed:
 	stop_server(&ipv4_http_server.ev);
 start_ipv4_jetws_server_failed:
 create_ipv4_jetws_socket_failed:
@@ -705,28 +723,16 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 		goto start_jetws_server_failed;
 	}
 
-	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
-	if (uds_fd < 0) {
-		return -1;
+	struct jet_server uds_jet_server;
+	if (start_uds_server(loop, &uds_jet_server) < 0) {
+		ret = -1;
+		goto start_local_uds_server_failed;
 	}
-
-	struct jet_server jet_uds_server = {
-		.ev = {
-			.read_function = accept_jet,
-			.write_function = NULL,
-			.error_function = accept_jet_error,
-			.loop = loop,
-			.sock = uds_fd}};
-
-	ret = start_server(&jet_uds_server.ev);
-	if (ret < 0) {
-		close(uds_fd);
-		return -1;
-	}
-
 
 	ret = run_jet(loop, config);
 
+	stop_uds_server(&uds_jet_server.ev);
+start_local_uds_server_failed:
 	stop_server(&http_server.ev);
 start_jetws_server_failed:
 create_jetws_socket_failed:
@@ -765,7 +771,6 @@ int run_io(struct eventloop *loop, const struct cmdline_config *config)
 	} else {
 		ret = run_io_all_interfaces(loop, config, handler, ARRAY_SIZE(handler));
 	}
-	unlink(UDS_PATH);
 
 	loop->destroy(loop->this_ptr);
 eventloop_init_failed:
