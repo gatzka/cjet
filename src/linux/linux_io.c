@@ -380,7 +380,7 @@ static int create_server_unix_domain_socket(const char *pPath)
 		log_err("binding unix domain socket failed: '%s!\n", strerror(errno));
 		goto error;
 	}
-	chmod(pPath, 0777); /* everyone should have access */
+	chmod(pPath, 0666); /* everyone should have access */
 
 	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
 		log_err("listen failed!\n");
