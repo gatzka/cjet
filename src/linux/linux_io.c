@@ -46,6 +46,7 @@
 #include "buffered_reader.h"
 #include "compiler.h"
 #include "eventloop.h"
+#include "generated/os_config.h"
 #include "http_connection.h"
 #include "http_server.h"
 #include "jet_server.h"
@@ -396,7 +397,7 @@ error:
 
 static int start_uds_server(struct eventloop *loop, struct jet_server* pjet_uds_server)
 {
-	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
+	int uds_fd = create_server_unix_domain_socket(UDS_FILE);
 	if (uds_fd < 0) {
 		return -1;
 	}
