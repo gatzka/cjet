@@ -61,8 +61,6 @@
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
 
-static const char UDS_PATH[] = "/tmp/jetd.sock";
-
 static int go_ahead = 1;
 
 static int set_fd_non_blocking(int fd)
@@ -501,7 +499,7 @@ static void stop_uds_server(struct io_event *ev)
 {
 	ev->loop->remove(ev->loop->this_ptr, ev);
 	close(ev->sock);
-	unlink(UDS_PATH);
+	unlink(UDS_FILE);
 }
 
 
