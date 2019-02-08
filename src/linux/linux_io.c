@@ -37,7 +37,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 #include <unistd.h>
 
 #include "alloc.h"
@@ -57,6 +59,8 @@
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))
 #endif
+
+static const char UDS_PATH[] = "/tmp/jetd.sock";
 
 static int go_ahead = 1;
 
@@ -97,11 +101,6 @@ static int configure_keepalive(int fd)
 		return -1;
 	}
 
-	opt = 1;
-	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
-		return -1;
-	}
 
 	return 0;
 }
@@ -110,17 +109,34 @@ static int prepare_peer_socket(int fd)
 {
 	static const int tcp_nodelay_on = 1;
 
-	if ((set_fd_non_blocking(fd) < 0) ||
-	    (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on,
-	                sizeof(tcp_nodelay_on)) < 0)) {
+	if (set_fd_non_blocking(fd) < 0) {
 		log_err("Could not set socket to nonblocking!\n");
 		close(fd);
 		return -1;
 	}
 
-	if (configure_keepalive(fd) < 0) {
-		log_err("Could not configure keepalive!\n");
-		close(fd);
+	int domain;
+	socklen_t len;
+	if (getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &domain, &len) < 0) {
+		log_err("could not determine socket domain");
+		return -1;
+	}
+	if ((domain == AF_INET) || (domain == AF_INET6)) {
+		if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on))==-1) {
+			log_err("error turning off nagle algorithm");
+			return -1;
+		}
+		if (configure_keepalive(fd) < 0) {
+			log_err("Could not configure keepalive!\n");
+			close(fd);
+			return -1;
+		}
+	}
+
+	// activate keep-alive
+	int opt = 1;
+	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
+		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
 		return -1;
 	}
 	return 0;
@@ -319,7 +335,7 @@ static int create_server_socket_all_interfaces(int port)
 	serveraddr.sin6_port = htons(port);
 	serveraddr.sin6_addr = in6addr_any;
 	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
-		log_err("bind failed!\n");
+		log_err("bind failed: '%s'!\n", strerror(errno));
 		goto error;
 	}
 
@@ -334,6 +350,72 @@ error:
 	close(listen_fd);
 	return -1;
 }
+
+static int create_server_unix_domain_socket(const char *pPath)
+{
+	int listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+	if (unlikely(listen_fd < 0)) {
+		log_err("Could not create listen socket!\n");
+		return -1;
+	}
+
+	static const int reuse_on = 1;
+	if (unlikely(setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &reuse_on,
+							sizeof(reuse_on)) < 0)) {
+		log_err("Could not set %s!\n", "SO_REUSEADDR");
+		goto error;
+	}
+
+	if (unlikely(set_fd_non_blocking(listen_fd) < 0)) {
+		log_err("Could not set %s!\n", "O_NONBLOCK");
+		goto error;
+	}
+
+	struct sockaddr_un serveraddr;
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sun_family = AF_UNIX;
+	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path) - 1);
+	unlink(pPath);
+	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
+		log_err("binding unix domain socket failed: '%s!\n", strerror(errno));
+		goto error;
+	}
+	chmod(pPath, 0666); /* everyone should have access */
+
+	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
+		log_err("listen failed!\n");
+		goto error;
+	}
+
+	return listen_fd;
+
+error:
+	close(listen_fd);
+	return -1;
+}
+
+static int start_uds_server(struct eventloop *loop, struct jet_server* pjet_uds_server)
+{
+	int uds_fd = create_server_unix_domain_socket(UDS_PATH);
+	if (uds_fd < 0) {
+		return -1;
+	}
+
+	pjet_uds_server->ev.read_function = accept_jet;
+	pjet_uds_server->ev.write_function = NULL;
+	pjet_uds_server->ev.error_function = accept_jet_error;
+	pjet_uds_server->ev.loop = loop;
+	pjet_uds_server->ev.sock = uds_fd;
+
+	int ret = start_server(&pjet_uds_server->ev);
+	if (ret < 0) {
+		close(uds_fd);
+		return -1;
+	}
+	return 0;
+}
+
+
 
 static int create_server_socket_bound(const char *bind_addr, int port)
 {
@@ -413,6 +495,14 @@ static void stop_server(struct io_event *ev)
 	ev->loop->remove(ev->loop->this_ptr, ev);
 	close(ev->sock);
 }
+
+static void stop_uds_server(struct io_event *ev)
+{
+	ev->loop->remove(ev->loop->this_ptr, ev);
+	close(ev->sock);
+	unlink(UDS_PATH);
+}
+
 
 static void sighandler(int signum)
 {
@@ -567,8 +657,16 @@ static int run_io_only_local(struct eventloop *loop, const struct cmdline_config
 		goto start_ipv4_jetws_server_failed;
 	}
 
+	struct jet_server uds_jet_server;
+	if (start_uds_server(loop, &uds_jet_server) < 0) {
+		ret = -1;
+		goto start_uds_server_failed;
+	}
+
 	ret = run_jet(loop, config);
 
+	stop_uds_server(&uds_jet_server.ev);
+start_uds_server_failed:
 	stop_server(&ipv4_http_server.ev);
 start_ipv4_jetws_server_failed:
 create_ipv4_jetws_socket_failed:
@@ -625,8 +723,16 @@ static int run_io_all_interfaces(struct eventloop *loop, const struct cmdline_co
 		goto start_jetws_server_failed;
 	}
 
+	struct jet_server uds_jet_server;
+	if (start_uds_server(loop, &uds_jet_server) < 0) {
+		ret = -1;
+		goto start_local_uds_server_failed;
+	}
+
 	ret = run_jet(loop, config);
 
+	stop_uds_server(&uds_jet_server.ev);
+start_local_uds_server_failed:
 	stop_server(&http_server.ev);
 start_jetws_server_failed:
 create_jetws_socket_failed:
