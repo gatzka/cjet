@@ -180,6 +180,16 @@ struct F {
 	struct peer set_peer;
 };
 
+static void check_response(cJSON *json, const char *id)
+{
+	cJSON *response_id = cJSON_GetObjectItem(json, "id");
+	BOOST_CHECK((response_id != NULL) &&
+				 (response_id->type == cJSON_String) &&
+				 (strcmp(response_id->valuestring, id) == 0));
+	cJSON *result = cJSON_GetObjectItem(json, "result");
+	BOOST_CHECK(result != NULL);
+}
+
 static void check_internal_error(const cJSON *response)
 {
 	const cJSON *error = cJSON_GetObjectItem(response, "error");
@@ -765,6 +775,50 @@ BOOST_FIXTURE_TEST_CASE(set_with_timeout_before_response, F)
 
 	cJSON_Delete(routed_message);
 	cJSON_Delete(response);
+}
+
+BOOST_FIXTURE_TEST_CASE(set_with_timeout_after_response, F)
+{
+	const char path[] = "/foo/bar/";
+	const char request_id[] = "request1";
+	cJSON *request = create_add(path);
+
+	cJSON *response = add_element_to_peer(&p, request);
+	BOOST_REQUIRE_MESSAGE(response != NULL, "add_element_to_peer() had no response!");
+	BOOST_CHECK_MESSAGE(!response_is_error(response), "add_element_to_peer() failed!");
+	cJSON_Delete(response);
+	cJSON_Delete(request);
+
+	cJSON *set_request = create_set_request(request_id, path);
+	response = set_or_call(&set_peer, set_request, STATE);
+	cJSON_Delete(set_request);
+	BOOST_CHECK_MESSAGE(response == NULL, "There must be no response when calling set/call");
+
+	cJSON *routed_message = parse_send_buffer();
+	response = create_response_from_message(routed_message);
+	cJSON *result = get_result_from_response(response);
+	cJSON_Delete(routed_message);
+
+	int ret = handle_routing_response(response, result, "result", &p);
+	BOOST_CHECK_MESSAGE(ret == 0, "Response after timeout not silently ignored!");
+	cJSON_Delete(response);
+
+	cJSON *error_message = parse_send_buffer();
+	BOOST_REQUIRE_MESSAGE(error_message != NULL, "Error message does not contain an error object!");
+	check_response(error_message, request_id);
+	cJSON_Delete(error_message);
+
+	//BOOST_REQUIRE_MESSAGE(timer_evs.size() == 1, "No timer ev was registered!");
+	//struct io_event *timer_ev = timer_evs.front();
+	//enum eventloop_return el_ret = timer_ev->read_function(timer_ev);
+	//BOOST_CHECK_MESSAGE(el_ret == EL_CONTINUE_LOOP, "timer read function did not returned EL_CONTINUE_LOOP");
+	//BOOST_REQUIRE_MESSAGE(timer_evs.size() == 0, "timer was not remove from eventloop!");
+	//cJSON *error_message = parse_send_buffer();
+	//BOOST_REQUIRE_MESSAGE(error_message != NULL, "Error message does not contain an error object!");
+	//check_internal_error(error_message);
+	//cJSON_Delete(error_message);
+
+
 }
 
 BOOST_FIXTURE_TEST_CASE(set_with_destroy_before_response, F)
