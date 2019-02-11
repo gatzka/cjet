@@ -115,7 +115,7 @@ static int prepare_peer_socket(int fd)
 	}
 
 	struct sockaddr_storage sockAddr;
-	socklen_t sockAddrSize;
+	socklen_t sockAddrSize = sizeof(sockAddr);
 
 	if (getsockname(fd, (struct sockaddr *)&sockAddr, &sockAddrSize) < 0) {
 		log_err("could not determine socket domain");
