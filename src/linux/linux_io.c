@@ -106,27 +106,29 @@ static int configure_keepalive(int fd)
 
 static int prepare_peer_socket(int fd)
 {
-	static const int tcp_nodelay_on = 1;
-
 	if (set_fd_non_blocking(fd) < 0) {
-		log_err("Could not set socket to nonblocking!\n");
+		log_err("Could not set socket to nonblocking '%s'!\n", strerror(errno));
 		close(fd);
 		return -1;
 	}
 
 	struct sockaddr_storage sockAddr;
-	socklen_t sockAddrSize;
+	socklen_t sockAddrSize = sizeof(sockAddr);
+
 	if (getsockname(fd, (struct sockaddr *)&sockAddr, &sockAddrSize) < 0) {
-		log_err("could not determine socket domain");
+		log_err("could not determine socket domain '%s'", strerror(errno));
 		return -1;
 	}
+
 	if ((sockAddr.ss_family == AF_INET) || (sockAddr.ss_family == AF_INET6)) {
+		static const int tcp_nodelay_on = 1;
+
 		if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on))==-1) {
-			log_err("error turning off nagle algorithm");
+			log_err("error turning off nagle algorithm '%s'", strerror(errno));
 			return -1;
 		}
 		if (configure_keepalive(fd) < 0) {
-			log_err("Could not configure keepalive!\n");
+			log_err("Could not configure keepalive '%s'!\n", strerror(errno));
 			close(fd);
 			return -1;
 		}
@@ -135,7 +137,7 @@ static int prepare_peer_socket(int fd)
 	// activate keep-alive
 	int opt = 1;
 	if (setsockopt(fd, SOL_SOCKET, SO_KEEPALIVE, &opt, sizeof(opt)) == -1) {
-		log_err("error setting socket option %s\n", "SO_KEEPALIVE");
+		log_err("error setting socket option SO_KEEPALIVE '%s'\n", strerror(errno));
 		return -1;
 	}
 	return 0;
