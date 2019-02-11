@@ -114,13 +114,13 @@ static int prepare_peer_socket(int fd)
 		return -1;
 	}
 
-	int domain;
-	socklen_t len;
-	if (getsockopt(fd, SOL_SOCKET, SO_DOMAIN, &domain, &len) < 0) {
+	struct sockaddr_storage sockAddr;
+	socklen_t sockAddrSize;
+	if (getsockname(fd, (struct sockaddr *)&sockAddr, &sockAddrSize) < 0) {
 		log_err("could not determine socket domain");
 		return -1;
 	}
-	if ((domain == AF_INET) || (domain == AF_INET6)) {
+	if ((sockAddr.ss_family == AF_INET) || (sockAddr.ss_family == AF_INET6)) {
 		if (setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &tcp_nodelay_on, sizeof(tcp_nodelay_on))==-1) {
 			log_err("error turning off nagle algorithm");
 			return -1;
