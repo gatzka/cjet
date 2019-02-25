@@ -35,7 +35,7 @@
 #include "linux/eventloop_epoll.h"
 #include "log.h"
 
-static enum eventloop_return handle_events(int num_events, struct epoll_event *events)
+static enum eventloop_return handle_events(struct eventloop_epoll *loop, int num_events, struct epoll_event *events)
 {
 	if (unlikely(num_events == -1)) {
 		if (errno == EINTR) {
@@ -46,6 +46,7 @@ static enum eventloop_return handle_events(int num_events, struct epoll_event *e
 	}
 	for (int i = 0; i < num_events; ++i) {
 		struct io_event *ev = events[i].data.ptr;
+		loop->current_ev = ev;
 
 		if (unlikely((events[i].events & ~(EPOLLIN | EPOLLOUT)) != 0)) {
 			if (ev->error_function(ev) == EL_ABORT_LOOP) {
@@ -63,14 +64,17 @@ static enum eventloop_return handle_events(int num_events, struct epoll_event *e
 					}
 				}
 			}
-			if (events[i].events & EPOLLOUT) {
-				if (likely(ev->write_function != NULL)) {
-					enum eventloop_return ret = ev->write_function(ev);
-					if (unlikely(ret == EL_ABORT_LOOP)) {
-						return EL_ABORT_LOOP;
-					}
-					if (unlikely(ret == EL_EVENT_REMOVED)) {
-						continue;
+
+			if (likely(loop->current_ev != NULL)) {
+				if (events[i].events & EPOLLOUT) {
+					if (likely(ev->write_function != NULL)) {
+						enum eventloop_return ret = ev->write_function(ev);
+						if (unlikely(ret == EL_ABORT_LOOP)) {
+							return EL_ABORT_LOOP;
+						}
+						if (unlikely(ret == EL_EVENT_REMOVED)) {
+							continue;
+						}
 					}
 				}
 			}
@@ -86,6 +90,8 @@ int eventloop_epoll_init(void *this_ptr)
 	if (loop->epoll_fd < 0) {
 		return -1;
 	}
+
+	loop->current_ev = NULL;
 	return 0;
 }
 
@@ -95,16 +101,16 @@ void eventloop_epoll_destroy(const void *this_ptr)
 	close(loop->epoll_fd);
 }
 
-int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
+int eventloop_epoll_run(void *this_ptr, const int *go_ahead)
 {
-	const struct eventloop_epoll *loop = this_ptr;
+	struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event events[CONFIG_MAX_EPOLL_EVENTS];
 
 	while (likely(*go_ahead)) {
 		int num_events =
 		    epoll_wait(loop->epoll_fd, events, CONFIG_MAX_EPOLL_EVENTS, -1);
 
-		if (unlikely(handle_events(num_events, events) == EL_ABORT_LOOP)) {
+		if (unlikely(handle_events(loop, num_events, events) == EL_ABORT_LOOP)) {
 			return -1;
 			break;
 		}
@@ -129,8 +135,11 @@ _Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	return EL_CONTINUE_LOOP;
 }
 
-void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)
+void eventloop_epoll_remove(void *this_ptr, const struct io_event *ev)
 {
-	const struct eventloop_epoll *loop = this_ptr;
+	struct eventloop_epoll *loop = this_ptr;
 	epoll_ctl(loop->epoll_fd, EPOLL_CTL_DEL, ev->sock, NULL);
+	if (loop->current_ev == ev) {
+		loop->current_ev = NULL;
+	}
 }
