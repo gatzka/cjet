@@ -60,9 +60,9 @@ struct eventloop {
 	void *this_ptr;
 	int (*init)(void *this_ptr);
 	void (*destroy)(const void *this_ptr);
-	int (*run)(const void *this_ptr, const int *go_ahead);
+	int (*run)(void *this_ptr, const int *go_ahead);
 	enum eventloop_return (*add)(const void *this_ptr, const struct io_event *ev);
-	void (*remove)(const void *this_ptr, const struct io_event *ev);
+	void (*remove)(void *this_ptr, const struct io_event *ev);
 };
 
 #ifdef __cplusplus

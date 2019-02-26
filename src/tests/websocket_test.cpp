@@ -127,7 +127,7 @@ static enum eventloop_return eventloop_fake_add(const void *this_ptr, const stru
 	return EL_CONTINUE_LOOP;
 }
 
-static void eventloop_fake_remove(const void *this_ptr, const struct io_event *ev)
+static void eventloop_fake_remove(void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
 	(void)ev;

@@ -36,13 +36,14 @@ extern "C" {
 struct eventloop_epoll {
 	int epoll_fd;
 	struct eventloop loop;
+	struct io_event *current_ev;
 };
 
 int eventloop_epoll_init(void *this_ptr);
 void eventloop_epoll_destroy(const void *this_ptr);
-int eventloop_epoll_run(const void *this_ptr, const int *go_ahead);
+int eventloop_epoll_run(void *this_ptr, const int *go_ahead);
 enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev);
-void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev);
+void eventloop_epoll_remove(void *this_ptr, const struct io_event *ev);
 
 #ifdef __cplusplus
 }

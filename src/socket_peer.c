@@ -92,6 +92,10 @@ static enum bs_read_callback_return read_msg_length(void *context, uint8_t *buf,
 	uint32_t message_length;
 	memcpy(&message_length, buf, len);
 	message_length = jet_be32toh(message_length);
+	if (unlikely(message_length == 0)) {
+		log_warn("Jet message length is 0!\n");
+		return BS_OK;
+	}
 
 	struct buffered_reader *br = &p->br;
 	br->read_exactly(br->this_ptr, message_length, read_msg, p);

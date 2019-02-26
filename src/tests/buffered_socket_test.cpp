@@ -359,7 +359,7 @@ static enum eventloop_return eventloop_fake_failing_add(const void *this_ptr, co
 	return EL_ABORT_LOOP;
 }
 
-static void eventloop_fake_remove(const void *this_ptr, const struct io_event *ev)
+static void eventloop_fake_remove(void *this_ptr, const struct io_event *ev)
 {
 	BOOST_REQUIRE_MESSAGE(this_ptr == &MAGIC, "this_ptr does not point to the eventloop!");
 	(void)ev;
