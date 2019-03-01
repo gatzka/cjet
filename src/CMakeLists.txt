@@ -151,3 +151,4 @@ configure_file("systemd/cjet.service.in" "cjet.service" @ONLY)
 
 INSTALL(TARGETS  cjet RUNTIME DESTINATION bin)
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/cjet.service" DESTINATION lib/systemd/system)
+INSTALL(FILES "systemd/avahi/cjet.service" DESTINATION bin/avahi)
