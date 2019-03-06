@@ -44,18 +44,23 @@ BOOST_AUTO_TEST_CASE(rfc4648_tests)
 	static const char * const strings[] = { "", "f", "fo", "foo", "foob", "fooba", "foobar" };
 	static const char * const results[] = { "", "Zg==", "Zm8=", "Zm9v", "Zm9vYg==", "Zm9vYmE=", "Zm9vYmFy" };
 
-	char result[b64_encoded_string_length(std::strlen(strings[ARRAY_SIZE(strings) -1]))];
+	size_t length = b64_encoded_string_length(std::strlen(strings[ARRAY_SIZE(strings)-1]));
+	char result[length];
 
 	for (unsigned int i = 0; i < ARRAY_SIZE(strings); ++i) {
-		b64_encode_string((uint8_t *)strings[i], std::strlen(strings[i]), result);
+		b64_encode_string(reinterpret_cast < const uint8_t * > (strings[i]), std::strlen(strings[i]), result);
 		BOOST_CHECK_EQUAL(std::strcmp(results[i], result), 0);
 		BOOST_CHECK_EQUAL(std::strlen(results[i]), std::strlen(result));
+		size_t length = b64_encoded_string_length(std::strlen(strings[i]));
+		BOOST_CHECK_EQUAL(length, std::strlen(result));
 	}
 
 	for (unsigned int i = ARRAY_SIZE(strings); i > 0; --i) {
-		b64_encode_string((uint8_t *)strings[i - 1], std::strlen(strings[i - 1]), result);
+		b64_encode_string(reinterpret_cast < const uint8_t * > (strings[i - 1]), std::strlen(strings[i - 1]), result);
 		BOOST_CHECK_EQUAL(std::strcmp(results[i - 1], result), 0);
 		BOOST_CHECK_EQUAL(std::strlen(results[i - 1]), std::strlen(result));
+		size_t length = b64_encoded_string_length(std::strlen(strings[i - 1]));
+		BOOST_CHECK_EQUAL(length, std::strlen(result));
 	}
 }
 
