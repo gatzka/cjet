@@ -540,7 +540,7 @@ static int send_upgrade_response(struct http_connection *connection)
 		return -1;
 	}
 
-	char accept_value[28];
+	char accept_value[28+1]; /* one more for termination */
 	struct SHA1Context context;
 	uint8_t sha1_buffer[SHA1HashSize];
 
@@ -569,7 +569,7 @@ static int send_upgrade_response(struct http_connection *connection)
 	iov[0].iov_base = switch_response;
 	iov[0].iov_len = sizeof(switch_response) - 1;
 	iov[1].iov_base = accept_value;
-	iov[1].iov_len = sizeof(accept_value);
+	iov[1].iov_len = sizeof(accept_value) - 1;
 	if (s->sub_protocol.name != NULL) {
 		iov[iov_length].iov_base = ws_protocol;
 		iov[iov_length].iov_len = sizeof(ws_protocol) - 1;
