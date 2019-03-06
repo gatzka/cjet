@@ -73,6 +73,6 @@ size_t b64_encoded_buffer_length(size_t input_length)
 	/* 4*input_length/3 gives unpadded length
 	 * round up to the nearest multiple of 4 for padding
 	 */
-	return ((4 * input_length / 3) + 3) & ~3;
+	return 4 * ((input_length + 2) / 3);
 }
 
