@@ -540,14 +540,14 @@ static int send_upgrade_response(struct http_connection *connection)
 		return -1;
 	}
 
-	char accept_value[28];
+	uint8_t accept_value[28];
 	struct SHA1Context context;
 	uint8_t sha1_buffer[SHA1HashSize];
 
 	SHA1Reset(&context);
 	SHA1Input(&context, s->sec_web_socket_key, SEC_WEB_SOCKET_GUID_LENGTH + SEC_WEB_SOCKET_KEY_LENGTH);
 	SHA1Result(&context, sha1_buffer);
-	b64_encode_string(sha1_buffer, SHA1HashSize, accept_value);
+	b64_encode_buffer(sha1_buffer, SHA1HashSize, accept_value);
 
 	static const char switch_response[] =
 		"HTTP/1.1 101 Switching Protocols" CRLF

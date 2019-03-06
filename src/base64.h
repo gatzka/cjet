@@ -34,11 +34,9 @@
 extern "C" {
 #endif
 
-void b64_encode_string(const uint8_t *__restrict in, size_t in_len, char *__restrict out);
-static inline size_t b64_encoded_string_length(size_t input_length)
-{
-	return 4 * ((input_length + 2) / 3);
-}
+void b64_encode_buffer(const uint8_t *__restrict in, size_t in_len, uint8_t *__restrict out);
+
+size_t b64_encoded_buffer_length(size_t input_length);
 
 #ifdef __cplusplus
 }
