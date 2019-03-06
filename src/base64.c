@@ -33,7 +33,7 @@
 
 static const char encode_table[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-void b64_encode_string(const uint8_t *__restrict in, size_t in_len, char *__restrict out)
+void b64_encode_buffer(const uint8_t *__restrict in, size_t in_len, uint8_t *__restrict out)
 {
 	unsigned int triple[3];
 	unsigned int len;
@@ -66,11 +66,9 @@ void b64_encode_string(const uint8_t *__restrict in, size_t in_len, char *__rest
 		memcpy(out, tmp, sizeof(tmp));
 		out += 4;
 	}
-
-	*out = '\0';
 }
 
-size_t b64_encoded_string_length(size_t input_length)
+size_t b64_encoded_buffer_length(size_t input_length)
 {
 	/* 4*input_length/3 gives unpadded length
 	 * round up to the nearest multiple of 4 for padding
