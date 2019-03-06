@@ -69,3 +69,12 @@ void b64_encode_string(const uint8_t *__restrict in, size_t in_len, char *__rest
 
 	*out = '\0';
 }
+
+size_t b64_encoded_string_length(size_t input_length)
+{
+	/* 4*input_length/3 gives unpadded length
+	 * round up to the nearest multiple of 4 for padding
+	 */
+	return ((4 * input_length / 3) + 3) & ~3;
+}
+
