@@ -63,71 +63,42 @@ static const uint8_t PER_MESSAGE_COMPRESSED_BIT = 0x4;
 
 static void unmask_payload(uint8_t *buffer, size_t length, uint8_t *mask)
 {
-	size_t bytewidth = sizeof(uint_fast16_t);
-	if (length < 8) bytewidth = 1;
-	size_t shift = 1;
-	if (bytewidth > 2) shift = 2;
-	if (bytewidth > 4) shift = 3;
+	uint_fast32_t aligned_mask;
 
-	size_t pre_length, main_length, post_length;
-	void *ptr_alligned;
-	uint32_t mask32;
-	uint32_t *buffer_alligned32;
-	uint64_t mask64;
-	uint64_t *buffer_alligned64;
-
-	switch (bytewidth) {
-	case 8:
-		pre_length = ((size_t) buffer) % bytewidth;
-		pre_length = bytewidth - pre_length;
-		main_length = (length - pre_length) >> shift;
-		post_length = length - pre_length - (main_length << shift);
-		ptr_alligned = buffer + pre_length;
-
-		mask32 = 0x0;
-		for (unsigned int i = 0; i < 4; i++) {
-			mask32 |= (((uint32_t) *(mask + (i + pre_length) % 4)) & 0xFF) << (i * 8);
-		}
-		mask64 = ((uint64_t) mask32) & 0xFFFFFFFF;
-		mask64 |= (mask64 << 32) & 0xFFFFFFFF00000000;
-		buffer_alligned64 = ptr_alligned;
-		for (size_t i = 0; i < pre_length; i++) {
-			buffer[i] ^= (mask[i % 4]);
-		}
-		for (size_t i = 0; i < main_length; i++) {
-			buffer_alligned64[i] ^= mask64;
-		}
-		for (size_t i = length - post_length; i < length; i++) {
-			buffer[i] ^= (mask[i % 4]);
-		}
-		break;
-	case 4:
-		pre_length = ((size_t) buffer) % bytewidth;
-		pre_length = bytewidth - pre_length;
-		main_length = (length - pre_length) >> shift;
-		post_length = length - pre_length - (main_length << shift);
-		ptr_alligned = buffer + pre_length;
-
-		mask32 = 0x0;
-		for (unsigned int i = 0; i < 4; i++) {
-			mask32 |= (((uint32_t) *(mask + (i + pre_length) % 4)) & 0xFF) << (i * 8);
-		}
-		buffer_alligned32 = ptr_alligned;
-		for (size_t i = 0; i < pre_length; i++) {
-			buffer[i] ^= (mask[i % 4]);
-		}
-		for (size_t i = 0; i < main_length; i++) {
-			buffer_alligned32[i] ^= mask32;
-		}
-		for (size_t i = length - post_length; i < length; i++) {
-			buffer[i] ^= (mask[i % 4]);
-		}
-		break;
-	default:
+	if (length < sizeof(aligned_mask)) {
 		for (size_t i = 0; i < length; i++) {
 			buffer[i] = buffer[i] ^ (mask[i % 4]);
 		}
-		break;
+
+		return;
+	}
+
+	unsigned int pre_length = ((uintptr_t)buffer) % sizeof(aligned_mask);
+	pre_length = (sizeof(aligned_mask) - pre_length) % sizeof(aligned_mask);
+
+	size_t main_length = (length - pre_length) / sizeof(aligned_mask);
+	unsigned int post_length = (unsigned int)(length - pre_length - (main_length * sizeof(aligned_mask)));
+
+	uint_fast32_t *buffer_aligned = (void *)(buffer + pre_length);
+
+	uint8_t *aligned_mask_filler = (uint8_t *)&aligned_mask;
+	for (uint_fast8_t i = 0; i < (uint_fast8_t)sizeof(aligned_mask); i++) {
+		*aligned_mask_filler++ = mask[(i + pre_length) % 4];
+	}
+
+	unsigned int i_p = 0;
+	while (pre_length-- > 0) {
+		buffer[i_p] ^= (mask[i_p % 4]);
+		i_p++;
+	}
+
+	while (main_length-- > 0) {
+		*buffer_aligned ^= aligned_mask;
+		buffer_aligned++;
+	}
+
+	for (size_t i = length - post_length; i < length; i++) {
+		buffer[i] ^= (mask[i % 4]);
 	}
 }
 
