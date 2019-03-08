@@ -24,7 +24,7 @@
 
 <service-group>
 
-  <name replace-wildcards="yes">%h</name>
+  <name>jetws</name>
 
   <service>
     <type>_jetws._tcp</type>
