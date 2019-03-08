@@ -147,8 +147,10 @@ TARGET_LINK_LIBRARIES(
         crypt
 )
 
-configure_file("systemd/cjet.service.in" "cjet.service" @ONLY)
+configure_file("systemd/cjet.service.in" "systemd/cjet.service" @ONLY)
+configure_file("systemd/avahi/jetws.service.in" "systemd/avahi/jetws.service" @ONLY)
 
-INSTALL(TARGETS  cjet RUNTIME DESTINATION bin)
-INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/cjet.service" DESTINATION lib/systemd/system)
-INSTALL(FILES "systemd/avahi/cjet.service" DESTINATION bin/avahi)
+INSTALL(TARGETS cjet RUNTIME DESTINATION bin)
+INSTALL(FILES "systemd/avahi/jet.service" DESTINATION bin/avahi)
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/systemd/cjet.service" DESTINATION lib/systemd/system)
+INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/systemd/avahi/jetws.service" DESTINATION bin/avahi)

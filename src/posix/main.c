@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 	    .bind_local_only = false,
 	    .user_name = NULL,
 	    .passwd_file = NULL,
-	    .request_target = "/api/jet/",
+		.request_target = WEBSOCKET_PATH,
 	};
 
 	if (init_random() < 0) {
