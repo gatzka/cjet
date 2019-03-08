@@ -9,8 +9,6 @@ Type=forking
 
 ExecStartPost=/bin/cp @CMAKE_INSTALL_PREFIX@/bin/avahi/jet.service /etc/avahi/services
 ExecStopPost=/bin/rm /etc/avahi/services/jet.service
-ExecStartPost=/bin/cp @CMAKE_INSTALL_PREFIX@/bin/avahi/jetws.service /etc/avahi/services
-ExecStopPost=/bin/rm /etc/avahi/services/jetws.service
 
 [Install]
 WantedBy=multi-user.target

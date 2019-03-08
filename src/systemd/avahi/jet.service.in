@@ -24,11 +24,15 @@
 
 <service-group>
 
-  <name>jetws</name>
+  <name>jet</name>
 
   <service>
     <type>_jetws._tcp</type>
     <port>11123</port>
     <txt-record>path=@WEBSOCKET_PATH@</txt-record>
+  </service>
+  <service>
+    <type>_jet._tcp</type>
+    <port>11122</port>
   </service>
 </service-group>
