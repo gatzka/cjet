@@ -7,8 +7,8 @@ ExecStart=@CMAKE_INSTALL_PREFIX@/bin/cjet
 Restart=always
 Type=forking
 
-ExecStartPost=/bin/cp @CMAKE_INSTALL_PREFIX@/bin/avahi/cjet.service /etc/avahi/services
-ExecStopPost=/bin/rm /etc/avahi/services/cjet.service
+ExecStartPost=/bin/cp @CMAKE_INSTALL_PREFIX@/bin/avahi/jet.service /etc/avahi/services
+ExecStopPost=/bin/rm /etc/avahi/services/jet.service
 
 [Install]
 WantedBy=multi-user.target

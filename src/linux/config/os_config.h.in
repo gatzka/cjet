@@ -32,6 +32,7 @@
 enum {CONFIG_MAX_EPOLL_EVENTS = ${CONFIG_MAX_EPOLL_EVENTS}};
 
 #define UDS_FILE "${CONFIG_UDS_FILE}"
+#define WEBSOCKET_PATH "${WEBSOCKET_PATH}"
 
 typedef int socket_type;
 
