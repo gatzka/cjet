@@ -611,6 +611,7 @@ int notify_fetchers(const struct element *e, const char *event_name)
 
 cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request, const struct fetch *f)
 {
+	(void)request_peer;
 	struct list_head *item;
 	struct list_head *tmp;
 	const struct list_head *peer_list = get_peer_list();
@@ -622,7 +623,7 @@ cJSON *add_fetch_to_states(const struct peer *request_peer, const cJSON *request
 		}
 	}
 
-	return create_success_response_from_request(request_peer, request);
+	return NULL;
 }
 
 static void remove_fetch_from_state(const struct element *e, const struct fetch *f)
@@ -719,6 +720,8 @@ int add_fetch_to_peer(struct peer *p, const cJSON *request, struct fetch **fetch
 
 	list_add_tail(&f->next_fetch, &p->fetch_list);
 	*fetch_return = f;
+
+	*response = create_success_response_from_request(p, request);
 	return 0;
 }
 

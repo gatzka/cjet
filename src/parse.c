@@ -71,9 +71,12 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 	cJSON *response;
 	if (unlikely(add_fetch_to_peer(p, json_rpc, &f, &response) < 0)) {
 		return response;
+	} else {
+		send_response(response, p);
 	}
 
-	return add_fetch_to_states(p, json_rpc, f);
+	add_fetch_to_states(p, json_rpc, f);
+	return NULL;
 }
 
 static cJSON *handle_method(const cJSON *request, const char *method_name,
