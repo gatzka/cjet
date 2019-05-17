@@ -228,12 +228,14 @@ static cjet_ssize_t get_read_ptr(struct buffered_socket *bs, union buffered_sock
 {
 	size_t count = ctx.num;
 	while (1) {
-		if (unread_bytes(bs) >= count) {
+		size_t bytes_in_buffer = unread_bytes(bs);
+		if (bytes_in_buffer >= count) {
 			*read_ptr = bs->read_ptr;
 			bs->read_ptr += count;
 			return count;
 		}
-		cjet_ssize_t number_of_bytes_read = fill_buffer(bs, count);
+
+		cjet_ssize_t number_of_bytes_read = fill_buffer(bs, count - bytes_in_buffer);
 		if (number_of_bytes_read <= 0) {
 			return number_of_bytes_read;
 		}
