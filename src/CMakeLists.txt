@@ -14,7 +14,8 @@ CONFIGURE_FILE(linux/config/os_config.h.in ${PROJECT_BINARY_DIR}/generated/os_co
 CONFIGURE_FILE(cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h)
 CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
-SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=1 -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
+#SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wstrict-overflow=5 -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
 SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 

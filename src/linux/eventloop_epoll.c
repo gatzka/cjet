@@ -112,15 +112,14 @@ int eventloop_epoll_run(const void *this_ptr, const int *go_ahead)
 	return 0;
 }
 
+_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 enum eventloop_return eventloop_epoll_add(const void *this_ptr, const struct io_event *ev)
 {
 	const struct eventloop_epoll *loop = this_ptr;
 	struct epoll_event epoll_ev;
 
 	memset(&epoll_ev, 0, sizeof(epoll_ev));
-_Pragma ("GCC diagnostic ignored \"-Wcast-qual\"")
 	epoll_ev.data.ptr = (void *)ev;
-_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	epoll_ev.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (unlikely(epoll_ctl(loop->epoll_fd, EPOLL_CTL_ADD, ev->sock, &epoll_ev) < 0)) {
 		log_err("epoll_ctl failed!\n");
@@ -128,6 +127,7 @@ _Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 	}
 	return EL_CONTINUE_LOOP;
 }
+_Pragma ("GCC diagnostic error \"-Wcast-qual\"")
 
 void eventloop_epoll_remove(const void *this_ptr, const struct io_event *ev)
 {
