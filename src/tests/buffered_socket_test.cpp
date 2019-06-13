@@ -950,7 +950,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 }
 
 /*
- * checks the handeling of chunks, which do not fit
+ * checks the handling of chunks, which do not fit
  * in the buffer completely.
  *
  * Three cases are checked: the first chunk size fits
