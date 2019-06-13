@@ -343,6 +343,7 @@ int buffered_socket_writev(void *this_ptr, struct socket_io_vector *io_vec, unsi
 
 	cjet_ssize_t sent = socket_writev_with_prefix(bs->ev.sock, bs->write_buffer, bs->to_write, io_vec, count);
 	if (likely(sent == (cjet_ssize_t)to_write)) {
+		bs->to_write = 0;
 		return 0;
 	}
 
