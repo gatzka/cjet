@@ -55,6 +55,15 @@ static error_handler br_error_handler = NULL;
 static void *br_error_context = NULL;
 
 extern "C" {
+	int buffered_socket_cork(void *this_ptr)
+	{
+		return 0;
+	}
+
+	int buffered_socket_uncork(void *this_ptr)
+	{
+		return 0;
+	}
 
 	cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count)
 	{

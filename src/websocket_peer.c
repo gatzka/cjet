@@ -30,6 +30,7 @@
 
 #include "alloc.h"
 #include "base64.h"
+#include "buffered_socket.h"
 #include "compiler.h"
 #include "http_connection.h"
 #include "jet_endian.h"
@@ -66,14 +67,18 @@ static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 
 static int cork(const struct peer *p)
 {
-	(void)p;
-	return 0;
+	const struct websocket_peer *ws_peer = const_container_of(p, struct websocket_peer, peer);
+	struct buffered_reader *br = &ws_peer->websocket.connection->br;
+	struct buffered_socket *bs = (struct buffered_socket *)br->this_ptr;
+	return buffered_socket_cork(bs);
 }
 
 static int uncork(const struct peer *p)
 {
-	(void)p;
-	return 0;
+	const struct websocket_peer *ws_peer = const_container_of(p, struct websocket_peer, peer);
+	struct buffered_reader *br = &ws_peer->websocket.connection->br;
+	struct buffered_socket *bs = (struct buffered_socket *)br->this_ptr;
+	return buffered_socket_uncork(bs);
 }
 
 static void free_websocket_peer(struct websocket_peer *ws_peer)
