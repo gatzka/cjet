@@ -104,6 +104,9 @@ int buffered_socket_read_until(void *this_ptr, const char *delim,
                                enum bs_read_callback_return (*read_callback)(void *context, uint8_t *buf, size_t len),
                                void *callback_context);
 
+int buffered_socket_cork(void *this_ptr);
+int buffered_socket_uncork(void *this_ptr);
+
 #ifdef __cplusplus
 }
 #endif

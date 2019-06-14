@@ -48,6 +48,8 @@ struct socket_io_vector {
  */
 cjet_ssize_t socket_read(socket_type sock, void *buf, size_t count);
 cjet_ssize_t socket_writev_with_prefix(socket_type sock, void *buf, size_t len, struct socket_io_vector *io_vec, unsigned int count);
+int socket_cork(socket_type sock);
+int socket_uncork(socket_type sock);
 int socket_close(socket_type sock);
 
 enum cjet_system_error get_socket_error(void);

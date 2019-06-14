@@ -24,7 +24,13 @@
  * SOFTWARE.
  */
 
+#define _GNU_SOURCE
+
+#include <netinet/in.h>
+#include <netinet/tcp.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/types.h>
 #include <sys/uio.h>
 #include <unistd.h>
 
@@ -74,4 +80,16 @@ enum cjet_system_error get_socket_error(void)
 const char *get_socket_error_msg(enum cjet_system_error err)
 {
 	return strerror(err);
+}
+
+int socket_cork(socket_type sock)
+{
+	static const int one = 1;
+	return setsockopt(sock, SOL_TCP, TCP_CORK, &one, sizeof(one));
+}
+
+int socket_uncork(socket_type sock)
+{
+	static const int zero = 0;
+	return setsockopt(sock, SOL_TCP, TCP_CORK, &zero, sizeof(zero));
 }

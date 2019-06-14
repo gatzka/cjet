@@ -343,6 +343,18 @@ extern "C" {
 	{
 		return ::strerror(err);
 	}
+
+	int socket_cork(socket_type sock)
+	{
+		(void)sock;
+		return 0;
+	}
+
+	int socket_uncork(socket_type sock)
+	{
+		(void)sock;
+		return 0;
+	}
 }
 
 static enum eventloop_return eventloop_fake_add(const void *this_ptr, const struct io_event *ev)

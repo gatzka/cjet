@@ -442,3 +442,15 @@ int buffered_socket_read_until(void *this_ptr, const char *delim,
 		return 0;
 	}
 }
+
+int buffered_socket_cork(void *this_ptr)
+{
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
+	return socket_cork(bs->ev.sock);
+}
+
+int buffered_socket_uncork(void *this_ptr)
+{
+	struct buffered_socket *bs = (struct buffered_socket *)this_ptr;
+	return socket_uncork(bs->ev.sock);
+}
