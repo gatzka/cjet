@@ -48,6 +48,8 @@ struct peer {
 	void *routing_table;
 	char *name;
 	int (*send_message)(const struct peer *p, char *rendered, size_t len);
+	int (*cork)(const struct peer *p);
+	int (*uncork)(const struct peer *p);
 	void (*close)(struct peer *p);
 	struct eventloop *loop;
 	group_t fetch_groups;

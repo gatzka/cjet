@@ -64,6 +64,18 @@ static int ws_send_message(const struct peer *p, char *rendered, size_t len)
 	return websocket_send_text_frame(&ws_peer->websocket, rendered, len);
 }
 
+static int cork(const struct peer *p)
+{
+	(void)p;
+	return 0;
+}
+
+static int uncork(const struct peer *p)
+{
+	(void)p;
+	return 0;
+}
+
 static void free_websocket_peer(struct websocket_peer *ws_peer)
 {
 	free_peer_resources(&ws_peer->peer);
@@ -130,6 +142,8 @@ static int init_websocket_peer(struct websocket_peer *ws_peer, struct http_conne
 
 	init_peer(&ws_peer->peer, is_local_connection, connection->server->ev.loop);
 	ws_peer->peer.send_message = ws_send_message;
+	ws_peer->peer.cork = cork;
+	ws_peer->peer.uncork = uncork;
 	ws_peer->peer.close = peer_close_websocket_peer;
 
 	struct buffered_reader *br = &connection->br;

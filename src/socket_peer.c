@@ -120,12 +120,30 @@ static int send_message(const struct peer *p, char *rendered, size_t len)
 	return br->writev(br->this_ptr, iov, ARRAY_SIZE(iov));
 }
 
+static int cork(const struct peer *p)
+{
+	const struct socket_peer *s_peer = const_container_of(p, struct socket_peer, peer);
+	const struct buffered_reader *br = &s_peer->br;
+	struct buffered_socket *bs = (struct buffered_socket *)br->this_ptr;
+	return buffered_socket_cork(bs);
+}
+
+static int uncork(const struct peer *p)
+{
+	const struct socket_peer *s_peer = const_container_of(p, struct socket_peer, peer);
+	const struct buffered_reader *br = &s_peer->br;
+	struct buffered_socket *bs = (struct buffered_socket *)br->this_ptr;
+	return buffered_socket_uncork(bs);
+}
+
 void init_socket_peer(struct socket_peer *p, struct buffered_reader *reader, bool is_local_connection)
 {
 	struct buffered_socket *bs = (struct buffered_socket *)reader->this_ptr;
 
 	init_peer(&p->peer, is_local_connection, bs->ev.loop);
 	p->peer.send_message = send_message;
+	p->peer.cork = cork;
+	p->peer.uncork = uncork;
 	p->peer.close = close_jet_peer;
 
 	struct buffered_reader *br = &p->br;

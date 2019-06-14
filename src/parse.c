@@ -73,7 +73,11 @@ static cJSON *process_fetch(const cJSON *json_rpc, struct peer *p)
 		return response;
 	}
 
-	return add_fetch_to_states(p, json_rpc, f);
+	p->cork(p);
+	response = add_fetch_to_states(p, json_rpc, f);
+	p->uncork(p);
+
+	return response;
 }
 
 static cJSON *handle_method(const cJSON *request, const char *method_name,

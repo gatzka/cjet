@@ -271,6 +271,16 @@ int send_message(const struct peer *p, char *rendered, size_t len)
 	return 0;
 }
 
+int cork(const struct peer *p)
+{
+	return 0;
+}
+
+int uncork(const struct peer *p)
+{
+	return 0;
+}
+
 static enum eventloop_return fake_add(const void *this_ptr, const struct io_event *ev)
 {
 	(void)this_ptr;
@@ -292,6 +302,8 @@ struct peer *alloc_peer()
 	struct peer *p = (struct peer *)::malloc(sizeof(*p));
 	init_peer(p, false, &loop);
 	p->send_message = send_message;
+	p->cork = cork;
+	p->uncork = uncork;
 	return p;
 }
 
