@@ -186,7 +186,7 @@ static inline uint32_t hs_hash6432shift(uint64_t key, unsigned int order)
 				table[free_position].value = table[hop_position].value;                                                                                           \
 				wmb();                                                                                                                                            \
 				check_hop_info = check_hop_info & ~(mask);                                                                                                        \
-				check_hop_info = check_hop_info | (1 << check_distance);                                                                                          \
+				check_hop_info = check_hop_info | (UINT32_C(1) << check_distance);                                                                                          \
 				table[check_position].hop_info = check_hop_info;                                                                                                  \
 				return hop_position;                                                                                                                              \
 			}                                                                                                                                                         \
@@ -244,7 +244,7 @@ static inline uint32_t hs_hash6432shift(uint64_t key, unsigned int order)
 					table[free_pos].key = key;                                                                                                                \
 					wmb();                                                                                                                                    \
 					hop_info = table[hash_pos].hop_info;                                                                                                      \
-					hop_info = hop_info | (1 << free_distance);                                                                                               \
+					hop_info = hop_info | (UINT32_C(1) << free_distance);                                                                                               \
 					table[hash_pos].hop_info = hop_info;                                                                                                      \
 					return HASHTABLE_SUCCESS;                                                                                                                 \
 				} else {                                                                                                                                          \
@@ -273,7 +273,7 @@ static inline uint32_t hs_hash6432shift(uint64_t key, unsigned int order)
 				wmb();                                                                                                                                            \
 				memset(&table[pos].value, 0, sizeof(table[pos].value));                                                                                           \
 				distance = wrap_pos##name(pos - hash_pos);                                                                                                        \
-				table[hash_pos].hop_info = hop_info & ~(1 << distance);                                                                                           \
+				table[hash_pos].hop_info = hop_info & ~(UINT32_C(1) << distance);                                                                                           \
 				return HASHTABLE_SUCCESS;                                                                                                                         \
 			}                                                                                                                                                         \
 			check_hop_info = check_hop_info >> 1;                                                                                                                     \
