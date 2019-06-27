@@ -124,7 +124,7 @@ static int copy_single_buffer(struct buffered_socket *bs, const char *buf, size_
 {
 	size_t free_space_in_buf = CONFIG_MAX_WRITE_BUFFER_SIZE - bs->to_write;
 	if (unlikely(to_copy > free_space_in_buf)) {
-		log_err("not enough space left in write buffer! %zu bytes of %i left", free_space_in_buf, CONFIG_MAX_WRITE_BUFFER_SIZE);
+		log_err("not enough space left in write buffer! %zu bytes of %i left, trying to copy %zu bytes", free_space_in_buf, CONFIG_MAX_WRITE_BUFFER_SIZE, to_copy);
 		return -1;
 	}
 
