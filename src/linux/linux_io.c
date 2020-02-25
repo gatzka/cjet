@@ -354,6 +354,15 @@ error:
 
 static int create_server_unix_domain_socket(const char *pPath)
 {
+	struct sockaddr_un serveraddr;
+	/* abstract socket address is distinguished by putting '\0' in the first byte of the address
+	 * addrlen for bind has to be calculated! This includes the address prefix '\0'
+	*/
+	size_t serveraddrLen = 1+strlen(pPath)+sizeof(serveraddr.sun_family);
+	memset(&serveraddr, 0, sizeof(serveraddr));
+	serveraddr.sun_family = AF_UNIX;
+	strncpy(&serveraddr.sun_path[1], pPath, sizeof(serveraddr.sun_path) - 2);
+
 	int listen_fd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (unlikely(listen_fd < 0)) {
 		log_err("Could not create listen socket!\n");
@@ -372,16 +381,10 @@ static int create_server_unix_domain_socket(const char *pPath)
 		goto error;
 	}
 
-	struct sockaddr_un serveraddr;
-	memset(&serveraddr, 0, sizeof(serveraddr));
-	serveraddr.sun_family = AF_UNIX;
-	strncpy(serveraddr.sun_path, pPath, sizeof(serveraddr.sun_path) - 1);
-	unlink(pPath);
-	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, sizeof(serveraddr)) < 0)) {
+	if (unlikely(bind(listen_fd, (struct sockaddr *)&serveraddr, (socklen_t)serveraddrLen) < 0)) {
 		log_err("binding unix domain socket failed: '%s!\n", strerror(errno));
 		goto error;
 	}
-	chmod(pPath, 0666); /* everyone should have access */
 
 	if (unlikely(listen(listen_fd, CONFIG_LISTEN_BACKLOG) < 0)) {
 		log_err("listen failed!\n");
