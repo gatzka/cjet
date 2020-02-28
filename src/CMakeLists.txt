@@ -16,7 +16,7 @@ CONFIGURE_FILE(version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
 SET(WARN_SWITCHES "-Wall -Wextra -Werror -Wshadow -Winit-self -Wunused-result -Wcast-qual -Wcast-align -Wformat=2 -Wwrite-strings -Wmissing-prototypes -pedantic")
 
-SET(CMAKE_C_FLAGS "-pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pipe -fvisibility=hidden -fno-common ${WARN_SWITCHES}")
 
 SET(CMAKE_C_FLAGS_RELEASE "-O3 -fno-asynchronous-unwind-tables")
 IF(CMAKE_C_COMPILER_ID STREQUAL GNU)
