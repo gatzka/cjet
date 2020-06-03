@@ -434,6 +434,13 @@ static cJSON *create_fetch_params(
 		cJSON_AddStringToObject(path, "startsWith", path_startsWith_string);
 	}
 
+	// putting 'caseInsensitive' not at the end of the matchers triggers another error case
+	if (ignore_case) {
+		cJSON_AddTrueToObject(path, "caseInsensitive");
+	} else {
+		cJSON_AddFalseToObject(path, "caseInsensitive");
+	}
+
 	if (strlen(path_endsWith_string)) {
 		cJSON_AddStringToObject(path, "endsWith", path_endsWith_string);
 	}
@@ -445,12 +452,6 @@ static cJSON *create_fetch_params(
 	if (strlen(path_containsallof)) {
 		cJSON *object = cJSON_Parse(path_containsallof);
 		cJSON_AddItemToObject(path, "containsAllOf", object);
-	}
-
-	if (ignore_case) {
-		cJSON_AddTrueToObject(path, "caseInsensitive");
-	} else {
-		cJSON_AddFalseToObject(path, "caseInsensitive");
 	}
 
 	cJSON *root = cJSON_CreateObject();
