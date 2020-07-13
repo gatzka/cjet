@@ -52,7 +52,7 @@ static int add_group(const char *group_name)
 		return 0;
 	}
 
-	if (cJSON_GetArraySize(all_groups) >= sizeof(group_t) * 8) {
+	if (cJSON_GetArraySize(all_groups) >= (int)sizeof(group_t) * 8) {
 		log_err("Only %zu distinct groups are supported!", sizeof(group_t) * 8);
 		return -1;
 	}
