@@ -7,7 +7,7 @@ option(FEATURE_POST_BUILD_UNITTEST  "Automatically run unit-tests as a post buil
 
 # -If using fetchcontent, headers of cjson are located in the same directory as the implementation. This is why we us '#include "cJSON.h"'
 # -If find_package succeeds, headers are located in '${CJSON_INCLUDE_DIRS}/cjson". 
-#  In order to make '#include "cJSON.h"' work we have to add this includ epath
+#  In order to make '#include "cJSON.h"' work we have to add this include path
 
 set(cJSON_REQUIREDVERSION "1.7.13")
 find_package(cJSON ${cJSON_REQUIREDVERSION} QUIET)
