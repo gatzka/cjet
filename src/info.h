@@ -28,7 +28,7 @@
 #define CJET_HANDLE_INFO_H
 
 #include "peer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

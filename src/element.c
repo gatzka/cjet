@@ -41,7 +41,7 @@
 #include "response.h"
 #include "router.h"
 #include "table.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static bool is_state(const struct element *e)
 {

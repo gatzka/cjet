@@ -29,7 +29,7 @@
 #include "compiler.h"
 #include "peer.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static cJSON *add_subobject_to_object(const struct peer *p, cJSON *root, cJSON *value, const char *key)
 {

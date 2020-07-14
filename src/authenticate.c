@@ -35,7 +35,7 @@
 #include "peer.h"
 #include "request.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 cJSON *handle_authentication(struct peer *p, const cJSON *request)
 {

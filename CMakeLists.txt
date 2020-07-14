@@ -5,6 +5,35 @@ CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 option(FEATURE_POST_BUILD_UNITTEST  "Automatically run unit-tests as a post build step" ON)
 
 
+# -If using fetchcontent, headers of cjson are located in the same directory as the implementation. This is why we us '#include "cJSON.h"'
+# -If find_package succeeds, headers are located in '${CJSON_INCLUDE_DIRS}/cjson". 
+#  In order to make '#include "cJSON.h"' work we have to add this includ epath
+
+set(cJSON_REQUIREDVERSION "1.7.13")
+find_package(cJSON ${cJSON_REQUIREDVERSION} QUIET)
+if(cJSON_FOUND)
+  # warning of strange spelling :"cJSON" for most variables but "CJSON_INCLUDE_DIRS" with capital 'C'!
+  message(STATUS "Found cJSON: ${cJSON_VERSION} ${cJSON_CONFIG} ")
+  include_directories("${CJSON_INCLUDE_DIRS}/cjson")
+else()
+  include(FetchContent)
+  set(cJSON_WITH_POST_BUILD_UNITTEST OFF)
+  set(cJSON_WITH_TESTS OFF)
+  FetchContent_Declare(
+    cJSON
+    set(CJSON_BUILD_SHARED_LIBS OFF)
+    set(ENABLE_CJSON_TEST OFF)
+    URL https://github.com/DaveGamble/cJSON/archive/v${cJSON_REQUIREDVERSION}.zip
+  )
+  FetchContent_GetProperties(cJSON)
+  if(NOT cJSON_POPULATED)
+    message(STATUS "Fetching cJSON ${cJSON_REQUIREDVERSION}...")
+    FetchContent_Populate(cJSON)
+    add_subdirectory(${cJSON_SOURCE_DIR} ${cJSON_BINARY_DIR})
+  endif()
+  include_directories("${cJSON_SOURCE_DIR}")
+endif()
+
 ADD_SUBDIRECTORY(src/)
 
 if(FEATURE_POST_BUILD_UNITTEST)

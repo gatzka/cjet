@@ -30,7 +30,7 @@
 #include "element.h"
 #include "peer.h"
 #include "timer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

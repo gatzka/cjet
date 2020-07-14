@@ -68,7 +68,6 @@ SET(CJET_FILES
         http_server.c
         info.c
         jet_string.c
-        json/cJSON.c
         parse.c
         peer.c
         response.c
@@ -145,6 +144,7 @@ TARGET_LINK_LIBRARIES(
         cjet
         m
         crypt
+        cjson
 )
 
 configure_file("systemd/cjet.service.in" "systemd/cjet.service" @ONLY)

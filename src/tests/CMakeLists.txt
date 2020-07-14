@@ -67,7 +67,6 @@ add_library(jet STATIC
  	../groups.c
  	../info.c
  	../jet_string.c
- 	../json/cJSON.c
  	../linux/jet_string.c
  	../parse.c
  	../peer.c
@@ -119,6 +118,7 @@ TARGET_LINK_LIBRARIES(
 	auth_file_test.bin
 	crypt
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -131,6 +131,7 @@ ADD_EXECUTABLE(info_test.bin ${INFO_TEST})
 TARGET_LINK_LIBRARIES(
 	info_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -143,6 +144,7 @@ ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
 	response_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -155,6 +157,7 @@ ADD_EXECUTABLE(router_test.bin ${ROUTER_TEST})
 TARGET_LINK_LIBRARIES(
 	router_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -207,6 +210,7 @@ ADD_EXECUTABLE(config_test.bin ${CONFIG_TEST})
 TARGET_LINK_LIBRARIES(
 	config_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -219,6 +223,7 @@ ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
 TARGET_LINK_LIBRARIES(
 	peer_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -232,6 +237,7 @@ ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 TARGET_LINK_LIBRARIES(
 	parse_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -245,6 +251,7 @@ ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 TARGET_LINK_LIBRARIES(
 	state_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -258,6 +265,7 @@ ADD_EXECUTABLE(method_test.bin ${METHOD_TEST})
 TARGET_LINK_LIBRARIES(
 	method_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -271,6 +279,7 @@ ADD_EXECUTABLE(combined_test.bin ${COMBINED_TEST})
 TARGET_LINK_LIBRARIES(
 	combined_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -284,6 +293,7 @@ ADD_EXECUTABLE(fetch_test.bin ${FETCH_TEST})
 TARGET_LINK_LIBRARIES(
 	fetch_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -307,6 +317,7 @@ ADD_EXECUTABLE(access_test.bin ${ACCESS_TEST})
 TARGET_LINK_LIBRARIES(
 	access_test.bin
 	jet
+	cjson
 	${Boost_LIBRARIES}
 )
 
@@ -349,6 +360,7 @@ ADD_EXECUTABLE(websocket_test.bin ${WEBSOCKET_TEST})
 TARGET_LINK_LIBRARIES(
 	websocket_test.bin
 	jet
+	cjson
 	zlib
 	${Boost_LIBRARIES}
 )
@@ -370,6 +382,7 @@ ADD_EXECUTABLE(websocket_frame_test.bin ${WEBSOCKET_FRAME_TEST})
 TARGET_LINK_LIBRARIES(
 	websocket_frame_test.bin
 	jet
+	cjson
 	zlib
 	${Boost_LIBRARIES}
 )
@@ -394,7 +407,8 @@ ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(
     websocket_peer_test.bin
     jet
-	zlib
+    cjson
+    zlib
     ${Boost_LIBRARIES}
 )
 
@@ -425,6 +439,10 @@ ADD_EXECUTABLE(compression_test.bin ${COMPRESSION_TEST})
 TARGET_LINK_LIBRARIES(
     compression_test.bin
     jet
+    cjson
     zlib
     ${Boost_LIBRARIES}
 )
+
+
+
