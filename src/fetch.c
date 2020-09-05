@@ -283,8 +283,10 @@ static int add_matchers(struct fetch *f, const cJSON *path, bool ignore_case)
 			if (unlikely(create_matcher(f, matcher, match_index, ignore_case) < 0)) {
 				goto error;
 			}
+			/* Do not increment on 'case_insensitive' since this is not a matcher on its own. 
+			 * It is used as an option combined with the other matchers */
+			match_index++; 
 		}
-		match_index++;
 		matcher = matcher->next;
 	}
 	return 0;

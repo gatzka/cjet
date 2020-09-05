@@ -35,8 +35,8 @@ extern "C" {
 
 struct eventloop_epoll {
 	int epoll_fd;
-	struct eventloop loop;
 	struct io_event *current_ev;
+	struct eventloop loop;
 };
 
 int eventloop_epoll_init(void *this_ptr);

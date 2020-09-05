@@ -455,6 +455,28 @@ BOOST_AUTO_TEST_CASE(test_buffered_socket_writev)
 	BOOST_CHECK(memcmp(write_buffer, send_buffer, strlen(send_buffer)) == 0);
 }
 
+BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_iov_and_writebuffer)
+{
+	static const char *iov_send_buffer = "Morning has broken";
+	static const size_t first_chunk_size = 8;
+	static const size_t writebuffer_chunk_size = 2;
+
+	F f(WRITEV_COMPLETE_WRITE);
+
+	memcpy(f.bs->write_buffer, iov_send_buffer, writebuffer_chunk_size);
+	f.bs->to_write = writebuffer_chunk_size;
+
+	struct socket_io_vector vec[2];
+	vec[0].iov_base = iov_send_buffer + writebuffer_chunk_size;
+	vec[0].iov_len = first_chunk_size;
+	vec[1].iov_base = iov_send_buffer + writebuffer_chunk_size + first_chunk_size;
+	vec[1].iov_len = strlen(iov_send_buffer) - first_chunk_size;
+	int ret = buffered_socket_writev(f.bs, vec, ARRAY_SIZE(vec));
+	BOOST_CHECK(ret == 0);
+	BOOST_CHECK_MESSAGE(f.bs->to_write == 0, "write buffer was not reset");
+	BOOST_CHECK(memcmp(write_buffer, iov_send_buffer, strlen(iov_send_buffer)) == 0);
+}
+
 BOOST_AUTO_TEST_CASE(test_buffered_socket_writev_inval)
 {
 	static const char *send_buffer = "foobar";
@@ -950,7 +972,7 @@ BOOST_AUTO_TEST_CASE(test_read_until_buffer_wrap)
 }
 
 /*
- * checks the handeling of chunks, which do not fit
+ * checks the handling of chunks, which do not fit
  * in the buffer completely.
  *
  * Three cases are checked: the first chunk size fits
