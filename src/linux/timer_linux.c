@@ -31,6 +31,7 @@
 
 #include "compiler.h"
 #include "eventloop.h"
+#include "log.h"
 #include "socket.h"
 #include "timer.h"
 #include "util.h"
@@ -93,6 +94,7 @@ static int timer_cancel(void *this_ptr)
 		timer->handler(timer->handler_context, true);
 	} else {
 		// TODO: maybe call registered callback with error parameter
+		log_err("Could not set timer '%s'", strerror(errno));
 	}
 
 	return ret;
@@ -103,6 +105,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 	timer->ev.loop = loop;
 	int ret = timerfd_create(CLOCK_MONOTONIC, O_NONBLOCK);
 	if (unlikely(ret == -1)) {
+		log_err("Could not create timer '%s'", strerror(errno));
 		return -1;
 	}
 
@@ -116,6 +119,7 @@ int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
 
 	enum eventloop_return ev_ret = timer->ev.loop->add(timer->ev.loop->this_ptr, &timer->ev);
 	if (unlikely(ev_ret == EL_ABORT_LOOP)) {
+		log_err("Could not add timer to event loop '%s'", strerror(errno));
 		return -1;
 	} else {
 		return 0;
