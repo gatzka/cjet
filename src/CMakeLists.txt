@@ -5,7 +5,7 @@ PROJECT(${PROJECTNAME} C)
 
 SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake/)
 INCLUDE(version)
-GENERATE_VERSION(version)
+GENERATE_VERSION(cjet_version)
 INCLUDE(defaults)
 INCLUDE(generate_doxygen)
 
