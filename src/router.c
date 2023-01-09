@@ -185,15 +185,13 @@ static void request_timeout_handler(void *context, bool cancelled)
 				} else {
 					log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
 				}
-
-				cjet_timer_destroy(&request->timer);
-				cJSON_Delete(request->origin_request_id);
 			}
-
-			cjet_free(request);
 		} else {
 			log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
 		}
+		cjet_timer_destroy(&request->timer);
+		cJSON_Delete(request->origin_request_id);
+		cjet_free(request);
 	}
 }
 
@@ -209,20 +207,19 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		return -1;
 	}
 
+	struct value_route_table val;
+	val.vals[0] = routing_request;
+	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
+							   routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
+		return -1;
+	}
+
 	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
 	if (unlikely(ret < 0)) {
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
 		return -1;
 	}
-
-	struct value_route_table val;
-	val.vals[0] = routing_request;
-	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
-	                           routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
-		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
-		return -1;
-	}
-
 	return 0;
 }
 
