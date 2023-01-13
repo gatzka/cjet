@@ -30,6 +30,7 @@
 
 #include <boost/test/unit_test.hpp>
 
+#include "alloc.h"
 #include "compiler.h"
 #include "json/cJSON.h"
 #include "peer.h"
@@ -90,6 +91,28 @@ struct F {
 
 	struct peer p;
 };
+
+
+BOOST_FIXTURE_TEST_CASE(uuid_test, F)
+{
+	peer requestingPeer;
+	peer owningPeer;
+	cJSON *request = cJSON_CreateObject();
+	cJSON_AddStringToObject(request, "id", "the id");
+	const cJSON *request_id = cJSON_GetObjectItem(request, "id");
+	// allocation has to create a unique routed request id! Two peers might send a request with the same id!
+	struct routing_request *routing_request1 = alloc_routing_request(&requestingPeer, &owningPeer, request_id);
+	struct routing_request *routing_request2 = alloc_routing_request(&requestingPeer, &owningPeer, request_id);
+
+	std::string id1 = routing_request1->id;
+	std::string id2 = routing_request2->id;
+
+	BOOST_REQUIRE(id1 != id2);
+	cjet_free(routing_request1);
+	cjet_free(routing_request2);
+	cJSON_Delete(request);
+}
+
 
 BOOST_FIXTURE_TEST_CASE(handle_response, F)
 {
