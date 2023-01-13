@@ -57,7 +57,7 @@ static void fill_routed_request_id(char *buf, size_t buf_size, const void *addre
 	} else {
 		snprintf(buf, buf_size, "%x_%p", uuid, address);
 	}
-	++uuid;
+	uuid++;
 }
 
 DECLARE_HASHTABLE_STRING(route_table, CONFIG_ROUTING_TABLE_ORDER, 1)
