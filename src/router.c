@@ -38,8 +38,6 @@
 #include "timer.h"
 #include "json/cJSON.h"
 
-#include "log.h"
-
 /* incremented with each request */
 static unsigned int uuid = 0;
 
