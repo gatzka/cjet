@@ -172,27 +172,30 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 
 static void request_timeout_handler(void *context, bool cancelled)
 {
-	struct routing_request *request = (struct routing_request *)context;
-	if (unlikely(!cancelled)) {
-		struct value_route_table val;
-		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
-		if (likely(ret == HASHTABLE_SUCCESS)) {
-			if (likely(request->origin_request_id != NULL)) {
-				cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
-				if (likely(result_response != NULL)) {
-					format_and_send_response(request->requesting_peer, result_response);
-					cJSON_Delete(result_response);
-				} else {
-					log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
-				}
-			}
-		} else {
-			log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
-		}
-		cjet_timer_destroy(&request->timer);
-		cJSON_Delete(request->origin_request_id);
-		cjet_free(request);
+	if (likely(cancelled)) {
+		// timeout timer got cancelled. No timeout.
+		return;
 	}
+
+	struct routing_request *request = (struct routing_request *)context;
+	struct value_route_table val;
+	int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
+	if (likely(ret == HASHTABLE_SUCCESS)) {
+		if (likely(request->origin_request_id != NULL)) {
+			cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
+			if (likely(result_response != NULL)) {
+				format_and_send_response(request->requesting_peer, result_response);
+				cJSON_Delete(result_response);
+			} else {
+				log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
+			}
+		}
+	} else {
+		log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
+	}
+	cjet_timer_destroy(&request->timer);
+	cJSON_Delete(request->origin_request_id);
+	cjet_free(request);
 }
 
 int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response)
