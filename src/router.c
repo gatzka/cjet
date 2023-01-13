@@ -191,7 +191,7 @@ static void request_timeout_handler(void *context, bool cancelled)
 			}
 		}
 	} else {
-		log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
+		log_peer_err(request->requesting_peer, "request_timeout_handler: Hashtable remove not successful");
 	}
 	cjet_timer_destroy(&request->timer);
 	cJSON_Delete(request->origin_request_id);
@@ -212,8 +212,7 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 
 	struct value_route_table val;
 	val.vals[0] = routing_request;
-	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
-							   routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table, routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 		return -1;
 	}
