@@ -219,6 +219,7 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 
 	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
 	if (unlikely(ret < 0)) {
+		HASHTABLE_REMOVE(route_table, e->peer->routing_table, routing_request->id, NULL);
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
 		return -1;
 	}
