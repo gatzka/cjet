@@ -170,6 +170,10 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	}
 }
 
+/**
+ * @param context Routing request that got timed out. 
+ * The function is responsible to destroy it and all its contents!
+ */
 static void request_timeout_handler(void *context, bool cancelled)
 {
 	if (likely(cancelled)) {
@@ -226,6 +230,11 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 	return 0;
 }
 
+/**
+ * @param json_rpc The complete response
+ * @param response Result or error object of json_rpc, this is what is to be forwarded 
+ * to the original requester
+ */
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
                             const struct peer *p)
 {
