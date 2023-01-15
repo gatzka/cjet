@@ -131,7 +131,7 @@ struct routing_request *alloc_routing_request(const struct peer *requesting_peer
 	struct routing_request *request;
 
 	size_t size_for_id = calculate_size_for_routed_request_id(requesting_peer, origin_request_id);
-	request = cjet_malloc(sizeof(*request) + size_for_id);
+	request = (struct routing_request *)cjet_malloc(sizeof(*request) + size_for_id);
 	if (likely(request != NULL)) {
 		cJSON *origin_request_id_copy;
 		if (origin_request_id != NULL) {

@@ -34,7 +34,7 @@
 char *duplicate_string(const char *s)
 {
 	size_t len_including_zero = strlen(s) + 1;
-	char *ptr = cjet_malloc(len_including_zero);
+	char *ptr = (char*)cjet_malloc(len_including_zero);
 	if (unlikely(ptr == NULL)) {
 		return NULL;
 	}
