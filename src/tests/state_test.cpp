@@ -31,6 +31,8 @@
 #include <boost/test/unit_test.hpp>
 #include <list>
 
+#include "json/cJSON.h"
+
 #include "compiler.h"
 #include "element.h"
 #include "json/cJSON.h"
