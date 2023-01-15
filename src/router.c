@@ -173,11 +173,11 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 /**
  * @param context Routing request that got timed out. 
  * The function is responsible to destroy it and all its contents!
+ * @param cancelled If true timeout timer got cancelled because response arrived in time
  */
 static void request_timeout_handler(void *context, bool cancelled)
 {
 	if (likely(cancelled)) {
-		/* Timeout timer got cancelled when handling response. No timeout. */
 		return;
 	}
 
@@ -232,7 +232,9 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 
 /**
  * @param json_rpc The complete response
- * @param response Result or error object of json_rpc, this is what is to be forwarded 
+ * @param response Result or error object of json_rpc, this is what is to be forwarded to the original requester
+ * @param result_type Tells whether response is result or error
+ * @param p The peer that does the routing of the original request
  * to the original requester
  */
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
@@ -252,7 +254,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 	struct value_route_table val;
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
-		struct routing_request *request = val.vals[0];
+		struct routing_request *request = (struct routing_request *)val.vals[0];
 		if (unlikely(request->timer.cancel(&request->timer) < 0)) {
 			log_peer_err(p, "Could not cancel request timer!\n");
 		}
