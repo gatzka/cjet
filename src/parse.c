@@ -140,7 +140,7 @@ static int parse_json_rpc(const cJSON *request, struct peer *p)
 	return send_response(response, p);
 }
 
-static int parse_json_array(cJSON *root, struct peer *p)
+static int parse_json_array(const cJSON *root, struct peer *p)
 {
 	unsigned int array_size = cJSON_GetArraySize(root);
 	for (unsigned int i = 0; i < array_size; ++i) {

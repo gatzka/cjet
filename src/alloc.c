@@ -44,7 +44,7 @@ void *cjet_malloc(size_t size)
 {
 	size_t alloc_size = size + sizeof(size_t);
 	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
-		log_err("Maximum allows heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
+		log_err("Maximum allowed heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 
@@ -70,7 +70,7 @@ void *cjet_calloc(size_t nmemb, size_t size)
 {
 	size_t alloc_size = nmemb * size + sizeof(size_t);
 	if (unlikely(allocated_memory + alloc_size > CONFIG_MAX_HEAPSIZE_IN_KBYTE * 1024)) {
-		log_err("Maximum allows heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
+		log_err("Maximum allowed heap size exceeded: %zd\n", CONFIG_MAX_HEAPSIZE_IN_KBYTE);
 		return NULL;
 	}
 

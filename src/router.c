@@ -131,7 +131,7 @@ struct routing_request *alloc_routing_request(const struct peer *requesting_peer
 	struct routing_request *request;
 
 	size_t size_for_id = calculate_size_for_routed_request_id(requesting_peer, origin_request_id);
-	request = cjet_malloc(sizeof(*request) + size_for_id);
+	request = (struct routing_request *)cjet_malloc(sizeof(*request) + size_for_id);
 	if (likely(request != NULL)) {
 		cJSON *origin_request_id_copy;
 		if (origin_request_id != NULL) {
@@ -170,31 +170,36 @@ static int format_and_send_response(const struct peer *p, const cJSON *response)
 	}
 }
 
+/**
+ * @param context Routing request that got timed out. 
+ * The function is responsible to destroy it and all its contents!
+ * @param cancelled If true timeout timer got cancelled because response arrived in time
+ */
 static void request_timeout_handler(void *context, bool cancelled)
 {
+	if (likely(cancelled)) {
+		return;
+	}
+
 	struct routing_request *request = (struct routing_request *)context;
-	if (unlikely(!cancelled)) {
-		struct value_route_table val;
-		int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, &val);
-		if (likely(ret == HASHTABLE_SUCCESS)) {
-			if (likely(request->origin_request_id != NULL)) {
-				cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
-				if (likely(result_response != NULL)) {
-					format_and_send_response(request->requesting_peer, result_response);
-					cJSON_Delete(result_response);
-				} else {
-					log_peer_err(request->requesting_peer, "Could not create %s response!\n", "error");
-				}
-
-				cjet_timer_destroy(&request->timer);
-				cJSON_Delete(request->origin_request_id);
-			}
-
-			cjet_free(request);
+	int ret = HASHTABLE_REMOVE(route_table, request->owner_peer->routing_table, request->id, NULL);
+	if (unlikely(ret != HASHTABLE_SUCCESS)) {
+		log_peer_err(request->requesting_peer, "request_timeout_handler: Hashtable remove not successful");
+	}
+	
+	if (likely(request->origin_request_id != NULL)) {
+		cJSON *result_response = create_error_response(request->requesting_peer, request->origin_request_id, INTERNAL_ERROR, "reason", "timeout for routed request");
+		if (likely(result_response != NULL)) {
+			format_and_send_response(request->requesting_peer, result_response);
+			cJSON_Delete(result_response);
 		} else {
-			log_peer_err(request->requesting_peer, "hashtable remove from request_timeout_handler not successful");
+			log_peer_err(request->requesting_peer, "request_timeout_handler: Could not create error response!");
 		}
 	}
+	
+	cjet_timer_destroy(&request->timer);
+	cJSON_Delete(request->origin_request_id);
+	cjet_free(request);
 }
 
 int setup_routing_information(struct element *e, const cJSON *request, const cJSON *timeout, struct routing_request *routing_request, cJSON **response)
@@ -209,23 +214,29 @@ int setup_routing_information(struct element *e, const cJSON *request, const cJS
 		return -1;
 	}
 
-	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
-	if (unlikely(ret < 0)) {
-		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
-		return -1;
-	}
-
 	struct value_route_table val;
 	val.vals[0] = routing_request;
-	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table,
-	                           routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
+	if (unlikely(HASHTABLE_PUT(route_table, e->peer->routing_table, routing_request->id, val, NULL) != HASHTABLE_SUCCESS)) {
 		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "routing table full");
 		return -1;
 	}
 
+	int ret = routing_request->timer.start(&routing_request->timer, timeout_ns, request_timeout_handler, routing_request);
+	if (unlikely(ret < 0)) {
+		HASHTABLE_REMOVE(route_table, e->peer->routing_table, routing_request->id, NULL);
+		*response = create_error_response_from_request(routing_request->requesting_peer, request, INTERNAL_ERROR, "reason", "could not start timer for routing request");
+		return -1;
+	}
 	return 0;
 }
 
+/**
+ * @param json_rpc The complete response
+ * @param response Result or error object of json_rpc, this is what is to be forwarded to the original requester
+ * @param result_type Tells whether response is result or error
+ * @param p The peer that does the routing of the original request
+ * to the original requester
+ */
 int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const char *result_type,
                             const struct peer *p)
 {
@@ -243,7 +254,7 @@ int handle_routing_response(const cJSON *json_rpc, const cJSON *response, const 
 	struct value_route_table val;
 	int ret = HASHTABLE_REMOVE(route_table, p->routing_table, id->valuestring, &val);
 	if (likely(ret == HASHTABLE_SUCCESS)) {
-		struct routing_request *request = val.vals[0];
+		struct routing_request *request = (struct routing_request *)val.vals[0];
 		if (unlikely(request->timer.cancel(&request->timer) < 0)) {
 			log_peer_err(p, "Could not cancel request timer!\n");
 		}
