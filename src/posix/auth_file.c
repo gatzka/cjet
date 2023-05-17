@@ -42,7 +42,7 @@
 #include "jet_random.h"
 #include "log.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(a) (sizeof(a) / sizeof((a)[0]))

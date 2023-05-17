@@ -35,7 +35,7 @@
 #include "eventloop.h"
 #include "groups.h"
 #include "list.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

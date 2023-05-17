@@ -32,7 +32,7 @@
 #include "linux/linux_io.h"
 #include "peer.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static cJSON *create_info(void)
 {

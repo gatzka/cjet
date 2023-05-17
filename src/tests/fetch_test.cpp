@@ -36,7 +36,7 @@
 #include "compiler.h"
 #include "eventloop.h"
 #include "generated/cjet_config.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "router.h"

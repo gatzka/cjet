@@ -41,7 +41,7 @@
 #include "peer.h"
 #include "response.h"
 #include "router.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static int send_response(cJSON *response, const struct peer *p)
 {

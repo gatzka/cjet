@@ -38,7 +38,7 @@
 #include "element.h"
 #include "eventloop.h"
 #include "fetch.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 #include "parse.h"
 #include "table.h"
 

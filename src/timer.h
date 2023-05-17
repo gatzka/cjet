@@ -32,7 +32,7 @@
 
 #include "eventloop.h"
 #include "peer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #ifdef __cplusplus
 extern "C" {

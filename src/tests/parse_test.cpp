@@ -37,7 +37,7 @@
 #include "compiler.h"
 #include "element.h"
 #include "generated/cjet_config.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 #include "parse.h"
 #include "peer.h"
 #include "table.h"

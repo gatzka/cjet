@@ -39,7 +39,7 @@
 #include "peer.h"
 #include "request.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 

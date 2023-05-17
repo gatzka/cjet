@@ -29,7 +29,7 @@
 #include "compiler.h"
 #include "response.h"
 #include "timer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static const double MIN_TIMEOUT_IN_S = 0.001;
 

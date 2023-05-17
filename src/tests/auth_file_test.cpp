@@ -37,7 +37,7 @@
 #include "authenticate.h"
 #include "parse.h"
 #include "peer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 extern "C" {
 int cjet_timer_init(struct cjet_timer *timer, struct eventloop *loop)
