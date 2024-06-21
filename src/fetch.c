@@ -335,17 +335,13 @@ static struct fetch *create_fetch(const struct peer *p, const cJSON *request, co
 
 	unsigned int number_of_matchers = cJSON_GetArraySize(path);
 
-	int ignore_case;
+	int ignore_case = 0;
 	const cJSON *match_ignore_case = get_case_insensitive(path);
 	if (match_ignore_case != NULL) {
 		number_of_matchers--;
 		if (match_ignore_case->type == cJSON_True) {
 			ignore_case = 1;
-		} else {
-			ignore_case = 0;
 		}
-	} else {
-		ignore_case = 0;
 	}
 
 	if (unlikely(number_of_matchers == 0)) {
