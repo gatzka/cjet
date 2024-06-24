@@ -32,7 +32,7 @@
 
 #include "alloc.h"
 #include "compiler.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 #include "peer.h"
 #include "router.h"
 

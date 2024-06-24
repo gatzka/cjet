@@ -31,7 +31,7 @@
 #include "peer.h"
 #include "request.h"
 #include "response.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 cJSON *config_peer(struct peer *p, const cJSON *request)
 {

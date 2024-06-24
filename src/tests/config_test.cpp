@@ -32,7 +32,7 @@
 
 #include "compiler.h"
 #include "config.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 #include "peer.h"
 
 extern "C" {

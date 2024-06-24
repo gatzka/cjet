@@ -38,7 +38,7 @@
 #include "peer.h"
 #include "router.h"
 #include "util.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 static LIST_HEAD(peer_list);
 

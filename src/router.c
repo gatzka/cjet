@@ -36,7 +36,7 @@
 #include "response.h"
 #include "router.h"
 #include "timer.h"
-#include "json/cJSON.h"
+#include "cJSON.h"
 
 /* incremented with each request */
 static unsigned int uuid = 0;
