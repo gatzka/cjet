@@ -1,6 +1,6 @@
-PROJECT("cjet binary and tests" C)
-
 CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+
+PROJECT("cjet binary and tests" C)
 
 option(FEATURE_POST_BUILD_UNITTEST  "Automatically run unit-tests as a post build step" ON)
 
