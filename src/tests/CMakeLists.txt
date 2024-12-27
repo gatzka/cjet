@@ -1,4 +1,4 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.5)
 
 SET(PROJECTNAME cjet_tests)
 PROJECT(${PROJECTNAME} C CXX)
@@ -14,11 +14,7 @@ CONFIGURE_FILE(../cjet_config.h.in ${PROJECT_BINARY_DIR}/generated/cjet_config.h
 CONFIGURE_FILE(../version.h.in ${PROJECT_BINARY_DIR}/generated/version.h)
 
 FIND_PACKAGE(Boost 1.46.0 REQUIRED COMPONENTS unit_test_framework filesystem)
-IF(Boost_FOUND)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-  LIST(APPEND ADDITIONAL_LIBS ${Boost_LIBRARIES})
-  ADD_DEFINITIONS(-DBOOST_SYSTEM_NO_DEPRECATED)
-ENDIF(Boost_FOUND)
+ADD_DEFINITIONS(-DBOOST_SYSTEM_NO_DEPRECATED)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/)
@@ -119,7 +115,8 @@ TARGET_LINK_LIBRARIES(
 	auth_file_test.bin
 	crypt
 	jet
-	${Boost_LIBRARIES}
+	Boost::filesystem
+	Boost::unit_test_framework
 )
 
 SET(INFO_TEST
@@ -131,7 +128,7 @@ ADD_EXECUTABLE(info_test.bin ${INFO_TEST})
 TARGET_LINK_LIBRARIES(
 	info_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(RESPONSE_TEST
@@ -143,7 +140,7 @@ ADD_EXECUTABLE(response_test.bin ${RESPONSE_TEST})
 TARGET_LINK_LIBRARIES(
 	response_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(ROUTER_TEST
@@ -155,7 +152,7 @@ ADD_EXECUTABLE(router_test.bin ${ROUTER_TEST})
 TARGET_LINK_LIBRARIES(
 	router_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(STRING_TEST
@@ -167,7 +164,7 @@ SET(STRING_TEST
 ADD_EXECUTABLE(string_test.bin ${STRING_TEST})
 TARGET_LINK_LIBRARIES(
 	string_test.bin
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(BUFFEREDSOCKET_TEST
@@ -180,7 +177,8 @@ SET(BUFFEREDSOCKET_TEST
 ADD_EXECUTABLE(buffered_socket_test.bin ${BUFFEREDSOCKET_TEST})
 TARGET_LINK_LIBRARIES(
 	buffered_socket_test.bin
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
+
 )
 
 SET(HTTP_CONNECTION_TEST
@@ -195,7 +193,7 @@ SET(HTTP_CONNECTION_TEST
 ADD_EXECUTABLE(http_connection_test.bin ${HTTP_CONNECTION_TEST})
 TARGET_LINK_LIBRARIES(
 	http_connection_test.bin
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(CONFIG_TEST
@@ -207,7 +205,7 @@ ADD_EXECUTABLE(config_test.bin ${CONFIG_TEST})
 TARGET_LINK_LIBRARIES(
 	config_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(PEER_TEST
@@ -219,7 +217,7 @@ ADD_EXECUTABLE(peer_test.bin ${PEER_TEST})
 TARGET_LINK_LIBRARIES(
 	peer_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(JSON_PARSE_TEST
@@ -232,7 +230,7 @@ ADD_EXECUTABLE(parse_test.bin ${JSON_PARSE_TEST})
 TARGET_LINK_LIBRARIES(
 	parse_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(STATE_TEST
@@ -245,7 +243,7 @@ ADD_EXECUTABLE(state_test.bin ${STATE_TEST})
 TARGET_LINK_LIBRARIES(
 	state_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(METHOD_TEST
@@ -258,7 +256,7 @@ ADD_EXECUTABLE(method_test.bin ${METHOD_TEST})
 TARGET_LINK_LIBRARIES(
 	method_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(COMBINED_TEST
@@ -271,7 +269,7 @@ ADD_EXECUTABLE(combined_test.bin ${COMBINED_TEST})
 TARGET_LINK_LIBRARIES(
 	combined_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(FETCH_TEST
@@ -284,7 +282,7 @@ ADD_EXECUTABLE(fetch_test.bin ${FETCH_TEST})
 TARGET_LINK_LIBRARIES(
 	fetch_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(ALLOC_TEST
@@ -295,7 +293,7 @@ SET(ALLOC_TEST
 ADD_EXECUTABLE(alloc_test.bin ${ALLOC_TEST})
 TARGET_LINK_LIBRARIES(
 	alloc_test.bin
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(ACCESS_TEST
@@ -307,7 +305,7 @@ ADD_EXECUTABLE(access_test.bin ${ACCESS_TEST})
 TARGET_LINK_LIBRARIES(
 	access_test.bin
 	jet
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(BASE64_TEST
@@ -318,7 +316,7 @@ SET(BASE64_TEST
 ADD_EXECUTABLE(base64_test.bin ${BASE64_TEST})
 TARGET_LINK_LIBRARIES(
 	base64_test.bin
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(HTTP_PARSER_TEST
@@ -350,7 +348,7 @@ TARGET_LINK_LIBRARIES(
 	websocket_test.bin
 	jet
 	zlib
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(WEBSOCKET_FRAME_TEST
@@ -371,7 +369,7 @@ TARGET_LINK_LIBRARIES(
 	websocket_frame_test.bin
 	jet
 	zlib
-	${Boost_LIBRARIES}
+	Boost::unit_test_framework
 )
 
 SET(WEBSOCKET_PEER_TEST
@@ -394,8 +392,8 @@ ADD_EXECUTABLE(websocket_peer_test.bin ${WEBSOCKET_PEER_TEST})
 TARGET_LINK_LIBRARIES(
     websocket_peer_test.bin
     jet
-	zlib
-    ${Boost_LIBRARIES}
+    zlib
+    Boost::unit_test_framework
 )
 
 SET(UTF8_CHECKER_TEST
@@ -405,7 +403,7 @@ SET(UTF8_CHECKER_TEST
 ADD_EXECUTABLE(utf8_checker_test.bin ${UTF8_CHECKER_TEST})
 TARGET_LINK_LIBRARIES(
     utf8_checker_test.bin
-    ${Boost_LIBRARIES}
+    Boost::unit_test_framework
 ) 
 
 SET(COMPRESSION_TEST
@@ -426,5 +424,5 @@ TARGET_LINK_LIBRARIES(
     compression_test.bin
     jet
     zlib
-    ${Boost_LIBRARIES}
+    Boost::unit_test_framework
 )
